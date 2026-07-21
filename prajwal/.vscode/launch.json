@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-PrajwalApplication<prajwal>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "Backend.prajwal.PrajwalApplication",
+            "projectName": "prajwal",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
