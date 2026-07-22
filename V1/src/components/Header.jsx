@@ -1,6 +1,6 @@
 import React from "react";
 import "./Header.css";
-
+import { Link } from "react-router-dom";
 function Header() {
   return (
     <header className="header">
@@ -8,21 +8,40 @@ function Header() {
       <div className="container nav-container">
 
         {/* Logo */}
-        <div className="logo">
-          Resort<span>Book</span>
-        </div>
+        <h2 className="logo">
+    Reserv<span>o</span>
+</h2>
 
         {/* Navigation */}
         <nav className="navbar">
 
-          <ul className="nav-links">
-            <li><a href="#">Home</a></li>
-            <li><a href="#">Resorts</a></li>
-            <li><a href="#">Services</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Contact</a></li>
-            <li><a href="#">FAQ</a></li>
-          </ul>
+         <ul className="nav-links">
+
+    <li>
+        <Link to="/">Home</Link>
+    </li>
+
+    <li>
+        <Link to="/">Resorts</Link>
+    </li>
+
+    <li>
+        <Link to="/">Services</Link>
+    </li>
+
+    <li>
+        <Link to="/about">About</Link>
+    </li>
+
+    <li>
+        <Link to="/contact">Contact</Link>
+    </li>
+
+    <li>
+        <Link to="/">FAQ</Link>
+    </li>
+
+</ul>
 
         </nav>
 

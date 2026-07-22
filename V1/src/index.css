@@ -41,7 +41,7 @@ html{
 
 body{
     font-family:'Poppins',sans-serif;
-    background:var(--white);
+    background:#F8F5F0;;
     color:var(--dark);
     overflow-x:hidden;
 }

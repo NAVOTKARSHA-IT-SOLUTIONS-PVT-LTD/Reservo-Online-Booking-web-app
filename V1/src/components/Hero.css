@@ -1,0 +1,374 @@
+/* ==========================
+   HERO SECTION
+========================== */
+
+.hero{
+    min-height:100vh;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    text-align:center;
+    color:white;
+
+    padding:0 20px;
+}
+
+/* ==========================
+   HERO CONTENT
+========================== */
+
+.hero-content{
+    width:100%;
+    max-width:1300px;
+}
+
+.hero-tag{
+    display:inline-block;
+    padding:10px 24px;
+
+    background:rgba(255,255,255,.15);
+    backdrop-filter:blur(12px);
+
+    border:1px solid rgba(255,255,255,.25);
+    border-radius:50px;
+
+    font-size:15px;
+    letter-spacing:1px;
+
+    margin-bottom:30px;
+}
+
+.hero h1{
+    font-family:"Playfair Display",serif;
+    font-size:88px;
+    font-weight:700;
+    line-height:1.08;
+    margin-top:80px;
+    margin-bottom:30px;
+    letter-spacing:1px;
+    text-shadow:0 8px 25px rgba(0,0,0,.45);
+}
+
+.hero p{
+
+    max-width:650px;
+
+    margin:auto;
+
+    font-size:22px;
+
+    line-height:1.8;
+
+    font-weight:300;
+
+    letter-spacing:.3px;
+
+    color:rgba(255,255,255,.92);
+
+    margin-bottom:45px;
+
+}
+
+/* ==========================
+   BUTTONS
+========================== */
+
+.hero-buttons{
+
+    display:flex;
+    justify-content:center;
+    gap:30px;
+    flex-wrap:wrap;
+
+    margin-top:15px;
+
+}
+
+.primary-btn{
+    background:#1F3A34;
+    color:white;
+
+    padding:18px 40px;
+
+    border:none;
+    border-radius:50px;
+
+    font-size:17px;
+    font-weight:600;
+
+    cursor:pointer;
+    transition:.35s;
+}
+
+.primary-btn:hover{
+    background:#17302B;
+    transform:translateY(-4px);
+}
+
+.secondary-btn{
+    background:transparent;
+    color:white;
+
+    padding:18px 40px;
+
+    border:2px solid white;
+    border-radius:50px;
+
+    font-size:17px;
+    font-weight:600;
+
+    cursor:pointer;
+    transition:.35s;
+}
+
+.secondary-btn:hover{
+    background:white;
+    color:#1F3A34;
+}
+
+/* ==========================
+   SEARCH BOX
+========================== */
+
+.booking-search{
+
+    width:80%;
+    max-width:1100px;
+
+    margin:60px auto 0;
+
+    padding:35px;
+
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+
+    gap:20px;
+    align-items:end;
+
+    background:rgba(255,255,255,.18);
+
+    backdrop-filter:blur(25px);
+
+    border:1px solid rgba(255,255,255,.25);
+
+    border-radius:35px;
+
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+
+}
+
+.search-item{
+
+    display:flex;
+    flex-direction:column;
+
+    text-align:left;
+
+}
+
+.search-item label{
+
+    color:white;
+
+    margin-bottom:10px;
+
+    font-weight:600;
+
+    font-size:15px;
+
+}
+
+.search-item input,
+.search-item select{
+
+    width:100%;
+
+    padding:16px;
+
+    border:none;
+
+    outline:none;
+
+    border-radius:12px;
+
+    background:white;
+
+    font-size:15px;
+
+}
+
+.search-btn{
+
+    height:56px;
+
+    background:#C2A878;
+
+    color:white;
+
+    border:none;
+
+    border-radius:12px;
+
+    font-size:17px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.35s;
+
+}
+
+.search-btn:hover{
+
+    background:#B08F5A;
+
+    transform:translateY(-3px);
+
+}
+
+/* ==========================
+   HERO STATS
+========================== */
+
+.hero-stats{
+
+    margin-top:70px;
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:80px;
+
+    flex-wrap:wrap;
+
+}
+
+.stat-box{
+
+    text-align:center;
+
+}
+
+.stat-box h2{
+
+    font-family:"Playfair Display",serif;
+
+    font-size:42px;
+
+    color:#D6B980;
+
+    margin-bottom:8px;
+
+}
+
+.stat-box p{
+
+    font-size:16px;
+
+    color:rgba(255,255,255,.9);
+
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media(max-width:1200px){
+
+.hero h1{
+
+font-size:65px;
+
+}
+
+.booking-search{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+.search-btn{
+
+grid-column:span 2;
+
+}
+
+}
+
+@media(max-width:768px){
+
+.hero{
+
+padding-top:140px;
+
+}
+
+.hero h1{
+
+font-size:46px;
+
+}
+
+.hero p{
+
+font-size:17px;
+
+}
+
+.hero-buttons{
+
+flex-direction:column;
+
+align-items:center;
+
+}
+
+.primary-btn,
+.secondary-btn{
+
+width:230px;
+
+}
+
+.booking-search{
+
+grid-template-columns:1fr;
+
+width:95%;
+
+padding:20px;
+
+}
+
+.search-btn{
+
+grid-column:span 1;
+
+}
+
+.hero-stats{
+
+gap:35px;
+
+}
+
+.stat-box h2{
+
+font-size:30px;
+
+}
+
+.stat-box p{
+
+font-size:14px;
+
+}
+
+}

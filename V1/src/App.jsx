@@ -1,80 +1,54 @@
-import React from "react";
+import { Routes, Route } from "react-router-dom";
+
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+
+import Hero from "./components/Hero";
+import PopularDestinations from "./components/PopularDestinations";
+import FeaturedResorts from "./components/FeaturedResorts";
+import Services from "./components/Services";
+import WhyChooseUs from "./components/WhyChooseUs";
+import Testimonials from "./components/Testimonials";
+import FAQ from "./components/FAQ";
+import Newsletter from "./components/Newsletter";
+
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import NotFound from "./pages/NotFound";
+
+function Home() {
+  return (
+    <>
+      <Hero />
+      <PopularDestinations />
+      <FeaturedResorts />
+      <Services />
+      <WhyChooseUs />
+      <Testimonials />
+      <FAQ />
+      <Newsletter />
+    </>
+  );
+}
 
 function App() {
   return (
     <>
-      {/* Header */}
-      <header
-        style={{
-          padding: "20px",
-          background: "#0F766E",
-          color: "white",
-          textAlign: "center",
-          fontSize: "24px",
-          fontWeight: "600",
-        }}
-      >
-        Resort Booking
-      </header>
+      <Header />
 
-      {/* Hero Section */}
-      <section className="container">
-        <h1 className="section-title mt-5">
-          Find Your Dream Resort
-        </h1>
+      <Routes>
 
-        <p className="section-subtitle">
-          Discover luxury resorts, villas, cottages, and unforgettable
-          experiences across India.
-        </p>
-      </section>
+        <Route path="/" element={<Home />} />
 
-      {/* Popular Destinations */}
-      <section className="container">
-        <h2 className="section-title">
-          Popular Destinations
-        </h2>
-      </section>
+        <Route path="/about" element={<About />} />
 
-      {/* Featured Resorts */}
-      <section className="container">
-        <h2 className="section-title">
-          Featured Resorts
-        </h2>
-      </section>
+        <Route path="/contact" element={<Contact />} />
 
-      {/* Services */}
-      <section className="container">
-        <h2 className="section-title">
-          Our Services
-        </h2>
-      </section>
+        <Route path="*" element={<NotFound />} />
 
-      {/* Testimonials */}
-      <section className="container">
-        <h2 className="section-title">
-          Testimonials
-        </h2>
-      </section>
+      </Routes>
 
-      {/* FAQ */}
-      <section className="container">
-        <h2 className="section-title">
-          Frequently Asked Questions
-        </h2>
-      </section>
-
-      {/* Footer */}
-      <footer
-        style={{
-          background: "#111827",
-          color: "white",
-          padding: "30px",
-          textAlign: "center",
-        }}
-      >
-        © 2026 Resort Booking. All Rights Reserved.
-      </footer>
+      <Footer />
     </>
   );
 }
