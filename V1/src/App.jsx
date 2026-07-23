@@ -33,23 +33,41 @@ function Home() {
 
 function App() {
   return (
-    <>
+    <div className="app">
+
       <Header />
 
-      <Routes>
+      <main>
 
-        <Route path="/" element={<Home />} />
+        <Routes>
 
-        <Route path="/about" element={<About />} />
+          <Route
+            path="/"
+            element={<Home />}
+          />
 
-        <Route path="/contact" element={<Contact />} />
+          <Route
+            path="/about"
+            element={<About />}
+          />
 
-        <Route path="*" element={<NotFound />} />
+          <Route
+            path="/contact"
+            element={<Contact />}
+          />
 
-      </Routes>
+          <Route
+            path="*"
+            element={<NotFound />}
+          />
+
+        </Routes>
+
+      </main>
 
       <Footer />
-    </>
+
+    </div>
   );
 }
 

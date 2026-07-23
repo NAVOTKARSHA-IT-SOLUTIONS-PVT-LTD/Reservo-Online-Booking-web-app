@@ -1,0 +1,266 @@
+/* ==========================
+   NEWSLETTER
+========================== */
+
+.newsletter{
+    padding:100px 20px;
+    background:#F8F5F0;
+}
+
+/* ==========================
+   BOX
+========================== */
+
+.newsletter-box{
+
+    background:linear-gradient(135deg,#1F3A34,#2C554B);
+
+    border-radius:28px;
+
+    padding:70px 60px;
+
+    text-align:center;
+
+    color:white;
+
+    box-shadow:0 25px 60px rgba(0,0,0,.18);
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+/* Decorative circles */
+
+.newsletter-box::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:260px;
+
+    height:260px;
+
+    background:rgba(255,255,255,.05);
+
+    border-radius:50%;
+
+    top:-120px;
+
+    right:-80px;
+
+}
+
+.newsletter-box::after{
+
+    content:"";
+
+    position:absolute;
+
+    width:180px;
+
+    height:180px;
+
+    background:rgba(194,168,120,.12);
+
+    border-radius:50%;
+
+    bottom:-70px;
+
+    left:-60px;
+
+}
+
+/* ==========================
+   CONTENT
+========================== */
+
+.newsletter-box h2{
+
+    font-family:"Playfair Display",serif;
+
+    font-size:48px;
+
+    margin:20px 0;
+
+    color:white;
+
+}
+
+.newsletter-box p{
+
+    max-width:700px;
+
+    margin:0 auto 40px;
+
+    font-size:18px;
+
+    line-height:1.8;
+
+    color:rgba(255,255,255,.85);
+
+}
+
+/* ==========================
+   FORM
+========================== */
+
+.newsletter-form{
+
+    max-width:750px;
+
+    margin:auto;
+
+    display:flex;
+
+    gap:18px;
+
+    background:white;
+
+    padding:10px;
+
+    border-radius:60px;
+
+    box-shadow:0 15px 35px rgba(0,0,0,.15);
+
+}
+
+.newsletter-form input{
+
+    flex:1;
+
+    border:none;
+
+    outline:none;
+
+    padding:18px 24px;
+
+    border-radius:50px;
+
+    font-size:16px;
+
+    background:transparent;
+
+}
+
+.newsletter-form button{
+
+    background:#C2A878;
+
+    color:white;
+
+    border:none;
+
+    padding:18px 34px;
+
+    border-radius:50px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    transition:.35s;
+
+}
+
+.newsletter-form button:hover{
+
+    background:#A8874C;
+
+    transform:translateY(-2px);
+
+}
+
+/* ==========================
+   FEATURES
+========================== */
+
+.newsletter-features{
+
+    margin-top:35px;
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:40px;
+
+    flex-wrap:wrap;
+
+}
+
+.newsletter-features span{
+
+    color:#EAEAEA;
+
+    font-size:15px;
+
+    font-weight:500;
+
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media(max-width:768px){
+
+    .newsletter-box{
+
+        padding:50px 25px;
+
+    }
+
+    .newsletter-box h2{
+
+        font-size:34px;
+
+    }
+
+    .newsletter-box p{
+
+        font-size:16px;
+
+    }
+
+    .newsletter-form{
+
+        flex-direction:column;
+
+        border-radius:20px;
+
+        padding:15px;
+
+    }
+
+    .newsletter-form input{
+
+        width:100%;
+
+        border-radius:12px;
+
+        background:#F5F5F5;
+
+    }
+
+    .newsletter-form button{
+
+        width:100%;
+
+        border-radius:12px;
+
+    }
+
+    .newsletter-features{
+
+        gap:15px;
+
+        flex-direction:column;
+
+    }
+
+}

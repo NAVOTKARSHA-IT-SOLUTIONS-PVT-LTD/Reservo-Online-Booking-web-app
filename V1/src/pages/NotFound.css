@@ -1,0 +1,88 @@
+/* ==========================
+   NOT FOUND
+========================== */
+
+.not-found{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    padding:120px 20px;
+
+    background:linear-gradient(rgba(20,35,32,.75),rgba(20,35,32,.75)),
+               url("../assets/images/hero.jpg");
+
+    background-size:cover;
+    background-position:center;
+    color:white;
+}
+
+/* Large 404 */
+
+.not-found h1{
+    font-family:"Playfair Display",serif;
+    font-size:150px;
+    color:#C2A878;
+    margin-bottom:10px;
+    line-height:1;
+}
+
+/* Title */
+
+.not-found h2{
+    font-family:"Playfair Display",serif;
+    font-size:48px;
+    margin-bottom:20px;
+}
+
+/* Description */
+
+.not-found p{
+    max-width:650px;
+    margin:auto;
+    color:rgba(255,255,255,.9);
+    font-size:18px;
+    line-height:1.9;
+    margin-bottom:40px;
+}
+
+/* Button */
+
+.home-btn{
+    display:inline-block;
+    padding:16px 38px;
+    background:#1F3A34;
+    color:white;
+    text-decoration:none;
+    border-radius:50px;
+    font-weight:600;
+    transition:.35s;
+}
+
+.home-btn:hover{
+    background:#162B27;
+    transform:translateY(-4px);
+}
+
+/* Responsive */
+
+@media(max-width:768px){
+
+.not-found h1{
+    font-size:90px;
+}
+
+.not-found h2{
+    font-size:32px;
+}
+
+.not-found p{
+    font-size:16px;
+}
+
+.home-btn{
+    padding:14px 30px;
+}
+
+}
