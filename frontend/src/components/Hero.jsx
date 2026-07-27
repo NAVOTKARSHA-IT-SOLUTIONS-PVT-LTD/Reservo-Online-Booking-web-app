@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { MapPin, Calendar, Users, Search, ArrowRight, Play } from "lucide-react";
 import heroImage from "../assets/images/hero.jpg";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
-import "./Hero.css";
 
 const DESTINATIONS = [
   { name: "Bali", region: "Indonesia" },
@@ -61,7 +60,6 @@ function Hero() {
   };
 
   const handleSearch = () => {
-    // Show booking availability check simulation modal trigger (mocked)
     const modal = document.getElementById("booking-modal");
     if (modal) {
       modal.setAttribute("aria-hidden", "false");
@@ -70,7 +68,6 @@ function Hero() {
       const btn = document.getElementById("close-modal-btn");
       if (btn) btn.style.display = "none";
       
-      // Auto close after 3s
       setTimeout(() => {
         const titleEl = modal.querySelector(".modal-title");
         const descEl = modal.querySelector(".modal-desc");
@@ -83,53 +80,53 @@ function Hero() {
 
   return (
     <section
-      className="hero"
+      className="min-h-screen bg-cover bg-center bg-no-repeat flex justify-center items-center text-center text-white px-5 pt-[120px] pb-15 md:pt-40 relative"
       style={{
         backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.3)), url(${heroImage})`,
       }}
     >
-      <div className="hero-content">
+      <div className="w-full max-w-[1300px] flex flex-col items-center">
         
         {/* Rivo Speech Bubble */}
-        <div className="hero-badge">
-          <img src={rivoMascot} alt="Rivo Avatar" className="badge-avatar" />
+        <div className="flex items-center gap-3 bg-bg-white border border-border-color px-5 py-2 rounded-full text-text-dark shadow-[0_10px_35px_rgba(0,0,0,0.15)] mb-7.5 font-semibold text-[14.5px] z-10">
+          <img src={rivoMascot} alt="Rivo Avatar" className="w-7.5 h-7.5 rounded-full border border-border-color object-cover" />
           <span>Hi, I'm Rivo! Let's explore your dream luxury stay.</span>
         </div>
 
-        <h1 className="hero-title">
-          Book Smart. <span>Stay <em>Better</em>.</span>
+        <h1 className="font-bold text-[38px] sm:text-[56px] xl:text-[80px] leading-tight mb-5 text-white [text-shadow:0_5px_20px_rgba(0,0,0,0.3)]">
+          Book Smart. <span>Stay <span className="italic font-serif">Better</span>.</span>
         </h1>
 
-        <p className="hero-subtitle">
+        <p className="max-w-[650px] mx-auto mb-8.5 text-base md:text-lg leading-relaxed text-white/92 font-normal">
           AI-powered platform for luxury resorts, boutique hotels, and unforgettable stays.
         </p>
 
-        <div className="hero-buttons">
-          <a href="#resorts" className="primary-btn">
+        <div className="flex justify-center gap-5 flex-wrap mb-15 flex-col sm:flex-row items-center w-full sm:w-auto">
+          <a href="#resorts" className="bg-primary text-bg-white px-9 py-4 border border-border-color rounded-full text-base font-semibold cursor-pointer flex items-center gap-2 transition-all duration-300 hover:bg-gold hover:-translate-y-0.5 w-full sm:w-auto max-w-[280px] justify-center">
             Explore Resorts <ArrowRight size={18} />
           </a>
-          <button className="secondary-btn">
-            <Play size={16} fill="white" /> Watch Demo
+          <button className="bg-white/85 text-[#111111] px-9 py-4 border-none rounded-full text-base font-semibold cursor-pointer flex items-center gap-2 transition-all duration-300 hover:bg-white hover:-translate-y-0.5 w-full sm:w-auto max-w-[280px] justify-center">
+            <Play size={16} fill="#111111" /> Watch Demo
           </button>
         </div>
 
         {/* Floating Smart Booking Widget */}
-        <div className="booking-widget-container" ref={widgetRef}>
-          <div className="booking-widget glass-panel">
+        <div className="flex justify-center w-full max-w-[1100px] mb-5 relative z-[100]" ref={widgetRef}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-[repeat(4,1fr)_auto] items-center bg-bg-white/85 backdrop-blur-[20px] border border-border-color p-3 lg:p-5 xl:pl-7.5 xl:pr-3 xl:py-3 rounded-[30px] xl:rounded-full gap-3.75 xl:gap-2.5 shadow-custom w-full">
             
             {/* Destination */}
             <div 
-              className={`booking-field ${activeField === 'destination' ? 'active' : ''}`}
+              className={`flex items-center gap-3.75 px-3.75 py-2.5 rounded-full cursor-pointer transition-colors duration-200 relative text-left bg-bg-light border border-border-color xl:bg-transparent xl:border-none hover:bg-bg-light active:bg-bg-light ${activeField === 'destination' ? 'bg-bg-light!' : ''}`}
               onClick={() => handleFieldClick('destination')}
             >
-              <div className="booking-field-icon">
+              <div className="text-text-dark flex items-center justify-center">
                 <MapPin size={18} />
               </div>
-              <div className="booking-field-info">
-                <span className="booking-field-label">Where to?</span>
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-[0.8px] text-text-gray font-bold">Where to?</span>
                 <input 
                   type="text" 
-                  className="booking-field-input" 
+                  className="bg-transparent border-none text-text-dark text-base font-extrabold w-full cursor-pointer pt-0.5 m-0 outline-none placeholder-text-gray" 
                   value={destination} 
                   readOnly 
                   placeholder="Select destination"
@@ -137,22 +134,22 @@ function Hero() {
               </div>
 
               {activeField === 'destination' && (
-                <div className="booking-dropdown dest-dropdown">
-                  <div className="dropdown-dest-list">
+                <div className="absolute top-[calc(100%+15px)] left-0 bg-bg-white border border-border-color rounded-2xl p-3.75 shadow-custom w-full xl:w-[320px] flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200 z-[110]">
+                  <div className="flex flex-col gap-1.25">
                     {DESTINATIONS.map((dest, i) => (
                       <div 
                         key={i} 
-                        className="dropdown-dest-item"
+                        className="flex items-center gap-3 p-2.5 rounded-xl transition-colors duration-200 text-text-dark hover:bg-bg-light cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
                           setDestination(`${dest.name}, ${dest.region}`);
                           setActiveField(null);
                         }}
                       >
-                        <MapPin size={16} />
+                        <MapPin size={16} className="text-gold" />
                         <div>
-                          <strong>{dest.name}</strong>
-                          <span className="dest-sub">{dest.region}</span>
+                          <strong className="block text-base text-text-dark">{dest.name}</strong>
+                          <span className="text-xs text-text-gray">{dest.region}</span>
                         </div>
                       </div>
                     ))}
@@ -163,30 +160,30 @@ function Hero() {
 
             {/* Check In */}
             <div 
-              className={`booking-field ${activeField === 'checkin' ? 'active' : ''}`}
+              className={`flex items-center gap-3.75 px-3.75 py-2.5 rounded-full cursor-pointer transition-colors duration-200 relative text-left bg-bg-light border border-border-color xl:bg-transparent xl:border-none hover:bg-bg-light active:bg-bg-light ${activeField === 'checkin' ? 'bg-bg-light!' : ''}`}
               onClick={() => handleFieldClick('checkin')}
             >
-              <div className="booking-field-icon">
+              <div className="text-text-dark flex items-center justify-center">
                 <Calendar size={18} />
               </div>
-              <div className="booking-field-info">
-                <span className="booking-field-label">Check In</span>
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-[0.8px] text-text-gray font-bold">Check In</span>
                 <input 
                   type="text" 
-                  className="booking-field-input" 
+                  className="bg-transparent border-none text-text-dark text-base font-extrabold w-full cursor-pointer pt-0.5 m-0 outline-none placeholder-text-gray" 
                   value={formatDateLabel(checkIn)} 
                   readOnly 
                 />
               </div>
 
               {activeField === 'checkin' && (
-                <div className="booking-dropdown date-dropdown" onClick={(e) => e.stopPropagation()}>
-                  <h4>Select Check-in Date</h4>
+                <div className="absolute top-[calc(100%+15px)] left-0 bg-bg-white border border-border-color rounded-2xl p-3.75 shadow-custom w-full xl:w-[280px] flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200 z-[110]" onClick={(e) => e.stopPropagation()}>
+                  <h4 className="text-[13px] m-0 mb-1.25 text-text-gray font-extrabold uppercase tracking-[0.5px]">Select Check-in Date</h4>
                   <input 
                     type="date" 
                     value={checkIn}
                     onChange={(e) => setCheckIn(e.target.value)} 
-                    className="date-picker-input"
+                    className="w-full p-2.5 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm"
                   />
                 </div>
               )}
@@ -194,30 +191,30 @@ function Hero() {
 
             {/* Check Out */}
             <div 
-              className={`booking-field ${activeField === 'checkout' ? 'active' : ''}`}
+              className={`flex items-center gap-3.75 px-3.75 py-2.5 rounded-full cursor-pointer transition-colors duration-200 relative text-left bg-bg-light border border-border-color xl:bg-transparent xl:border-none hover:bg-bg-light active:bg-bg-light ${activeField === 'checkout' ? 'bg-bg-light!' : ''}`}
               onClick={() => handleFieldClick('checkout')}
             >
-              <div className="booking-field-icon">
+              <div className="text-text-dark flex items-center justify-center">
                 <Calendar size={18} />
               </div>
-              <div className="booking-field-info">
-                <span className="booking-field-label">Check Out</span>
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-[0.8px] text-text-gray font-bold">Check Out</span>
                 <input 
                   type="text" 
-                  className="booking-field-input" 
+                  className="bg-transparent border-none text-text-dark text-base font-extrabold w-full cursor-pointer pt-0.5 m-0 outline-none placeholder-text-gray" 
                   value={formatDateLabel(checkOut)} 
                   readOnly 
                 />
               </div>
 
               {activeField === 'checkout' && (
-                <div className="booking-dropdown date-dropdown" onClick={(e) => e.stopPropagation()}>
-                  <h4>Select Check-out Date</h4>
+                <div className="absolute top-[calc(100%+15px)] left-0 bg-bg-white border border-border-color rounded-2xl p-3.75 shadow-custom w-full xl:w-[280px] flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200 z-[110]" onClick={(e) => e.stopPropagation()}>
+                  <h4 className="text-[13px] m-0 mb-1.25 text-text-gray font-extrabold uppercase tracking-[0.5px]">Select Check-out Date</h4>
                   <input 
                     type="date" 
                     value={checkOut}
                     onChange={(e) => setCheckOut(e.target.value)} 
-                    className="date-picker-input"
+                    className="w-full p-2.5 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm"
                   />
                 </div>
               )}
@@ -225,62 +222,62 @@ function Hero() {
 
             {/* Guests */}
             <div 
-              className={`booking-field ${activeField === 'guests' ? 'active' : ''}`}
+              className={`flex items-center gap-3.75 px-3.75 py-2.5 rounded-full cursor-pointer transition-colors duration-200 relative text-left bg-bg-light border border-border-color xl:bg-transparent xl:border-none hover:bg-bg-light active:bg-bg-light ${activeField === 'guests' ? 'bg-bg-light!' : ''}`}
               onClick={() => handleFieldClick('guests')}
             >
-              <div className="booking-field-icon">
+              <div className="text-text-dark flex items-center justify-center">
                 <Users size={18} />
               </div>
-              <div className="booking-field-info">
-                <span className="booking-field-label">Guests & Rooms</span>
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-[0.8px] text-text-gray font-bold">Guests & Rooms</span>
                 <input 
                   type="text" 
-                  className="booking-field-input" 
+                  className="bg-transparent border-none text-text-dark text-base font-extrabold w-full cursor-pointer pt-0.5 m-0 outline-none placeholder-text-gray" 
                   value={`${guests.adults + guests.children} Guests, ${guests.rooms} Room`} 
                   readOnly 
                 />
               </div>
 
               {activeField === 'guests' && (
-                <div className="booking-dropdown guests-dropdown" onClick={(e) => e.stopPropagation()}>
-                  <div className="dropdown-guest-row">
+                <div className="absolute top-[calc(100%+15px)] left-0 bg-bg-white border border-border-color rounded-2xl p-5 shadow-custom w-full xl:w-[320px] flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200 z-[110]" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex justify-between items-center py-2.5 border-b border-border-color">
                     <div>
-                      <strong>Adults</strong>
-                      <span className="guest-sub">Age 13+</span>
+                      <strong className="block text-base text-text-dark">Adults</strong>
+                      <span className="text-xs text-text-gray">Age 13+</span>
                     </div>
-                    <div className="guest-controls">
-                      <button className="ctrl-btn" onClick={() => handleGuestChange('adults', 'subtract')}>-</button>
-                      <span className="count">{guests.adults}</span>
-                      <button className="ctrl-btn" onClick={() => handleGuestChange('adults', 'add')}>+</button>
+                    <div className="flex items-center gap-3">
+                      <button className="bg-bg-light text-text-dark w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold border border-border-color transition-colors duration-200 hover:bg-primary hover:text-bg-white hover:border-primary" onClick={() => handleGuestChange('adults', 'subtract')}>-</button>
+                      <span className="text-base font-bold min-w-[15px] text-center text-text-dark">{guests.adults}</span>
+                      <button className="bg-bg-light text-text-dark w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold border border-border-color transition-colors duration-200 hover:bg-primary hover:text-bg-white hover:border-primary" onClick={() => handleGuestChange('adults', 'add')}>+</button>
                     </div>
                   </div>
-                  <div className="dropdown-guest-row">
+                  <div className="flex justify-between items-center py-2.5 border-b border-border-color">
                     <div>
-                      <strong>Children</strong>
-                      <span className="guest-sub">Ages 2-12</span>
+                      <strong className="block text-base text-text-dark">Children</strong>
+                      <span className="text-xs text-text-gray">Ages 2-12</span>
                     </div>
-                    <div className="guest-controls">
-                      <button className="ctrl-btn" onClick={() => handleGuestChange('children', 'subtract')}>-</button>
-                      <span className="count">{guests.children}</span>
-                      <button className="ctrl-btn" onClick={() => handleGuestChange('children', 'add')}>+</button>
+                    <div className="flex items-center gap-3">
+                      <button className="bg-bg-light text-text-dark w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold border border-border-color transition-colors duration-200 hover:bg-primary hover:text-bg-white hover:border-primary" onClick={() => handleGuestChange('children', 'subtract')}>-</button>
+                      <span className="text-base font-bold min-w-[15px] text-center text-text-dark">{guests.children}</span>
+                      <button className="bg-bg-light text-text-dark w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold border border-border-color transition-colors duration-200 hover:bg-primary hover:text-bg-white hover:border-primary" onClick={() => handleGuestChange('children', 'add')}>+</button>
                     </div>
                   </div>
-                  <div className="dropdown-guest-row">
+                  <div className="flex justify-between items-center py-2.5">
                     <div>
-                      <strong>Rooms</strong>
-                      <span className="guest-sub">Number of rooms</span>
+                      <strong className="block text-base text-text-dark">Rooms</strong>
+                      <span className="text-xs text-text-gray">Number of rooms</span>
                     </div>
-                    <div className="guest-controls">
-                      <button className="ctrl-btn" onClick={() => handleGuestChange('rooms', 'subtract')}>-</button>
-                      <span className="count">{guests.rooms}</span>
-                      <button className="ctrl-btn" onClick={() => handleGuestChange('rooms', 'add')}>+</button>
+                    <div className="flex items-center gap-3">
+                      <button className="bg-bg-light text-text-dark w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold border border-border-color transition-colors duration-200 hover:bg-primary hover:text-bg-white hover:border-primary" onClick={() => handleGuestChange('rooms', 'subtract')}>-</button>
+                      <span className="text-base font-bold min-w-[15px] text-center text-text-dark">{guests.rooms}</span>
+                      <button className="bg-bg-light text-text-dark w-7.5 h-7.5 rounded-full flex items-center justify-center font-bold border border-border-color transition-colors duration-200 hover:bg-primary hover:text-bg-white hover:border-primary" onClick={() => handleGuestChange('rooms', 'add')}>+</button>
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            <button className="btn-search-widget-pill" onClick={handleSearch} aria-label="Search Stays">
+            <button className="bg-gold text-white border-none h-[54px] px-7.5 rounded-[12px] xl:rounded-full cursor-pointer flex items-center justify-center gap-2 font-semibold text-[14.5px] transition-all duration-300 hover:bg-gold-dark hover:-translate-y-px col-span-1 lg:col-span-2 xl:col-span-1 w-full" onClick={handleSearch} aria-label="Search Stays">
               <Search size={18} />
               <span>Search Stays</span>
             </button>
