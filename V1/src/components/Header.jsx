@@ -98,37 +98,37 @@ function Header() {
       </div>
 
       {/* Drawer Overlay Menu */}
-      <div className={`drawer-overlay ${isMenuOpen ? "active" : ""}`} onClick={toggleMenu}>
-        <div className={`drawer-menu ${isMenuOpen ? "open" : ""}`} onClick={(e) => e.stopPropagation()}>
-          <div className="drawer-header">
-            <h3>Account Settings</h3>
-            <button className="close-btn" onClick={toggleMenu}>
-              <X size={24} />
-            </button>
-          </div>
-
-          <ul className="drawer-links">
-            <li>
-              <Link to="/profile" className="drawer-user-link" onClick={toggleMenu}>
-                👤 Profile
-              </Link>
-            </li>
-            <hr className="drawer-divider" />
-            <li className="drawer-user-section">
-              <span className="drawer-section-title">Sign In or Register</span>
-              <div className="drawer-auth-buttons">
-                <button className="login-btn" onClick={toggleMenu}>Log In</button>
-                <button className="signup-btn" onClick={toggleMenu}>Register / Sign Up</button>
-              </div>
-            </li>
-            <hr className="drawer-divider" />
-            <li>
-              <Link to="/" className="drawer-legal-link" onClick={toggleMenu}>
-                Privacy Policy
-              </Link>
-            </li>
-          </ul>
+      <div className={`drawer-overlay ${isMenuOpen ? "active" : ""}`} onClick={toggleMenu}></div>
+      
+      <div className={`drawer-menu ${isMenuOpen ? "open" : ""}`} onClick={(e) => e.stopPropagation()}>
+        <div className="drawer-header">
+          <h3>Account Settings</h3>
+          <button className="close-btn" onClick={toggleMenu}>
+            <X size={24} />
+          </button>
         </div>
+
+        <ul className="drawer-links">
+          <li>
+            <Link to="/profile" className="drawer-user-link" onClick={toggleMenu}>
+              👤 Profile
+            </Link>
+          </li>
+          <hr className="drawer-divider" />
+          <li className="drawer-user-section">
+            <span className="drawer-section-title">Sign In or Register</span>
+            <div className="drawer-auth-buttons">
+              <button className="login-btn" onClick={toggleMenu}>Log In</button>
+              <button className="signup-btn" onClick={toggleMenu}>Register / Sign Up</button>
+            </div>
+          </li>
+          <hr className="drawer-divider" />
+          <li>
+            <Link to="/" className="drawer-legal-link" onClick={toggleMenu}>
+              Privacy Policy
+            </Link>
+          </li>
+        </ul>
       </div>
     </header>
   );
