@@ -39,63 +39,65 @@ function Header() {
   };
 
   return (
-    <header className={`header-wrapper ${isScrolled ? "scrolled" : ""}`}>
-      <div className="container nav-container">
-        {/* Logo with Mascot Avatar */}
-        <Link to="/" className="logo">
-          <img 
-            src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=80&q=80" 
-            alt="Rivo Logo" 
-            className="logo-avatar"
-          />
-          <span className="logo-text">
-            RESERV<span>O</span>
-          </span>
-        </Link>
-
-        {/* Desktop Navigation Links */}
-        <nav className="navbar">
-          <ul className="nav-links">
-            <li><Link to="/" className="active">Home</Link></li>
-            <li><a href="/#explore">Explore</a></li>
-            <li><Link to="/resorts">Resorts</Link></li>
-            <li><Link to="/experiences">Experiences</Link></li>
-            <li><a href="/#why">Why Us</a></li>
-            <li><a href="/#testimonials">Reviews</a></li>
-            <li><a href="/#footer">Contact</a></li>
-          </ul>
-        </nav>
-
-        {/* Nav Actions / Hamburger Trigger */}
-        <div className="nav-actions">
-          {/* Theme Switcher Button */}
-          <button 
-            className="theme-toggle-btn" 
-            onClick={toggleTheme} 
-            aria-label="Toggle Theme"
-          >
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-
-          <Link to="/wishlist" className="wishlist-btn" aria-label="View Wishlist">
-            <Heart size={18} />
+    <>
+      <header className={`header-wrapper ${isScrolled ? "scrolled" : ""}`}>
+        <div className="container nav-container">
+          {/* Logo with Mascot Avatar */}
+          <Link to="/" className="logo">
+            <img 
+              src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=80&q=80" 
+              alt="Rivo Logo" 
+              className="logo-avatar"
+            />
+            <span className="logo-text">
+              RESERV<span>O</span>
+            </span>
           </Link>
-          
-          <div className="lang-selector" aria-label="Change Language">
-            <Globe size={18} />
-            <span>EN</span>
-          </div>
 
-          <button 
-            className="hamburger-btn" 
-            onClick={toggleMenu} 
-            aria-label="Toggle Menu"
-            aria-expanded={isMenuOpen}
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* Desktop Navigation Links */}
+          <nav className="navbar">
+            <ul className="nav-links">
+              <li><Link to="/" className="active">Home</Link></li>
+              <li><a href="/#explore">Explore</a></li>
+              <li><Link to="/resorts">Resorts</Link></li>
+              <li><Link to="/experiences">Experiences</Link></li>
+              <li><a href="/#why">Why Us</a></li>
+              <li><a href="/#testimonials">Reviews</a></li>
+              <li><a href="/#footer">Contact</a></li>
+            </ul>
+          </nav>
+
+          {/* Nav Actions / Hamburger Trigger */}
+          <div className="nav-actions">
+            {/* Theme Switcher Button */}
+            <button 
+              className="theme-toggle-btn" 
+              onClick={toggleTheme} 
+              aria-label="Toggle Theme"
+            >
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            <Link to="/wishlist" className="wishlist-btn" aria-label="View Wishlist">
+              <Heart size={18} />
+            </Link>
+            
+            <div className="lang-selector" aria-label="Change Language">
+              <Globe size={18} />
+              <span>EN</span>
+            </div>
+
+            <button 
+              className="hamburger-btn" 
+              onClick={toggleMenu} 
+              aria-label="Toggle Menu"
+              aria-expanded={isMenuOpen}
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Drawer Overlay Menu */}
       <div className={`drawer-overlay ${isMenuOpen ? "active" : ""}`} onClick={toggleMenu}></div>
@@ -130,7 +132,7 @@ function Header() {
           </li>
         </ul>
       </div>
-    </header>
+    </>
   );
 }
 
