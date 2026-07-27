@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import "./CustomCursor.css";
 
 function CustomCursor() {
   const dotRef = useRef(null);
@@ -19,7 +18,6 @@ function CustomCursor() {
       }
       
       if (ringRef.current) {
-        // Use smooth animation or requestAnimationFrame
         ringRef.current.animate(
           {
             left: `${x}px`,
@@ -31,7 +29,6 @@ function CustomCursor() {
     };
 
     const handleMouseOver = (e) => {
-      // Check if hovering over clickable element
       const target = e.target;
       const isClickable = 
         target.tagName === "BUTTON" || 
@@ -75,13 +72,27 @@ function CustomCursor() {
     <>
       <div 
         ref={dotRef} 
-        className={`custom-cursor-dot ${isHovered ? "hover" : ""} ${isClicking ? "click" : ""}`}
+        className={`fixed pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2 rounded-full transition-[width,height,background-color] duration-200 ${
+          isHovered 
+            ? "w-1 h-1 bg-gold" 
+            : isClicking 
+              ? "w-0.75 h-0.75 bg-text-dark" 
+              : "w-2 h-2 bg-text-dark"
+        }`}
       />
       <div 
         ref={ringRef} 
-        className={`custom-cursor-ring ${isHovered ? "hover" : ""} ${isClicking ? "click" : ""}`}
+        className={`fixed border border-gold rounded-full pointer-events-none z-[9998] -translate-x-1/2 -translate-y-1/2 flex items-center justify-center transition-all duration-300 ease-out ${
+          isHovered 
+            ? "w-13.5 h-13.5 bg-gold/18" 
+            : isClicking 
+              ? "w-8.5 h-8.5 bg-gold/30" 
+              : "w-10 h-10 bg-transparent"
+        }`}
       >
-        <span>+</span>
+        <span className={`text-text-dark text-base font-bold transition-all duration-200 block leading-none ${
+          isHovered ? "opacity-100 scale-100" : "opacity-0 scale-50"
+        }`}>+</span>
       </div>
     </>
   );
