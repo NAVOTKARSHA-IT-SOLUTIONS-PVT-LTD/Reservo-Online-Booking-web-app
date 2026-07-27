@@ -52,14 +52,14 @@ function App() {
   };
 
   return (
-    <div className="app">
+    <div className="min-h-screen flex flex-col">
       {/* Custom reactive cursor */}
       <CustomCursor />
 
       {/* Global Navigation Header */}
       <Header />
 
-      <main>
+      <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />

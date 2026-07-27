@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Trash2, Calendar, MapPin } from "lucide-react";
-import "./Wishlist.css";
 import rivoSearching from "../assets/images/rivo_searching.png";
 
 function Wishlist() {
@@ -60,21 +59,21 @@ function Wishlist() {
   };
 
   return (
-    <div className="wishlist-page fade-up">
-      <div className="container wishlist-container">
-        <header className="wishlist-header">
-          <h1>Saved Stays & Wishlist</h1>
-          <p>Your curated selections of verified luxury retreats around the world.</p>
+    <div className="py-30 pb-25 bg-bg-light min-h-screen fade-up">
+      <div className="w-[90%] max-w-[1300px] mx-auto">
+        <header className="text-center mb-12.5">
+          <h1 className="text-[32px] sm:text-[40px] font-bold text-text-dark mb-3">Saved Stays & Wishlist</h1>
+          <p className="text-[15px] text-text-gray max-w-[600px] mx-auto">Your curated selections of verified luxury retreats around the world.</p>
         </header>
 
         {wishlist.length > 0 ? (
-          <div className="wishlist-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7.5">
             {wishlist.map(resort => (
-              <div key={resort.id} className="wish-card">
-                <div className="wish-img-box">
-                  <img src={resort.image} alt={resort.name} />
+              <div key={resort.id} className="bg-bg-white border border-border-color rounded-2xl overflow-hidden shadow-custom flex flex-col transition-all duration-300 hover:-translate-y-1.25 group">
+                <div className="relative h-55">
+                  <img src={resort.image} alt={resort.name} className="w-full h-full object-cover" />
                   <button 
-                    className="wish-delete-btn"
+                    className="absolute top-3.75 right-3.75 bg-white/90 text-red-500 border-none w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all duration-200 hover:bg-red-500 hover:text-white hover:scale-110"
                     onClick={() => removeWish(resort.id, resort.name)}
                     aria-label="Remove from Wishlist"
                   >
@@ -82,18 +81,18 @@ function Wishlist() {
                   </button>
                 </div>
 
-                <div className="wish-body">
-                  <span className="wish-loc"><MapPin size={12} /> {resort.location}</span>
-                  <h3>{resort.name}</h3>
+                <div className="p-5 flex flex-col flex-1">
+                  <span className="text-xs text-text-gray flex items-center gap-1 mb-2 font-medium"><MapPin size={12} className="text-gold" /> {resort.location}</span>
+                  <h3 className="text-xl font-bold text-text-dark mb-4.5">{resort.name}</h3>
 
-                  <div className="wish-footer">
-                    <div className="wish-price">
-                      <strong>${resort.price}</strong>
-                      <span>/ night</span>
+                  <div className="flex justify-between items-center border-t border-border-color pt-3.75 mt-auto">
+                    <div className="flex items-center">
+                      <strong className="text-xl font-bold text-text-dark">${resort.price}</strong>
+                      <span className="text-[11px] text-text-gray ml-0.5">/ night</span>
                     </div>
 
                     <button 
-                      className="wish-book-btn"
+                      className="bg-primary text-bg-white border-none px-5 py-2.5 rounded-lg text-[13px] font-semibold cursor-pointer flex items-center transition-colors duration-300 hover:bg-gold hover:text-white"
                       onClick={() => bookStay(resort.name)}
                     >
                       Book Now <Calendar size={13} style={{ marginLeft: 6 }} />
@@ -104,18 +103,18 @@ function Wishlist() {
             ))}
           </div>
         ) : (
-          <div className="wishlist-empty-state">
-            <div className="wishlist-empty-illustration-wrapper">
+          <div className="text-center py-15 px-5 flex flex-col items-center text-text-gray">
+            <div className="relative w-40 h-40 mb-6.25">
               <img 
                 src={rivoSearching} 
                 alt="Rivo searching empty wishlist" 
-                className="wishlist-empty-mascot-img"
+                className="w-full h-full rounded-full border-3 border-border-color object-cover shadow-[0_10px_30px_rgba(0,0,0,0.05)]"
               />
-              <div className="wishlist-empty-badge">?</div>
+              <div className="absolute bottom-0 right-1.25 w-11 h-11 bg-gold text-white rounded-full flex items-center justify-center text-[22px] font-extrabold border-3 border-bg-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">?</div>
             </div>
-            <h2>Your Wishlist is Empty</h2>
-            <p>Rivo couldn't find any saved resorts here. Explore our verified listings and click the heart icon to save them!</p>
-            <Link to="/resorts" className="explore-resorts-action-btn">
+            <h2 className="text-[28px] text-text-dark mb-2.5 font-bold">Your Wishlist is Empty</h2>
+            <p className="text-[14.5px] max-w-[450px] mb-7.5 leading-relaxed">Rivo couldn't find any saved resorts here. Explore our verified listings and click the heart icon to save them!</p>
+            <Link to="/resorts" className="bg-primary text-bg-white no-underline px-[30px] py-3 rounded-lg font-semibold text-sm transition-all duration-300 hover:bg-gold hover:text-white hover:-translate-y-0.5 hover:shadow-[0_5px_15px_rgba(194,168,120,0.2)]">
               Explore Luxury Resorts
             </Link>
           </div>
