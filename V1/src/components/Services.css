@@ -5,20 +5,30 @@
 .services {
   padding: 80px 0;
   background-color: #ffffff;
+  overflow: hidden;
 }
 
-.experiences-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 25px;
-  margin-top: 50px;
+/* ==========================
+   CAROUSEL WRAPPER & TRACK
+   ========================== */
+
+.experiences-carousel-wrapper {
+  width: 100%;
+}
+
+.experiences-carousel-track {
+  display: flex;
+  gap: 30px;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
 }
 
 /* ==========================
    EXPERIENCE CARD
    ========================== */
 
-.experience-card {
+.experience-slide-card {
+  flex: 0 0 calc((100% - 60px) / 3); /* Shows exactly 3 cards on desktop */
   position: relative;
   height: 400px;
   border-radius: 20px;
@@ -28,7 +38,7 @@
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.experience-card:hover {
+.experience-slide-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
@@ -45,12 +55,12 @@
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.experience-card:hover .experience-img {
+.experience-slide-card:hover .experience-img {
   transform: scale(1.06);
 }
 
 /* Gradient Overlay */
-.experience-card::after {
+.experience-slide-card::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -84,27 +94,28 @@
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.85);
   margin: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 /* ==========================
    RESPONSIVE
    ========================== */
 
-@media (max-width: 1100px) {
-  .experiences-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+@media (max-width: 992px) {
+  .experience-slide-card {
+    flex: 0 0 calc((100% - 30px) / 2); /* Shows exactly 2 cards on tablet */
   }
 }
 
-@media (max-width: 600px) {
-  .experiences-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
+@media (max-width: 768px) {
+  .experiences-carousel-track {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    transform: none !important; /* Let native touch scroll on mobile */
   }
-  
-  .experience-card {
+
+  .experience-slide-card {
+    flex: 0 0 85%; /* Shows a single card mostly, with preview of next */
     height: 350px;
   }
 }

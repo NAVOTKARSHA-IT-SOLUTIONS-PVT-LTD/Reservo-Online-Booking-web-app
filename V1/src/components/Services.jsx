@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import "./Services.css";
 
 const EXPERIENCES = [
@@ -29,28 +30,76 @@ const EXPERIENCES = [
 ];
 
 function Services() {
+  const [sliderIndex, setSliderIndex] = useState(0);
+
+  const handleNext = () => {
+    if (sliderIndex < EXPERIENCES.length - 3) {
+      setSliderIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (sliderIndex > 0) {
+      setSliderIndex(prev => prev - 1);
+    }
+  };
+
   return (
     <section className="services" id="experiences">
       <div className="container">
-        <span className="section-tag">Luxury Curated Programs</span>
-        <h2 className="section-title">Experiences Beyond Stays</h2>
-        <p className="section-subtitle">
-          Immerse yourself in authentic custom adventures mapped by local culture and elite hospitality experts.
-        </p>
+        
+        {/* Title Header with Controls */}
+        <div className="section-header-row">
+          <div>
+            <span className="section-tag">Luxury Curated Programs</span>
+            <h2 className="section-title">Experiences Beyond Stays</h2>
+            <p className="section-subtitle">
+              Immerse yourself in authentic custom adventures mapped by local culture and elite hospitality experts.
+            </p>
+          </div>
 
-        <div className="experiences-grid">
-          {EXPERIENCES.map((exp) => (
-            <div className="experience-card" key={exp.id}>
-              <div className="experience-img-wrapper">
-                <img src={exp.image} alt={exp.title} className="experience-img" />
-              </div>
-              <div className="experience-info">
-                <h3 className="experience-title">{exp.title}</h3>
-                <p className="experience-desc">{exp.description}</p>
-              </div>
-            </div>
-          ))}
+          <div className="slider-controls">
+            <button 
+              className={`slider-ctrl-btn ${sliderIndex === 0 ? "disabled" : ""}`}
+              onClick={handlePrev}
+              disabled={sliderIndex === 0}
+              aria-label="Previous experiences"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button 
+              className={`slider-ctrl-btn ${sliderIndex >= EXPERIENCES.length - 3 ? "disabled" : ""}`}
+              onClick={handleNext}
+              disabled={sliderIndex >= EXPERIENCES.length - 3}
+              aria-label="Next experiences"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
         </div>
+
+        {/* Carousel Slider */}
+        <div className="experiences-carousel-wrapper">
+          <div 
+            className="experiences-carousel-track"
+            style={{
+              transform: `translateX(-${sliderIndex * (100 / 3)}%)`
+            }}
+          >
+            {EXPERIENCES.map((exp) => (
+              <div className="experience-slide-card" key={exp.id}>
+                <div className="experience-img-wrapper">
+                  <img src={exp.image} alt={exp.title} className="experience-img" />
+                </div>
+                <div className="experience-info">
+                  <h3 className="experience-title">{exp.title}</h3>
+                  <p className="experience-desc">{exp.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </section>
   );

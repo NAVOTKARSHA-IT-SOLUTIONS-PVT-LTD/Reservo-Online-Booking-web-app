@@ -5,20 +5,30 @@
 .featured {
   padding: 80px 0;
   background-color: #ffffff;
+  overflow: hidden;
 }
 
-.resorts-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+/* ==========================
+   CAROUSEL WRAPPER & TRACK
+   ========================== */
+
+.resorts-carousel-wrapper {
+  width: 100%;
+}
+
+.resorts-carousel-track {
+  display: flex;
   gap: 30px;
-  margin-top: 50px;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
 }
 
 /* ==========================
    RESORT CARD
    ========================== */
 
-.resort-card {
+.resort-slide-card {
+  flex: 0 0 calc((100% - 60px) / 3); /* Shows exactly 3 cards on desktop */
   background: #ffffff;
   border: 1px solid #e5e5e7;
   border-radius: 20px;
@@ -29,7 +39,7 @@
   flex-direction: column;
 }
 
-.resort-card:hover {
+.resort-slide-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
 }
@@ -52,7 +62,7 @@
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.resort-card:hover .resort-img {
+.resort-slide-card:hover .resort-img {
   transform: scale(1.05);
 }
 
@@ -237,19 +247,20 @@
    ========================== */
 
 @media (max-width: 992px) {
-  .resorts-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 25px;
+  .resort-slide-card {
+    flex: 0 0 calc((100% - 30px) / 2); /* Shows exactly 2 cards on tablet */
   }
 }
 
 @media (max-width: 768px) {
-  .resorts-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
+  .resorts-carousel-track {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    transform: none !important; /* Let native touch scroll on mobile */
   }
 
-  .resort-card {
-    max-width: 100%;
+  .resort-slide-card {
+    flex: 0 0 85%; /* Shows a single card mostly, with preview of next */
   }
 }

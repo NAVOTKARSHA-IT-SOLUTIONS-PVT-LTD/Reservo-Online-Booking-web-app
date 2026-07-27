@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { MapPin, Calendar, Users, Search, ArrowRight, Play } from "lucide-react";
 import heroImage from "../assets/images/hero.jpg";
+import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import "./Hero.css";
 
 const DESTINATIONS = [
-  { name: "Goa", region: "West Coast, India" },
-  { name: "Manali", region: "Himalayas, India" },
-  { name: "Kerala", region: "South Coast, India" },
-  { name: "Coorg", region: "Western Ghats, India" },
-  { name: "Andaman", region: "Island Territory, India" }
+  { name: "Bali", region: "Indonesia" },
+  { name: "Maldives", region: "Indian Ocean" },
+  { name: "Santorini", region: "Greece" },
+  { name: "Swiss Alps", region: "Switzerland" }
 ];
 
 function Hero() {
-  const [destination, setDestination] = useState("Goa, India");
+  const [destination, setDestination] = useState("Bali, Indonesia");
   const [checkIn, setCheckIn] = useState("2026-09-12");
   const [checkOut, setCheckOut] = useState("2026-09-19");
   
@@ -22,10 +22,9 @@ function Hero() {
     rooms: 1
   });
 
-  const [activeField, setActiveField] = useState(null); // 'destination' | 'checkin' | 'checkout' | 'guests' | null
+  const [activeField, setActiveField] = useState(null);
   const widgetRef = useRef(null);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (widgetRef.current && !widgetRef.current.contains(event.target)) {
@@ -62,7 +61,24 @@ function Hero() {
   };
 
   const handleSearch = () => {
-    alert(`Searching luxury stays in ${destination} for ${guests.adults + guests.children} guests (${guests.rooms} room/s) from ${formatDateLabel(checkIn)} to ${formatDateLabel(checkOut)}.`);
+    // Show booking availability check simulation modal trigger (mocked)
+    const modal = document.getElementById("booking-modal");
+    if (modal) {
+      modal.setAttribute("aria-hidden", "false");
+      modal.style.display = "flex";
+      
+      const btn = document.getElementById("close-modal-btn");
+      if (btn) btn.style.display = "none";
+      
+      // Auto close after 3s
+      setTimeout(() => {
+        const titleEl = modal.querySelector(".modal-title");
+        const descEl = modal.querySelector(".modal-desc");
+        if (titleEl) titleEl.innerText = "Search Complete!";
+        if (descEl) descEl.innerText = `Rivo matched 12 luxury stays in ${destination} for your dates!`;
+        if (btn) btn.style.display = "block";
+      }, 3000);
+    }
   };
 
   return (
@@ -73,23 +89,25 @@ function Hero() {
       }}
     >
       <div className="hero-content">
-        <span className="hero-tag">
-          ✨ Premium Stays, AI Curated
-        </span>
+        
+        {/* Rivo Speech Bubble */}
+        <div className="hero-badge">
+          <img src={rivoMascot} alt="Rivo Avatar" className="badge-avatar" />
+          <span>Hi, I'm Rivo! Let's explore your dream luxury stay.</span>
+        </div>
 
         <h1 className="hero-title">
-          Book Smart. <br />
-          Stay <span>Better.</span>
+          Book Smart. <span>Stay <em>Better</em>.</span>
         </h1>
 
         <p className="hero-subtitle">
-          AI-powered booking for India's finest luxury resorts, boutique villas, and memorable stays.
+          AI-powered platform for luxury resorts, boutique hotels, and unforgettable stays.
         </p>
 
         <div className="hero-buttons">
-          <button className="primary-btn">
+          <a href="#resorts" className="primary-btn">
             Explore Resorts <ArrowRight size={18} />
-          </button>
+          </a>
           <button className="secondary-btn">
             <Play size={16} fill="white" /> Watch Demo
           </button>
@@ -127,7 +145,7 @@ function Hero() {
                         className="dropdown-dest-item"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setDestination(`${dest.name}, India`);
+                          setDestination(`${dest.name}, ${dest.region}`);
                           setActiveField(null);
                         }}
                       >
@@ -218,7 +236,7 @@ function Hero() {
                 <input 
                   type="text" 
                   className="booking-field-input" 
-                  value={`${guests.adults + guests.children} Guest${guests.adults + guests.children > 1 ? 's' : ''}, ${guests.rooms} Room${guests.rooms > 1 ? 's' : ''}`} 
+                  value={`${guests.adults + guests.children} Guests, ${guests.rooms} Room`} 
                   readOnly 
                 />
               </div>
@@ -262,31 +280,11 @@ function Hero() {
               )}
             </div>
 
-            <button className="btn-search-widget" onClick={handleSearch} aria-label="Search Stays">
-              <Search size={20} />
-              <span>Search</span>
+            <button className="btn-search-widget-pill" onClick={handleSearch} aria-label="Search Stays">
+              <Search size={18} />
+              <span>Search Stays</span>
             </button>
 
-          </div>
-        </div>
-
-        {/* Hero Statistics */}
-        <div className="hero-stats">
-          <div className="stat-box">
-            <h2>500+</h2>
-            <p>Luxury Resorts</p>
-          </div>
-          <div className="stat-box">
-            <h2>150+</h2>
-            <p>Destinations</p>
-          </div>
-          <div className="stat-box">
-            <h2>50K+</h2>
-            <p>Happy Guests</p>
-          </div>
-          <div className="stat-box">
-            <h2>4.9★</h2>
-            <p>Guest Rating</p>
           </div>
         </div>
 

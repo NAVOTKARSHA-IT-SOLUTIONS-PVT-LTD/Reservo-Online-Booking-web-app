@@ -1,135 +1,168 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, Send } from "lucide-react";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import "./Mascot.css";
 
-const FEATURES = [
-  {
-    id: 1,
-    icon: "👋",
-    title: "1. WELCOME",
-    description: "Rivo welcomes you to Reservo and makes you feel at home."
-  },
-  {
-    id: 2,
-    icon: "🔍",
-    title: "2. SEARCH",
-    description: "Rivo helps you search the best resorts and hotels anywhere."
-  },
-  {
-    id: 3,
-    icon: "⚖️",
-    title: "3. COMPARE",
-    description: "Rivo compares options so you can choose the perfect stay."
-  },
-  {
-    id: 4,
-    icon: "📅",
-    title: "4. BOOK",
-    description: "Rivo makes booking fast, easy and hassle-free."
-  },
-  {
-    id: 5,
-    icon: "🏷️",
-    title: "5. BEST DEALS",
-    description: "Rivo brings you exclusive offers and unbeatable prices."
-  },
-  {
-    id: 6,
-    icon: "✨",
-    title: "6. AI RECOMMEND",
-    description: "Rivo recommends personalized stays based on your preferences."
-  },
-  {
-    id: 7,
-    icon: "🗺️",
-    title: "7. TRIP PLAN",
-    description: "Rivo creates your complete trip plan including stays, activities and more."
-  },
-  {
-    id: 8,
-    icon: "🎧",
-    title: "8. SUPPORT",
-    description: "Rivo is here 24/7 to help you anytime, anywhere."
-  },
-  {
-    id: 9,
-    icon: "🔔",
-    title: "9. REMINDERS",
-    description: "Rivo reminds you about check-in, activities and special plans."
-  },
-  {
-    id: 10,
-    icon: "🕶️",
-    title: "10. ENJOY",
-    description: "Rivo wants you to relax, enjoy and create memories that last forever."
-  },
-  {
-    id: 11,
-    icon: "🔄",
-    title: "11. REVISIT",
-    description: "Rivo is excited to have you back for your next adventure."
-  },
-  {
-    id: 12,
-    icon: "🔗",
-    title: "12. SHARE",
-    description: "Rivo loves when you share your experience with your friends."
-  }
+const QUICK_REPLIES = [
+  { text: "🌴 Suggest beach resorts", key: "beach" },
+  { text: "🏔️ Tell me about Manali", key: "manali" },
+  { text: "📅 How do I book?", key: "book" }
 ];
 
 function Mascot() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      sender: "rivo",
+      text: "Hi! I'm Rivo, your AI travel buddy. I can recommend premium stays, check availability, or help with concierge. Where would you like to travel?"
+    }
+  ]);
+  const [inputVal, setInputVal] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isTyping]);
+
+  const toggleChat = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleSend = (text) => {
+    if (!text.trim()) return;
+
+    // Add user message
+    const userMsg = {
+      id: Date.now(),
+      sender: "user",
+      text: text
+    };
+    setMessages(prev => [...prev, userMsg]);
+    setInputVal("");
+    setIsTyping(true);
+
+    // Simulate Rivo reply after 1.5s
+    setTimeout(() => {
+      let replyText = "I'm checking that with our systems now. Rivo is looking for the best matches!";
+      const lowerText = text.toLowerCase();
+
+      if (lowerText.includes("beach") || lowerText.includes("goa") || lowerText.includes("andaman")) {
+        replyText = "I highly recommend Ocean Breeze Resort in Goa or Sunrise Beach Resort in Andaman. Both feature 4.9+ ratings and premium beachfront pools. Shall I check rates?";
+      } else if (lowerText.includes("manali") || lowerText.includes("mountain") || lowerText.includes("shimla")) {
+        replyText = "Manali and Shimla are beautiful right now! The Mountain Paradise Resort in Manali is currently our best-seller and features private spa access and cozy fireplaces.";
+      } else if (lowerText.includes("book") || lowerText.includes("how") || lowerText.includes("process")) {
+        replyText = "Booking is super easy! Simply select your destination in the search bar above, pick dates, and click search. You can also click 'Quick Book' on any resort card!";
+      }
+
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: "rivo",
+          text: replyText
+        }
+      ]);
+      setIsTyping(false);
+    }, 1500);
+  };
+
   return (
-    <section className="mascot" id="mascot">
-      <div className="container">
-        <div className="mascot-wrapper">
+    <div className="rivo-floating-wrapper">
+      
+      {/* Floating Mascot Trigger Badge */}
+      <button 
+        className={`rivo-float-badge ${isOpen ? "active" : ""}`}
+        onClick={toggleChat}
+        aria-label="Toggle Rivo AI Companion"
+      >
+        <img src={rivoMascot} alt="Rivo Mascot" className="float-badge-img" />
+        <span className="float-pulse"></span>
+      </button>
+
+      {/* Interactive Chat Popup Dialog */}
+      {isOpen && (
+        <div className="rivo-chat-popup glass-panel">
           
-          {/* Left Column: Mascot Profile Card */}
-          <div className="mascot-profile-card">
-            <div className="mascot-img-container">
-              <img src={rivoMascot} alt="Rivo Mascot" className="mascot-img" />
-              <div className="mascot-badge">Rivo v1.0</div>
+          {/* Header */}
+          <div className="chat-header">
+            <img src={rivoMascot} alt="Rivo Avatar" className="chat-header-avatar" />
+            <div className="chat-header-info">
+              <h4>Rivo AI</h4>
+              <span>🟢 Online Companion</span>
             </div>
-            
-            <h2 className="mascot-main-title">
-              Meet <span>RIVO</span>
-            </h2>
-            <p className="mascot-tagline">Your Travel Buddy</p>
-            
-            <p className="mascot-intro">
-              Rivo is here to make your travel planning easy, smart, and unforgettable. He is more than just a mascot — he is your interactive digital companion.
-            </p>
-            
-            <div className="mascot-attributes">
-              <span>🧠 Smart</span>
-              <span>😊 Friendly</span>
-              <span>👍 Helpful</span>
-              <span>🛡️ Trustworthy</span>
-            </div>
+            <button className="chat-close-btn" onClick={toggleChat} aria-label="Close Chat">
+              <X size={18} />
+            </button>
           </div>
-          
-          {/* Right Column: 12 Features Grid */}
-          <div className="mascot-features-section">
-            <div className="section-header-compact">
-              <span className="section-tag">AI Digital Companion</span>
-              <h3 className="mascot-sub-title">12 Ways Rivo Assists You</h3>
-            </div>
-            
-            <div className="mascot-features-grid">
-              {FEATURES.map((feature) => (
-                <div className="feature-card" key={feature.id}>
-                  <div className="feature-card-header">
-                    <span className="feature-icon">{feature.icon}</span>
-                    <h4>{feature.title}</h4>
-                  </div>
-                  <p>{feature.description}</p>
+
+          {/* Messages Area */}
+          <div className="chat-messages">
+            {messages.map((msg) => (
+              <div key={msg.id} className={`chat-bubble-row ${msg.sender}`}>
+                {msg.sender === "rivo" && (
+                  <img src={rivoMascot} alt="Rivo" className="chat-bubble-avatar" />
+                )}
+                <div className="chat-bubble">
+                  {msg.text}
                 </div>
+              </div>
+            ))}
+            
+            {isTyping && (
+              <div className="chat-bubble-row rivo">
+                <img src={rivoMascot} alt="Rivo" className="chat-bubble-avatar" />
+                <div className="chat-bubble typing">
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot"></span>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Quick Replies */}
+          {messages.length === 1 && !isTyping && (
+            <div className="chat-quick-replies">
+              {QUICK_REPLIES.map((reply, i) => (
+                <button 
+                  key={i} 
+                  className="quick-reply-btn"
+                  onClick={() => handleSend(reply.text)}
+                >
+                  {reply.text}
+                </button>
               ))}
             </div>
-          </div>
-          
+          )}
+
+          {/* Message Input Form */}
+          <form 
+            className="chat-input-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend(inputVal);
+            }}
+          >
+            <input 
+              type="text" 
+              placeholder="Ask Rivo about stays..."
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+            />
+            <button type="submit" className="chat-submit-btn" aria-label="Send message">
+              <Send size={16} />
+            </button>
+          </form>
+
         </div>
-      </div>
-    </section>
+      )}
+
+    </div>
   );
 }
 

@@ -3,57 +3,176 @@
    ========================== */
 
 .destinations {
-  padding: 80px 0;
-  background-color: #f5f5f7; /* Light neutral gray */
+  padding: 60px 0 80px 0;
+  background-color: #f5f5f7;
+  overflow: hidden;
+}
+
+/* ==========================
+   CATEGORIES TAB BAR
+   ========================== */
+
+.categories-tab-bar {
+  margin-bottom: 40px;
+  border-bottom: 1px solid #e5e5e7;
+  padding-bottom: 5px;
+}
+
+.categories-scroll {
+  display: flex;
+  gap: 30px;
+  overflow-x: auto;
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+  padding-bottom: 5px;
+}
+
+.categories-scroll::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome/Safari */
+}
+
+.category-item-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 12px 6px;
+  color: #6e6e73;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.category-item-tab svg {
+  color: #86868b;
+  transition: color 0.3s;
+}
+
+.category-item-tab:hover,
+.category-item-tab.active {
+  color: #121e1b;
+}
+
+.category-item-tab:hover svg,
+.category-item-tab.active svg {
+  color: #C2A878;
+}
+
+.category-item-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #121e1b;
+}
+
+/* ==========================
+   SECTION HEADER ROW
+   ========================== */
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 40px;
 }
 
 .section-tag {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #C2A878;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: block;
 }
 
 .section-title {
   font-family: "Playfair Display", serif;
-  font-size: 40px;
+  font-size: 38px;
   color: #121e1b;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
+  font-weight: 800;
 }
 
 .section-subtitle {
-  font-size: 16px;
+  font-size: 15px;
   color: #6e6e73;
-  max-width: 600px;
-  margin-bottom: 50px;
+  max-width: 580px;
+  margin: 0;
 }
 
 /* ==========================
-   DESTINATIONS GRID
+   SLIDER NAVIGATION BUTTONS
    ========================== */
 
-.destinations-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
+.slider-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 5px;
 }
 
-.destination-card {
+.slider-ctrl-btn {
+  background: white;
+  color: #121e1b;
+  border: 1px solid #e5e5e7;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.slider-ctrl-btn:hover:not(.disabled) {
+  background: #121e1b;
+  color: white;
+  border-color: #121e1b;
+  transform: scale(1.05);
+}
+
+.slider-ctrl-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==========================
+   CAROUSEL TRACK & CARDS
+   ========================== */
+
+.destinations-carousel-wrapper {
+  width: 100%;
+}
+
+.destinations-carousel-track {
+  display: flex;
+  gap: 30px;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+.destination-slide-card {
+  flex: 0 0 calc((100% - 60px) / 3); /* Shows exactly 3 cards on desktop */
   background: white;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
   border: 1px solid rgba(0,0,0,0.03);
 }
 
-.destination-card:hover {
+.destination-slide-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.06);
 }
 
 .destination-img-wrapper {
@@ -70,8 +189,8 @@
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.destination-card:hover .destination-img {
-  transform: scale(1.06);
+.destination-slide-card:hover .destination-img {
+  transform: scale(1.05);
 }
 
 .destination-bookmark {
@@ -103,7 +222,7 @@
   color: #EF4444;
 }
 
-/* Info Details */
+/* Info details */
 .destination-info {
   padding: 20px 24px;
 }
@@ -119,7 +238,7 @@
   font-family: "Playfair Display", serif;
   font-size: 22px;
   color: #121e1b;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .destination-rating {
@@ -135,7 +254,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 13.5px;
   color: #86868b;
 }
 
@@ -156,28 +275,47 @@
   color: #121e1b;
 }
 
+.no-destinations-fallback {
+  padding: 60px;
+  text-align: center;
+  width: 100%;
+  color: #86868b;
+  font-size: 15px;
+}
+
 /* ==========================
    RESPONSIVE
    ========================== */
 
 @media (max-width: 992px) {
-  .destinations-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 25px;
+  .destination-slide-card {
+    flex: 0 0 calc((100% - 30px) / 2); /* Shows exactly 2 cards on tablet */
   }
 }
 
 @media (max-width: 768px) {
   .section-title {
-    font-size: 32px;
+    font-size: 30px;
   }
   
-  .destinations-grid {
-    grid-template-columns: 1fr;
+  .section-header-row {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 20px;
   }
-  
-  .destination-img-wrapper {
-    height: 220px;
+
+  .slider-controls {
+    align-self: flex-end;
+  }
+
+  .destinations-carousel-track {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    transform: none !important; /* Let native touch scroll on mobile */
+  }
+
+  .destination-slide-card {
+    flex: 0 0 85%; /* Shows a single card mostly, with preview of next */
   }
 }
