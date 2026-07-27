@@ -7,7 +7,7 @@ import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/Reservo-Online-Booking-web-app">
       <App />
     </BrowserRouter>
   </React.StrictMode>
