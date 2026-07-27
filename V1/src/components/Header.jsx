@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Globe, Heart, Moon, Sun } from "lucide-react";
 import "./Header.css";
 
 function Header() {
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDark, setIsDark] = useState(() => {
@@ -38,9 +39,12 @@ function Header() {
     setIsDark(!isDark);
   };
 
+  const isHome = location.pathname === "/";
+  const shouldBeDarkHeader = !isHome || isScrolled;
+
   return (
     <>
-      <header className={`header-wrapper ${isScrolled ? "scrolled" : ""}`}>
+      <header className={`header-wrapper ${shouldBeDarkHeader ? "scrolled" : ""}`}>
         <div className="container nav-container">
           {/* Logo with Mascot Avatar */}
           <Link to="/" className="logo">
