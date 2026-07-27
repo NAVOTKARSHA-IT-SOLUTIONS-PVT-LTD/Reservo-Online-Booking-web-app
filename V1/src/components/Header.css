@@ -212,7 +212,8 @@
   bottom: 0;
   width: 320px;
   max-width: 100%;
-  background: var(--bg-white); /* White background for readability */
+  background-color: #ffffff !important; /* Solid fallback */
+  background: var(--bg-white) !important; /* Theme variable override */
   border-left: 1px solid var(--border-color);
   padding: 30px;
   box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);

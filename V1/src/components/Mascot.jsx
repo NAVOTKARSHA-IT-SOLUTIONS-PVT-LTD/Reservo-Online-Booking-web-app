@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Send } from "lucide-react";
-import rivoMascot from "../assets/images/rivo_mascot.jpg";
+import rivoSupport from "../assets/images/rivo_support.png";
 import "./Mascot.css";
 
 const QUICK_REPLIES = [
@@ -79,7 +79,7 @@ function Mascot() {
         onClick={toggleChat}
         aria-label="Toggle Rivo AI Companion"
       >
-        <img src={rivoMascot} alt="Rivo Mascot" className="float-badge-img" />
+        <img src={rivoSupport} alt="Rivo Mascot" className="float-badge-img" />
         <span className="float-pulse"></span>
       </button>
 
@@ -89,7 +89,7 @@ function Mascot() {
           
           {/* Header */}
           <div className="chat-header">
-            <img src={rivoMascot} alt="Rivo Avatar" className="chat-header-avatar" />
+            <img src={rivoSupport} alt="Rivo Avatar" className="chat-header-avatar" />
             <div className="chat-header-info">
               <h4>Rivo AI</h4>
               <span>🟢 Online Companion</span>
@@ -104,7 +104,7 @@ function Mascot() {
             {messages.map((msg) => (
               <div key={msg.id} className={`chat-bubble-row ${msg.sender}`}>
                 {msg.sender === "rivo" && (
-                  <img src={rivoMascot} alt="Rivo" className="chat-bubble-avatar" />
+                  <img src={rivoSupport} alt="Rivo" className="chat-bubble-avatar" />
                 )}
                 <div className="chat-bubble">
                   {msg.text}
@@ -114,7 +114,7 @@ function Mascot() {
             
             {isTyping && (
               <div className="chat-bubble-row rivo">
-                <img src={rivoMascot} alt="Rivo" className="chat-bubble-avatar" />
+                <img src={rivoSupport} alt="Rivo" className="chat-bubble-avatar" />
                 <div className="chat-bubble typing">
                   <span className="typing-dot"></span>
                   <span className="typing-dot"></span>

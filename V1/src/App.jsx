@@ -18,6 +18,11 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
+import Resorts from "./pages/Resorts";
+import Experiences from "./pages/Experiences";
+import Profile from "./pages/Profile";
+import Wishlist from "./pages/Wishlist";
+
 import rivoMascot from "./assets/images/rivo_mascot.jpg";
 
 function Home() {
@@ -38,7 +43,14 @@ function Home() {
 function App() {
   const closeModal = () => {
     const modal = document.getElementById("booking-modal");
-    if (modal) modal.style.display = "none";
+    if (modal) {
+      modal.style.display = "none";
+      // Reset modal image back to default search mascot when closed
+      const loaderImg = modal.querySelector(".ai-loader img");
+      if (loaderImg) {
+        loaderImg.src = rivoMascot;
+      }
+    }
   };
 
   return (
@@ -54,6 +66,10 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/resorts" element={<Resorts />} />
+          <Route path="/experiences" element={<Experiences />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

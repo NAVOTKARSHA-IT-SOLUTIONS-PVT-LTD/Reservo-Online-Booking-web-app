@@ -9,6 +9,7 @@ import keralaImg from "../assets/images/kerala.jpg";
 import coorgImg from "../assets/images/coorg.jpg";
 import andamanImg from "../assets/images/andaman.jpg";
 import udaipurImg from "../assets/images/udaipur.jpg";
+import rivoSearching from "../assets/images/rivo_searching.png";
 
 const CATEGORIES = [
   { id: "beach", label: "Beach Resorts", icon: <Waves size={16} /> },
@@ -208,8 +209,23 @@ function PopularDestinations() {
             ))}
             
             {filteredDestinations.length === 0 && (
-              <div className="no-destinations-fallback">
-                <p>No verified stays available for this category yet. Checking with Rivo...</p>
+              <div className="no-destinations-fallback" style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "40px 20px" }}>
+                <div style={{ position: "relative", width: "140px", height: "140px", marginBottom: "20px" }}>
+                  <img 
+                    src={rivoSearching} 
+                    alt="Rivo searching stays" 
+                    style={{ width: "100%", height: "100%", borderRadius: "50%", border: "3px solid var(--border-color)", objectFit: "cover" }}
+                  />
+                  <div style={{
+                    position: "absolute", bottom: 0, right: "5px", width: "36px", height: "36px",
+                    background: "#C2A878", color: "white", borderRadius: "50%", display: "flex",
+                    alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: "800",
+                    border: "3px solid var(--bg-white)", boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                  }}>?</div>
+                </div>
+                <p style={{ fontSize: "15px", color: "var(--text-gray)", fontWeight: "500", maxWidth: "400px", margin: "0 auto", textAlign: "center", lineHeight: "1.6" }}>
+                  No verified stays available for this category yet. Checking with Rivo...
+                </p>
               </div>
             )}
           </div>

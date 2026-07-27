@@ -57,12 +57,10 @@ function Header() {
         <nav className="navbar">
           <ul className="nav-links">
             <li><Link to="/" className="active">Home</Link></li>
-            <li><a href="#explore">Explore</a></li>
-            <li><a href="#resorts">Resorts</a></li>
-            <li><a href="#experiences">Experiences</a></li>
-            <li><a href="#why">Why Us</a></li>
-            <li><a href="#testimonials">Reviews</a></li>
-            <li><a href="#footer">Contact</a></li>
+            <li><a href="/#explore">Explore</a></li>
+            <li><a href="/#why">Why Us</a></li>
+            <li><a href="/#testimonials">Reviews</a></li>
+            <li><a href="/#footer">Contact</a></li>
           </ul>
         </nav>
 
@@ -77,9 +75,9 @@ function Header() {
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
-          <button className="wishlist-btn" aria-label="View Wishlist">
+          <Link to="/wishlist" className="wishlist-btn" aria-label="View Wishlist">
             <Heart size={18} />
-          </button>
+          </Link>
           
           <div className="lang-selector" aria-label="Change Language">
             <Globe size={18} />
@@ -109,7 +107,7 @@ function Header() {
 
           <ul className="drawer-links">
             <li>
-              <Link to="/" className="drawer-user-link" onClick={toggleMenu}>
+              <Link to="/profile" className="drawer-user-link" onClick={toggleMenu}>
                 👤 Profile
               </Link>
             </li>
