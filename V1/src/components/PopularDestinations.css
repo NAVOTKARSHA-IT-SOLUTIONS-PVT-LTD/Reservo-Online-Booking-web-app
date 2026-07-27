@@ -1,0 +1,322 @@
+/* ==========================
+   POPULAR DESTINATIONS
+   ========================== */
+
+.destinations {
+  padding: 60px 0 80px 0;
+  background-color: var(--bg-light);
+  overflow: hidden;
+  transition: background-color 0.3s;
+}
+
+/* ==========================
+   CATEGORIES TAB BAR
+   ========================== */
+
+.categories-tab-bar {
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 5px;
+}
+
+.categories-scroll {
+  display: flex;
+  gap: 30px;
+  overflow-x: auto;
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+  padding-bottom: 5px;
+}
+
+.categories-scroll::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome/Safari */
+}
+
+.category-item-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 12px 6px;
+  color: var(--text-gray);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.category-item-tab svg {
+  color: var(--text-gray);
+  transition: color 0.3s;
+}
+
+.category-item-tab:hover,
+.category-item-tab.active {
+  color: var(--text-dark);
+}
+
+.category-item-tab:hover svg,
+.category-item-tab.active svg {
+  color: #C2A878;
+}
+
+.category-item-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--text-dark);
+}
+
+/* ==========================
+   SECTION HEADER ROW
+   ========================== */
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 40px;
+}
+
+.section-tag {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #C2A878;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.section-title {
+  font-family: "Playfair Display", serif;
+  font-size: 38px;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+  font-weight: 800;
+}
+
+.section-subtitle {
+  font-size: 15px;
+  color: var(--text-gray);
+  max-width: 580px;
+  margin: 0;
+}
+
+/* ==========================
+   SLIDER NAVIGATION BUTTONS
+   ========================== */
+
+.slider-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.slider-ctrl-btn {
+  background: var(--bg-white);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow);
+}
+
+.slider-ctrl-btn:hover:not(.disabled) {
+  background: var(--text-dark);
+  color: var(--bg-white);
+  border-color: var(--text-dark);
+  transform: scale(1.05);
+}
+
+.slider-ctrl-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==========================
+   CAROUSEL TRACK & CARDS
+   ========================== */
+
+.destinations-carousel-wrapper {
+  width: 100%;
+}
+
+.destinations-carousel-track {
+  display: flex;
+  gap: 30px;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+.destination-slide-card {
+  flex: 0 0 calc((100% - 60px) / 3); /* Shows exactly 3 cards on desktop */
+  background: var(--bg-white);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border-color);
+}
+
+.destination-slide-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.06);
+}
+
+.destination-img-wrapper {
+  position: relative;
+  height: 250px;
+  overflow: hidden;
+  background: var(--border-color);
+}
+
+.destination-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.destination-slide-card:hover .destination-img {
+  transform: scale(1.05);
+}
+
+.destination-bookmark {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #121e1b;
+  cursor: pointer;
+  transition: 0.3s;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.destination-bookmark:hover {
+  background: white;
+  transform: scale(1.1);
+}
+
+.destination-bookmark.active {
+  color: #EF4444;
+}
+
+/* Info details */
+.destination-info {
+  padding: 20px 24px;
+}
+
+.destination-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.destination-name {
+  font-family: "Playfair Display", serif;
+  font-size: 22px;
+  color: var(--text-dark);
+  font-weight: 750;
+}
+
+.destination-rating {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.destination-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13.5px;
+  color: var(--text-gray);
+}
+
+.destination-loc {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+.destination-price {
+  font-weight: 500;
+}
+
+.destination-price span {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.no-destinations-fallback {
+  padding: 60px;
+  text-align: center;
+  width: 100%;
+  color: var(--text-gray);
+  font-size: 15px;
+}
+
+/* ==========================
+   RESPONSIVE
+   ========================== */
+
+@media (max-width: 992px) {
+  .destination-slide-card {
+    flex: 0 0 calc((100% - 30px) / 2); /* Shows exactly 2 cards on tablet */
+  }
+}
+
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 30px;
+  }
+  
+  .section-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .slider-controls {
+    align-self: flex-end;
+  }
+
+  .destinations-carousel-track {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    transform: none !important; /* Let native touch scroll on mobile */
+  }
+
+  .destination-slide-card {
+    flex: 0 0 85%; /* Shows a single card mostly, with preview of next */
+  }
+}

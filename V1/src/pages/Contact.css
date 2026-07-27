@@ -1,0 +1,243 @@
+/* ==========================
+   CONTACT HERO
+========================== */
+
+.contact-hero{
+    padding:150px 20px 100px;
+    background:linear-gradient(rgba(20,35,32,.72),rgba(20,35,32,.72)),
+               url("../assets/images/contact.jpg");
+    background-size:cover;
+    background-position:center;
+    text-align:center;
+    color:white;
+}
+
+.contact-hero h1{
+    font-family:"Playfair Display",serif;
+    font-size:64px;
+    line-height:1.2;
+    margin:25px 0;
+}
+
+.contact-hero p{
+    max-width:760px;
+    margin:auto;
+    font-size:20px;
+    line-height:1.8;
+    color:rgba(255,255,255,.9);
+}
+
+/* ==========================
+   CONTACT
+========================== */
+
+.contact{
+    padding:100px 0;
+    background:#FCFAF7;
+}
+
+.contact-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:70px;
+    align-items:start;
+}
+
+/* ==========================
+   LEFT
+========================== */
+
+.small-title{
+    display:inline-block;
+    color:#C2A878;
+    font-weight:600;
+    letter-spacing:2px;
+    margin-bottom:15px;
+}
+
+.contact-info h2{
+    font-family:"Playfair Display",serif;
+    font-size:46px;
+    color:#1F3A34;
+    margin-bottom:20px;
+}
+
+.contact-info p{
+    color:#6F6A63;
+    line-height:1.9;
+    margin-bottom:30px;
+}
+
+/* Contact Cards */
+
+.info-card{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    background:white;
+    border:1px solid #E7DFD4;
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+    transition:.35s;
+}
+
+.info-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 18px 40px rgba(0,0,0,.12);
+}
+
+.info-icon{
+    width:60px;
+    height:60px;
+    background:#1F3A34;
+    color:white;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:26px;
+    flex-shrink:0;
+}
+
+.info-card h4{
+    margin-bottom:6px;
+    color:#1F3A34;
+    font-size:20px;
+}
+
+.info-card p{
+    margin:0;
+    color:#6F6A63;
+}
+
+/* ==========================
+   FORM
+========================== */
+
+.contact-form{
+    background:white;
+    border:1px solid #E7DFD4;
+    border-radius:22px;
+    padding:40px;
+    box-shadow:0 18px 40px rgba(0,0,0,.08);
+}
+
+.contact-form h2{
+    font-family:"Playfair Display",serif;
+    font-size:38px;
+    color:#1F3A34;
+    margin-bottom:30px;
+}
+
+.contact-form form{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.contact-form input,
+.contact-form textarea{
+    width:100%;
+    padding:16px 18px;
+    border:1px solid #D8D1C8;
+    border-radius:12px;
+    outline:none;
+    font-size:16px;
+    background:#FAF8F5;
+    transition:.3s;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus{
+    border-color:#C2A878;
+    background:white;
+}
+
+.contact-form textarea{
+    resize:none;
+}
+
+.contact-form button{
+    background:#1F3A34;
+    color:white;
+    border:none;
+    padding:16px;
+    border-radius:50px;
+    font-size:17px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.35s;
+}
+
+.contact-form button:hover{
+    background:#162B27;
+    transform:translateY(-3px);
+}
+
+/* ==========================
+   MAP
+========================== */
+
+.map{
+    padding:100px 0;
+    background:#F8F5F0;
+}
+
+.map iframe{
+    width:100%;
+    height:500px;
+    border:none;
+    border-radius:22px;
+    margin-top:50px;
+    box-shadow:0 20px 45px rgba(0,0,0,.12);
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media(max-width:992px){
+
+.contact-grid{
+    grid-template-columns:1fr;
+}
+
+.contact-info{
+    text-align:center;
+}
+
+.info-card{
+    text-align:left;
+}
+
+}
+
+@media(max-width:768px){
+
+.contact-hero{
+    padding:130px 20px 80px;
+}
+
+.contact-hero h1{
+    font-size:42px;
+}
+
+.contact-hero p{
+    font-size:17px;
+}
+
+.contact-form{
+    padding:25px;
+}
+
+.contact-form h2{
+    font-size:30px;
+}
+
+.map iframe{
+    height:350px;
+}
+
+}

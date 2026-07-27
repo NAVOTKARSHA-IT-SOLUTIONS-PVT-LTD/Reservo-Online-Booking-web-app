@@ -1,0 +1,154 @@
+/* ==========================
+   NEWSLETTER
+   ========================== */
+
+.newsletter {
+  padding: 80px 0;
+  background-color: var(--bg-white); /* Variable background */
+  transition: background-color 0.3s;
+}
+
+/* ==========================
+   BOX
+   ========================== */
+
+.newsletter-box {
+  background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%);
+  border-radius: 28px;
+  padding: 70px 60px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+/* Decorative circles */
+.newsletter-box::before {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+  top: -120px;
+  right: -80px;
+}
+
+.newsletter-box::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  background: rgba(197, 160, 89, 0.08);
+  border-radius: 50%;
+  bottom: -70px;
+  left: -60px;
+}
+
+/* ==========================
+   CONTENT
+   ========================== */
+
+.newsletter-box h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 40px;
+  margin: 15px 0;
+  color: white;
+  font-weight: 700;
+}
+
+.newsletter-box p {
+  max-width: 650px;
+  margin: 0 auto 35px auto;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ==========================
+   FORM
+   ========================== */
+
+.newsletter-form {
+  max-width: 650px;
+  margin: auto;
+  display: flex;
+  gap: 15px;
+  background: var(--bg-white);
+  padding: 8px;
+  border-radius: 50px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.newsletter-form input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 14px 20px;
+  border-radius: 50px;
+  font-size: 15px;
+  background: transparent;
+  color: var(--text-dark);
+}
+
+.newsletter-form input::placeholder {
+  color: var(--text-gray);
+}
+
+.newsletter-form button {
+  background: var(--gold);
+  color: white;
+  border: none;
+  padding: 14px 34px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);
+}
+
+.newsletter-form button:hover {
+  background: var(--gold-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(197, 160, 89, 0.4);
+}
+
+/* ==========================
+   RESPONSIVE
+   ========================== */
+
+@media (max-width: 768px) {
+  .newsletter-box {
+    padding: 50px 30px;
+  }
+  
+  .newsletter-box h2 {
+    font-size: 30px;
+  }
+  
+  .newsletter-box p {
+    font-size: 14.5px;
+    margin-bottom: 25px;
+  }
+  
+  .newsletter-form {
+    flex-direction: column;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    gap: 12px;
+  }
+  
+  .newsletter-form input {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+  }
+  
+  .newsletter-form button {
+    width: 100%;
+  }
+}
