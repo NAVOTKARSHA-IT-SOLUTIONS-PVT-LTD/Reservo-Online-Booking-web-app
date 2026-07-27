@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Search, SlidersHorizontal, Star, Heart, MapPin } from "lucide-react";
-import "./Resorts.css";
 import rivoSearching from "../assets/images/rivo_searching.png";
 
 const ALL_RESORTS = [
@@ -108,7 +107,6 @@ function Resorts() {
     modal.querySelector(".modal-title").textContent = "Securing Luxury Suite";
     modal.querySelector(".modal-desc").innerHTML = `Initializing Stripe premium gateway checkout for <strong>${name}</strong>. Hold tight while we secure your rates...`;
     
-    // Set the book confirmed mascot image inside loader if exists
     const loaderImg = modal.querySelector(".ai-loader img");
     if (loaderImg) {
       loaderImg.src = "/src/assets/images/rivo_confirmed.png";
@@ -127,7 +125,6 @@ function Resorts() {
     }, 2500);
   };
 
-  // Filters logic
   const filteredResorts = ALL_RESORTS.filter(resort => {
     const matchesSearch = resort.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           resort.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -137,48 +134,54 @@ function Resorts() {
   });
 
   return (
-    <div className="resorts-page fade-up">
+    <div className="pt-20 bg-bg-light min-h-screen fade-up">
       {/* Header Banner */}
-      <section className="resorts-hero">
-        <div className="resorts-hero-overlay"></div>
-        <div className="container resorts-hero-content">
-          <span className="resorts-tag">Curated Collections</span>
-          <h1>Luxury Resorts & Boutique Hotels</h1>
-          <p>Handpicked five-star retreats with verified Rivo scores & certified credentials.</p>
+      <section className="relative h-[380px] bg-[url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center flex items-center text-center text-white">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#121e1b]/40 to-[#121e1b]/80 z-10"></div>
+        <div className="relative z-20 w-[90%] max-w-[1300px] mx-auto">
+          <span className="text-xs font-bold uppercase tracking-widest text-gold mb-3 block">Curated Collections</span>
+          <h1 className="text-[38px] md:text-5xl font-bold mb-3.75 text-white">Luxury Resorts & Boutique Hotels</h1>
+          <p className="text-base max-w-[600px] mx-auto opacity-90 leading-relaxed">Handpicked five-star retreats with verified Rivo scores & certified credentials.</p>
         </div>
       </section>
 
       {/* Main Filter and Grid section */}
-      <section className="resorts-list-section">
-        <div className="container">
-          <div className="resorts-filter-wrapper">
+      <section className="py-12.5 pb-25">
+        <div className="w-[90%] max-w-[1300px] mx-auto">
+          <div className="bg-bg-white border border-border-color p-6 rounded-2xl shadow-custom mb-12.5 flex flex-col gap-5">
             {/* Search inputs */}
-            <div className="search-bar-box">
-              <Search size={18} />
+            <div className="flex items-center gap-3 bg-bg-light border border-border-color rounded-xl px-5 py-3">
+              <Search size={18} className="text-text-gray" />
               <input 
                 type="text" 
                 placeholder="Search by resort name or country..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="border-none bg-transparent w-full outline-none text-sm text-text-dark"
               />
             </div>
 
             {/* Filter Pills */}
-            <div className="filter-controls-row">
-              <div className="filter-pills-scroll">
-                {["All", "Bali", "Santorini", "Maldives", "India"].map((loc) => (
-                  <button 
-                    key={loc}
-                    className={`filter-pill-btn ${selectedLocation === loc ? "active" : ""}`}
-                    onClick={() => setSelectedLocation(loc)}
-                  >
-                    {loc}
-                  </button>
-                ))}
+            <div className="flex justify-between items-center flex-wrap gap-5 flex-col sm:flex-row">
+              <div className="flex gap-2.5 overflow-x-auto">
+                {["All", "Bali", "Santorini", "Maldives", "India"].map((loc) => {
+                  const isActive = selectedLocation === loc;
+                  return (
+                    <button 
+                      key={loc}
+                      className={`bg-bg-light border border-border-color text-text-gray px-4.5 py-2 rounded-full text-[13.5px] font-semibold cursor-pointer transition-all duration-300 hover:bg-text-dark hover:text-bg-white hover:border-text-dark ${
+                        isActive ? "bg-text-dark! text-bg-white! border-text-dark!" : ""
+                      }`}
+                      onClick={() => setSelectedLocation(loc)}
+                    >
+                      {loc}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Price slider controls */}
-              <div className="price-slider-box">
+              <div className="flex items-center gap-3 text-text-dark text-sm font-medium w-full sm:w-auto justify-between sm:justify-start">
                 <SlidersHorizontal size={16} />
                 <span>Max Price: <strong>${maxPrice}</strong></span>
                 <input 
@@ -187,54 +190,57 @@ function Resorts() {
                   max="350" 
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  className="accent-gold cursor-pointer"
                 />
               </div>
             </div>
           </div>
 
           {/* Stays Grid */}
-          <div className="resorts-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7.5">
             {filteredResorts.length > 0 ? (
               filteredResorts.map((resort) => {
                 const isLiked = wishlist.some(item => item.id === resort.id);
                 return (
-                  <div key={resort.id} className="resort-page-card">
-                    <div className="resort-img-container">
-                      <img src={resort.image} alt={resort.name} />
-                      <span className="resort-tag-badge">{resort.tag}</span>
+                  <div key={resort.id} className="bg-bg-white border border-border-color rounded-2xl overflow-hidden shadow-custom transition-all duration-400 ease-out flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] group">
+                    <div className="relative h-55 overflow-hidden">
+                      <img src={resort.image} alt={resort.name} className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-105" />
+                      <span className="absolute bottom-3 left-3 bg-gold text-white px-2.5 py-1 rounded-xl text-[11px] font-bold">{resort.tag}</span>
                       <button 
-                        className={`resort-like-btn ${isLiked ? "active" : ""}`}
+                        className={`absolute top-3 right-3 w-8.5 h-8.5 rounded-full bg-white/85 backdrop-blur-[4px] border-none flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-white hover:scale-110 ${
+                          isLiked ? "text-red-500" : "text-[#121e1b]"
+                        }`}
                         onClick={() => toggleWishlist(resort)}
                       >
-                        <Heart size={16} fill={isLiked ? "#EF4444" : "none"} />
+                        <Heart size={16} fill={isLiked ? "#EF4444" : "none"} stroke={isLiked ? "#EF4444" : "currentColor"} />
                       </button>
                     </div>
 
-                    <div className="resort-body-details">
-                      <div className="resort-header-details">
-                        <span className="resort-loc-pin">
-                          <MapPin size={12} /> {resort.location}
+                    <div className="p-5 flex flex-col flex-1">
+                      <div className="flex justify-between text-xs text-text-gray mb-2.5">
+                        <span className="flex items-center gap-1 font-medium">
+                          <MapPin size={12} className="text-gold" /> {resort.location}
                         </span>
-                        <span className="resort-rating-badge">
+                        <span className="flex items-center gap-1 font-semibold text-text-dark">
                           <Star size={12} fill="#C2A878" color="#C2A878" /> {resort.rating}
                         </span>
                       </div>
 
-                      <h3>{resort.name}</h3>
+                      <h3 className="text-xl font-bold text-text-dark mb-3">{resort.name}</h3>
 
-                      <div className="resort-amenity-tags">
+                      <div className="flex flex-wrap gap-1.5 mb-5">
                         {resort.amenities.map((am, i) => (
-                          <span key={i} className="amenity-tag">{am}</span>
+                          <span key={i} className="text-[11.5px] bg-bg-light text-text-gray px-2.5 py-1 rounded-xl border border-border-color">{am}</span>
                         ))}
                       </div>
 
-                      <div className="resort-footer-row">
-                        <div className="resort-price-tag">
-                          <span className="price-value">${resort.price}</span>
-                          <span className="price-lbl">/ night</span>
+                      <div className="flex justify-between items-center border-t border-border-color pt-3.75 mt-auto">
+                        <div className="flex items-center">
+                          <span className="text-xl font-bold text-text-dark">${resort.price}</span>
+                          <span className="text-[11px] text-text-gray ml-0.5">/ night</span>
                         </div>
                         <button 
-                          className="book-now-btn"
+                          className="bg-primary text-bg-white border-none px-5 py-2.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-all duration-300 hover:bg-gold hover:text-white hover:-translate-y-px"
                           onClick={() => triggerQuickBook(resort.name)}
                         >
                           Book Now
@@ -245,22 +251,17 @@ function Resorts() {
                 );
               })
             ) : (
-              <div className="no-resorts-state" style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "60px 20px" }}>
-                <div style={{ position: "relative", width: "140px", height: "140px", marginBottom: "20px" }}>
+              <div className="col-span-full text-center py-15 px-5 flex flex-col items-center text-text-gray">
+                <div className="relative w-140 h-140 mb-5 w-[140px] h-[140px]">
                   <img 
                     src={rivoSearching} 
                     alt="Rivo searching resorts" 
-                    style={{ width: "100%", height: "100%", borderRadius: "50%", border: "3px solid var(--border-color)", objectFit: "cover" }}
+                    className="w-full h-full rounded-full border-3 border-border-color object-cover"
                   />
-                  <div style={{
-                    position: "absolute", bottom: 0, right: "5px", width: "36px", height: "36px",
-                    background: "var(--gold)", color: "white", borderRadius: "50%", display: "flex",
-                    alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: "800",
-                    border: "3px solid var(--bg-white)", boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-                  }}>?</div>
+                  <div className="absolute bottom-0 right-1.25 w-9 h-9 bg-gold text-white rounded-full flex items-center justify-center text-lg font-extrabold border-3 border-bg-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">?</div>
                 </div>
-                <h3>No Luxury Resorts Found</h3>
-                <p style={{ fontSize: "14.5px", color: "var(--text-gray)", maxWidth: "400px", margin: "8px auto 0 auto", textAlign: "center", lineHeight: "1.6" }}>
+                <h3 className="text-2xl font-bold text-text-dark mb-2">No Luxury Resorts Found</h3>
+                <p className="text-[14.5px] text-text-gray max-w-[400px] mx-auto text-center leading-relaxed">
                   Try clearing your search query or selecting a different location filter.
                 </p>
               </div>

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Compass, Calendar, Clock, MapPin, Award, ArrowRight } from "lucide-react";
-import "./Experiences.css";
 import rivoSearching from "../assets/images/rivo_searching.png";
 
 const EXPERIENCES = [
@@ -73,7 +72,6 @@ function Experiences() {
     modal.querySelector(".modal-title").textContent = "Consulting Rivo...";
     modal.querySelector(".modal-desc").innerHTML = `Booking slot request for <strong>${title}</strong> is being processed across our verified premium operators...`;
     
-    // Set matching Rivo mascot
     const loaderImg = modal.querySelector(".ai-loader img");
     if (loaderImg) {
       loaderImg.src = "/src/assets/images/rivo_confirmed.png";
@@ -97,72 +95,77 @@ function Experiences() {
     : EXPERIENCES.filter(exp => exp.location.includes(selectedLocation));
 
   return (
-    <div className="experiences-page fade-up">
+    <div className="pt-20 bg-bg-light min-h-screen fade-up">
       {/* Hero Header */}
-      <section className="exp-hero">
-        <div className="exp-hero-overlay"></div>
-        <div className="container exp-hero-content">
-          <span className="exp-tag">Experiences Beyond Stays</span>
-          <h1>Curated Luxury Adventures</h1>
-          <p>Unforgettable tailor-made journeys hosted by certified local naturalists & luxury partners.</p>
+      <section className="relative h-[380px] bg-[url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center flex items-center text-center text-white">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#121e1b]/40 to-[#121e1b]/80 z-10"></div>
+        <div className="relative z-20 w-[90%] max-w-[1300px] mx-auto">
+          <span className="text-xs font-bold uppercase tracking-widest text-gold mb-3 block">Experiences Beyond Stays</span>
+          <h1 className="text-[38px] md:text-5xl font-bold mb-3.75 text-white">Curated Luxury Adventures</h1>
+          <p className="text-base max-w-[600px] mx-auto opacity-90 leading-relaxed">Unforgettable tailor-made journeys hosted by certified local naturalists & luxury partners.</p>
         </div>
       </section>
 
       {/* Grid List */}
-      <section className="exp-list-section">
-        <div className="container">
+      <section className="py-12.5 pb-25">
+        <div className="w-[90%] max-w-[1300px] mx-auto">
           {/* Location Filters */}
-          <div className="exp-filters-row">
-            <Compass size={18} className="filter-icon" />
-            <div className="exp-filters-pills">
-              {["All", "Maldives", "Bali", "Santorini", "Coorg"].map(loc => (
-                <button
-                  key={loc}
-                  className={`exp-filter-btn ${selectedLocation === loc ? "active" : ""}`}
-                  onClick={() => setSelectedLocation(loc)}
-                >
-                  {loc}
-                </button>
-              ))}
+          <div className="flex items-center gap-3.75 bg-bg-white border border-border-color px-6.25 py-3.75 rounded-full mb-10 shadow-custom">
+            <Compass size={18} className="text-gold shrink-0" />
+            <div className="flex gap-2.5 overflow-x-auto">
+              {["All", "Maldives", "Bali", "Santorini", "Coorg"].map(loc => {
+                const isActive = selectedLocation === loc;
+                return (
+                  <button
+                    key={loc}
+                    className={`bg-transparent border-none text-text-gray px-5 py-2 rounded-full text-sm font-semibold cursor-pointer transition-all duration-300 hover:bg-bg-light hover:text-text-dark ${
+                      isActive ? "bg-bg-light! text-text-dark!" : ""
+                    }`}
+                    onClick={() => setSelectedLocation(loc)}
+                  >
+                    {loc}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Cards Stack */}
-          <div className="exp-stack">
+          <div className="flex flex-col gap-10">
             {filtered.length > 0 ? (
               filtered.map(exp => (
-                <div key={exp.id} className="exp-wide-card">
-                  <div className="exp-img-box">
-                    <img src={exp.image} alt={exp.title} />
-                    <span className="exp-rating"><Award size={12} /> {exp.rating}</span>
+                <div key={exp.id} className="flex flex-col lg:flex-row bg-bg-white border border-border-color rounded-3xl overflow-hidden shadow-custom transition-all duration-400 ease-out hover:-translate-y-1.25 hover:shadow-[0_15px_35px_rgba(0,0,0,0.05)]">
+                  <div className="relative w-full lg:w-[40%] h-[250px] lg:h-auto lg:min-h-[350px] shrink-0">
+                    <img src={exp.image} alt={exp.title} className="w-full h-full object-cover" />
+                    <span className="absolute top-3.75 left-3.75 bg-[#121e1b]/85 text-white px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.25 backdrop-blur-[4px]"><Award size={12} /> {exp.rating}</span>
                   </div>
 
-                  <div className="exp-content-box">
-                    <div className="exp-meta-header">
-                      <span className="exp-loc"><MapPin size={12} /> {exp.location}</span>
-                      <span className="exp-duration"><Clock size={12} /> {exp.duration}</span>
+                  <div className="p-6.25 lg:p-8.75 w-full lg:w-[60%] flex flex-col">
+                    <div className="flex gap-5 text-[13px] text-text-gray mb-3">
+                      <span className="flex items-center gap-1.25 font-semibold"><MapPin size={12} className="text-gold" /> {exp.location}</span>
+                      <span className="flex items-center gap-1.25 font-semibold"><Clock size={12} className="text-gold" /> {exp.duration}</span>
                     </div>
 
-                    <h2>{exp.title}</h2>
-                    <p>{exp.description}</p>
+                    <h2 className="text-[26px] font-extrabold text-text-dark mb-3.75 leading-snug">{exp.title}</h2>
+                    <p className="text-[14.5px] text-text-gray leading-relaxed mb-6.25">{exp.description}</p>
 
-                    <div className="exp-highlights-list">
-                      <h4>What's Included:</h4>
-                      <ul>
+                    <div className="mb-7.5">
+                      <h4 className="text-xs uppercase tracking-wider text-text-dark mb-2.5 font-bold">What's Included:</h4>
+                      <ul className="list-none grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {exp.highlights.map((hl, i) => (
-                          <li key={i}><ArrowRight size={10} /> {hl}</li>
+                          <li key={i} className="text-xs text-text-gray flex items-center gap-1.5 font-medium"><ArrowRight size={10} className="text-gold" /> {hl}</li>
                         ))}
                       </ul>
                     </div>
 
-                    <div className="exp-footer">
-                      <div className="exp-price-box">
-                        <span className="exp-price-value">${exp.price}</span>
-                        <span className="exp-price-lbl">/ person</span>
+                    <div className="flex justify-between items-center border-t border-border-color pt-5 mt-auto">
+                      <div className="flex flex-col">
+                        <span className="text-2xl font-bold text-text-dark">${exp.price}</span>
+                        <span className="text-[11px] text-text-gray">/ person</span>
                       </div>
 
                       <button 
-                        className="book-exp-btn"
+                        className="bg-primary text-bg-white border-none px-7 py-3 rounded-lg text-sm font-semibold cursor-pointer flex items-center transition-all duration-300 hover:bg-gold hover:text-white hover:-translate-y-0.5"
                         onClick={() => bookExperience(exp.title)}
                       >
                         Reserve Slot <Calendar size={14} style={{ marginLeft: 6 }} />
@@ -172,22 +175,17 @@ function Experiences() {
                 </div>
               ))
             ) : (
-              <div className="no-resorts-state" style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "60px 20px" }}>
-                <div style={{ position: "relative", width: "140px", height: "140px", marginBottom: "20px" }}>
+              <div className="col-span-full text-center py-15 px-5 flex flex-col items-center text-text-gray">
+                <div className="relative w-140 h-140 mb-5 w-[140px] h-[140px]">
                   <img 
                     src={rivoSearching} 
                     alt="Rivo searching experiences" 
-                    style={{ width: "100%", height: "100%", borderRadius: "50%", border: "3px solid var(--border-color)", objectFit: "cover" }}
+                    className="w-full h-full rounded-full border-3 border-border-color object-cover"
                   />
-                  <div style={{
-                    position: "absolute", bottom: 0, right: "5px", width: "36px", height: "36px",
-                    background: "var(--gold)", color: "white", borderRadius: "50%", display: "flex",
-                    alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: "800",
-                    border: "3px solid var(--bg-white)", boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-                  }}>?</div>
+                  <div className="absolute bottom-0 right-1.25 w-9 h-9 bg-gold text-white rounded-full flex items-center justify-center text-lg font-extrabold border-3 border-bg-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">?</div>
                 </div>
-                <h3>No Luxury Experiences Found</h3>
-                <p style={{ fontSize: "14.5px", color: "var(--text-gray)", maxWidth: "400px", margin: "8px auto 0 auto", textAlign: "center", lineHeight: "1.6" }}>
+                <h3 className="text-2xl font-bold text-text-dark mb-2">No Luxury Experiences Found</h3>
+                <p className="text-[14.5px] text-text-gray max-w-[400px] mx-auto text-center leading-relaxed">
                   Try selecting a different destination filter from the menu.
                 </p>
               </div>
