@@ -11,6 +11,7 @@ import WhyChooseUs from "./components/WhyChooseUs";
 import Testimonials from "./components/Testimonials";
 import FAQ from "./components/FAQ";
 import Newsletter from "./components/Newsletter";
+import MascotShowcase from "./components/MascotShowcase";
 
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -28,6 +29,7 @@ function Home() {
     <>
       <Hero />
       <PopularDestinations />
+      <MascotShowcase />
       <WhyChooseUs />
       <Testimonials />
       <FAQ />

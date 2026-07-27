@@ -60,7 +60,7 @@ html {
 }
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg-light);
     color: var(--text-dark);
     overflow-x: hidden;
@@ -526,4 +526,22 @@ section{
 .toast.show {
   opacity: 1;
   pointer-events: auto;
-}
+}
+
+/* ==========================================
+   GLOBAL APPLE SANS-SERIF TYPOGRAPHY OVERRIDE
+   ========================================== */
+
+h1, h2, h3, h4, h5, h6,
+.section-title, .logo-text, .resort-name, .destination-name, .exp-content-box h2,
+.wish-body h3, .profile-meta-info h2, .profile-section-card h3, .history-main-info h4,
+.faq-question h3, .user-info h3, .newsletter-box h2, .about-title, .contact-title,
+.modal-title, .drawer-header h3 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* Base Body typography settings */
+p, span, a, button, input, select, textarea {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
