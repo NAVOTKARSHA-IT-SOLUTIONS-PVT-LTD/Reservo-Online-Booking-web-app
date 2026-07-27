@@ -1,6 +1,5 @@
 import React from "react";
 import { Sparkles, ShieldCheck, CreditCard, HelpCircle } from "lucide-react";
-import "./WhyChooseUs.css";
 
 const FEATURES = [
   {
@@ -31,22 +30,22 @@ const FEATURES = [
 
 function WhyChooseUs() {
   return (
-    <section className="why" id="why">
-      <div className="container">
-        <span className="section-tag">Value Proposition</span>
-        <h2 className="section-title">The Next Era of Luxury Stays</h2>
-        <p className="section-subtitle">
+    <section className="py-20 bg-bg-light transition-colors duration-300" id="why">
+      <div className="w-[90%] max-w-[1300px] mx-auto">
+        <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-3">Value Proposition</span>
+        <h2 className="text-[28px] sm:text-[32px] md:text-[38px] xl:text-[46px] font-bold text-center text-primary mb-4.5">The Next Era of Luxury Stays</h2>
+        <p className="max-w-[720px] mx-auto mb-15 text-center text-text-gray text-base md:text-lg leading-relaxed">
           Reservo pairs cutting-edge machine learning with elite hospitality standards to redefine your holiday experience.
         </p>
 
-        <div className="why-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mt-12.5">
           {FEATURES.map((feature) => (
-            <div className="why-card" key={feature.id}>
-              <div className="why-icon">
+            <div className="bg-bg-white p-10 md:p-8 rounded-[20px] text-center border border-border-color shadow-custom transition-all duration-400 ease-out cursor-pointer hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] group" key={feature.id}>
+              <div className="w-17.5 h-17.5 mx-auto mb-6 bg-primary text-gold rounded-full flex justify-center items-center transition-all duration-300 ease-out group-hover:bg-gold group-hover:text-white group-hover:rotate-10 group-hover:scale-105">
                 {feature.icon}
               </div>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
+              <h3 className="text-xl font-bold text-text-dark mb-3">{feature.title}</h3>
+              <p className="text-text-gray leading-relaxed text-sm m-0">{feature.description}</p>
             </div>
           ))}
         </div>
