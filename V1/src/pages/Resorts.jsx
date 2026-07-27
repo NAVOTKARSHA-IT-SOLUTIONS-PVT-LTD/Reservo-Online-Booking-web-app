@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Search, SlidersHorizontal, Star, Heart, MapPin, Compass } from "lucide-react";
+import { Search, SlidersHorizontal, Star, Heart, MapPin } from "lucide-react";
 import "./Resorts.css";
+import rivoSearching from "../assets/images/rivo_searching.png";
 
 const ALL_RESORTS = [
   {
@@ -244,10 +245,24 @@ function Resorts() {
                 );
               })
             ) : (
-              <div className="no-resorts-state">
-                <Compass size={48} className="no-resorts-icon" />
+              <div className="no-resorts-state" style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "60px 20px" }}>
+                <div style={{ position: "relative", width: "140px", height: "140px", marginBottom: "20px" }}>
+                  <img 
+                    src={rivoSearching} 
+                    alt="Rivo searching resorts" 
+                    style={{ width: "100%", height: "100%", borderRadius: "50%", border: "3px solid var(--border-color)", objectFit: "cover" }}
+                  />
+                  <div style={{
+                    position: "absolute", bottom: 0, right: "5px", width: "36px", height: "36px",
+                    background: "var(--gold)", color: "white", borderRadius: "50%", display: "flex",
+                    alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: "800",
+                    border: "3px solid var(--bg-white)", boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                  }}>?</div>
+                </div>
                 <h3>No Luxury Resorts Found</h3>
-                <p>Try clearing your search query or selecting a different location filter.</p>
+                <p style={{ fontSize: "14.5px", color: "var(--text-gray)", maxWidth: "400px", margin: "8px auto 0 auto", textAlign: "center", lineHeight: "1.6" }}>
+                  Try clearing your search query or selecting a different location filter.
+                </p>
               </div>
             )}
           </div>

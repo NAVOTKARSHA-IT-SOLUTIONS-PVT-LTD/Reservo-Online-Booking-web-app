@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Compass, Calendar, Clock, MapPin, Award, ArrowRight } from "lucide-react";
 import "./Experiences.css";
+import rivoSearching from "../assets/images/rivo_searching.png";
 
 const EXPERIENCES = [
   {
@@ -128,47 +129,69 @@ function Experiences() {
 
           {/* Cards Stack */}
           <div className="exp-stack">
-            {filtered.map(exp => (
-              <div key={exp.id} className="exp-wide-card">
-                <div className="exp-img-box">
-                  <img src={exp.image} alt={exp.title} />
-                  <span className="exp-rating"><Award size={12} /> {exp.rating}</span>
-                </div>
-
-                <div className="exp-content-box">
-                  <div className="exp-meta-header">
-                    <span className="exp-loc"><MapPin size={12} /> {exp.location}</span>
-                    <span className="exp-duration"><Clock size={12} /> {exp.duration}</span>
+            {filtered.length > 0 ? (
+              filtered.map(exp => (
+                <div key={exp.id} className="exp-wide-card">
+                  <div className="exp-img-box">
+                    <img src={exp.image} alt={exp.title} />
+                    <span className="exp-rating"><Award size={12} /> {exp.rating}</span>
                   </div>
 
-                  <h2>{exp.title}</h2>
-                  <p>{exp.description}</p>
-
-                  <div className="exp-highlights-list">
-                    <h4>What's Included:</h4>
-                    <ul>
-                      {exp.highlights.map((hl, i) => (
-                        <li key={i}><ArrowRight size={10} /> {hl}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="exp-footer">
-                    <div className="exp-price-box">
-                      <span className="exp-price-value">${exp.price}</span>
-                      <span className="exp-price-lbl">/ person</span>
+                  <div className="exp-content-box">
+                    <div className="exp-meta-header">
+                      <span className="exp-loc"><MapPin size={12} /> {exp.location}</span>
+                      <span className="exp-duration"><Clock size={12} /> {exp.duration}</span>
                     </div>
 
-                    <button 
-                      className="book-exp-btn"
-                      onClick={() => bookExperience(exp.title)}
-                    >
-                      Reserve Slot <Calendar size={14} style={{ marginLeft: 6 }} />
-                    </button>
+                    <h2>{exp.title}</h2>
+                    <p>{exp.description}</p>
+
+                    <div className="exp-highlights-list">
+                      <h4>What's Included:</h4>
+                      <ul>
+                        {exp.highlights.map((hl, i) => (
+                          <li key={i}><ArrowRight size={10} /> {hl}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="exp-footer">
+                      <div className="exp-price-box">
+                        <span className="exp-price-value">${exp.price}</span>
+                        <span className="exp-price-lbl">/ person</span>
+                      </div>
+
+                      <button 
+                        className="book-exp-btn"
+                        onClick={() => bookExperience(exp.title)}
+                      >
+                        Reserve Slot <Calendar size={14} style={{ marginLeft: 6 }} />
+                      </button>
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="no-resorts-state" style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "60px 20px" }}>
+                <div style={{ position: "relative", width: "140px", height: "140px", marginBottom: "20px" }}>
+                  <img 
+                    src={rivoSearching} 
+                    alt="Rivo searching experiences" 
+                    style={{ width: "100%", height: "100%", borderRadius: "50%", border: "3px solid var(--border-color)", objectFit: "cover" }}
+                  />
+                  <div style={{
+                    position: "absolute", bottom: 0, right: "5px", width: "36px", height: "36px",
+                    background: "var(--gold)", color: "white", borderRadius: "50%", display: "flex",
+                    alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: "800",
+                    border: "3px solid var(--bg-white)", boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                  }}>?</div>
+                </div>
+                <h3>No Luxury Experiences Found</h3>
+                <p style={{ fontSize: "14.5px", color: "var(--text-gray)", maxWidth: "400px", margin: "8px auto 0 auto", textAlign: "center", lineHeight: "1.6" }}>
+                  Try selecting a different destination filter from the menu.
+                </p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
