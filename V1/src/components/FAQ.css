@@ -4,7 +4,8 @@
 
 .faq {
   padding: 80px 0;
-  background-color: #f5f5f7; /* Light neutral gray */
+  background-color: var(--bg-light); /* Variable background */
+  transition: background-color 0.3s;
 }
 
 /* ==========================
@@ -21,12 +22,12 @@
    ========================== */
 
 .faq-item {
-  background: white;
-  border: 1px solid #e5e5e7;
+  background: var(--bg-white); /* Variable background */
+  border: 1px solid var(--border-color); /* Variable border */
   border-radius: 16px;
   margin-bottom: 18px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -37,7 +38,7 @@
 
 /* Active Item */
 .faq-item.active {
-  border-left: 4px solid #C2A878;
+  border-left: 4px solid var(--gold);
 }
 
 /* ==========================
@@ -54,13 +55,13 @@
 }
 
 .faq-question:hover {
-  background: #fafafa;
+  background: var(--bg-light);
 }
 
 .faq-question h3 {
   font-family: "Playfair Display", serif;
   font-size: 20px;
-  color: #121e1b;
+  color: var(--text-dark);
   margin: 0;
   font-weight: 700;
 }
@@ -72,8 +73,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #121e1b;
-  color: white;
+  background: var(--primary);
+  color: var(--bg-white);
   font-size: 20px;
   font-weight: bold;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -81,7 +82,8 @@
 
 /* Active Icon */
 .faq-item.active .faq-icon {
-  background: #C2A878;
+  background: var(--gold);
+  color: white;
   transform: rotate(180deg);
 }
 
@@ -91,10 +93,11 @@
 
 .faq-answer {
   padding: 0 30px 22px 30px;
+  background: var(--bg-white);
 }
 
 .faq-answer p {
-  color: #6e6e73;
+  color: var(--text-gray);
   font-size: 14.5px;
   line-height: 1.6;
   margin: 0;
@@ -108,19 +111,10 @@
   .faq-question {
     padding: 18px 20px;
   }
-
   .faq-question h3 {
-    font-size: 16px;
-    line-height: 1.4;
+    font-size: 17px;
   }
-
   .faq-answer {
     padding: 0 20px 18px 20px;
-  }
-
-  .faq-icon {
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
   }
 }

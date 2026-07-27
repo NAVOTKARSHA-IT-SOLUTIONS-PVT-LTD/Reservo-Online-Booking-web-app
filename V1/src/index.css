@@ -9,16 +9,17 @@
 ========================================== */
 
 :root {
-    --primary: #121e1b;
-    --primary-dark: #0d1614;
+    --primary: #111111;
+    --primary-dark: #1a1a1a;
 
-    --gold: #C2A878;
-    --gold-dark: #B08F5A;
+    --gold: #c5a059;
+    --gold-dark: #b58e45;
+    --accent-teal: #008080;
 
-    --bg-light: #f5f5f7;
+    --bg-light: #f7f7f7;
     --bg-white: #ffffff;
 
-    --text-dark: #121e1b;
+    --text-dark: #111111;
     --text-gray: #6e6e73;
 
     --border-color: #e5e5e7;
@@ -34,14 +35,14 @@ body.dark-theme {
     --primary: #f5f5f7;
     --primary-dark: #ffffff;
     
-    --bg-light: #0d1614;
-    --bg-white: #13221e;
+    --bg-light: #111111;
+    --bg-white: #1a1a1a;
 
     --text-dark: #f5f5f7;
     --text-gray: #86868b;
 
-    --border-color: rgba(255, 255, 255, 0.1);
-    --shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
 }
 
 /* ==========================================

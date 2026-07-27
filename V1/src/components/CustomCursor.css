@@ -16,7 +16,7 @@
   position: fixed;
   width: 8px;
   height: 8px;
-  background-color: #121e1b;
+  background-color: var(--text-dark); /* Adapts to theme */
   border-radius: 50%;
   pointer-events: none;
   z-index: 9999;
@@ -28,7 +28,7 @@
   position: fixed;
   width: 40px;
   height: 40px;
-  border: 1.5px solid #C2A878;
+  border: 1.5px solid var(--gold); /* Theme gold */
   border-radius: 50%;
   pointer-events: none;
   z-index: 9998;
@@ -43,7 +43,7 @@
 }
 
 .custom-cursor-ring span {
-  color: #121e1b;
+  color: var(--text-dark);
   font-size: 16px;
   font-weight: 700;
   opacity: 0;
@@ -55,7 +55,7 @@
 
 /* Hover States */
 .custom-cursor-dot.hover {
-  background-color: #C2A878;
+  background-color: var(--gold);
   width: 4px;
   height: 4px;
 }
@@ -63,8 +63,8 @@
 .custom-cursor-ring.hover {
   width: 54px;
   height: 54px;
-  border-color: #C2A878;
-  background-color: rgba(194, 168, 120, 0.18);
+  border-color: var(--gold);
+  background-color: rgba(197, 160, 89, 0.18);
 }
 
 .custom-cursor-ring.hover span {
@@ -81,5 +81,5 @@
 .custom-cursor-ring.click {
   width: 34px;
   height: 34px;
-  background-color: rgba(194, 168, 120, 0.3);
+  background-color: rgba(197, 160, 89, 0.3);
 }

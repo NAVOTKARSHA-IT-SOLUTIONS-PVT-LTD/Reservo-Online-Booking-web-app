@@ -3,7 +3,7 @@
    ========================== */
 
 .footer {
-  background: #121e1b; /* Deep luxury dark background */
+  background: #111111; /* Deep charcoal / slate black background */
   color: white;
   padding: 80px 0 0 0;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
@@ -33,7 +33,7 @@
 }
 
 .footer-logo span {
-  color: #C2A878;
+  color: var(--gold);
 }
 
 .company p {
@@ -85,12 +85,12 @@
   bottom: -3px;
   width: 0;
   height: 1.5px;
-  background: #C2A878;
+  background: var(--gold);
   transition: 0.3s;
 }
 
 .footer-column a:hover {
-  color: #C2A878;
+  color: var(--gold);
 }
 
 .footer-column a:hover::after {
@@ -112,7 +112,7 @@
 }
 
 .footer-column.contact-info p svg {
-  color: #C2A878;
+  color: var(--gold);
   flex-shrink: 0;
 }
 
@@ -139,7 +139,7 @@
 }
 
 .social-icons a:hover {
-  background: #C2A878;
+  background: var(--gold);
   color: white;
   transform: translateY(-3px);
 }
@@ -157,7 +157,7 @@
 }
 
 .footer-bottom strong {
-  color: #C2A878;
+  color: var(--gold);
 }
 
 /* ==========================
