@@ -79,24 +79,24 @@ function App() {
       <Footer />
 
       {/* Booking Confirmation / Search Feedback Modal */}
-      <div id="booking-modal" className="modal-overlay" aria-hidden="true" role="dialog">
-        <div className="modal-content glass-panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-          <h3 className="modal-title">Checking Availability...</h3>
-          <p className="modal-desc">Rivo is search-matching live luxury inventories across our global verified partners...</p>
-          <div className="ai-loader" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "1rem 0", gap: "1.5rem" }}>
-            <div style={{ position: "relative", width: "5.5rem", height: "5.5rem" }}>
+      <div id="booking-modal" className="fixed inset-0 bg-black/45 backdrop-blur-[10px] z-[3000] hidden items-center justify-center p-5" aria-hidden="true" role="dialog">
+        <div className="bg-bg-white border border-border-color p-10 rounded-3xl max-w-[480px] w-full shadow-[0_30px_60px_rgba(0,0,0,0.2)] flex flex-col items-center text-center">
+          <h3 className="modal-title text-2xl font-bold text-[#121e1b] mb-2.5">Checking Availability...</h3>
+          <p className="modal-desc text-[14.5px] text-text-gray leading-relaxed mb-6.25">Rivo is search-matching live luxury inventories across our global verified partners...</p>
+          <div className="flex flex-col items-center py-4 gap-6">
+            <div className="relative w-22 h-22">
               <img 
                 src={rivoMascot} 
                 alt="Rivo searching" 
-                style={{ width: "100%", height: "100%", borderRadius: "50%", border: "3px solid #e5e5e7", animation: "bounceRivo 2s infinite" }}
+                className="w-full h-full rounded-full border-3 border-border-color animate-bounce-rivo"
               />
-              <div className="ai-pulse-circle" style={{ position: "absolute", inset: "-8px", zIndex: -1 }}></div>
+              <div className="absolute -inset-2 border-2 border-gold rounded-full animate-pulse-rivo pointer-events-none z-[-1]"></div>
             </div>
           </div>
           <button 
             id="close-modal-btn" 
-            className="book-btn" 
-            style={{ marginTop: "1rem", display: "none" }}
+            className="bg-[#121e1b] text-white px-6 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-colors duration-200 hover:bg-gold mt-4" 
+            style={{ display: "none" }}
             onClick={closeModal}
           >
             Close Window

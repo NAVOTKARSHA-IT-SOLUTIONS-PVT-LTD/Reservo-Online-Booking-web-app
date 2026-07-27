@@ -1,6 +1,5 @@
 import React, { useState, useRef } from "react";
 import { Heart, Star, MapPin, ChevronLeft, ChevronRight, Waves, Mountain, Trees, Home, Tent, Sparkles, Palmtree, Compass, PawPrint, HeartHandshake } from "lucide-react";
-import "./PopularDestinations.css";
 
 // Import local images from Aditya's assets
 import goaImg from "../assets/images/goa.jpg";
@@ -95,7 +94,6 @@ function PopularDestinations() {
     }));
   };
 
-  // Filter destinations by category or show fallback list
   const filteredDestinations = DESTINATIONS.filter(
     (dest) => dest.category === activeCategory || activeCategory === "all"
   );
@@ -113,43 +111,50 @@ function PopularDestinations() {
   };
 
   return (
-    <section className="destinations" id="explore">
-      <div className="container">
+    <section className="py-15 bg-bg-light transition-colors duration-300 overflow-hidden" id="explore">
+      <div className="w-[90%] max-w-[1300px] mx-auto">
         
         {/* Categories Tab Bar */}
-        <div className="categories-tab-bar">
-          <div className="categories-scroll">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                className={`category-item-tab ${activeCategory === cat.id ? "active" : ""}`}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  setSliderIndex(0); // Reset index on tab change
-                }}
-              >
-                {cat.icon}
-                <span className="category-label">{cat.label}</span>
-              </button>
-            ))}
+        <div className="mb-10 border-b border-border-color pb-1.25">
+          <div className="flex gap-7.5 overflow-x-auto scrollbar-none pb-1.25">
+            {CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  className={`flex items-center gap-2 bg-transparent border-none py-3 px-1.5 text-sm font-semibold cursor-pointer whitespace-nowrap relative transition-colors duration-300 group ${
+                    isActive 
+                      ? "text-text-dark after:content-[''] after:absolute after:bottom-[-6px] after:left-0 after:right-0 after:h-0.5 after:bg-text-dark" 
+                      : "text-text-gray hover:text-text-dark"
+                  }`}
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    setSliderIndex(0);
+                  }}
+                >
+                  <span className={`transition-colors duration-300 ${isActive ? "text-gold" : "text-text-gray group-hover:text-gold"}`}>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Section Title */}
-        <div className="section-header-row">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
           <div>
-            <span className="section-tag">Popular Destinations</span>
-            <h2 className="section-title">Trending Vacation Stays</h2>
-            <p className="section-subtitle">
+            <span className="block text-xs font-bold uppercase tracking-widest text-gold mb-3">Popular Destinations</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-text-dark mb-4.5">Trending Vacation Stays</h2>
+            <p className="text-text-gray text-base md:text-lg leading-relaxed max-w-[580px]">
               Discover gorgeous corners around the world, verified for absolute comfort and luxury.
             </p>
           </div>
           
           {/* Navigation Slider Buttons */}
           {filteredDestinations.length > 3 && (
-            <div className="slider-controls">
+            <div className="flex gap-3">
               <button 
-                className={`slider-ctrl-btn ${sliderIndex === 0 ? "disabled" : ""}`}
+                className={`w-11 h-11 rounded-full border border-border-color bg-bg-white text-text-dark flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-text-dark hover:text-bg-white hover:border-text-dark hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed`}
                 onClick={handlePrev}
                 disabled={sliderIndex === 0}
                 aria-label="Previous stays"
@@ -157,7 +162,7 @@ function PopularDestinations() {
                 <ChevronLeft size={20} />
               </button>
               <button 
-                className={`slider-ctrl-btn ${sliderIndex >= filteredDestinations.length - 3 ? "disabled" : ""}`}
+                className={`w-11 h-11 rounded-full border border-border-color bg-bg-white text-text-dark flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-text-dark hover:text-bg-white hover:border-text-dark hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed`}
                 onClick={handleNext}
                 disabled={sliderIndex >= filteredDestinations.length - 3}
                 aria-label="Next stays"
@@ -169,39 +174,41 @@ function PopularDestinations() {
         </div>
 
         {/* Card Carousel Slider */}
-        <div className="destinations-carousel-wrapper">
+        <div className="w-full">
           <div 
-            className="destinations-carousel-track"
+            className="flex gap-[30px] transition-transform duration-500 ease-out w-full overflow-x-auto md:overflow-visible scrollbar-none [transform:none] md:[transform:var(--carousel-transform)]"
             ref={sliderRef}
             style={{
-              transform: `translateX(-${sliderIndex * (100 / 3)}%)`
+              "--carousel-transform": `translateX(-${sliderIndex * (100 / 3)}%)`
             }}
           >
             {filteredDestinations.map((dest) => (
-              <div className="destination-slide-card" key={dest.id}>
-                <div className="destination-img-wrapper">
-                  <img src={dest.image} alt={dest.name} className="destination-img" />
+              <div className="flex-[0_0_85%] md:flex-[0_0_calc((100%-30px)/2)] lg:flex-[0_0_calc((100%-60px)/3)] bg-bg-white border-radius-20 overflow-hidden shadow-custom transition-all duration-400 ease-out border border-border-color hover:-translate-y-1.25 hover:shadow-[0_15px_30px_rgba(0,0,0,0.06)] group rounded-2xl" key={dest.id}>
+                <div className="relative h-[250px] overflow-hidden bg-border-color">
+                  <img src={dest.image} alt={dest.name} className="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105" />
                   <button 
-                    className={`destination-bookmark ${wishlist[dest.id] ? "active" : ""}`}
+                    className={`absolute top-3.75 right-3.75 bg-white/85 backdrop-blur-[8px] border-none w-9 h-9 rounded-full flex items-center justify-center text-[#121e1b] cursor-pointer transition-all duration-300 z-10 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-white hover:scale-110 ${
+                      wishlist[dest.id] ? "text-red-500" : ""
+                    }`}
                     aria-label="Bookmark destination"
                     onClick={(e) => toggleWishlist(dest.id, e)}
                   >
-                    <Heart size={16} fill={wishlist[dest.id] ? "#EF4444" : "none"} />
+                    <Heart size={16} fill={wishlist[dest.id] ? "#EF4444" : "none"} stroke={wishlist[dest.id] ? "#EF4444" : "currentColor"} />
                   </button>
                 </div>
-                <div className="destination-info">
-                  <div className="destination-top">
-                    <h3 className="destination-name">{dest.name}</h3>
-                    <span className="destination-rating">
+                <div className="p-5 md:px-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-2xl font-bold text-text-dark">{dest.name}</h3>
+                    <span className="text-sm font-semibold text-text-dark flex items-center gap-1">
                       <Star size={14} fill="#C2A878" color="#C2A878" /> {dest.rating}
                     </span>
                   </div>
-                  <div className="destination-details">
-                    <span className="destination-loc">
-                      <MapPin size={12} /> {dest.location}
+                  <div className="flex justify-between items-center text-[13.5px] text-text-gray">
+                    <span className="flex items-center gap-1.25 font-medium">
+                      <MapPin size={12} className="text-gold" /> {dest.location}
                     </span>
-                    <span className="destination-price">
-                      from <span>₹{dest.price}</span>/night
+                    <span className="font-medium">
+                      from <span className="text-base font-bold text-text-dark">₹{dest.price}</span>/night
                     </span>
                   </div>
                 </div>

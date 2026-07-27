@@ -1,6 +1,5 @@
 import React from "react";
 import { Quote, Star } from "lucide-react";
-import "./Testimonials.css";
 
 const TESTIMONIALS = [
   {
@@ -31,30 +30,30 @@ const TESTIMONIALS = [
 
 function Testimonials() {
   return (
-    <section className="testimonials" id="testimonials">
-      <div className="container">
-        <span className="section-tag">Guest Reviews</span>
-        <h2 className="section-title">What Our Guests Say</h2>
-        <p className="section-subtitle">
+    <section className="py-20 bg-bg-white transition-colors duration-300" id="testimonials">
+      <div className="w-[90%] max-w-[1300px] mx-auto">
+        <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-3">Guest Reviews</span>
+        <h2 className="text-[28px] sm:text-[32px] md:text-[38px] xl:text-[46px] font-bold text-center text-primary mb-4.5">What Our Guests Say</h2>
+        <p className="max-w-[720px] mx-auto mb-15 text-center text-text-gray text-base md:text-lg leading-relaxed">
           Thousands of travelers trust Reservo for unforgettable luxury vacations.
         </p>
 
-        <div className="testimonial-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6.25 mt-12.5">
           {TESTIMONIALS.map((item) => (
-            <div className="testimonial-card" key={item.id}>
-              <div className="quote-icon">
+            <div className="bg-bg-white rounded-2xl p-8.75 md:p-6.25 border border-border-color relative flex flex-col shadow-custom transition-all duration-400 ease-out hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] group" key={item.id}>
+              <div className="text-gold mb-5 flex items-center">
                 <Quote size={32} fill="rgba(194, 168, 120, 0.1)" color="rgba(194, 168, 120, 0.2)" />
               </div>
 
-              <p className="review">{item.review}</p>
+              <p className="text-base leading-relaxed text-text-gray mb-6.25 flex-1">{item.review}</p>
 
-              <div className="testimonial-user">
-                <img src={item.image} alt={item.name} className="user-image" />
-                <div className="user-info">
-                  <h3>{item.name}</h3>
-                  <span className="location">{item.location}</span>
+              <div className="flex items-center gap-3.75 border-t border-border-color pt-5 mt-auto">
+                <img src={item.image} alt={item.name} className="w-12.5 h-12.5 rounded-full object-cover border-2 border-border-color transition-all duration-300 group-hover:border-gold group-hover:scale-105" />
+                <div className="flex flex-col">
+                  <h3 className="text-lg font-bold text-text-dark m-0 mb-0.5">{item.name}</h3>
+                  <span className="text-xs text-text-gray">{item.location}</span>
                 </div>
-                <div className="stars">
+                <div className="flex gap-0.75 ml-auto self-center">
                   {Array.from({ length: item.rating }).map((_, i) => (
                     <Star key={i} size={14} fill="#C2A878" color="#C2A878" />
                   ))}
