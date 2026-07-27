@@ -7,8 +7,6 @@ import Mascot from "./components/Mascot";
 
 import Hero from "./components/Hero";
 import PopularDestinations from "./components/PopularDestinations";
-import FeaturedResorts from "./components/FeaturedResorts";
-import Services from "./components/Services";
 import WhyChooseUs from "./components/WhyChooseUs";
 import Testimonials from "./components/Testimonials";
 import FAQ from "./components/FAQ";
@@ -30,8 +28,6 @@ function Home() {
     <>
       <Hero />
       <PopularDestinations />
-      <FeaturedResorts />
-      <Services />
       <WhyChooseUs />
       <Testimonials />
       <FAQ />
