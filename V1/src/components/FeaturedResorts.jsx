@@ -1,175 +1,194 @@
-import React from "react";
+import React, { useState } from "react";
+import { Heart, Star, MapPin, Sparkles } from "lucide-react";
 import "./FeaturedResorts.css";
-import { FaHeart } from "react-icons/fa";
-import manali from "../assets/images/manali.jpg";
-import goa from "../assets/images/goa.jpg";
-import kerala from "../assets/images/kerala.jpg";
-import udaipur from "../assets/images/udaipur.jpg";
-import shimla from "../assets/images/shimla.jpg";
-import coorg from "../assets/images/coorg.jpg";
-import andaman from "../assets/images/andaman.jpg";
-import jaipur from "../assets/images/jaipur.jpg";
 
+// Import local images from Aditya's assets
+import manaliImg from "../assets/images/manali.jpg";
+import goaImg from "../assets/images/goa.jpg";
+import keralaImg from "../assets/images/kerala.jpg";
+import udaipurImg from "../assets/images/udaipur.jpg";
+import shimlaImg from "../assets/images/shimla.jpg";
+import coorgImg from "../assets/images/coorg.jpg";
+import andamanImg from "../assets/images/andaman.jpg";
+import jaipurImg from "../assets/images/jaipur.jpg";
 
-const resorts = [
+const RESORTS = [
   {
     id: 1,
     name: "Mountain Paradise Resort",
     location: "Manali, Himachal Pradesh",
-    price: "₹6,500",
-    rating: "4.8",
-    badge:"Best Seller",
-    image: manali,
-    amenities: ["Pool", "Spa", "WiFi"],
+    price: 6500,
+    rating: "4.8 (89 reviews)",
+    badge: "Best Seller",
+    image: manaliImg,
+    amenities: ["🔥 Fireplace", "🧖 Spa", "📶 WiFi"],
+    isAIRecommended: false
   },
   {
     id: 2,
     name: "Ocean Breeze Resort",
-    location: "Goa",
-    price: "₹8,200",
-    rating: "4.9",
-    badge:"Luxury",
-    image: goa,
-    amenities: ["Beach", "Restaurant", "Bar"],
+    location: "Goa, India",
+    price: 8200,
+    rating: "4.9 (142 reviews)",
+    badge: "Luxury",
+    image: goaImg,
+    amenities: ["🏖️ Beachfront", "🍽️ Restaurant", "🍸 Bar"],
+    isAIRecommended: true
   },
   {
     id: 3,
     name: "Green Valley Resort",
-    location: "Kerala",
-    price: "₹5,900",
-    rating: "4.7",
-    badge:"Top Rated",
-    image: kerala,
-    amenities: ["Spa", "Nature", "Pool"],
+    location: "Kerala, India",
+    price: 5900,
+    rating: "4.7 (76 reviews)",
+    badge: "Top Rated",
+    image: keralaImg,
+    amenities: ["🧘 Spa", "🌲 Nature Trails", "🏊 Pool"],
+    isAIRecommended: false
   },
   {
     id: 4,
     name: "Royal Lake Palace",
-    location: "Udaipur",
-    price: "₹9,500",
-    rating: "4.9",
-    badge:"Premium",
-    image: udaipur,
-    amenities: ["Lake View", "Luxury", "Pool"],
+    location: "Udaipur, Rajasthan",
+    price: 9500,
+    rating: "4.9 (198 reviews)",
+    badge: "Premium Heritage",
+    image: udaipurImg,
+    amenities: ["🌅 Lake View", "⚜️ Luxury Suites", "🏊 Pool"],
+    isAIRecommended: true
   },
   {
     id: 5,
     name: "Himalayan Bliss Resort",
-    location: "Shimla",
-    price: "₹7,300",
-    rating: "4.8",
-    badge:"Nature",
-    image: shimla,
-    amenities: ["Mountain", "Fireplace", "Spa"],
+    location: "Shimla, India",
+    price: 7300,
+    rating: "4.8 (94 reviews)",
+    badge: "Nature Retreat",
+    image: shimlaImg,
+    amenities: ["🏔️ Mountain View", "🔥 Fireplace", "💆 Spa"],
+    isAIRecommended: false
   },
   {
     id: 6,
     name: "Coorg Nature Retreat",
-    location: "Coorg",
-    price: "₹6,800",
-    rating: "4.8",
-    badge:"Editor's Pick",
-    image: coorg,
-    amenities: ["Coffee Estate", "Pool", "Nature"],
+    location: "Coorg, Karnataka",
+    price: 6800,
+    rating: "4.8 (65 reviews)",
+    badge: "Editor's Pick",
+    image: coorgImg,
+    amenities: ["☕ Coffee Estate", "🏊 Pool", "🦜 Bird Watching"],
+    isAIRecommended: false
   },
   {
     id: 7,
     name: "Sunrise Beach Resort",
-    location: "Andaman Islands",
-    price: "₹10,200",
-    rating: "4.9",
-    badge:"Beachfront",
-    image: andaman,
-    amenities: ["Private Beach", "Diving", "Spa"],
+    location: "Andaman Islands, India",
+    price: 10200,
+    rating: "4.9 (120 reviews)",
+    badge: "Beachfront VIP",
+    image: andamanImg,
+    amenities: ["🏝️ Private Beach", "🤿 Scuba Diving", "💆 Spa"],
+    isAIRecommended: true
   },
   {
     id: 8,
     name: "The Royal Heritage Resort",
-    location: "Jaipur",
-    price: "₹8,900",
-    rating: "4.7",
-    badge:"Heritage",
-    image: jaipur,
-    amenities: ["Heritage", "Restaurant", "Pool"],
+    location: "Jaipur, Rajasthan",
+    price: 8900,
+    rating: "4.7 (104 reviews)",
+    badge: "Heritage Palace",
+    image: jaipurImg,
+    amenities: ["🏰 Palace Tour", "🍽️ Fine Dining", "🏊 Pool"],
+    isAIRecommended: false
   },
 ];
-  
-
 
 function FeaturedResorts() {
+  const [wishlist, setWishlist] = useState({});
+
+  const toggleWishlist = (id, e) => {
+    e.stopPropagation();
+    setWishlist(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const handleQuickBook = (name) => {
+    alert(`Initiating booking check for ${name}. Connecting to gateway...`);
+  };
+
   return (
-    <section className="featured">
+    <section className="featured" id="resorts">
       <div className="container">
-
-        <h2 className="section-title">
-          Featured Resorts
-        </h2>
-
+        <span className="section-tag">Featured Stays</span>
+        <h2 className="section-title">Luxury Resorts Handpicked for You</h2>
         <p className="section-subtitle">
-          Handpicked luxury resorts for your next unforgettable vacation.
+          Every location features premium amenities, breathtaking architecture, and stellar local service.
         </p>
 
         <div className="resorts-grid">
+          {RESORTS.map((resort) => (
+            <article className="resort-card" key={resort.id}>
+              <div className="resort-img-wrapper">
+                <img src={resort.image} alt={resort.name} className="resort-img" />
+                
+                {resort.isAIRecommended && (
+                  <span className="resort-badge ai">
+                    <Sparkles size={12} /> AI Recommended
+                  </span>
+                )}
+                {!resort.isAIRecommended && resort.badge && (
+                  <span className="resort-badge standard">
+                    {resort.badge}
+                  </span>
+                )}
 
-          {resorts.map((resort) => (
-            <div className="resort-card" key={resort.id}>
+                <button 
+                  className={`resort-wishlist ${wishlist[resort.id] ? "active" : ""}`}
+                  aria-label="Add to Wishlist"
+                  onClick={(e) => toggleWishlist(resort.id, e)}
+                >
+                  <Heart size={16} fill={wishlist[resort.id] ? "#EF4444" : "none"} />
+                </button>
+              </div>
 
-              <div className="image-box">
-
-  <img src={resort.image} alt={resort.name} />
-
-  <span className="badge">
-    {resort.badge}
-  </span>
-
-  <span className="rating">
-    ⭐ {resort.rating}
-  </span>
-
-  <div className="wishlist">
-    <FaHeart />
-  </div>
-
-</div>
-
-              <div className="resort-content">
-
-                <h3>{resort.name}</h3>
-
-                <p className="location">
-                  📍 {resort.location}
-                </p>
-
-                <div className="amenities">
+              <div className="resort-body">
+                <div className="resort-meta">
+                  <span className="resort-loc">
+                    <MapPin size={12} /> {resort.location}
+                  </span>
+                  <span className="resort-rating">
+                    <Star size={12} fill="#C2A878" color="#C2A878" /> {resort.rating}
+                  </span>
+                </div>
+                
+                <h3 className="resort-name">{resort.name}</h3>
+                
+                <div className="resort-amenities">
                   {resort.amenities.map((item, index) => (
-                    <span key={index}>{item}</span>
+                    <span className="resort-amenity" key={index}>
+                      {item}
+                    </span>
                   ))}
                 </div>
 
-                <div className="bottom">
-
-                  <div>
-                    <small>Starting From</small>
-
-                    <h4>
-                         {resort.price}
-                         <span>/Night</span>
-                    </h4>
+                <div className="resort-footer">
+                  <div className="resort-price">
+                    <span className="resort-price-val">₹{resort.price}</span>
+                    <span className="resort-price-label">per night</span>
                   </div>
-
-                      <button className="book-btn">
-                          Book Now →
-                      </button>
-
+                  <button 
+                    className="book-btn" 
+                    onClick={() => handleQuickBook(resort.name)}
+                  >
+                    Quick Book
+                  </button>
                 </div>
-
               </div>
-
-            </div>
+            </article>
           ))}
-
         </div>
-
       </div>
     </section>
   );

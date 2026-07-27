@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 
 import Hero from "./components/Hero";
 import PopularDestinations from "./components/PopularDestinations";
+import Mascot from "./components/Mascot";
 import FeaturedResorts from "./components/FeaturedResorts";
 import Services from "./components/Services";
 import WhyChooseUs from "./components/WhyChooseUs";
@@ -21,6 +22,7 @@ function Home() {
     <>
       <Hero />
       <PopularDestinations />
+      <Mascot />
       <FeaturedResorts />
       <Services />
       <WhyChooseUs />

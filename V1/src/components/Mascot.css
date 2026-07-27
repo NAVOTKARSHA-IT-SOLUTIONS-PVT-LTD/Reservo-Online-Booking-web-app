@@ -1,0 +1,197 @@
+/* ==========================
+   MASCOT SECTION
+   ========================== */
+
+.mascot {
+  padding: 80px 0;
+  background-color: #ffffff;
+  border-top: 1px solid #e5e5e7;
+  border-bottom: 1px solid #e5e5e7;
+}
+
+.mascot-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1.8fr;
+  gap: 50px;
+  align-items: start;
+}
+
+/* ==========================
+   MASCOT PROFILE CARD
+   ========================== */
+
+.mascot-profile-card {
+  background: #f5f5f7;
+  border-radius: 24px;
+  padding: 35px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  border: 1px solid #e5e5e7;
+}
+
+.mascot-img-container {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto 25px auto;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  border: 4px solid white;
+}
+
+.mascot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mascot-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 50%;
+  transform: translateX(50%);
+  background: #121e1b;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: 2.5px solid white;
+}
+
+.mascot-main-title {
+  font-family: "Playfair Display", serif;
+  font-size: 36px;
+  color: #121e1b;
+  margin-bottom: 5px;
+}
+
+.mascot-main-title span {
+  color: #C2A878;
+}
+
+.mascot-tagline {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #86868b;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+
+.mascot-intro {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #6e6e73;
+  margin-bottom: 25px;
+}
+
+.mascot-attributes {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mascot-attributes span {
+  font-size: 13px;
+  font-weight: 600;
+  background: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #e5e5e7;
+  color: #121e1b;
+}
+
+/* ==========================
+   MASCOT FEATURES SECTION
+   ========================== */
+
+.mascot-features-section {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.section-header-compact {
+  border-bottom: 1px solid #e5e5e7;
+  padding-bottom: 15px;
+}
+
+.mascot-sub-title {
+  font-family: "Playfair Display", serif;
+  font-size: 32px;
+  color: #121e1b;
+}
+
+.mascot-features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.feature-card {
+  background: #f5f5f7;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #e5e5e7;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  background: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.feature-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.feature-icon {
+  font-size: 20px;
+}
+
+.feature-card h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #121e1b;
+  letter-spacing: 0.5px;
+}
+
+.feature-card p {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #6e6e73;
+}
+
+/* ==========================
+   RESPONSIVE
+   ========================== */
+
+@media (max-width: 992px) {
+  .mascot-wrapper {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mascot-sub-title {
+    font-size: 26px;
+  }
+  
+  .mascot-features-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .mascot-profile-card {
+    padding: 25px;
+  }
+}

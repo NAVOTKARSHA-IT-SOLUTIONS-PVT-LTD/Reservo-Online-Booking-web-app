@@ -1,231 +1,110 @@
 /* ==========================
-   SERVICES
-========================== */
+   EXPERIENCES / SERVICES
+   ========================== */
 
-.services{
-    padding:100px 0;
-    background:#FCFAF7;
+.services {
+  padding: 80px 0;
+  background-color: #ffffff;
+}
+
+.experiences-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+  margin-top: 50px;
 }
 
 /* ==========================
-   GRID
-========================== */
+   EXPERIENCE CARD
+   ========================== */
 
-.services-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:35px;
-    margin-top:60px;
+.experience-card {
+  position: relative;
+  height: 400px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ==========================
-   CARD
-========================== */
-
-.service-card{
-
-    background:white;
-
-    border:1px solid #E7DFD4;
-
-    border-radius:20px;
-
-    padding:40px 30px;
-
-    text-align:center;
-
-    box-shadow:0 15px 35px rgba(0,0,0,.08);
-
-    transition:.4s;
-
-    position:relative;
-
-    overflow:hidden;
-
+.experience-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
-.service-card:hover{
-
-    transform:translateY(-12px);
-
-    box-shadow:0 25px 50px rgba(0,0,0,.15);
-
+.experience-img-wrapper {
+  width: 100%;
+  height: 100%;
 }
 
-/* Top Gold Line */
-
-.service-card::before{
-
-    content:"";
-
-    position:absolute;
-
-    top:0;
-
-    left:0;
-
-    width:0;
-
-    height:4px;
-
-    background:#C2A878;
-
-    transition:.4s;
-
+.experience-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.service-card:hover::before{
-
-    width:100%;
-
+.experience-card:hover .experience-img {
+  transform: scale(1.06);
 }
 
-/* ==========================
-   ICON
-========================== */
-
-.service-icon{
-
-    width:90px;
-
-    height:90px;
-
-    margin:0 auto 25px;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    border-radius:50%;
-
-    background:linear-gradient(135deg,#1F3A34,#2C554B);
-
-    color:white;
-
-    font-size:42px;
-
-    transition:.4s;
-
+/* Gradient Overlay */
+.experience-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0.85) 100%);
+  z-index: 2;
+  transition: opacity 0.3s;
 }
 
-.service-card:hover .service-icon{
-
-    background:linear-gradient(135deg,#C2A878,#A8874C);
-
-    transform:rotate(10deg) scale(1.08);
-
+.experience-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 25px;
+  z-index: 3;
+  color: white;
+  text-align: left;
 }
 
-/* ==========================
-   TITLE
-========================== */
-
-.service-card h3{
-
-    font-family:"Playfair Display",serif;
-
-    font-size:26px;
-
-    color:#2D2A26;
-
-    margin-bottom:15px;
-
+.experience-title {
+  font-family: "Playfair Display", serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* ==========================
-   DESCRIPTION
-========================== */
-
-.service-card p{
-
-    color:#6F6A63;
-
-    line-height:1.8;
-
-    margin-bottom:25px;
-
-    font-size:16px;
-
-}
-
-/* ==========================
-   BUTTON
-========================== */
-
-.service-btn{
-
-    background:#1F3A34;
-
-    color:white;
-
-    border:none;
-
-    padding:12px 28px;
-
-    border-radius:30px;
-
-    cursor:pointer;
-
-    font-size:15px;
-
-    font-weight:600;
-
-    transition:.35s;
-
-}
-
-.service-btn:hover{
-
-    background:#C2A878;
-
-    color:white;
-
-    transform:translateY(-3px);
-
+.experience-desc {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 /* ==========================
    RESPONSIVE
-========================== */
+   ========================== */
 
-@media(max-width:1100px){
-
-    .services-grid{
-
-        grid-template-columns:repeat(2,1fr);
-
-    }
-
+@media (max-width: 1100px) {
+  .experiences-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
 }
 
-@media(max-width:768px){
-
-    .services-grid{
-
-        grid-template-columns:1fr;
-
-    }
-
-    .service-card{
-
-        padding:35px 25px;
-
-    }
-
-    .service-icon{
-
-        width:80px;
-        height:80px;
-        font-size:36px;
-
-    }
-
-    .service-card h3{
-
-        font-size:22px;
-
-    }
-
+@media (max-width: 600px) {
+  .experiences-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .experience-card {
+    height: 350px;
+  }
 }

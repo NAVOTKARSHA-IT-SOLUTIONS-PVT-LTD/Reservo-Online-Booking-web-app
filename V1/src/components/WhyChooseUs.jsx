@@ -1,116 +1,56 @@
 import React from "react";
+import { Sparkles, ShieldCheck, CreditCard, HelpCircle } from "lucide-react";
 import "./WhyChooseUs.css";
 
-const features = [
+const FEATURES = [
   {
     id: 1,
-    icon: "🏨",
-    title: "500+ Luxury Resorts",
-    description:
-      "Discover handpicked luxury resorts, villas, and boutique stays across India's most beautiful destinations.",
+    icon: <Sparkles size={32} />,
+    title: "AI Personal Recommendations",
+    description: "Our intelligent algorithm maps your mood, calendar, and past stay histories to deliver tailored recommendations with unparalleled precision."
   },
   {
     id: 2,
-    icon: "🛡️",
-    title: "Secure Booking",
-    description:
-      "Book confidently with encrypted payments, instant confirmation, and trusted partners.",
+    icon: <ShieldCheck size={32} />,
+    title: "100% Hand-Verified Stays",
+    description: "Every resort, private villa, and boutique hotel goes through a thorough 150-point safety, luxury, and amenity auditing process before listing."
   },
   {
     id: 3,
-    icon: "⭐",
-    title: "Verified Reviews",
-    description:
-      "Read genuine reviews and ratings from thousands of satisfied travelers before booking.",
+    icon: <CreditCard size={32} />,
+    title: "Instant Secure Payments",
+    description: "Sleek checkout integration powered by Stripe, accepting global premium credit cards, digital wallets, and flexible installment schedules."
   },
   {
     id: 4,
-    icon: "📞",
-    title: "24/7 Concierge",
-    description:
-      "Our travel experts are available around the clock to help plan your perfect vacation.",
-  },
+    icon: <HelpCircle size={32} />,
+    title: "24/7 Concierge Support",
+    description: "Our dedicated digital and human concierge support teams are available around the clock to handle bookings, dining reservations, or changes."
+  }
 ];
 
 function WhyChooseUs() {
   return (
-    <section className="why">
-
+    <section className="why" id="why">
       <div className="container">
-
-        <span className="section-tag">
-          Why Reservo
-        </span>
-
-        <h2 className="section-title">
-          Why Travelers Choose Reservo
-        </h2>
-
+        <span className="section-tag">Value Proposition</span>
+        <h2 className="section-title">The Next Era of Luxury Stays</h2>
         <p className="section-subtitle">
-          Experience luxury, comfort, and seamless booking with India's
-          trusted premium resort platform.
+          Reservo pairs cutting-edge machine learning with elite hospitality standards to redefine your holiday experience.
         </p>
 
         <div className="why-grid">
-
-          {features.map((feature) => (
-
+          {FEATURES.map((feature) => (
             <div className="why-card" key={feature.id}>
-
               <div className="why-icon">
                 {feature.icon}
               </div>
-
               <h3>{feature.title}</h3>
-
               <p>{feature.description}</p>
-
             </div>
-
           ))}
-
         </div>
-
-        {/* Statistics */}
-
-        <div className="why-stats">
-
-          <div className="stat">
-
-            <h2>500+</h2>
-
-            <p>Luxury Resorts</p>
-
-          </div>
-
-          <div className="stat">
-
-            <h2>150+</h2>
-
-            <p>Destinations</p>
-
-          </div>
-
-          <div className="stat">
-
-            <h2>50K+</h2>
-
-            <p>Happy Guests</p>
-
-          </div>
-
-          <div className="stat">
-
-            <h2>4.9★</h2>
-
-            <p>Average Rating</p>
-
-          </div>
-
-        </div>
-
       </div>
-
     </section>
   );
 }
