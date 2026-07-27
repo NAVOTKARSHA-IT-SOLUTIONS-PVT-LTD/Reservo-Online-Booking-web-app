@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Globe, Facebook, Instagram, Youtube, MapPin, Phone, Mail, Clock } from "lucide-react";
+import { Globe, MapPin, Phone, Mail, Clock } from "lucide-react";
+import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa";
 import "./Footer.css";
 
 function Footer() {
@@ -18,9 +19,9 @@ function Footer() {
           </p>
           <div className="social-icons">
             <a href="#" aria-label="Website"><Globe size={18} /></a>
-            <a href="#" aria-label="Facebook"><Facebook size={18} /></a>
-            <a href="#" aria-label="Instagram"><Instagram size={18} /></a>
-            <a href="#" aria-label="Youtube"><Youtube size={18} /></a>
+            <a href="#" aria-label="Facebook"><FaFacebookF size={18} /></a>
+            <a href="#" aria-label="Instagram"><FaInstagram size={18} /></a>
+            <a href="#" aria-label="Youtube"><FaYoutube size={18} /></a>
           </div>
         </div>
 
