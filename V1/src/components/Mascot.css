@@ -14,8 +14,8 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: white;
-  border: 1.5px solid rgba(0,0,0,0.05);
+  background: var(--bg-white);
+  border: 1.5px solid var(--border-color);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   display: flex;
@@ -68,8 +68,8 @@
   right: 0;
   width: 350px;
   height: 480px;
-  background: white;
-  border: 1px solid #e5e5e7;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   box-shadow: 0 15px 45px rgba(0, 0, 0, 0.15);
   display: flex;
@@ -112,6 +112,7 @@
   font-size: 14.5px;
   margin: 0;
   font-weight: 700;
+  color: white;
 }
 
 .chat-header-info span {
@@ -145,7 +146,7 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  background: #f5f5f7;
+  background: var(--bg-light);
 }
 
 .chat-bubble-row {
@@ -169,7 +170,7 @@
   height: 28px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid #e5e5e7;
+  border: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
@@ -178,14 +179,14 @@
   border-radius: 18px;
   font-size: 13.5px;
   line-height: 1.5;
-  color: #121e1b;
+  color: var(--text-dark);
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
 .rivo .chat-bubble {
-  background: white;
+  background: var(--bg-white);
   border-top-left-radius: 4px;
-  border: 1px solid #e5e5e7;
+  border: 1px solid var(--border-color);
 }
 
 .user .chat-bubble {
@@ -204,7 +205,7 @@
 .typing-dot {
   width: 6px;
   height: 6px;
-  background: #86868b;
+  background: var(--text-gray);
   border-radius: 50%;
   animation: typingDot 1.4s infinite ease-in-out;
 }
@@ -232,14 +233,14 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px 20px;
-  background: #f5f5f7;
-  border-top: 1px solid #e5e5e7;
+  background: var(--bg-light);
+  border-top: 1px solid var(--border-color);
 }
 
 .quick-reply-btn {
-  background: white;
-  color: #121e1b;
-  border: 1px solid #e5e5e7;
+  background: var(--bg-white);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
   padding: 8px 14px;
   border-radius: 12px;
   font-size: 12.5px;
@@ -249,7 +250,7 @@
 }
 
 .quick-reply-btn:hover {
-  background: #f5f5f7;
+  background: var(--bg-light);
   border-color: #C2A878;
   color: #C2A878;
 }
@@ -258,8 +259,8 @@
 .chat-input-form {
   display: flex;
   padding: 12px 15px;
-  border-top: 1px solid #e5e5e7;
-  background: white;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-white);
   align-items: center;
   gap: 10px;
 }
@@ -270,9 +271,9 @@
   outline: none;
   padding: 8px 12px;
   font-size: 13.5px;
-  background: #f5f5f7;
+  background: var(--bg-light);
   border-radius: 10px;
-  color: #121e1b;
+  color: var(--text-dark);
 }
 
 .chat-submit-btn {

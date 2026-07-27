@@ -8,54 +8,62 @@
    ROOT VARIABLES
 ========================================== */
 
-:root{
+:root {
+    --primary: #121e1b;
+    --primary-dark: #0d1614;
 
-    --primary:#1F3A34;
-    --primary-dark:#162B27;
+    --gold: #C2A878;
+    --gold-dark: #B08F5A;
 
-    --gold:#C2A878;
-    --gold-dark:#B08F5A;
+    --bg-light: #f5f5f7;
+    --bg-white: #ffffff;
 
-    --light:#F8F5F0;
-    --white:#ffffff;
+    --text-dark: #121e1b;
+    --text-gray: #6e6e73;
 
-    --dark:#222222;
-    --gray:#6F6A63;
+    --border-color: #e5e5e7;
 
-    --border:#E7DFD4;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
 
-    --shadow:0 15px 35px rgba(0,0,0,.08);
+    --radius: 18px;
 
-    --radius:18px;
+    --transition: .35s ease;
+}
 
-    --transition:.35s ease;
+body.dark-theme {
+    --primary: #f5f5f7;
+    --primary-dark: #ffffff;
+    
+    --bg-light: #0d1614;
+    --bg-white: #13221e;
 
+    --text-dark: #f5f5f7;
+    --text-gray: #86868b;
+
+    --border-color: rgba(255, 255, 255, 0.1);
+    --shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 /* ==========================================
    RESET
 ========================================== */
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-html{
-    scroll-behavior:smooth;
+html {
+    scroll-behavior: smooth;
 }
 
-body{
-
-    font-family:'Poppins',sans-serif;
-
-    background:var(--light);
-
-    color:var(--dark);
-
-    overflow-x:hidden;
-
+body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg-light);
+    color: var(--text-dark);
+    overflow-x: hidden;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 img{

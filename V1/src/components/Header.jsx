@@ -1,17 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, Globe, Heart } from "lucide-react";
+import { Menu, X, Globe, Heart, Moon, Sun } from "lucide-react";
 import "./Header.css";
 
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem("reservo-theme") === "dark";
+  });
+
+  // Track page scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Sync dark theme with body tag
+  useEffect(() => {
+    if (isDark) {
+      document.body.classList.add("dark-theme");
+      localStorage.setItem("reservo-theme", "dark");
+    } else {
+      document.body.classList.remove("dark-theme");
+      localStorage.setItem("reservo-theme", "light");
+    }
+  }, [isDark]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const toggleTheme = () => {
+    setIsDark(!isDark);
+  };
+
   return (
-    <header className="header-wrapper">
+    <header className={`header-wrapper ${isScrolled ? "scrolled" : ""}`}>
       <div className="container nav-container">
         {/* Logo with Mascot Avatar */}
         <Link to="/" className="logo">
@@ -40,6 +68,15 @@ function Header() {
 
         {/* Nav Actions / Hamburger Trigger */}
         <div className="nav-actions">
+          {/* Theme Switcher Button */}
+          <button 
+            className="theme-toggle-btn" 
+            onClick={toggleTheme} 
+            aria-label="Toggle Theme"
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
           <button className="wishlist-btn" aria-label="View Wishlist">
             <Heart size={18} />
           </button>
@@ -48,8 +85,6 @@ function Header() {
             <Globe size={18} />
             <span>EN</span>
           </div>
-
-          <button className="signin-nav-btn">Sign In</button>
 
           <button 
             className="hamburger-btn" 

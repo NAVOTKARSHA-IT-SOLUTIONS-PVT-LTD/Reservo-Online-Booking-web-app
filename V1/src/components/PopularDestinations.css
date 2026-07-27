@@ -4,8 +4,9 @@
 
 .destinations {
   padding: 60px 0 80px 0;
-  background-color: #f5f5f7;
+  background-color: var(--bg-light);
   overflow: hidden;
+  transition: background-color 0.3s;
 }
 
 /* ==========================
@@ -14,7 +15,7 @@
 
 .categories-tab-bar {
   margin-bottom: 40px;
-  border-bottom: 1px solid #e5e5e7;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 5px;
 }
 
@@ -38,7 +39,7 @@
   background: transparent;
   border: none;
   padding: 12px 6px;
-  color: #6e6e73;
+  color: var(--text-gray);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -48,13 +49,13 @@
 }
 
 .category-item-tab svg {
-  color: #86868b;
+  color: var(--text-gray);
   transition: color 0.3s;
 }
 
 .category-item-tab:hover,
 .category-item-tab.active {
-  color: #121e1b;
+  color: var(--text-dark);
 }
 
 .category-item-tab:hover svg,
@@ -69,7 +70,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: #121e1b;
+  background-color: var(--text-dark);
 }
 
 /* ==========================
@@ -96,14 +97,14 @@
 .section-title {
   font-family: "Playfair Display", serif;
   font-size: 38px;
-  color: #121e1b;
+  color: var(--text-dark);
   margin-bottom: 12px;
   font-weight: 800;
 }
 
 .section-subtitle {
   font-size: 15px;
-  color: #6e6e73;
+  color: var(--text-gray);
   max-width: 580px;
   margin: 0;
 }
@@ -119,9 +120,9 @@
 }
 
 .slider-ctrl-btn {
-  background: white;
-  color: #121e1b;
-  border: 1px solid #e5e5e7;
+  background: var(--bg-white);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -130,13 +131,13 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  box-shadow: var(--shadow);
 }
 
 .slider-ctrl-btn:hover:not(.disabled) {
-  background: #121e1b;
-  color: white;
-  border-color: #121e1b;
+  background: var(--text-dark);
+  color: var(--bg-white);
+  border-color: var(--text-dark);
   transform: scale(1.05);
 }
 
@@ -162,12 +163,12 @@
 
 .destination-slide-card {
   flex: 0 0 calc((100% - 60px) / 3); /* Shows exactly 3 cards on desktop */
-  background: white;
+  background: var(--bg-white);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(0,0,0,0.03);
+  border: 1px solid var(--border-color);
 }
 
 .destination-slide-card:hover {
@@ -179,7 +180,7 @@
   position: relative;
   height: 250px;
   overflow: hidden;
-  background: #e5e5e7;
+  background: var(--border-color);
 }
 
 .destination-img {
@@ -237,14 +238,14 @@
 .destination-name {
   font-family: "Playfair Display", serif;
   font-size: 22px;
-  color: #121e1b;
+  color: var(--text-dark);
   font-weight: 750;
 }
 
 .destination-rating {
   font-size: 14px;
   font-weight: 600;
-  color: #121e1b;
+  color: var(--text-dark);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -255,7 +256,7 @@
   justify-content: space-between;
   align-items: center;
   font-size: 13.5px;
-  color: #86868b;
+  color: var(--text-gray);
 }
 
 .destination-loc {
@@ -272,14 +273,14 @@
 .destination-price span {
   font-size: 16px;
   font-weight: 700;
-  color: #121e1b;
+  color: var(--text-dark);
 }
 
 .no-destinations-fallback {
   padding: 60px;
   text-align: center;
   width: 100%;
-  color: #86868b;
+  color: var(--text-gray);
   font-size: 15px;
 }
 

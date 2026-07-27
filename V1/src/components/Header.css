@@ -1,5 +1,5 @@
 /* ==========================
-   HEADER
+   HEADER CONTAINER & pill
    ========================== */
 
 .header-wrapper {
@@ -10,7 +10,7 @@
   width: 92%;
   max-width: 1400px;
   z-index: 1000;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nav-container {
@@ -22,8 +22,16 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 50px; /* Full pill shape */
+  border-radius: 50px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Scrolled Navbar Style overrides */
+.header-wrapper.scrolled .nav-container {
+  background: var(--bg-white);
+  border-color: var(--border-color);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 /* ==========================
@@ -43,6 +51,11 @@
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.3);
   object-fit: cover;
+  transition: border-color 0.3s;
+}
+
+.header-wrapper.scrolled .logo-avatar {
+  border-color: var(--border-color);
 }
 
 .logo-text {
@@ -51,14 +64,19 @@
   font-weight: 800;
   color: white;
   letter-spacing: 1px;
+  transition: color 0.3s;
 }
 
 .logo-text span {
   color: #C2A878;
 }
 
+.header-wrapper.scrolled .logo-text {
+  color: var(--text-dark);
+}
+
 /* ==========================
-   NAVIGATION
+   NAVIGATION LINKS
    ========================== */
 
 .navbar {
@@ -75,10 +93,10 @@
 
 .nav-links a {
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 15px;
   font-weight: 500;
-  transition: 0.3s;
+  transition: color 0.3s;
 }
 
 .nav-links a:hover,
@@ -86,17 +104,28 @@
   color: white;
 }
 
+.header-wrapper.scrolled .nav-links a {
+  color: var(--text-gray);
+}
+
+.header-wrapper.scrolled .nav-links a:hover,
+.header-wrapper.scrolled .nav-links a.active {
+  color: var(--text-dark);
+}
+
 /* ==========================
-   NAV ACTIONS & HAMBURGER
+   NAV ACTIONS
    ========================== */
 
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
 }
 
-.wishlist-btn {
+.theme-toggle-btn,
+.wishlist-btn,
+.hamburger-btn {
   background: transparent;
   color: white;
   border: none;
@@ -106,11 +135,26 @@
   justify-content: center;
   padding: 8px;
   border-radius: 50%;
-  transition: 0.3s;
+  transition: all 0.3s;
 }
 
-.wishlist-btn:hover {
+.theme-toggle-btn:hover,
+.wishlist-btn:hover,
+.hamburger-btn:hover {
   background: rgba(255, 255, 255, 0.15);
+  color: #C2A878;
+}
+
+.header-wrapper.scrolled .theme-toggle-btn,
+.header-wrapper.scrolled .wishlist-btn,
+.header-wrapper.scrolled .hamburger-btn {
+  color: var(--text-dark);
+}
+
+.header-wrapper.scrolled .theme-toggle-btn:hover,
+.header-wrapper.scrolled .wishlist-btn:hover,
+.header-wrapper.scrolled .hamburger-btn:hover {
+  background: var(--bg-light);
   color: #C2A878;
 }
 
@@ -125,55 +169,30 @@
   padding: 6px 12px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.1);
-  transition: 0.3s;
+  transition: all 0.3s;
 }
 
 .lang-selector:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.signin-nav-btn {
-  background: white;
-  color: #121e1b;
-  border: none;
-  padding: 8px 22px;
-  border-radius: 20px;
-  font-weight: 650;
-  font-size: 14px;
-  cursor: pointer;
-  transition: 0.3s;
+.header-wrapper.scrolled .lang-selector {
+  color: var(--text-dark);
+  background: var(--bg-light);
 }
 
-.signin-nav-btn:hover {
-  background: #C2A878;
-  color: white;
-}
-
-.hamburger-btn {
-  background: transparent;
-  color: white;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  border-radius: 50%;
-  transition: 0.3s;
-}
-
-.hamburger-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+.header-wrapper.scrolled .lang-selector:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 /* ==========================
-   DRAWER OVERLAY & MENU
+   WHITE THEME SIDEBAR MENU DRAWER
    ========================== */
 
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
@@ -193,12 +212,10 @@
   bottom: 0;
   width: 320px;
   max-width: 100%;
-  background: rgba(18, 30, 27, 0.95);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-white); /* White background for readability */
+  border-left: 1px solid var(--border-color);
   padding: 30px;
-  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateX(100%);
   display: flex;
@@ -215,26 +232,26 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 15px;
 }
 
 .drawer-header h3 {
   font-family: "Playfair Display", serif;
   font-size: 22px;
-  color: white;
+  color: var(--text-dark);
 }
 
 .drawer-header .close-btn {
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-gray);
   border: none;
   cursor: pointer;
   transition: 0.3s;
 }
 
 .drawer-header .close-btn:hover {
-  color: white;
+  color: var(--text-dark);
 }
 
 .drawer-links {
@@ -246,9 +263,9 @@
 
 .drawer-links a {
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-dark);
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 550;
   transition: 0.3s;
   display: block;
 }
@@ -261,7 +278,7 @@
 .drawer-divider {
   border: none;
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-color);
   margin: 10px 0;
 }
 
@@ -276,7 +293,7 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-gray);
   font-weight: 700;
 }
 
@@ -290,8 +307,8 @@
 .drawer-auth-buttons .login-btn {
   width: 100%;
   background: transparent;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
   padding: 10px;
   border-radius: 8px;
   cursor: pointer;
@@ -300,8 +317,9 @@
 }
 
 .drawer-auth-buttons .login-btn:hover {
-  background: white;
-  color: #121e1b;
+  background: var(--text-dark);
+  color: var(--bg-white);
+  border-color: var(--text-dark);
 }
 
 .drawer-auth-buttons .signup-btn {
@@ -322,11 +340,11 @@
 
 .drawer-legal-link {
   font-size: 14px !important;
-  color: rgba(255, 255, 255, 0.5) !important;
+  color: var(--text-gray) !important;
 }
 
 .drawer-legal-link:hover {
-  color: white !important;
+  color: var(--text-dark) !important;
 }
 
 /* ==========================
