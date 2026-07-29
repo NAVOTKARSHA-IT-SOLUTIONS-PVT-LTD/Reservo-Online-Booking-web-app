@@ -57,32 +57,26 @@ function MascotShowcase() {
   const activeTab = SHOWCASE_TABS.find(tab => tab.id === activeTabId) || SHOWCASE_TABS[0];
 
   return (
-    <section className="py-20 bg-bg-light transition-colors duration-300 overflow-hidden" id="meet-rivo">
+    <section className="py-16 bg-bg-light transition-colors duration-300 overflow-hidden" id="mascot-showcase">
       <div className="w-[90%] max-w-[1300px] mx-auto">
         
         {/* Section Header */}
-        <div className="text-center mb-15">
+        <div className="text-center mb-10">
           <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-3">MEET RIVO</span>
-          <h2 className="text-[28px] sm:text-[32px] md:text-[38px] xl:text-[46px] font-bold text-center text-primary mb-4.5">Your Luxury Travel Buddy</h2>
-          <p className="max-w-[720px] mx-auto mb-15 text-center text-text-gray text-base md:text-lg leading-relaxed">
-            Rivo is here to make your travel planning easy, smart, and unforgettable. Click the interactive tabs to see Rivo in action!
+          <h2 className="text-[28px] sm:text-[32px] md:text-[38px] xl:text-[46px] font-bold text-center text-primary mb-4">Your AI Travel Companion</h2>
+          <p className="max-w-[720px] mx-auto mb-10 text-center text-text-gray text-base md:text-lg leading-relaxed">
+            Rivo is your personal travel concierge, powered by AI to seamlessly curate and manage every aspect of your trip.
           </p>
         </div>
 
         {/* Split Screen Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12.5 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
           
           {/* Left Column: Mascot profile details */}
           <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-            <div className="flex gap-2.5 mb-5">
-              <span className="text-[11px] font-bold text-gold bg-gold/10 px-3 py-1.25 rounded-xl uppercase tracking-wide">#Explorer</span>
-              <span className="text-[11px] font-bold text-gold bg-gold/10 px-3 py-1.25 rounded-xl uppercase tracking-wide">#AICompanion</span>
-              <span className="text-[11px] font-bold text-gold bg-gold/10 px-3 py-1.25 rounded-xl uppercase tracking-wide">#TravelBuddy</span>
-            </div>
-
-            <h3 className="text-[32px] text-text-dark font-extrabold mb-3.5 leading-tight">Interactive Assistant Showcase</h3>
-            <p className="text-[15px] leading-relaxed text-text-gray mb-8.5 max-w-[520px] mx-auto lg:mx-0">
-              Reservo is powered by Rivo, an elite companion designed to take the friction out of luxury hospitality. From custom itineraries to live key handovers, Rivo manages it all.
+            <h3 className="text-[32px] text-text-dark font-extrabold mb-3.5 leading-tight">Always at your service</h3>
+            <p className="text-[15px] leading-relaxed text-text-gray mb-8 max-w-[520px] mx-auto lg:mx-0">
+              From crafting bespoke itineraries to live key handovers, Rivo takes the friction out of luxury hospitality.
             </p>
 
             {/* Vertical Tab Selectors */}
@@ -105,7 +99,7 @@ function MascotShowcase() {
                     <ArrowRight size={14} className={`transition-all duration-300 ease-out ${
                       isActive 
                         ? "text-bg-white opacity-100 translate-x-0" 
-                        : "text-text-gray opacity-0 -translate-x-1.25 group-hover:opacity-100 group-hover:translate-x-0"
+                        : "text-text-gray opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
                     }`} />
                   </button>
                 );
@@ -115,14 +109,14 @@ function MascotShowcase() {
 
           {/* Right Column: Display Area with active Mascot image */}
           <div className="flex justify-center w-full">
-            <div className="bg-bg-white border border-border-color rounded-[28px] p-10 w-full max-w-[440px] shadow-custom relative flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1.25">
+            <div className="bg-bg-white border border-border-color rounded-[28px] p-10 w-full max-w-[440px] shadow-custom relative flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1">
               {/* Highlight Badge */}
               <span className="absolute top-6 left-6 bg-gold text-white px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center shadow-[0_4px_10px_rgba(197,160,89,0.2)]">
                 <Sparkles size={12} className="mr-1" /> {activeTab.badge}
               </span>
 
               {/* Image Frame */}
-              <div className="w-[220px] h-[220px] rounded-full overflow-hidden border-4 border-border-color mt-5 mb-7.5 shadow-custom bg-bg-light">
+              <div className="w-[220px] h-[220px] rounded-full overflow-hidden border-4 border-border-color mt-5 mb-8 shadow-custom bg-bg-light">
                 <img 
                   src={activeTab.image} 
                   alt={`Rivo ${activeTabId}`}
