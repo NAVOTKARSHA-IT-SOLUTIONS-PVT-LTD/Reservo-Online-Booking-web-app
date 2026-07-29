@@ -1,26 +1,23 @@
-import React, { useState, useRef } from "react";
-import { Heart, Star, MapPin, ChevronLeft, ChevronRight, Waves, Mountain, Trees, Home, Tent, Sparkles, Palmtree, Compass, PawPrint, HeartHandshake } from "lucide-react";
+import React, { useState } from "react";
+import { MapPin, Heart, Star, ChevronLeft, ChevronRight, Waves, Mountain, TreePine, Home, Tent, Palmtree, ArrowRight, ShieldCheck, HeadphonesIcon } from "lucide-react";
 
-// Import local images from Aditya's assets
-import goaImg from "../assets/images/goa.jpg";
-import manaliImg from "../assets/images/manali.jpg";
-import keralaImg from "../assets/images/kerala.jpg";
-import coorgImg from "../assets/images/coorg.jpg";
-import andamanImg from "../assets/images/andaman.jpg";
-import udaipurImg from "../assets/images/udaipur.jpg";
-import rivoSearching from "../assets/images/rivo_searching.png";
+import goaImage from "../assets/images/goa.jpg";
+import keralaImage from "../assets/images/kerala.jpg";
+import coorgImage from "../assets/images/coorg.jpg";
+import manaliImage from "../assets/images/manali.jpg";
+import jaipurImage from "../assets/images/jaipur.jpg";
+import udaipurImage from "../assets/images/udaipur.jpg";
+import shimlaImage from "../assets/images/shimla.jpg";
+import andamanImage from "../assets/images/andaman.jpg";
 
 const CATEGORIES = [
-  { id: "beach", label: "Beach Resorts", icon: <Waves size={16} /> },
-  { id: "mountain", label: "Mountain Retreats", icon: <Mountain size={16} /> },
-  { id: "forest", label: "Forest Chalets", icon: <Trees size={16} /> },
-  { id: "villas", label: "Luxury Villas", icon: <Home size={16} /> },
-  { id: "cabins", label: "Rustic Cabins", icon: <Tent size={16} /> },
-  { id: "glamping", label: "Glamping Stays", icon: <Sparkles size={16} /> },
-  { id: "island", label: "Private Islands", icon: <Palmtree size={16} /> },
-  { id: "camping", label: "Eco Camping", icon: <Compass size={16} /> },
-  { id: "pet", label: "Pet Friendly", icon: <PawPrint size={16} /> },
-  { id: "family", label: "Family Stays", icon: <HeartHandshake size={16} /> }
+  { id: "beach", label: "Beach Resorts", icon: <Waves size={20} /> },
+  { id: "mountain", label: "Mountain Retreats", icon: <Mountain size={20} /> },
+  { id: "forest", label: "Forest Chalets", icon: <TreePine size={20} /> },
+  { id: "villas", label: "Luxury Villas", icon: <Home size={20} /> },
+  { id: "cabins", label: "Rustic Cabins", icon: <Home size={20} /> },
+  { id: "glamping", label: "Glamping Stays", icon: <Tent size={20} /> },
+  { id: "islands", label: "Private Islands", icon: <Palmtree size={20} /> },
 ];
 
 const DESTINATIONS = [
@@ -28,214 +25,274 @@ const DESTINATIONS = [
     id: 1,
     name: "Goa Coastline",
     location: "West Coast, India",
-    rating: 4.9,
     price: 8000,
-    image: goaImg,
+    rating: 4.9,
+    reviews: "Exceptional",
+    image: goaImage,
     category: "beach"
   },
   {
     id: 2,
-    name: "Manali Peaks",
-    location: "Himachal Pradesh, India",
-    rating: 4.8,
-    price: 6500,
-    image: manaliImg,
-    category: "mountain"
-  },
-  {
-    id: 3,
     name: "Kerala Backwaters",
     location: "South Coast, India",
-    rating: 4.9,
     price: 9000,
-    image: keralaImg,
+    rating: 4.9,
+    reviews: "Exceptional",
+    image: keralaImage,
     category: "beach"
   },
   {
+    id: 3,
+    name: "Solang Valley Manali",
+    location: "Himachal Pradesh, India",
+    price: 6500,
+    rating: 4.8,
+    reviews: "Excellent",
+    image: manaliImage,
+    category: "mountain"
+  },
+  {
     id: 4,
-    name: "Coorg Coffee Estate",
-    location: "Karnataka Hills, India",
+    name: "Coorg Hill Station",
+    location: "Karnataka, India",
+    price: 7200,
     rating: 4.7,
-    price: 7500,
-    image: coorgImg,
-    category: "forest"
+    reviews: "Excellent",
+    image: coorgImage,
+    category: "mountain"
   },
   {
     id: 5,
-    name: "Andaman Shore",
-    location: "Bay of Bengal, India",
-    rating: 4.9,
-    price: 12000,
-    image: andamanImg,
-    category: "island"
+    name: "Coorg Forest Chalet",
+    location: "Karnataka, India",
+    price: 8500,
+    rating: 4.8,
+    reviews: "Exceptional",
+    image: coorgImage,
+    category: "forest"
   },
   {
     id: 6,
     name: "Udaipur Lake Palace",
     location: "Rajasthan, India",
-    rating: 4.8,
-    price: 11000,
-    image: udaipurImg,
+    price: 15000,
+    rating: 4.9,
+    reviews: "Exceptional",
+    image: udaipurImage,
     category: "villas"
   },
+  {
+    id: 7,
+    name: "Jaipur Haveli",
+    location: "Rajasthan, India",
+    price: 12000,
+    rating: 4.8,
+    reviews: "Excellent",
+    image: jaipurImage,
+    category: "villas"
+  },
+  {
+    id: 8,
+    name: "Shimla Log Cabin",
+    location: "Himachal Pradesh, India",
+    price: 5800,
+    rating: 4.6,
+    reviews: "Good",
+    image: shimlaImage,
+    category: "cabins"
+  },
+  {
+    id: 9,
+    name: "Manali Glamping Tents",
+    location: "Himachal Pradesh, India",
+    price: 7500,
+    rating: 4.9,
+    reviews: "Exceptional",
+    image: manaliImage,
+    category: "glamping"
+  },
+  {
+    id: 10,
+    name: "Andaman Private Shore",
+    location: "Andaman Islands, India",
+    price: 18000,
+    rating: 5.0,
+    reviews: "Exceptional",
+    image: andamanImage,
+    category: "islands"
+  }
 ];
 
-function PopularDestinations() {
-  const [activeCategory, setActiveCategory] = useState("beach");
-  const [wishlist, setWishlist] = useState({});
-  const [sliderIndex, setSliderIndex] = useState(0);
-  const sliderRef = useRef(null);
-
-  const toggleWishlist = (id, e) => {
-    e.stopPropagation();
-    setWishlist(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
+function PopularDestinations({ wishlist = [], toggleWishlist }) {
+  const [activeCat, setActiveCat] = useState("beach");
 
   const filteredDestinations = DESTINATIONS.filter(
-    (dest) => dest.category === activeCategory || activeCategory === "all"
+    (dest) => dest.category === activeCat
   );
 
-  const handleNext = () => {
-    if (sliderIndex < filteredDestinations.length - 3) {
-      setSliderIndex(prev => prev + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (sliderIndex > 0) {
-      setSliderIndex(prev => prev - 1);
-    }
-  };
-
   return (
-    <section className="py-15 bg-bg-light transition-colors duration-300 overflow-hidden" id="explore">
-      <div className="w-[90%] max-w-[1300px] mx-auto">
+    <section className="py-16 bg-bg-light transition-colors duration-300" id="explore">
+      <div className="w-full max-w-[1280px] mx-auto px-5">
         
         {/* Categories Tab Bar */}
-        <div className="mb-10 border-b border-border-color pb-1.25">
-          <div className="flex gap-7.5 overflow-x-auto scrollbar-none pb-1.25">
-            {CATEGORIES.map((cat) => {
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  className={`flex items-center gap-2 bg-transparent border-none py-3 px-1.5 text-sm font-semibold cursor-pointer whitespace-nowrap relative transition-colors duration-300 group ${
-                    isActive 
-                      ? "text-text-dark after:content-[''] after:absolute after:bottom-[-6px] after:left-0 after:right-0 after:h-0.5 after:bg-text-dark" 
-                      : "text-text-gray hover:text-text-dark"
-                  }`}
-                  onClick={() => {
-                    setActiveCategory(cat.id);
-                    setSliderIndex(0);
-                  }}
-                >
-                  <span className={`transition-colors duration-300 ${isActive ? "text-gold" : "text-text-gray group-hover:text-gold"}`}>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        <div className="flex overflow-x-auto hide-scrollbar gap-8 mb-10 bg-bg-white rounded-2xl px-6 py-4 shadow-[0_5px_15px_rgba(0,0,0,0.03)] border border-border-color transition-colors duration-300">
+          {CATEGORIES.map((cat) => {
+            const isActive = activeCat === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCat(cat.id)}
+                className={`flex flex-col items-center gap-2 min-w-max pb-2 relative transition-colors duration-300 ${
+                  isActive ? "text-primary" : "text-text-gray hover:text-primary"
+                } bg-transparent border-none cursor-pointer focus:outline-none`}
+              >
+                <span>{cat.icon}</span>
+                <span className="text-[13px] font-bold">{cat.label}</span>
+                {isActive && (
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></div>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Section Title */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
-          <div>
-            <span className="block text-xs font-bold uppercase tracking-widest text-gold mb-3">Popular Destinations</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-text-dark mb-4.5">Trending Vacation Stays</h2>
-            <p className="text-text-gray text-base md:text-lg leading-relaxed max-w-[580px]">
+        {/* Section Header Area */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10 mb-8">
+          
+          {/* Left Title Area */}
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[11px] font-bold uppercase tracking-[1.5px] text-primary">POPULAR DESTINATIONS</span>
+              <div className="w-8 h-0.5 bg-primary"></div>
+            </div>
+            <h2 className="text-[28px] sm:text-[34px] font-extrabold text-text-dark mb-3 font-serif transition-colors duration-300">
+              Trending <span className="text-primary">Vacation Stays</span>
+            </h2>
+            <p className="text-text-gray text-[15px] leading-relaxed max-w-[420px] transition-colors duration-300">
               Discover gorgeous corners around the world, verified for absolute comfort and luxury.
             </p>
           </div>
-          
-          {/* Navigation Slider Buttons */}
-          {filteredDestinations.length > 3 && (
-            <div className="flex gap-3">
-              <button 
-                className={`w-11 h-11 rounded-full border border-border-color bg-bg-white text-text-dark flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-text-dark hover:text-bg-white hover:border-text-dark hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed`}
-                onClick={handlePrev}
-                disabled={sliderIndex === 0}
-                aria-label="Previous stays"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button 
-                className={`w-11 h-11 rounded-full border border-border-color bg-bg-white text-text-dark flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-text-dark hover:text-bg-white hover:border-text-dark hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed`}
-                onClick={handleNext}
-                disabled={sliderIndex >= filteredDestinations.length - 3}
-                aria-label="Next stays"
-              >
-                <ChevronRight size={20} />
-              </button>
+
+          {/* Right Trust Badges & Controls */}
+          <div className="flex flex-col items-end gap-6">
+            <div className="flex flex-wrap justify-end gap-4 bg-bg-white rounded-[24px] p-3 shadow-[0_5px_15px_rgba(0,0,0,0.03)] border border-border-color transition-colors duration-300">
+              
+              <div className="flex items-center gap-3 px-3 py-2 border-r border-border-color">
+                <div className="w-10 h-10 rounded-full bg-bg-light flex items-center justify-center text-primary transition-colors duration-300">
+                  <ShieldCheck size={20} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[13px] font-bold text-text-dark transition-colors duration-300">Verified Stays</span>
+                  <span className="text-[11px] text-text-gray transition-colors duration-300">Quality checked for your comfort</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 px-3 py-2 border-r border-border-color">
+                <div className="w-10 h-10 rounded-full bg-bg-light flex items-center justify-center text-primary transition-colors duration-300">
+                  <Star size={20} className="fill-current" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[13px] font-bold text-text-dark transition-colors duration-300">Best Price</span>
+                  <span className="text-[11px] text-text-gray transition-colors duration-300">Get the most value for money</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 px-3 py-2">
+                <div className="w-10 h-10 rounded-full bg-bg-light flex items-center justify-center text-primary transition-colors duration-300">
+                  <HeadphonesIcon size={20} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[13px] font-bold text-text-dark transition-colors duration-300">24/7 Support</span>
+                  <span className="text-[11px] text-text-gray transition-colors duration-300">We're here anytime you need</span>
+                </div>
+              </div>
             </div>
-          )}
+
+            <div className="flex items-center gap-4">
+              <button className="flex items-center gap-2 text-primary font-bold text-[14px] hover:text-primary-dark bg-transparent border-none cursor-pointer transition-colors px-4">
+                View All Destinations <ArrowRight size={16} />
+              </button>
+              <div className="flex gap-2">
+                <button className="w-10 h-10 rounded-full bg-bg-white border border-border-color flex items-center justify-center text-text-gray hover:text-primary hover:border-primary transition-all cursor-pointer">
+                  <ChevronLeft size={20} />
+                </button>
+                <button className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white hover:bg-primary-dark transition-all cursor-pointer shadow-[0_5px_15px_rgba(47,128,237,0.3)]">
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Card Carousel Slider */}
-        <div className="w-full">
-          <div 
-            className="flex gap-[30px] transition-transform duration-500 ease-out w-full overflow-x-auto md:overflow-visible scrollbar-none [transform:none] md:[transform:var(--carousel-transform)]"
-            ref={sliderRef}
-            style={{
-              "--carousel-transform": `translateX(-${sliderIndex * (100 / 3)}%)`
-            }}
-          >
-            {filteredDestinations.map((dest) => (
-              <div className="flex-[0_0_85%] md:flex-[0_0_calc((100%-30px)/2)] lg:flex-[0_0_calc((100%-60px)/3)] bg-bg-white border-radius-20 overflow-hidden shadow-custom transition-all duration-400 ease-out border border-border-color hover:-translate-y-1.25 hover:shadow-[0_15px_30px_rgba(0,0,0,0.06)] group rounded-2xl" key={dest.id}>
-                <div className="relative h-[250px] overflow-hidden bg-border-color">
-                  <img src={dest.image} alt={dest.name} className="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105" />
-                  <button 
-                    className={`absolute top-3.75 right-3.75 bg-white/85 backdrop-blur-[8px] border-none w-9 h-9 rounded-full flex items-center justify-center text-[#121e1b] cursor-pointer transition-all duration-300 z-10 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-white hover:scale-110 ${
-                      wishlist[dest.id] ? "text-red-500" : ""
-                    }`}
-                    aria-label="Bookmark destination"
-                    onClick={(e) => toggleWishlist(dest.id, e)}
-                  >
-                    <Heart size={16} fill={wishlist[dest.id] ? "#EF4444" : "none"} stroke={wishlist[dest.id] ? "#EF4444" : "currentColor"} />
-                  </button>
-                </div>
-                <div className="p-5 md:px-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-2xl font-bold text-text-dark">{dest.name}</h3>
-                    <span className="text-sm font-semibold text-text-dark flex items-center gap-1">
-                      <Star size={14} fill="#C2A878" color="#C2A878" /> {dest.rating}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-[13.5px] text-text-gray">
-                    <span className="flex items-center gap-1.25 font-medium">
-                      <MapPin size={12} className="text-gold" /> {dest.location}
-                    </span>
-                    <span className="font-medium">
-                      from <span className="text-base font-bold text-text-dark">₹{dest.price}</span>/night
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {filteredDestinations.length === 0 && (
-              <div className="no-destinations-fallback" style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "40px 20px" }}>
-                <div style={{ position: "relative", width: "140px", height: "140px", marginBottom: "20px" }}>
+        {/* Destination Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {filteredDestinations.map((dest) => {
+            const isLiked = wishlist.includes(dest.id);
+            return (
+              <div key={dest.id} className="bg-bg-white rounded-[32px] overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.06)] border border-border-color transition-colors duration-300 group cursor-pointer">
+                
+                {/* Image Area */}
+                <div className="relative h-[320px] overflow-hidden">
                   <img 
-                    src={rivoSearching} 
-                    alt="Rivo searching stays" 
-                    style={{ width: "100%", height: "100%", borderRadius: "50%", border: "3px solid var(--border-color)", objectFit: "cover" }}
+                    src={dest.image} 
+                    alt={dest.name} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                   />
-                  <div style={{
-                    position: "absolute", bottom: 0, right: "5px", width: "36px", height: "36px",
-                    background: "#C2A878", color: "white", borderRadius: "50%", display: "flex",
-                    alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: "800",
-                    border: "3px solid var(--bg-white)", boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-                  }}>?</div>
+                  
+                  {/* Top Left Rating Badge */}
+                  <div className="absolute top-5 left-5 bg-primary/95 backdrop-blur-sm text-white p-2.5 rounded-xl shadow-lg border border-white/10 flex flex-col items-center justify-center">
+                    <div className="flex items-center gap-1 text-[14px] font-bold text-yellow-400 mb-0.5">
+                      <Star size={12} className="fill-current" /> {dest.rating}
+                    </div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider">{dest.reviews}</span>
+                  </div>
+
+                  {/* Top Right Heart */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(dest.id);
+                    }}
+                    className="absolute top-5 right-5 w-10 h-10 rounded-full bg-bg-white text-text-gray flex items-center justify-center shadow-md hover:text-red-500 transition-all border-none cursor-pointer focus:outline-none"
+                  >
+                    <Heart 
+                      size={20} 
+                      className={`transition-colors duration-300 ${
+                        isLiked ? "fill-red-500 text-red-500" : "text-text-gray"
+                      }`} 
+                    />
+                  </button>
+                  
+                  {/* Image pagination dots (simulated) */}
+                  <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-white"></div>
+                    <div className="w-2 h-2 rounded-full bg-white/50"></div>
+                    <div className="w-2 h-2 rounded-full bg-white/50"></div>
+                    <div className="w-2 h-2 rounded-full bg-white/50"></div>
+                  </div>
                 </div>
-                <p style={{ fontSize: "15px", color: "var(--text-gray)", fontWeight: "500", maxWidth: "400px", margin: "0 auto", textAlign: "center", lineHeight: "1.6" }}>
-                  No verified stays available for this category yet. Checking with Rivo...
-                </p>
+
+              {/* Content Area */}
+              <div className="p-6">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <h3 className="text-[22px] font-extrabold text-text-dark mb-1.5 font-serif transition-colors duration-300">{dest.name}</h3>
+                    <div className="flex items-center gap-1.5 text-text-gray font-medium text-[14px] transition-colors duration-300">
+                      <MapPin size={16} /> {dest.location}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-text-gray/80 text-[13px] font-medium block mb-1">from</span>
+                    <div className="text-[20px] font-extrabold text-text-dark transition-colors duration-300">
+                      ₹{dest.price}<span className="text-[14px] text-text-gray font-medium">/night</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+
+            </div>
+          );
+          })}
         </div>
 
       </div>

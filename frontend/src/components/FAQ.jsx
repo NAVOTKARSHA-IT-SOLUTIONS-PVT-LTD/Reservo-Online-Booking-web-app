@@ -41,7 +41,7 @@ function FAQ() {
   };
 
   return (
-    <section className="py-20 bg-bg-light transition-colors duration-300">
+    <section className="py-16 bg-bg-light transition-colors duration-300">
 
       <div className="w-[90%] max-w-[1300px] mx-auto">
 
@@ -49,37 +49,37 @@ function FAQ() {
           Help Center
         </span>
 
-        <h2 className="text-[28px] sm:text-[32px] md:text-[38px] xl:text-[46px] font-bold text-center text-primary mb-4.5">
+        <h2 className="text-[28px] sm:text-[32px] md:text-[38px] xl:text-[46px] font-bold text-center text-primary mb-5">
           Frequently Asked Questions
         </h2>
 
-        <p className="max-w-[720px] mx-auto mb-15 text-center text-text-gray text-base md:text-lg leading-relaxed">
+        <p className="max-w-[720px] mx-auto mb-10 text-center text-text-gray text-base md:text-lg leading-relaxed">
           Everything you need to know before booking your next luxury getaway.
         </p>
 
-        <div className="max-w-[800px] mx-auto mt-12.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 max-w-[1000px] mx-auto mt-10">
 
           {faqData.map((item, index) => {
             const isActive = activeIndex === index;
             return (
               <div
-                className={`bg-bg-white border border-border-color rounded-2xl mb-4.5 overflow-hidden shadow-custom transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.04)] ${
-                  isActive ? "border-l-4 border-l-gold" : ""
+                className={`bg-bg-white border border-border-color rounded-2xl overflow-hidden shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.04)] h-fit ${
+                  isActive ? "border-l-4 border-l-gold shadow-md" : ""
                 }`}
                 key={index}
               >
 
                 <div
-                  className="flex justify-between items-center px-7.5 py-5.5 md:px-5 md:py-4.5 cursor-pointer transition-colors duration-300 hover:bg-bg-light"
+                  className="flex justify-between items-center px-6 py-5 cursor-pointer transition-colors duration-300 hover:bg-bg-light gap-4"
                   onClick={() => toggleFAQ(index)}
                 >
 
-                  <h3 className="text-xl font-bold text-text-dark m-0 md:text-[17px]">{item.question}</h3>
+                  <h3 className="text-[15px] font-bold text-text-dark m-0 leading-snug">{item.question}</h3>
 
-                  <span className={`w-9 h-9 rounded-full flex justify-center items-center text-xl font-bold transition-all duration-300 ease-out ${
+                  <span className={`shrink-0 w-8 h-8 rounded-full flex justify-center items-center text-lg font-bold transition-all duration-300 ease-out ${
                     isActive 
                       ? "bg-gold text-white rotate-180" 
-                      : "bg-primary text-bg-white"
+                      : "bg-bg-light border border-border-color text-text-gray"
                   }`}>
                     {isActive ? "−" : "+"}
                   </span>
@@ -87,8 +87,8 @@ function FAQ() {
                 </div>
 
                 {isActive && (
-                  <div className="px-7.5 pb-5.5 md:px-5 md:pb-4.5 bg-bg-white">
-                    <p className="text-text-gray text-[14.5px] leading-relaxed m-0">{item.answer}</p>
+                  <div className="px-6 pb-5 bg-bg-white animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-text-gray text-[13.5px] leading-relaxed m-0">{item.answer}</p>
                   </div>
                 )}
 

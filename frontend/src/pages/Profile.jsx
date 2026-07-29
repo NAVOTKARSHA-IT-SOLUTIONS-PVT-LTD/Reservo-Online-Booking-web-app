@@ -11,22 +11,39 @@ function Profile() {
     points: "24,500 pts"
   });
 
-  const [bookingHistory] = useState([
-    {
-      id: 1,
-      property: "Azure Bay Resort, Bali",
-      dates: "Aug 12 - Aug 18, 2026",
-      status: "Confirmed",
-      amount: "$1,470"
-    },
-    {
-      id: 2,
-      property: "Himalaya Escape, Manali",
-      dates: "Dec 22 - Dec 28, 2025",
-      status: "Completed",
-      amount: "$1,134"
-    }
-  ]);
+  const [bookingHistory] = useState(() => {
+    let localBookings = [];
+    try {
+      localBookings = JSON.parse(localStorage.getItem("reservo-bookings") || "[]");
+    } catch(e) {}
+    
+    // Map local bookings to the UI format
+    const formattedLocal = localBookings.map(b => ({
+      id: b.id,
+      property: b.resortName,
+      dates: `${new Date(b.checkin).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${new Date(b.checkout).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+      status: b.status,
+      amount: `$${b.total}`
+    }));
+
+    return [
+      ...formattedLocal,
+      {
+        id: 1,
+        property: "Azure Bay Resort, Bali",
+        dates: "Aug 12 - Aug 18, 2026",
+        status: "Confirmed",
+        amount: "$1,470"
+      },
+      {
+        id: 2,
+        property: "Himalaya Escape, Manali",
+        dates: "Dec 22 - Dec 28, 2025",
+        status: "Completed",
+        amount: "$1,134"
+      }
+    ];
+  });
 
   const showGlobalToast = (msg) => {
     const toast = document.getElementById("toast");
