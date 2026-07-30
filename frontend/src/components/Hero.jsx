@@ -36,7 +36,7 @@ function Hero() {
 
   const handleSearchComplete = () => {
     setIsSearching(false);
-    navigate("/search-results", { state: { location, checkIn, checkOut, guests } });
+    navigate("/search", { state: { location, checkIn, checkOut, guests } });
   };
 
   const scrollToExplore = () => {

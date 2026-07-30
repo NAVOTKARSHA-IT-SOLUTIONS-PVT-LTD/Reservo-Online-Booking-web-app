@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -20,7 +20,10 @@ import NotFound from "./pages/NotFound";
 import Rewards from "./pages/Rewards";
 import { Careers, Terms, HelpCenter, Support } from "./pages/DummyPages";
 
-import SearchResults from "./pages/SearchResults";
+import ResortListing from "./components/ResortListing";
+import ResortDetails from "./components/ResortDetails";
+import { RESORTS } from "./data/resortsData";
+
 import Experiences from "./pages/Experiences";
 import Profile from "./pages/Profile";
 import Wishlist from "./pages/Wishlist";
@@ -41,7 +44,25 @@ function Home({ wishlist, toggleWishlist }) {
   );
 }
 
+// Wrapper for Resort Details page to extract route parameter
+function ResortDetailsPageWrapper({ isDark }) {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const resort = RESORTS.find((r) => r.id === id) || RESORTS[0];
+
+  return (
+    <ResortDetails
+      resort={resort}
+      isDarkMode={isDark}
+      onBack={() => navigate("/resorts")}
+    />
+  );
+}
+
 function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // Only show preloader once per browser session
   const [showPreloader, setShowPreloader] = useState(() => {
     return !sessionStorage.getItem("reservo_preloader_shown");
@@ -65,8 +86,6 @@ function App() {
     );
   };
 
-  const location = useLocation();
-
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -80,7 +99,8 @@ function App() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
-  const isSearchPage = location.pathname === "/search";
+
+  const isSearchPage = location.pathname === "/search" || location.pathname === "/search-results" || location.pathname === "/resorts";
   const isResortOrExperience = location.pathname.startsWith("/resort/") || location.pathname === "/experiences";
 
   useEffect(() => {
@@ -97,13 +117,19 @@ function App() {
     const modal = document.getElementById("booking-modal");
     if (modal) {
       modal.style.display = "none";
-      // Reset modal image back to default search mascot when closed
       const loaderImg = modal.querySelector(".ai-loader img");
       if (loaderImg) {
         loaderImg.src = rivoMascot;
       }
     }
   };
+
+  const renderResortListing = () => (
+    <ResortListing
+      isDarkMode={isDark}
+      onSelectResort={(resort) => navigate(`/resort/${resort.id}`)}
+    />
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -112,8 +138,7 @@ function App() {
         <Preloader onComplete={handlePreloaderComplete} />
       )}
 
-      {/* Custom reactive cursor */}
-      <CustomCursor />
+      {/* Default browser mouse pointer used (CustomCursor removed for smooth performance) */}
 
       {isMobile ? (
         <MobileUI isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist}>
@@ -125,7 +150,10 @@ function App() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/help" element={<HelpCenter />} />
             <Route path="/support" element={<Support />} />
-            <Route path="/search" element={<SearchResults />} />
+            <Route path="/search" element={renderResortListing()} />
+            <Route path="/search-results" element={renderResortListing()} />
+            <Route path="/resorts" element={renderResortListing()} />
+            <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} />} />
             <Route path="/experiences" element={<Experiences />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/wishlist" element={<Wishlist />} />
@@ -134,7 +162,7 @@ function App() {
         </MobileUI>
       ) : (
         <div className="flex flex-col flex-1">
-          {!isSearchPage && <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} />}
+          <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} />
 
           <main className="flex-1">
             <Routes>
@@ -145,7 +173,10 @@ function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/support" element={<Support />} />
-              <Route path="/search" element={<SearchResults />} />
+              <Route path="/search" element={renderResortListing()} />
+              <Route path="/search-results" element={renderResortListing()} />
+              <Route path="/resorts" element={renderResortListing()} />
+              <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} />} />
               <Route path="/experiences" element={<Experiences />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/wishlist" element={<Wishlist />} />
@@ -157,7 +188,7 @@ function App() {
           <Mascot />
 
           {/* Footer */}
-          {!isSearchPage && !isResortOrExperience && <Footer />}
+          <Footer />
         </div>
       )}
 
