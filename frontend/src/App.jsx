@@ -16,6 +16,7 @@ import FAQ from "./components/FAQ";
 import MascotShowcase from "./components/MascotShowcase";
 
 import About from "./pages/About";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Rewards from "./pages/Rewards";
 import { Careers, Terms, HelpCenter, Support } from "./pages/DummyPages";
@@ -48,13 +49,31 @@ function Home({ wishlist, toggleWishlist }) {
 function ResortDetailsPageWrapper({ isDark }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const resort = RESORTS.find((r) => r.id === id) || RESORTS[0];
+
+  const idMap = {
+    "1": "goa-coastline",
+    "2": "kerala-backwaters",
+    "3": "himalayan-chalet",
+    "4": "himalayan-chalet",
+    "5": "himalayan-chalet",
+    "6": "udaipur-palace",
+    "7": "udaipur-palace",
+    "8": "himalayan-chalet",
+    "9": "himalayan-chalet",
+    "10": "maldives-overwater",
+    "11": "goa-coastline",
+    "12": "himalayan-chalet",
+    "13": "udaipur-palace"
+  };
+
+  const mappedId = idMap[id] || id;
+  const resort = RESORTS.find((r) => r.id === mappedId) || RESORTS[0];
 
   return (
     <ResortDetails
       resort={resort}
       isDarkMode={isDark}
-      onBack={() => navigate("/resorts")}
+      onBack={() => navigate("/")}
     />
   );
 }
@@ -113,6 +132,37 @@ function App() {
     }
   }, [isDark]);
 
+  useEffect(() => {
+    if ((location.pathname === "/resorts" || location.pathname === "/search" || location.pathname === "/search-results") && location.state?.checkAvailabilityFor) {
+      const resortId = location.state.checkAvailabilityFor;
+      const resort = RESORTS.find((r) => r.id === resortId) || RESORTS[0];
+      if (resort) {
+        setTimeout(() => {
+          const modal = document.getElementById("booking-modal");
+          if (modal) {
+            modal.setAttribute("aria-hidden", "false");
+            modal.style.display = "flex";
+            
+            const btn = document.getElementById("close-modal-btn");
+            if (btn) btn.style.display = "none";
+            
+            const titleEl = modal.querySelector(".modal-title");
+            const descEl = modal.querySelector(".modal-desc");
+            if (titleEl) titleEl.innerText = "Checking Availability...";
+            if (descEl) descEl.innerText = `Rivo is search-matching live luxury inventories for ${resort.name}...`;
+
+            setTimeout(() => {
+              if (titleEl) titleEl.innerText = "Resort Available!";
+              if (descEl) descEl.innerText = `Great choice! We have secured special rates for ${resort.name}. Complete your check-out process.`;
+              if (btn) btn.style.display = "block";
+            }, 3000);
+          }
+        }, 200);
+      }
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
   const closeModal = () => {
     const modal = document.getElementById("booking-modal");
     if (modal) {
@@ -145,6 +195,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home wishlist={wishlist} toggleWishlist={toggleWishlist} />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/rewards" element={<Rewards />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/terms" element={<Terms />} />
@@ -164,10 +215,11 @@ function App() {
         <div className="flex flex-col flex-1">
           <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} />
 
-          <main className="flex-1">
+          <main className={`flex-1 ${location.pathname === "/" ? "" : "pt-28"}`}>
             <Routes>
               <Route path="/" element={<Home wishlist={wishlist} toggleWishlist={toggleWishlist} />} />
               <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/rewards" element={<Rewards />} />
               <Route path="/careers" element={<Careers />} />
               <Route path="/terms" element={<Terms />} />
@@ -185,7 +237,7 @@ function App() {
           </main>
 
           {/* Floating Mascot Widget */}
-          <Mascot />
+          <Mascot isDark={isDark} setIsDark={setIsDark} />
 
           {/* Footer */}
           <Footer />

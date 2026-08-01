@@ -19,7 +19,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [selectedPerks, setSelectedPerks] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const [activeRivoTab, setActiveRivoTab] = useState('welcome');
+
 
   const toggleFavorite = (id, e) => {
     e.stopPropagation();
@@ -481,104 +481,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
           </div>
         </section>
 
-        {/* Interactive AI Assistant Showcase */}
-        <section className={`rounded-3xl p-8 sm:p-12 shadow-xl border ${
-          isDarkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-        }`}>
-          <div className="text-center max-w-2xl mx-auto space-y-2 mb-10">
-            <div className={`text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-[#93C5FD]' : 'text-[#2563EB]'}`}>
-              MEET RIVO
-            </div>
-            <h2 className={`text-3xl font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
-              Your Luxury Travel Buddy
-            </h2>
-            <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-              Rivo is here to make your travel planning easy, smart, and tranquil. Click the interactive tabs to see Rivo in action!
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div className="space-y-3">
-              {[
-                { id: 'welcome', num: '1.', title: 'Welcome & Instant Greetings', desc: 'Rivo greets you to RESERVO with tailored stays and seamless check-in support.' },
-                { id: 'search', num: '2.', title: 'Smart Search & Category Filter', desc: 'Find villas with infinity pools, oceanfront suites, or spa retreats instantly.' },
-                { id: 'book', num: '3.', title: 'Book Suite & Add-on Services', desc: 'Reserve rooms, helicopter transfers, and private beach dining with one click.' },
-                { id: 'map', num: '4.', title: 'Interactive Resort Map Escort', desc: 'Rivo guides you visually around the resort grounds, pools, spa, and dining.' }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveRivoTab(tab.id)}
-                  className={`w-full text-left p-4 rounded-2xl transition flex items-center justify-between border ${
-                    activeRivoTab === tab.id
-                      ? 'bg-[#2563EB] text-white border-[#60A5FA] shadow-lg'
-                      : isDarkMode
-                        ? 'bg-[#111827] text-[#CBD5E1] hover:bg-[#334155] border-[#334155]'
-                        : 'bg-[#F8FAFC] text-[#475569] hover:bg-[#DBEAFE] border-[#E2E8F0]'
-                  }`}
-                >
-                  <div>
-                    <span className="text-xs font-bold text-sky-300 mr-2">{tab.num}</span>
-                    <span className="text-sm font-bold">{tab.title}</span>
-                  </div>
-                  <ChevronRight className={`w-4 h-4 transition ${activeRivoTab === tab.id ? 'text-white transform rotate-90' : 'text-stone-400'}`} />
-                </button>
-              ))}
-            </div>
-
-            <div className={`rounded-3xl p-8 border text-center flex flex-col items-center justify-center space-y-4 min-h-[320px] ${
-              isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'
-            }`}>
-              <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#2563EB] to-[#60A5FA] p-1 shadow-xl">
-                <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-4xl">
-                  🐻‍❄️
-                </div>
-              </div>
-
-              {activeRivoTab === 'welcome' && (
-                <div className="space-y-2 animate-fade-in">
-                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>Rivo welcomes you!</h3>
-                  <p className={`text-xs max-w-sm ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-                    "Rivo greets you to RESERVO with a warm polar wave and makes you feel right at home at any premium resort."
-                  </p>
-                </div>
-              )}
-
-              {activeRivoTab === 'search' && (
-                <div className="space-y-2 animate-fade-in">
-                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>Instant AI Search</h3>
-                  <p className={`text-xs max-w-sm ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-                    "Tell Rivo your vibe — honeymoon, wellness, or beach — and Rivo matches you with verified stays."
-                  </p>
-                </div>
-              )}
-
-              {activeRivoTab === 'book' && (
-                <div className="space-y-2 animate-fade-in">
-                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>Instant Suite Booking</h3>
-                  <p className={`text-xs max-w-sm ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-                    "Rivo simplifies checkout, adds customized luxury perks, and generates your digital access pass."
-                  </p>
-                </div>
-              )}
-
-              {activeRivoTab === 'map' && (
-                <div className="space-y-2 animate-fade-in">
-                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>Guided Resort Tour</h3>
-                  <p className={`text-xs max-w-sm ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-                    "Rivo navigates the resort map, showing you walking times to pools, restaurants, and spa treatments."
-                  </p>
-                </div>
-              )}
-
-              <button
-                onClick={onAskRivo}
-                className="mt-4 px-6 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-full shadow-lg transition"
-              >
-                Talk with Rivo Now
-              </button>
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );

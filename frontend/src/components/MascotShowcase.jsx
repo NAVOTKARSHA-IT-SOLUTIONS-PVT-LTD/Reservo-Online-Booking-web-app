@@ -30,7 +30,7 @@ const SHOWCASE_TABS = [
     label: "3. Book Suite",
     image: rivoConfirmed,
     heading: "Instant Secure Payments",
-    desc: "Rivo makes booking fast, secure, and hassle-free, delivering your confirmation details and digital keys instantly.",
+    desc: "Rivo makes booking fast, secure, and hassle-free, delivering your confirmation details instantly.",
     badge: "Verified Booking"
   },
   {
@@ -46,7 +46,7 @@ const SHOWCASE_TABS = [
     label: "5. Live Support",
     image: rivoSupport,
     heading: "24/7 Concierge Service",
-    desc: "Rivo is wearing a headset and stays connected around the clock to support booking adjustments, dining reservations, or local guides.",
+    desc: "Rivo is wearing a headset and stays connected around the clock to support booking adjustments.",
     badge: "Active Care"
   }
 ];
@@ -57,43 +57,43 @@ function MascotShowcase() {
   const activeTab = SHOWCASE_TABS.find(tab => tab.id === activeTabId) || SHOWCASE_TABS[0];
 
   return (
-    <section className="py-16 bg-bg-light transition-colors duration-300 overflow-hidden" id="mascot-showcase">
+    <section className="py-12 bg-bg-light transition-colors duration-300 overflow-hidden" id="mascot-showcase">
       <div className="w-[90%] max-w-[1300px] mx-auto">
         
         {/* Section Header */}
-        <div className="text-center mb-10">
-          <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-3">MEET RIVO</span>
-          <h2 className="text-[28px] sm:text-[32px] md:text-[38px] xl:text-[46px] font-bold text-center text-primary mb-4">Your AI Travel Companion</h2>
-          <p className="max-w-[720px] mx-auto mb-10 text-center text-text-gray text-base md:text-lg leading-relaxed">
+        <div className="text-center mb-6">
+          <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-2">MEET RIVO</span>
+          <h2 className="text-[24px] sm:text-[28px] md:text-[34px] font-bold text-center text-primary mb-2">Your AI Travel Companion</h2>
+          <p className="max-w-[720px] mx-auto mb-4 text-center text-text-gray text-[14px] leading-relaxed">
             Rivo is your personal travel concierge, powered by AI to seamlessly curate and manage every aspect of your trip.
           </p>
         </div>
 
         {/* Split Screen Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6 items-center">
           
           {/* Left Column: Mascot profile details */}
           <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-            <h3 className="text-[32px] text-text-dark font-extrabold mb-3.5 leading-tight">Always at your service</h3>
-            <p className="text-[15px] leading-relaxed text-text-gray mb-8 max-w-[520px] mx-auto lg:mx-0">
+            <h3 className="text-[24px] text-text-dark font-extrabold mb-2 leading-tight">Always at your service</h3>
+            <p className="text-[13.5px] leading-relaxed text-text-gray mb-4 max-w-[520px] mx-auto lg:mx-0">
               From crafting bespoke itineraries to live key handovers, Rivo takes the friction out of luxury hospitality.
             </p>
 
             {/* Vertical Tab Selectors */}
-            <div className="flex flex-col gap-3 w-full max-w-[440px] mx-auto lg:mx-0">
+            <div className="flex flex-col gap-2 w-full max-w-[440px] mx-auto lg:mx-0">
               {SHOWCASE_TABS.map(tab => {
                 const isActive = activeTabId === tab.id;
                 return (
                   <button
                     key={tab.id}
-                    className={`flex justify-between items-center px-6 py-4 rounded-2xl cursor-pointer transition-all duration-300 ease-out text-left shadow-custom border hover:border-gold hover:translate-x-1 group ${
+                    className={`flex justify-between items-center px-5 py-2.5 rounded-2xl cursor-pointer transition-all duration-300 ease-out text-left shadow-custom border hover:border-gold hover:translate-x-1 group ${
                       isActive 
                         ? "bg-primary border-primary" 
                         : "bg-bg-white border-border-color"
                     }`}
                     onClick={() => setActiveTabId(tab.id)}
                   >
-                    <span className={`text-[15px] font-semibold transition-colors duration-300 ${
+                    <span className={`text-[13.5px] font-semibold transition-colors duration-300 ${
                       isActive ? "text-bg-white" : "text-text-dark"
                     }`}>{tab.label}</span>
                     <ArrowRight size={14} className={`transition-all duration-300 ease-out ${
@@ -109,14 +109,14 @@ function MascotShowcase() {
 
           {/* Right Column: Display Area with active Mascot image */}
           <div className="flex justify-center w-full">
-            <div className="bg-bg-white border border-border-color rounded-[28px] p-10 w-full max-w-[440px] shadow-custom relative flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-bg-white border border-border-color rounded-[24px] p-6 w-full max-w-[400px] shadow-custom relative flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1">
               {/* Highlight Badge */}
-              <span className="absolute top-6 left-6 bg-gold text-white px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center shadow-[0_4px_10px_rgba(197,160,89,0.2)]">
-                <Sparkles size={12} className="mr-1" /> {activeTab.badge}
+              <span className="absolute top-4 left-4 bg-gold text-white px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center shadow-[0_4px_10px_rgba(197,160,89,0.2)]">
+                <Sparkles size={10} className="mr-1" /> {activeTab.badge}
               </span>
 
               {/* Image Frame */}
-              <div className="w-[220px] h-[220px] rounded-full overflow-hidden border-4 border-border-color mt-5 mb-8 shadow-custom bg-bg-light">
+              <div className="w-[150px] h-[150px] rounded-full overflow-hidden border-4 border-border-color mt-4 mb-6 shadow-custom bg-bg-light">
                 <img 
                   src={activeTab.image} 
                   alt={`Rivo ${activeTabId}`}
@@ -126,8 +126,8 @@ function MascotShowcase() {
 
               {/* Caption details */}
               <div className="display-caption">
-                <h4 className="text-2xl font-extrabold text-text-dark mb-2.5">{activeTab.heading}</h4>
-                <p className="text-sm text-text-gray leading-relaxed m-0">{activeTab.desc}</p>
+                <h4 className="text-xl font-extrabold text-text-dark mb-1.5">{activeTab.heading}</h4>
+                <p className="text-[13px] text-text-gray leading-relaxed m-0">{activeTab.desc}</p>
               </div>
             </div>
           </div>

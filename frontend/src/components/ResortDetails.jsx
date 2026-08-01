@@ -1,283 +1,241 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Star, Heart, MapPin, CheckCircle2, Waves, Sparkles, Utensils, Bot, Wifi, Wine, Navigation, Compass, ShieldCheck } from 'lucide-react';
-import ResortNavigationMap from './ResortNavigationMap';
-import BookingModal from './BookingModal';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check } from "lucide-react";
 
-export default function ResortDetails({ resort, isDarkMode, onBack, onAskRivo }) {
-  const [selectedImage, setSelectedImage] = useState(resort.heroImage);
-  const [selectedRoom, setSelectedRoom] = useState(resort.roomTypes[0] || null);
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
+export default function ResortDetails({ resort, isDarkMode, onBack }) {
+  const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = useState(false);
+  const [checkIn, setCheckIn] = useState("2026-05-12");
+  const [checkOut, setCheckOut] = useState("2026-05-15");
+  const [guests, setGuests] = useState("2 Guests, 1 Room");
 
-  const getAmenityIcon = (iconName) => {
-    switch (iconName) {
-      case 'Waves': return <Waves className="w-4 h-4 text-[#2563EB]" />;
-      case 'Sparkles': return <Sparkles className="w-4 h-4 text-[#2563EB]" />;
-      case 'Utensils': return <Utensils className="w-4 h-4 text-[#2563EB]" />;
-      case 'Bot': return <Bot className="w-4 h-4 text-[#2563EB]" />;
-      case 'Wifi': return <Wifi className="w-4 h-4 text-[#2563EB]" />;
-      case 'Wine': return <Wine className="w-4 h-4 text-[#2563EB]" />;
-      case 'Navigation': return <Navigation className="w-4 h-4 text-[#2563EB]" />;
-      default: return <Compass className="w-4 h-4 text-[#2563EB]" />;
-    }
+  // Format price
+  const formattedPrice = resort.price ? resort.price.toLocaleString() : "8,000";
+
+  const handleCheckAvailability = () => {
+    // Navigate to listing page and trigger booking modal
+    navigate("/resorts", { state: { checkAvailabilityFor: resort.id } });
+  };
+
+  const handleExploreMore = () => {
+    navigate("/resorts");
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans space-y-12">
-      {/* Top Controls */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold shadow border transition ${
-            isDarkMode
-              ? 'bg-[#1E293B] text-[#93C5FD] border-[#334155] hover:bg-[#334155]'
-              : 'bg-white text-[#2563EB] border-[#E2E8F0] hover:bg-[#DBEAFE]'
-          }`}
-        >
-          <ArrowLeft className="w-4 h-4 text-[#2563EB]" /> Back to All Resorts
-        </button>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsFavorited(!isFavorited)}
-            className={`w-10 h-10 rounded-full flex items-center justify-center shadow border transition ${
-              isDarkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-            } ${isFavorited ? 'text-rose-500' : 'text-stone-400'}`}
+    <div className="w-full max-w-[1280px] mx-auto px-5 py-8 font-sans transition-colors duration-300">
+      
+      {/* 2-Column Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* Left Column (Hero Card + Gallery) */}
+        <div className="lg:col-span-8 space-y-6">
+          
+          {/* Main Hero Card */}
+          <div 
+            className="relative rounded-[32px] overflow-hidden min-h-[480px] flex flex-col justify-between p-6 sm:p-8 bg-cover bg-center shadow-lg border border-border-color transition-all duration-500"
+            style={{ backgroundImage: `url(${resort.heroImage})` }}
           >
-            <Heart className={`w-4 h-4 ${isFavorited ? 'fill-rose-500' : ''}`} />
-          </button>
-          <button
-            onClick={onAskRivo}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-full shadow transition"
-          >
-            <Sparkles className="w-3.5 h-3.5" /> Ask Rivo About Stay
-          </button>
-        </div>
-      </div>
+            {/* Dark Overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20 z-0"></div>
 
-      {/* Header Specs */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="px-3 py-1 bg-[#2563EB] text-white text-[10px] font-bold uppercase tracking-wider rounded-full">
-            {resort.categoryLabel}
-          </span>
-          <span className="px-3 py-1 bg-emerald-500/10 text-[#22C55E] border border-[#22C55E]/30 text-[10px] font-bold uppercase tracking-wider rounded-full flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> 100% Hand-Verified Luxury
-          </span>
-        </div>
+            {/* Top Bar (Back & Action Buttons) */}
+            <div className="relative z-10 flex justify-between items-center w-full">
+              {/* Back Button */}
+              <button 
+                onClick={onBack}
+                className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/20 text-white rounded-full text-xs font-bold hover:bg-black/60 transition cursor-pointer"
+              >
+                <ArrowLeft size={14} /> Back to results
+              </button>
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className={`text-3xl sm:text-5xl font-bold tracking-tight ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
-              {resort.name}
-            </h1>
-            <div className={`flex items-center gap-4 text-xs mt-2 ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-              <span className="flex items-center gap-1 font-medium">
-                <MapPin className="w-4 h-4 text-[#2563EB]" /> {resort.location}
-              </span>
-              <span>•</span>
-              <span className={`flex items-center gap-1 font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> {resort.rating} ({resort.reviewsCount} verified reviews)
-              </span>
-            </div>
-          </div>
-
-          <div className="text-left md:text-right">
-            <div className="text-xs text-stone-400 font-semibold uppercase">Starting Rate</div>
-            <div className={`text-3xl font-bold ${isDarkMode ? 'text-[#93C5FD]' : 'text-[#2563EB]'}`}>
-              {resort.currency}{resort.price.toLocaleString()} <span className={`text-xs font-normal ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>/ night</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Gallery Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Main Cover */}
-        <div className="lg:col-span-2 relative h-[380px] sm:h-[480px] rounded-3xl overflow-hidden shadow-xl group border border-stone-200">
-          <img
-            src={selectedImage}
-            alt={resort.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0B1120]/50 to-transparent"></div>
-          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold text-[#0F172A] shadow">
-            📸 High-Res Photo Gallery Preview
-          </div>
-        </div>
-
-        {/* Thumbnails */}
-        <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
-          {resort.gallery.slice(1, 4).map((img, idx) => (
-            <div
-              key={idx}
-              onClick={() => setSelectedImage(img)}
-              className={`relative h-28 lg:h-36 rounded-2xl overflow-hidden shadow cursor-pointer border-2 transition ${
-                selectedImage === img ? 'border-[#2563EB] scale-[0.98]' : 'border-transparent hover:opacity-90'
-              }`}
-            >
-              <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Quick Specs */}
-      <div className={`rounded-2xl p-6 shadow-md border grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center ${
-        isDarkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-      }`}>
-        <div>
-          <div className="text-[10px] font-bold text-stone-400 uppercase">CAPACITY</div>
-          <div className={`text-sm font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>{resort.specs.guests}</div>
-        </div>
-        <div>
-          <div className="text-[10px] font-bold text-stone-400 uppercase">BEDROOMS</div>
-          <div className={`text-sm font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>{resort.specs.bedrooms}</div>
-        </div>
-        <div>
-          <div className="text-[10px] font-bold text-stone-400 uppercase">BATHROOMS</div>
-          <div className={`text-sm font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>{resort.specs.bathrooms}</div>
-        </div>
-        <div>
-          <div className="text-[10px] font-bold text-stone-400 uppercase">SUITE SIZE</div>
-          <div className={`text-sm font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>{resort.specs.area}</div>
-        </div>
-        <div>
-          <div className="text-[10px] font-bold text-stone-400 uppercase">CHECK IN</div>
-          <div className={`text-sm font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>{resort.specs.checkIn}</div>
-        </div>
-        <div>
-          <div className="text-[10px] font-bold text-stone-400 uppercase">CHECK OUT</div>
-          <div className={`text-sm font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>{resort.specs.checkOut}</div>
-        </div>
-      </div>
-
-      {/* Overview & Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
-          <div className={`rounded-3xl p-8 shadow-md border space-y-4 ${
-            isDarkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-          }`}>
-            <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>Resort Overview</h2>
-            <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-              {resort.description}
-            </p>
-
-            <div className={`pt-4 border-t ${isDarkMode ? 'border-[#334155]' : 'border-[#E2E8F0]'}`}>
-              <h3 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDarkMode ? 'text-[#93C5FD]' : 'text-[#2563EB]'}`}>
-                Key Highlights
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {resort.highlights.map((h, i) => (
-                  <div key={i} className={`flex items-center gap-2 text-xs font-medium ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
-                    <CheckCircle2 className="w-4 h-4 text-[#22C55E] flex-shrink-0" />
-                    <span>{h}</span>
-                  </div>
-                ))}
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setIsFavorited(!isFavorited)}
+                  className="w-10 h-10 rounded-full bg-white/95 text-stone-400 flex items-center justify-center shadow-md hover:text-red-500 transition cursor-pointer border-none"
+                >
+                  <Heart size={18} className={isFavorited ? "fill-red-500 text-red-500" : ""} />
+                </button>
+                <button className="flex items-center gap-1.5 px-4 py-2 bg-white/95 text-text-dark rounded-full text-xs font-bold shadow-md hover:bg-white transition cursor-pointer border-none">
+                  <Share size={14} /> Share
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* Amenities */}
-          <div className={`rounded-3xl p-8 shadow-md border space-y-4 ${
-            isDarkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-          }`}>
-            <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>Luxury Amenities</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-              {resort.amenities.map((item, idx) => (
-                <div key={idx} className={`p-4 rounded-2xl border text-center space-y-2 hover:border-[#2563EB] transition ${
-                  isDarkMode ? 'bg-[#111827] border-[#334155] text-[#F8FAFC]' : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A]'
-                }`}>
-                  <div className="w-10 h-10 rounded-full bg-[#DBEAFE] flex items-center justify-center mx-auto shadow-sm">
-                    {getAmenityIcon(item.icon)}
-                  </div>
-                  <div className="text-xs font-bold">{item.name}</div>
+            {/* Bottom Info Specs */}
+            <div className="relative z-10 space-y-4 text-white mt-auto">
+              
+              {/* Rating area */}
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/95 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-xl flex items-center gap-1 font-bold text-sm shadow-md border border-white/10">
+                  <Star size={14} className="fill-yellow-400 text-yellow-400" /> {resort.rating || "4.9"}
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold">Excellent</span>
+                  <span className="text-[10px] text-white/80">{resort.reviewsCount || "128"} reviews</span>
+                </div>
+              </div>
 
-        {/* Sidebar */}
-        <div className={`rounded-3xl p-6 shadow-xl border flex flex-col justify-between space-y-6 h-fit sticky top-6 ${
-          isDarkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-        }`}>
-          <div>
-            <div className={`flex items-center justify-between border-b pb-4 ${isDarkMode ? 'border-[#334155]' : 'border-[#E2E8F0]'}`}>
-              <div>
-                <span className={`text-[10px] font-bold uppercase ${isDarkMode ? 'text-[#93C5FD]' : 'text-[#2563EB]'}`}>
-                  DIRECT BOOKING
+              {/* Title */}
+              <h1 className="text-3xl sm:text-5xl font-extrabold font-serif tracking-tight text-white leading-tight">
+                {resort.name}
+              </h1>
+
+              {/* Location & Tag */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex items-center gap-1 text-xs font-medium text-white/90">
+                  <MapPin size={14} className="text-primary" /> {resort.location}
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/20 backdrop-blur-md text-white border border-primary/30 px-3 py-1 rounded-full">
+                  {resort.categoryLabel || "Beachfront Resort"}
                 </span>
-                <div className={`text-2xl font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
-                  {resort.currency}{selectedRoom ? selectedRoom.price.toLocaleString() : resort.price.toLocaleString()}
-                  <span className={`text-xs font-normal ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}> / night</span>
-                </div>
               </div>
-              <span className="px-2.5 py-1 bg-amber-50 text-amber-800 rounded-full text-xs font-bold border border-amber-200">
-                ⭐ {resort.rating}
-              </span>
+
+              {/* Description */}
+              <p className="text-white/85 text-xs sm:text-sm leading-relaxed max-w-[620px]">
+                {resort.description || "Experience the perfect blend of luxury and nature. Relax by the beach, indulge in world-class amenities, and create unforgettable memories."}
+              </p>
+
+              {/* Amenities horizontal list */}
+              <div className="flex flex-wrap items-center gap-y-3 gap-x-5 pt-2 border-t border-white/10 text-white/90">
+                <div className="flex items-center gap-1.5 text-xs font-medium">
+                  <Waves size={14} className="text-primary" /> Beachfront
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-medium">
+                  <Waves size={14} className="text-primary" /> Pool
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-medium">
+                  <Sparkles size={14} className="text-primary" /> Spa
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-medium">
+                  <Wifi size={14} className="text-primary" /> Free Wi-Fi
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-medium">
+                  <Utensils size={14} className="text-primary" /> Restaurant
+                </div>
+                <span className="text-[10px] font-bold bg-white/10 border border-white/20 px-2 py-0.5 rounded-full">
+                  +12 more
+                </span>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Gallery Thumbnails row */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3.5">
+            {/* View Video */}
+            <div className="relative rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group">
+              <img src={resort.heroImage} alt="Video preview" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 text-white z-10">
+                <Play size={16} className="fill-current" />
+                <span className="text-[9px] font-bold uppercase tracking-wider">View Video</span>
+              </div>
             </div>
 
-            {/* Room selection */}
-            <div className="mt-5 space-y-3">
-              <label className="text-xs font-bold uppercase tracking-wider text-stone-400">Select Suite Category</label>
-              <div className="space-y-2">
-                {resort.roomTypes.map(room => (
-                  <div
-                    key={room.id}
-                    onClick={() => setSelectedRoom(room)}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition ${
-                      selectedRoom?.id === room.id
-                        ? 'bg-[#2563EB] text-white border-[#60A5FA] shadow-md'
-                        : isDarkMode
-                          ? 'bg-[#111827] text-[#CBD5E1] border-[#334155] hover:bg-[#334155]'
-                          : 'bg-[#F8FAFC] text-[#0F172A] border-[#E2E8F0] hover:bg-[#DBEAFE]'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center text-xs font-bold">
-                      <span>{room.title}</span>
-                      <span className={selectedRoom?.id === room.id ? 'text-white' : 'text-[#2563EB]'}>
-                        {resort.currency}{room.price.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+            {/* Gallery images */}
+            {resort.gallery && resort.gallery.slice(1, 5).map((imgUrl, i) => (
+              <div key={i} className="rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group">
+                <img src={imgUrl} alt={`Gallery thumbnail ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+              </div>
+            ))}
+
+            {/* View Photos Overlay */}
+            <div className="relative rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group">
+              <img src={resort.gallery ? resort.gallery[0] : resort.heroImage} alt="Photos preview" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white z-10">
+                <span className="text-sm font-extrabold">+24</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider">Photos</span>
               </div>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsBookingOpen(true)}
-            className="w-full py-4 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider rounded-2xl shadow-xl transition transform hover:scale-[1.02]"
-          >
-            Reserve {selectedRoom ? selectedRoom.title : 'Suite'} Now
-          </button>
         </div>
+
+        {/* Right Column (Sticky Booking Card) */}
+        <div className="lg:col-span-4 sticky top-6">
+          <div className="bg-bg-white border border-border-color rounded-[32px] p-6 shadow-[0_15px_45px_rgba(0,0,0,0.05)] space-y-5 transition-colors duration-300">
+            
+            {/* Rates Header */}
+            <div>
+              <span className="text-xs text-text-gray/80 font-medium block">from</span>
+              <div className="text-[28px] font-extrabold text-text-dark transition-colors duration-300">
+                {resort.currency || "₹"}{formattedPrice} <span className="text-sm text-text-gray font-semibold">/night</span>
+              </div>
+              <span className="text-xs text-text-gray/70 block mt-0.5">Inclusive of taxes</span>
+            </div>
+
+            {/* Date Pickers */}
+            <div className="grid grid-cols-2 gap-3.5">
+              
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Check-in</label>
+                <div className="relative">
+                  <input 
+                    type="date" 
+                    value={checkIn}
+                    onChange={(e) => setCheckIn(e.target.value)}
+                    className="w-full border border-border-color rounded-xl px-3 py-2.5 text-xs font-semibold bg-bg-light text-text-dark focus:border-primary outline-none transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Check-out</label>
+                <div className="relative">
+                  <input 
+                    type="date" 
+                    value={checkOut}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                    className="w-full border border-border-color rounded-xl px-3 py-2.5 text-xs font-semibold bg-bg-light text-text-dark focus:border-primary outline-none transition-colors"
+                  />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Guests Selector */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Guests & Rooms</label>
+              <select 
+                value={guests}
+                onChange={(e) => setGuests(e.target.value)}
+                className="w-full border border-border-color rounded-xl px-3 py-2.5 text-xs font-semibold bg-bg-light text-text-dark focus:border-primary outline-none transition-colors appearance-none cursor-pointer"
+              >
+                <option value="1 Guest, 1 Room">1 Guest, 1 Room</option>
+                <option value="2 Guests, 1 Room">2 Guests, 1 Room</option>
+                <option value="3 Guests, 2 Rooms">3 Guests, 2 Rooms</option>
+                <option value="4 Guests, 2 Rooms">4 Guests, 2 Rooms</option>
+              </select>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3 pt-2">
+              <button 
+                onClick={handleCheckAvailability}
+                className="w-full py-3.5 bg-primary hover:bg-primary-dark text-white text-xs font-extrabold uppercase tracking-wider rounded-2xl shadow-[0_5px_15px_rgba(13,71,161,0.2)] hover:shadow-[0_8px_20px_rgba(13,71,161,0.3)] transition-all cursor-pointer border-none"
+              >
+                Check Availability
+              </button>
+
+              <button 
+                onClick={handleExploreMore}
+                className="w-full py-3.5 bg-transparent hover:bg-primary/5 text-primary border border-primary/20 rounded-2xl text-xs font-extrabold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                Explore More &rarr;
+              </button>
+            </div>
+
+            {/* Footer badge */}
+            <div className="flex items-center justify-center gap-1.5 text-xs text-text-gray font-semibold pt-1 border-t border-border-color">
+              <Check size={14} className="text-primary bg-primary/10 rounded-full p-0.5" />
+              <span>Free cancellation up to 24 hours</span>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
-      {/* Interactive Resort Navigation Map */}
-      <section className="pt-4">
-        <ResortNavigationMap
-          mapPoints={resort.mapPoints}
-          resortName={resort.name}
-          isDarkMode={isDarkMode}
-          onSelectSpot={() => {
-            if (onAskRivo) onAskRivo();
-          }}
-        />
-      </section>
-
-      {/* Booking Modal */}
-      {isBookingOpen && (
-        <BookingModal
-          resort={resort}
-          room={selectedRoom}
-          isDarkMode={isDarkMode}
-          onClose={() => setIsBookingOpen(false)}
-          onAskRivo={onAskRivo}
-        />
-      )}
     </div>
   );
 }

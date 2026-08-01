@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { User, Mail, Phone, Globe, Shield, CreditCard, LogOut, CheckCircle2 } from "lucide-react";
+import rivoSupport from "../assets/images/rivo_support.png";
 
 function Profile() {
   const [profile, setProfile] = useState({
@@ -98,6 +99,16 @@ function Profile() {
               <LogOut size={16} /> Sign Out
             </button>
           </nav>
+
+          {/* Rivo Travel Buddy Card */}
+          <div className="bg-[#1E293B] text-white p-5 rounded-2xl mt-7.5 border border-[#334155] text-left relative overflow-hidden flex items-center gap-4">
+            <div className="flex-1 z-10">
+              <span className="text-[9px] bg-gold text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Travel Buddy</span>
+              <h4 className="text-base font-bold mt-2 mb-1">Rivo is here!</h4>
+              <p className="text-[11px] text-[#94A3B8] leading-relaxed">Need help checking in or customizing your room temperature? Open my chat at the bottom right!</p>
+            </div>
+            <img src={rivoSupport} alt="Rivo Mascot" className="w-16 h-16 rounded-full object-cover border-2 border-gold shadow-md shrink-0" />
+          </div>
         </aside>
 
         {/* Right column details */}

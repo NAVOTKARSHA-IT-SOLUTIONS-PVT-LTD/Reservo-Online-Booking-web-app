@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Trash2, Calendar, MapPin } from "lucide-react";
-import rivoSearching from "../assets/images/rivo_searching.png";
+import rivoMascot from "../assets/images/rivo_mascot.jpg";
 
 function Wishlist() {
   const [wishlist, setWishlist] = useState([]);
@@ -106,15 +106,22 @@ function Wishlist() {
           <div className="text-center py-15 px-5 flex flex-col items-center text-text-gray">
             <div className="relative w-40 h-40 mb-6.25">
               <img 
-                src={rivoSearching} 
-                alt="Rivo searching empty wishlist" 
-                className="w-full h-full rounded-full border-3 border-border-color object-cover shadow-[0_10px_30px_rgba(0,0,0,0.05)]"
+                src={rivoMascot} 
+                alt="Rivo Mascot" 
+                className="w-full h-full rounded-full border-3 border-border-color object-cover shadow-[0_10px_30px_rgba(0,0,0,0.05)] animate-bounce-rivo"
               />
-              <div className="absolute bottom-0 right-1.25 w-11 h-11 bg-gold text-white rounded-full flex items-center justify-center text-[22px] font-extrabold border-3 border-bg-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">?</div>
+              <div className="absolute bottom-0 right-1.25 w-11 h-11 bg-gold text-white rounded-full flex items-center justify-center text-lg font-extrabold border-3 border-bg-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">❤️</div>
             </div>
+
+            {/* Rivo Speech Bubble */}
+            <div className="relative bg-bg-white border border-border-color px-6 py-3.5 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.03)] max-w-[340px] mb-6 text-sm text-text-dark font-medium leading-relaxed">
+              "Your escape list is empty! Let's find your next destination together."
+              <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-bg-white border-r border-b border-border-color rotate-45 -mt-1.5" />
+            </div>
+
             <h2 className="text-[28px] text-text-dark mb-2.5 font-bold">Your Wishlist is Empty</h2>
             <p className="text-[14.5px] max-w-[450px] mb-7.5 leading-relaxed">Rivo couldn't find any saved resorts here. Explore our verified listings and click the heart icon to save them!</p>
-            <Link to="/resorts" className="bg-primary text-bg-white no-underline px-[30px] py-3 rounded-lg font-semibold text-sm transition-all duration-300 hover:bg-gold hover:text-white hover:-translate-y-0.5 hover:shadow-[0_5px_15px_rgba(194,168,120,0.2)]">
+            <Link to="/search" className="bg-primary text-bg-white no-underline px-[30px] py-3 rounded-lg font-semibold text-sm transition-all duration-300 hover:bg-gold hover:text-white hover:-translate-y-0.5 hover:shadow-[0_5px_15px_rgba(194,168,120,0.2)]">
               Explore Luxury Resorts
             </Link>
           </div>

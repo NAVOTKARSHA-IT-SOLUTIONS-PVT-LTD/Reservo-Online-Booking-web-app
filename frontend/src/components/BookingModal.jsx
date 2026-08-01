@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, CheckCircle, Sparkles, QrCode } from 'lucide-react';
+import rivoConfirmed from '../assets/images/rivo_confirmed.png';
 
 export default function BookingModal({ resort, room, isDarkMode, onClose, onAskRivo }) {
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -121,9 +122,17 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
               </div>
             </>
           ) : (
-            <div className="text-center space-y-5 py-4 animate-fade-in">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 text-[#22C55E] flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle className="w-10 h-10" />
+            <div className="flex flex-col items-center text-center space-y-4 py-2 animate-fade-in">
+              <div className="relative w-28 h-28 mx-auto">
+                <img 
+                  src={rivoConfirmed} 
+                  alt="Booking Confirmed" 
+                  className="w-full h-full object-cover rounded-full border-2 border-[#22C55E] shadow-lg"
+                  style={{ animation: "bounceRivo 2s infinite" }}
+                />
+                <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#22C55E] text-white flex items-center justify-center border-2 border-white shadow-md">
+                  <CheckCircle className="w-4 h-4" />
+                </div>
               </div>
 
               <div>
@@ -132,7 +141,7 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
                 </span>
                 <h3 className="text-2xl font-bold mt-2">Reservation Secured!</h3>
                 <p className="text-xs text-stone-400 mt-1">
-                  We’ve sent your luxury digital access pass to your registered email.
+                  Rivo has secured your booking. Digital pass sent to email!
                 </p>
               </div>
 

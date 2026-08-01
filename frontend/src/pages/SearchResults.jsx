@@ -186,6 +186,31 @@ function SearchResults() {
     return () => clearTimeout(t);
   }, [dest]);
 
+  useEffect(() => {
+    const handleRivoMode = (e) => {
+      const { mode } = e.detail;
+      if (mode === 'luxury') {
+        setMaxPrice(800);
+        setMinRating(4.8);
+        setSelectedAmenities(['Spa', 'Ocean View']);
+      } else if (mode === 'budget') {
+        setMaxPrice(200);
+        setMinRating(0);
+        setSelectedAmenities([]);
+      } else if (mode === 'relax') {
+        setMaxPrice(800);
+        setMinRating(0);
+        setSelectedAmenities(['Spa', 'Pool']);
+      } else if (mode === 'adventure') {
+        setMaxPrice(800);
+        setMinRating(0);
+        setSelectedAmenities(['Mountain View']);
+      }
+    };
+    window.addEventListener('rivo-mode', handleRivoMode);
+    return () => window.removeEventListener('rivo-mode', handleRivoMode);
+  }, []);
+
   const toggleAmenity = (am) =>
     setSelectedAmenities((prev) =>
       prev.includes(am) ? prev.filter((a) => a !== am) : [...prev, am]

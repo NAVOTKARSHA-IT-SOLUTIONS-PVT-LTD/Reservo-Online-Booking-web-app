@@ -1,7 +1,78 @@
-import React from "react";
+import React, { useState } from "react";
 import contactImage from "../assets/images/contact.jpg";
+import rivoSupport from "../assets/images/rivo_support.png";
 
 function Contact() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: ""
+  });
+
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) {
+      newErrors.name = "Full Name is required.";
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = "Name must be at least 3 characters long.";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email Address is required.";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        newErrors.email = "Please enter a valid email address.";
+      }
+    }
+
+    if (!formData.subject.trim()) {
+      newErrors.subject = "Subject is required.";
+    }
+
+    if (!formData.message.trim()) {
+      newErrors.message = "Message content is required.";
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = "Message must be at least 10 characters long.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error message when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: ""
+      }));
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validate()) {
+      setIsSubmitting(true);
+      // Simulate API submit delay of 1.5 seconds
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setIsSubmitted(true);
+        setFormData({ name: "", email: "", subject: "", message: "" });
+      }, 1500);
+    }
+  };
+
   return (
     <>
       {/* Hero */}
@@ -68,35 +139,100 @@ function Contact() {
           </div>
 
           {/* Right */}
-          <div className="bg-bg-white border border-[#E7DFD4] rounded-[22px] p-6.25 md:p-10 shadow-[0_18px_40px_rgba(0,0,0,0.08)] text-left">
-            <h2 className="text-[30px] md:text-[38px] font-bold text-primary mb-7.5">
-              Send a Message
-            </h2>
-            <form className="flex flex-col gap-5">
-              <input
-                type="text"
-                placeholder="Full Name"
-                className="w-full px-[18px] py-4 border border-[#D8D1C8] rounded-xl outline-none text-base bg-[#FAF8F5] transition-all duration-300 focus:border-gold focus:bg-bg-white"
-              />
-              <input
-                type="email"
-                placeholder="Email Address"
-                className="w-full px-[18px] py-4 border border-[#D8D1C8] rounded-xl outline-none text-base bg-[#FAF8F5] transition-all duration-300 focus:border-gold focus:bg-bg-white"
-              />
-              <input
-                type="text"
-                placeholder="Subject"
-                className="w-full px-[18px] py-4 border border-[#D8D1C8] rounded-xl outline-none text-base bg-[#FAF8F5] transition-all duration-300 focus:border-gold focus:bg-bg-white"
-              />
-              <textarea
-                rows="6"
-                placeholder="Tell us how we can help..."
-                className="w-full px-[18px] py-4 border border-[#D8D1C8] rounded-xl outline-none text-base bg-[#FAF8F5] transition-all duration-300 focus:border-gold focus:bg-bg-white resize-none"
-              ></textarea>
-              <button type="submit" className="bg-primary text-white border-none py-4 rounded-full text-[17px] font-semibold cursor-pointer transition-all duration-[350ms] hover:bg-[#162B27] hover:-translate-y-0.75">
-                Send Message
-              </button>
-            </form>
+          <div className="bg-bg-white border border-[#E7DFD4] rounded-[22px] p-6.25 md:p-10 shadow-[0_18px_40px_rgba(0,0,0,0.08)] text-left min-h-[480px] flex flex-col justify-center">
+            
+            {isSubmitted ? (
+              <div className="text-center py-6 animate-in fade-in duration-500">
+                <div className="w-[120px] h-[120px] mx-auto rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden mb-6 shadow-md">
+                  <img src={rivoSupport} alt="Rivo Mascot" className="w-full h-full object-cover" />
+                </div>
+                <h3 className="text-2xl font-extrabold text-primary mb-3">Message Delivered!</h3>
+                <p className="text-text-gray text-[14px] leading-relaxed max-w-[340px] mx-auto mb-6">
+                  Rivo is submitting your details directly to the Reservo concierge desk. We will reach back to you within **2 hours**.
+                </p>
+                <div className="inline-block py-2 px-5 bg-gold/10 text-gold rounded-full text-xs font-bold border border-gold/20">
+                  Ticket Reference: #RSV-{Math.floor(1000 + Math.random() * 9000)}
+                </div>
+                <div className="mt-8">
+                  <button 
+                    onClick={() => setIsSubmitted(false)}
+                    className="bg-transparent border border-border-color text-text-dark font-bold px-6 py-2.5 rounded-full hover:bg-slate-50 cursor-pointer text-xs transition-colors"
+                  >
+                    Send Another Message
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-[30px] md:text-[38px] font-bold text-primary mb-7.5">
+                  Send a Message
+                </h2>
+                <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+                  <div className="flex flex-col gap-1">
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Full Name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className={`w-full px-[18px] py-4 border ${errors.name ? "border-red-500 bg-red-50/10" : "border-[#D8D1C8] bg-[#FAF8F5]"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white`}
+                    />
+                    {errors.name && <span className="text-red-500 text-xs font-bold ml-1 mt-0.5">{errors.name}</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="Email Address"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={`w-full px-[18px] py-4 border ${errors.email ? "border-red-500 bg-red-50/10" : "border-[#D8D1C8] bg-[#FAF8F5]"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white`}
+                    />
+                    {errors.email && <span className="text-red-500 text-xs font-bold ml-1 mt-0.5">{errors.email}</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <input
+                      type="text"
+                      name="subject"
+                      placeholder="Subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      className={`w-full px-[18px] py-4 border ${errors.subject ? "border-red-500 bg-red-50/10" : "border-[#D8D1C8] bg-[#FAF8F5]"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white`}
+                    />
+                    {errors.subject && <span className="text-red-500 text-xs font-bold ml-1 mt-0.5">{errors.subject}</span>}
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <textarea
+                      rows="5"
+                      name="message"
+                      placeholder="Tell us how we can help..."
+                      value={formData.message}
+                      onChange={handleChange}
+                      className={`w-full px-[18px] py-4 border ${errors.message ? "border-red-500 bg-red-50/10" : "border-[#D8D1C8] bg-[#FAF8F5]"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white resize-none`}
+                    ></textarea>
+                    {errors.message && <span className="text-red-500 text-xs font-bold ml-1 mt-0.5">{errors.message}</span>}
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="bg-primary text-white border-none py-4 rounded-full text-[17px] font-semibold cursor-pointer transition-all duration-[350ms] hover:bg-[#162B27] hover:-translate-y-0.75 flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Message"
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
 
         </div>

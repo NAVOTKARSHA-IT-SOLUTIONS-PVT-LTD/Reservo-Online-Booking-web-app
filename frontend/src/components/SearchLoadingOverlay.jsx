@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
+import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
+import rivoConfirmed from "../assets/images/rivo_confirmed.png";
+import rivoPlanner from "../assets/images/rivo_planner.png";
+import rivoSupport from "../assets/images/rivo_support.png";
 
 const STEPS = [
-  "Finding Resorts...",
-  "Checking Availability...",
-  "Comparing Prices...",
-  "Finding Best Deals...",
-  "AI Selecting Best Options...",
+  { text: "Rivo is planning your trip...", image: rivoPlanner },
+  { text: "Filtering best resort inventories...", image: rivoSearching },
+  { text: "Checking live room availability...", image: rivoSupport },
+  { text: "Matching exclusive travel deals...", image: rivoConfirmed },
+  { text: "Finalizing your best options...", image: rivoMascot },
 ];
 
 const TIPS = [
@@ -27,7 +31,7 @@ const WEATHER_MAP = {
   Switzerland: { temp: "18°C", icon: "🏔️", desc: "Cool & Clear" },
 };
 
-const TOTAL_MS = 1800;
+const TOTAL_MS = 2500;
 
 function SearchLoadingOverlay({ destination, onComplete }) {
   const [completedSteps, setCompletedSteps] = useState([]);
@@ -38,6 +42,9 @@ function SearchLoadingOverlay({ destination, onComplete }) {
     (destination || "").toLowerCase().includes(k.toLowerCase())
   ) || "Bali";
   const weather = WEATHER_MAP[destKey];
+
+  const activeStepIndex = Math.min(completedSteps.length, STEPS.length - 1);
+  const activeImage = STEPS[activeStepIndex].image;
 
   useEffect(() => {
     const stepTimers = STEPS.map((_, i) =>
@@ -76,8 +83,8 @@ function SearchLoadingOverlay({ destination, onComplete }) {
           <div className="absolute -inset-5 border-2 border-gold/30 rounded-full animate-ping" style={{ animationDuration: "2s" }} />
           <div className="absolute -inset-9 border border-gold/15 rounded-full animate-ping" style={{ animationDuration: "2.5s", animationDelay: "0.5s" }} />
           <img
-            src={rivoSearching}
-            alt="Rivo Searching"
+            src={activeImage}
+            alt="Rivo Mascot"
             className="w-24 h-24 rounded-full object-cover border-2 border-gold shadow-[0_0_30px_rgba(197,160,89,0.4)]"
             style={{ animation: "bounceRivo 2s infinite" }}
           />
@@ -117,7 +124,7 @@ function SearchLoadingOverlay({ destination, onComplete }) {
                     done ? "text-gold" : active ? "text-white" : "text-white/30"
                   }`}
                 >
-                  {step}
+                  {step.text}
                 </span>
               </div>
             );

@@ -1,7 +1,7 @@
-import React from "react";
-import { Gift, Award, TrendingUp, CreditCard, Tag, Heart } from "lucide-react";
+import React, { useState } from "react";
+import { Gift, Award, TrendingUp, CreditCard, Tag, Heart, X } from "lucide-react";
 
-function RewardCard({ icon, title, description, badge }) {
+function RewardCard({ icon, title, description, badge, onLearnMore }) {
   return (
     <div className="bg-bg-white border border-border-color rounded-3xl p-6 shadow-sm hover:shadow-custom hover:-translate-y-1 transition-all duration-300">
       <div className="flex justify-between items-start mb-4">
@@ -16,7 +16,10 @@ function RewardCard({ icon, title, description, badge }) {
       </div>
       <h3 className="text-xl font-bold text-text-dark mb-2">{title}</h3>
       <p className="text-sm text-text-gray leading-relaxed mb-4">{description}</p>
-      <button className="text-gold font-bold text-sm bg-transparent border-none cursor-pointer hover:underline p-0 m-0">
+      <button 
+        onClick={onLearnMore}
+        className="text-gold font-bold text-sm bg-transparent border-none cursor-pointer hover:underline p-0 m-0"
+      >
         Learn More →
       </button>
     </div>
@@ -24,6 +27,42 @@ function RewardCard({ icon, title, description, badge }) {
 }
 
 export default function Rewards() {
+  const [activeReward, setActiveReward] = useState(null);
+
+  const CARDS_DATA = [
+    {
+      icon: <TrendingUp size={24} />,
+      title: "Loyalty Points",
+      description: "Earn 10 points for every $1 spent on bookings. Use points to get free nights and room upgrades."
+    },
+    {
+      icon: <Tag size={24} />,
+      title: "Promo Codes",
+      description: "Get access to member-only promo codes during seasonal sales and festive periods.",
+      badge: "New"
+    },
+    {
+      icon: <Heart size={24} />,
+      title: "Referral Rewards",
+      description: "Invite a friend to Reservo and you both get a $50 coupon when they complete their first stay."
+    },
+    {
+      icon: <CreditCard size={24} />,
+      title: "Cashback Offers",
+      description: "Pay with our partner credit cards to instantly receive up to 5% cashback on luxury stays."
+    },
+    {
+      icon: <Award size={24} />,
+      title: "Membership Levels",
+      description: "Progress from Silver to Platinum to unlock early check-ins, late check-outs, and dedicated support."
+    },
+    {
+      icon: <Gift size={24} />,
+      title: "Birthday Surprise",
+      description: "Travel during your birthday month and receive a complimentary bottle of champagne and spa voucher."
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-bg-light pt-32 pb-20">
       <div className="max-w-[1200px] mx-auto w-[92%]">
@@ -71,41 +110,47 @@ export default function Rewards() {
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-text-dark mb-8">Ways to Earn & Save</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <RewardCard 
-              icon={<TrendingUp size={24} />} 
-              title="Loyalty Points" 
-              description="Earn 10 points for every $1 spent on bookings. Use points to get free nights and room upgrades." 
-            />
-            <RewardCard 
-              icon={<Tag size={24} />} 
-              title="Promo Codes" 
-              description="Get access to member-only promo codes during seasonal sales and festive periods." 
-              badge="New"
-            />
-            <RewardCard 
-              icon={<Heart size={24} />} 
-              title="Referral Rewards" 
-              description="Invite a friend to Reservo and you both get a $50 coupon when they complete their first stay." 
-            />
-            <RewardCard 
-              icon={<CreditCard size={24} />} 
-              title="Cashback Offers" 
-              description="Pay with our partner credit cards to instantly receive up to 5% cashback on luxury stays." 
-            />
-            <RewardCard 
-              icon={<Award size={24} />} 
-              title="Membership Levels" 
-              description="Progress from Silver to Platinum to unlock early check-ins, late check-outs, and dedicated support." 
-            />
-            <RewardCard 
-              icon={<Gift size={24} />} 
-              title="Birthday Surprise" 
-              description="Travel during your birthday month and receive a complimentary bottle of champagne and spa voucher." 
-            />
+            {CARDS_DATA.map((card, i) => (
+              <RewardCard 
+                key={i}
+                icon={card.icon}
+                title={card.title}
+                description={card.description}
+                badge={card.badge}
+                onLearnMore={() => setActiveReward(card)}
+              />
+            ))}
           </div>
         </div>
 
       </div>
+
+      {/* Rewards Detailed Modal */}
+      {activeReward && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+          <div className="bg-bg-white border border-border-color rounded-[32px] max-w-lg w-full p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200 text-left">
+            <button 
+              onClick={() => setActiveReward(null)}
+              className="absolute top-6 right-6 w-8 h-8 rounded-full bg-bg-light hover:bg-slate-200 border-none cursor-pointer flex items-center justify-center text-text-dark"
+            >
+              <X size={16} />
+            </button>
+            <div className="w-12 h-12 bg-gold/10 rounded-2xl flex items-center justify-center text-gold mb-6">
+              {activeReward.icon}
+            </div>
+            <span className="text-[10px] bg-[#121e1b]/10 text-[#121e1b] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Rewards Tier</span>
+            <h3 className="text-2xl font-extrabold text-text-dark mt-4 mb-3">{activeReward.title}</h3>
+            <p className="text-text-gray text-sm leading-relaxed mb-6">{activeReward.description}</p>
+            
+            <div className="p-4 bg-bg-light border border-border-color rounded-2xl">
+              <h4 className="text-xs uppercase tracking-wider text-text-dark font-bold mb-2">How to redeem:</h4>
+              <p className="text-xs text-text-gray m-0 leading-relaxed">
+                Go to your profile page by clicking on your avatar at the top right, navigate to 'Loyalty Points', and select 'Redeem' to convert points into reservation coupons. Alternatively, tell Rivo chatbot *"Redeem my points"* to proceed automatically!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

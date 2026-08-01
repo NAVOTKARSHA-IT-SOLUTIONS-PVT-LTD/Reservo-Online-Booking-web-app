@@ -6,7 +6,102 @@ import {
   Sparkles, Star, ChevronRight, User, Send
 } from "lucide-react";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
+import rivoSearching from "../assets/images/rivo_searching.png";
+import rivoConfirmed from "../assets/images/rivo_confirmed.png";
+import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
+import { ALL_RESORTS } from "../data/resorts";
+
+const COMPANION_MODES = [
+  { id: "support", label: "Support", emoji: "🤖", avatar: rivoSupport, name: "Support" },
+  { id: "luxury", label: "Luxury", emoji: "👑", avatar: rivoPlanner, name: "Luxury" },
+  { id: "budget", label: "Budget", emoji: "🐷", avatar: rivoSearching, name: "Budget" },
+  { id: "relax", label: "Relax", emoji: "🏖️", avatar: rivoMascot, name: "Relax" },
+  { id: "adventure", label: "Adventure", emoji: "🏔️", avatar: rivoPlanner, name: "Adventure" }
+];
+
+const getAvatarForText = (text) => {
+  const lower = text.toLowerCase();
+  if (lower.includes("book") || lower.includes("pay") || lower.includes("confirm") || lower.includes("reserve")) {
+    return rivoConfirmed;
+  }
+  if (lower.includes("beach") || lower.includes("goa") || lower.includes("spa") || lower.includes("relax") || lower.includes("pool")) {
+    return rivoMascot;
+  }
+  if (lower.includes("plan") || lower.includes("itinerary") || lower.includes("day") || lower.includes("trip")) {
+    return rivoPlanner;
+  }
+  if (lower.includes("search") || lower.includes("find") || lower.includes("resort") || lower.includes("destination")) {
+    return rivoSearching;
+  }
+  if (lower.includes("help") || lower.includes("support") || lower.includes("concierge") || lower.includes("service")) {
+    return rivoSupport;
+  }
+  return null;
+};
+
+const generateAIResponse = (text) => {
+  const lower = text.toLowerCase();
+  
+  const locations = ["bali", "maldives", "manali", "dubai", "coorg", "kerala", "santorini", "greece"];
+  const matchedLocation = locations.find(loc => lower.includes(loc));
+
+  const amenitiesList = ["pool", "spa", "ocean view", "breakfast", "wifi", "fireplace", "mountain view", "ski", "chef", "gym"];
+  const matchedAmenities = amenitiesList.filter(am => lower.includes(am));
+
+  let maxBudget = null;
+  const budgetMatch = lower.match(/(?:under|below|less than|max)\s*(\d+)/) || lower.match(/\$\s*(\d+)/) || lower.match(/₹\s*(\d+)/);
+  if (budgetMatch && budgetMatch[1]) {
+    maxBudget = parseInt(budgetMatch[1], 10);
+  }
+
+  let matches = ALL_RESORTS;
+  
+  if (matchedLocation) {
+    const locKey = matchedLocation === "greece" ? "santorini" : matchedLocation;
+    matches = matches.filter(r => r.location.toLowerCase().includes(locKey));
+  }
+
+  if (matchedAmenities.length > 0) {
+    matches = matches.filter(r => {
+      return matchedAmenities.every(am => {
+        return r.amenities.some(item => {
+          const itemLower = item.toLowerCase();
+          if (am === "wifi") return itemLower.includes("wifi");
+          if (am === "ski") return itemLower.includes("ski");
+          return itemLower.includes(am);
+        });
+      });
+    });
+  }
+
+  if (maxBudget) {
+    matches = matches.filter(r => r.price <= maxBudget);
+  }
+
+  if (matches.length > 0) {
+    let responseText = `I found some excellent matches for you! Here are ${matches.length} luxury stays that match your request:\n\n`;
+    matches.forEach((r, idx) => {
+      responseText += `${idx + 1}. **${r.name}** in *${r.location}* — **$${r.price}/night** (${r.rating}⭐). Features: ${r.amenities.slice(0, 3).join(", ")}. "${r.tag}"\n`;
+    });
+    responseText += `\nWould you like me to check live room availability for any of these?`;
+    return responseText;
+  }
+
+  if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
+    return "Hi there! I'm Rivo, your AI travel buddy. I can recommend the perfect luxury stays based on your destination, budget, or preferred amenities. Where are we heading next?";
+  }
+  
+  if (lower.includes("book") || lower.includes("how to") || lower.includes("process")) {
+    return "Booking is simple! Choose your destination, select check-in/check-out dates in the search bar, click 'Search Stays', and then select your preferred room. Rivo will take care of the rest!";
+  }
+
+  if (lower.includes("price") || lower.includes("cost") || lower.includes("cheap") || lower.includes("expensive")) {
+    return "Stays at Reservo range from $165/night (like Snow Peaks Lodge in Manali) to $640/night (like Atlantis Towers in Dubai). Let me know your destination or budget and I'll find the best match!";
+  }
+
+  return "I'm always learning! Let me know where you want to travel (e.g. Bali, Maldives, Dubai) and what amenities you want (e.g. Spa, Pool, Fireplace), and I'll search our luxury collection for you.";
+};
 
 const CATEGORIES = [
   { id: "beach", label: "Beach", icon: <Waves size={20} /> },
@@ -45,6 +140,8 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   const [wishlist, setWishlist] = useState({});
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isMascotOpen, setIsMascotOpen] = useState(false);
+  const [activeMode, setActiveMode] = useState("support");
+  const [rivoAvatar, setRivoAvatar] = useState(rivoSupport);
   const [messages, setMessages] = useState([
     { id: 1, sender: "rivo", text: "Hi! I'm Rivo 🤖 Your AI travel buddy. Where would you like to travel today?" }
   ]);
@@ -57,11 +154,56 @@ function MobileUI({ isDark, onToggleTheme, children }) {
 
   const scrollToSection = (id) => {
     setIsDrawerOpen(false);
-    // MobileUI is only shown on mobile — navigate to home and scroll
-    navigate("/");
-    setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    }, 300);
+    const performScroll = () => {
+      const el = document.getElementById(id);
+      if (el) {
+        const yOffset = -80; // Mobile header offset
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    };
+    if (location.pathname !== "/") {
+      navigate("/");
+      setTimeout(performScroll, 350);
+    } else {
+      performScroll();
+    }
+  };
+
+  const handleSelectMode = (mode) => {
+    setActiveMode(mode.id);
+    setRivoAvatar(mode.avatar);
+
+    let replyMessage = "";
+    if (mode.id === "luxury") {
+      if (onToggleTheme && !isDark) onToggleTheme();
+      replyMessage = "Rivo is now in Luxury Mode! 👑 I've toggled the premium dark theme and filtered our listings for high-end resorts with Dedicated AI Butler service. Enjoy your luxury escape!";
+      window.dispatchEvent(new CustomEvent("rivo-mode", { detail: { mode: "luxury" } }));
+      navigate("/search");
+    } else if (mode.id === "budget") {
+      replyMessage = "Rivo is now in Budget Mode! 🐷 I've set our max nightly rate filter to ₹15,000 to find you the smartest luxury deals.";
+      window.dispatchEvent(new CustomEvent("rivo-mode", { detail: { mode: "budget" } }));
+      navigate("/search");
+    } else if (mode.id === "relax") {
+      replyMessage = "Rivo is now in Relax Mode! 🏖️ I'm filtering for properties with premium Spa & Wellness facilities and infinity edge pools.";
+      window.dispatchEvent(new CustomEvent("rivo-mode", { detail: { mode: "relax" } }));
+      navigate("/search");
+    } else if (mode.id === "adventure") {
+      replyMessage = "Rivo is now in Adventure Mode! 🏔️ I've filtered for mountain/forest properties offering scuba, water sports, or private helipads.";
+      window.dispatchEvent(new CustomEvent("rivo-mode", { detail: { mode: "adventure" } }));
+      navigate("/search");
+    } else {
+      replyMessage = "Rivo is now in Support Mode! 🤖 Ask me anything about your booking, check-in details, or active reservations.";
+    }
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: "rivo",
+        text: replyMessage
+      }
+    ]);
   };
 
   const handleSend = (text) => {
@@ -69,12 +211,23 @@ function MobileUI({ isDark, onToggleTheme, children }) {
     setMessages(prev => [...prev, { id: Date.now(), sender: "user", text }]);
     setInputVal("");
     setIsTyping(true);
+
+    const userReactAvatar = getAvatarForText(text);
+    if (userReactAvatar) {
+      setRivoAvatar(userReactAvatar);
+    }
+
     setTimeout(() => {
-      const lower = text.toLowerCase();
-      let reply = "Let me check that for you! Rivo is looking for the best matches...";
-      if (lower.includes("beach") || lower.includes("goa")) reply = "I recommend Ocean Breeze Resort in Goa — 4.9⭐ with private beachfront pools!";
-      if (lower.includes("manali") || lower.includes("mountain")) reply = "Mountain Paradise Resort in Manali is our top pick with private spa access and cozy fireplaces! 🏔️";
-      if (lower.includes("book") || lower.includes("how")) reply = "Booking is super easy! Pick your destination, select dates, and tap Search Stays. Done in 30 seconds!";
+      const reply = generateAIResponse(text);
+
+      const replyReactAvatar = getAvatarForText(reply);
+      if (replyReactAvatar) {
+        setRivoAvatar(replyReactAvatar);
+      } else if (!userReactAvatar) {
+        const activeModeObj = COMPANION_MODES.find(m => m.id === activeMode);
+        setRivoAvatar(activeModeObj ? activeModeObj.avatar : rivoSupport);
+      }
+
       setMessages(prev => [...prev, { id: Date.now() + 1, sender: "rivo", text: reply }]);
       setIsTyping(false);
     }, 1500);
@@ -280,24 +433,44 @@ function MobileUI({ isDark, onToggleTheme, children }) {
       <div className="fixed bottom-[72px] right-4 z-[8500]">
         {/* Chat Popup */}
         {isMascotOpen && (
-          <div className="absolute bottom-[60px] right-0 w-[300px] h-[380px] bg-bg-white border border-border-color rounded-2xl shadow-[0_15px_45px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <div className="absolute bottom-[60px] right-0 w-[300px] h-[420px] bg-bg-white border border-border-color rounded-2xl shadow-[0_15px_45px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-300">
             {/* Chat Header */}
-            <div className="bg-[#121e1b] px-4 py-3 flex items-center gap-2.5 border-b border-white/5">
-              <img src={rivoSupport} alt="Rivo" className="w-7 h-7 rounded-full object-cover border border-white/20" />
+            <div className="bg-[#121e1b] px-4 py-3 flex items-center gap-2.5 border-b border-white/5 shrink-0">
+              <img src={rivoAvatar} alt="Rivo" className="w-7 h-7 rounded-full object-cover border border-white/20" />
               <div className="flex-1">
-                <h4 className="text-[13px] font-bold text-white m-0">Rivo AI</h4>
-                <span className="text-[10px] text-white/60">🟢 Online</span>
+                <h4 className="text-[13px] font-bold text-white m-0 flex items-center gap-1">
+                  Rivo AI {(COMPANION_MODES.find(m => m.id === activeMode) || COMPANION_MODES[0]).emoji}
+                </h4>
+                <span className="text-[10px] text-white/60">🟢 {(COMPANION_MODES.find(m => m.id === activeMode) || COMPANION_MODES[0]).name} Companion</span>
               </div>
               <button className="bg-transparent border-none text-white/70 hover:text-white cursor-pointer" onClick={() => setIsMascotOpen(false)}>
                 <X size={16} />
               </button>
             </div>
+
+            {/* Companion Mode Selector Bar (Mobile) */}
+            <div className="bg-slate-50 border-b border-border-color px-3 py-1.5 flex gap-1.5 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-none">
+              {COMPANION_MODES.map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => handleSelectMode(m)}
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all border cursor-pointer ${
+                    activeMode === m.id
+                      ? 'bg-[#2563EB] text-white border-[#2563EB]'
+                      : 'bg-white text-slate-600 border-slate-200'
+                  }`}
+                >
+                  {m.emoji} {m.label}
+                </button>
+              ))}
+            </div>
+
             {/* Messages */}
             <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-2.5 bg-bg-light">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex items-start gap-2 max-w-[90%] ${msg.sender === "user" ? "self-end flex-row-reverse" : "self-start"}`}>
                   {msg.sender === "rivo" && (
-                    <img src={rivoSupport} alt="Rivo" className="w-6 h-6 rounded-full object-cover border border-border-color shrink-0" />
+                    <img src={rivoAvatar} alt="Rivo" className="w-6 h-6 rounded-full object-cover border border-border-color shrink-0" />
                   )}
                   <div className={`px-3 py-2 rounded-[14px] text-[12.5px] leading-relaxed ${
                     msg.sender === "user"
@@ -310,7 +483,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               ))}
               {isTyping && (
                 <div className="flex items-center gap-2 self-start">
-                  <img src={rivoSupport} alt="Rivo" className="w-6 h-6 rounded-full object-cover border border-border-color" />
+                  <img src={rivoAvatar} alt="Rivo" className="w-6 h-6 rounded-full object-cover border border-border-color shrink-0" />
                   <div className="bg-bg-white border border-border-color px-3 py-2 rounded-[14px] flex gap-1 items-center">
                     <span className="w-1.5 h-1.5 bg-text-gray rounded-full animate-bounce [animation-delay:-0.3s]" />
                     <span className="w-1.5 h-1.5 bg-text-gray rounded-full animate-bounce [animation-delay:-0.15s]" />
@@ -321,7 +494,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             </div>
             {/* Quick Replies */}
             {messages.length === 1 && !isTyping && (
-              <div className="flex flex-col gap-1.5 px-3 py-2 bg-bg-light border-t border-border-color">
+              <div className="flex flex-col gap-1.5 px-3 py-2 bg-bg-light border-t border-border-color shrink-0">
                 {QUICK_REPLIES.map((r) => (
                   <button key={r.key} className="bg-bg-white text-text-dark border border-border-color px-3 py-1.5 rounded-xl text-[11.5px] text-left cursor-pointer transition-colors hover:bg-bg-light hover:text-gold" onClick={() => handleSend(r.text)}>
                     {r.text}
@@ -330,7 +503,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               </div>
             )}
             {/* Input */}
-            <form className="flex px-3 py-2.5 border-t border-border-color bg-bg-white items-center gap-2" onSubmit={(e) => { e.preventDefault(); handleSend(inputVal); }}>
+            <form className="flex px-3 py-2.5 border-t border-border-color bg-bg-white items-center gap-2 shrink-0" onSubmit={(e) => { e.preventDefault(); handleSend(inputVal); }}>
               <input
                 type="text"
                 placeholder="Ask Rivo..."
@@ -351,7 +524,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           onClick={() => setIsMascotOpen(!isMascotOpen)}
           aria-label="Chat with Rivo"
         >
-          <img src={rivoSupport} alt="Rivo" className="w-full h-full object-cover" />
+          <img src={rivoAvatar} alt="Rivo" className="w-full h-full object-cover" />
         </button>
       </div>
 

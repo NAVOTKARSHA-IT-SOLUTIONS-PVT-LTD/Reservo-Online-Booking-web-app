@@ -174,6 +174,29 @@ function Hero() {
 
       </div>
 
+      {/* Interactive AI Prompt Suggestions */}
+      <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[95%] max-w-[1100px] z-20 flex items-center justify-center gap-2.5 flex-wrap hidden md:flex">
+        <span className="text-[11px] font-bold text-white/50 uppercase tracking-widest mr-1 flex items-center gap-1">
+          <Sparkles size={11} className="text-yellow-400" /> Try Prompts:
+        </span>
+        {[
+          { label: "🌴 Beach retreats in Bali", location: "Bali, Indonesia" },
+          { label: "🏔️ Fireplaces in Manali", location: "Manali, India" },
+          { label: "🏖️ Overwater villas in Maldives", location: "Maldives" }
+        ].map((prompt, i) => (
+          <button
+            key={i}
+            onClick={() => {
+              setLocation(prompt.location);
+              setIsSearching(true);
+            }}
+            className="bg-black/40 backdrop-blur-md border border-white/10 text-white hover:border-gold hover:text-gold text-xs px-4.5 py-2 rounded-full cursor-pointer transition-all duration-300 shadow-md flex items-center gap-1 hover:scale-105"
+          >
+            {prompt.label}
+          </button>
+        ))}
+      </div>
+
       {/* Floating Bottom Search Bar */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-[1100px] bg-bg-white/95 backdrop-blur-xl rounded-[100px] p-2 shadow-[0_30px_60px_rgba(47,128,237,0.15)] flex flex-col md:flex-row items-center justify-between border border-border-color transition-colors duration-300 z-20">
         
