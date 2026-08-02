@@ -3,7 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   Menu, X, Moon, Sun, Heart, Bell, MapPin, Calendar, Users,
   Search, ArrowRight, Waves, Mountain, Home, Droplets,
-  Sparkles, Star, ChevronRight, User, Send
+  Sparkles, Star, ChevronRight, User, Send,
+  LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
+  LayoutGrid, BookOpen, Settings
 } from "lucide-react";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
@@ -11,6 +13,7 @@ import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
 import { ALL_RESORTS } from "../data/resorts";
+import Footer from "./Footer";
 
 const COMPANION_MODES = [
   { id: "support", label: "Support", emoji: "🤖", avatar: rivoSupport, name: "Support" },
@@ -173,6 +176,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   const handleSelectMode = (mode) => {
     setActiveMode(mode.id);
     setRivoAvatar(mode.avatar);
+    localStorage.setItem("reservo-active-mode", mode.id);
 
     let replyMessage = "";
     if (mode.id === "luxury") {
@@ -276,157 +280,11 @@ function MobileUI({ isDark, onToggleTheme, children }) {
       </header>
 
       {/* ── SCROLLABLE CONTENT ─────────────────────── */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
-        {location.pathname === "/" ? (
-          <>
-            {/* Hero Banner */}
-            <div
-              className="relative h-[240px] bg-cover bg-center"
-              style={{ backgroundImage: "url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80')" }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/70" />
-              <div className="absolute inset-0 flex flex-col justify-end px-5 pb-5 text-white">
-                <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1 w-fit mb-2.5">
-                  <Sparkles size={10} className="text-gold fill-gold" />
-                  <span className="text-[11px] font-semibold">AI Recommended</span>
-                </div>
-                <h2 className="text-[26px] font-extrabold leading-tight mb-2">
-                  Book Smart,<br />Stay <em className="font-serif">Better.</em>
-                </h2>
-                <p className="text-white/80 text-[12.5px] mb-4 leading-relaxed">
-                  AI-powered stays for unforgettable moments.
-                </p>
-                <button
-                  className="flex items-center gap-2 bg-gold text-white text-sm font-bold px-5 py-2.5 rounded-full w-fit transition-all hover:bg-gold-dark border-none cursor-pointer"
-                  onClick={() => { setActiveTab("explore"); navigate("/search"); }}
-                >
-                  Explore Stays <ArrowRight size={14} />
-                </button>
-              </div>
-            </div>
-
-            {/* Search Card */}
-            <div className="mx-4 -mt-5 relative z-10">
-              <div className="bg-bg-white border border-border-color rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] overflow-hidden">
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-border-color">
-                  <MapPin size={15} className="text-gold shrink-0" />
-                  <div>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-text-gray">Where?</span>
-                    <span className="text-sm font-semibold text-text-dark">Search destinations</span>
-                  </div>
-                </div>
-                <div className="flex divide-x divide-border-color">
-                  <div className="flex items-center gap-2 px-4 py-3 flex-1">
-                    <Calendar size={13} className="text-gold shrink-0" />
-                    <div>
-                      <span className="block text-[10px] font-bold uppercase tracking-wider text-text-gray">Dates</span>
-                      <span className="text-xs font-semibold text-text-dark">Select dates</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-3 flex-1">
-                    <Users size={13} className="text-gold shrink-0" />
-                    <div>
-                      <span className="block text-[10px] font-bold uppercase tracking-wider text-text-gray">Guests</span>
-                      <span className="text-xs font-semibold text-text-dark">2 Guests, 1 Room</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  className="w-full bg-primary text-bg-white py-3 text-sm font-bold flex items-center justify-center gap-2 transition-colors hover:bg-gold border-none cursor-pointer"
-                  onClick={() => { setActiveTab("explore"); navigate("/search"); }}
-                >
-                  <Search size={14} /> Search Stays
-                </button>
-              </div>
-            </div>
-
-            {/* Categories */}
-            <div className="px-4 pt-6 pb-2">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[15px] font-extrabold text-text-dark">Explore by Category</h3>
-                <button className="text-xs font-semibold text-gold flex items-center gap-0.5 bg-transparent border-none cursor-pointer" onClick={() => navigate("/search")}>
-                  View all <ChevronRight size={13} />
-                </button>
-              </div>
-              <div className="grid grid-cols-4 gap-2.5">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.id}
-                    className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                      activeCategory === cat.id
-                        ? "bg-primary text-bg-white border-primary shadow-md"
-                        : "bg-bg-light text-text-dark border-border-color hover:border-gold hover:text-gold"
-                    }`}
-                    onClick={() => setActiveCategory(cat.id)}
-                  >
-                    <span className={activeCategory === cat.id ? "text-gold" : ""}>{cat.icon}</span>
-                    <span className="leading-tight text-center">{cat.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Featured Resorts */}
-            <div className="px-4 pt-5 pb-32">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[15px] font-extrabold text-text-dark">Featured Stays</h3>
-                <button className="text-xs font-semibold text-gold flex items-center gap-0.5 bg-transparent border-none cursor-pointer" onClick={() => navigate("/search")}>
-                  See all <ChevronRight size={13} />
-                </button>
-              </div>
-              <div className="flex flex-col gap-3.5">
-                {FEATURED.map((resort) => (
-                  <div
-                    key={resort.id}
-                    className="bg-bg-white border border-border-color rounded-2xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.06)] flex gap-3 p-3 transition-all hover:-translate-y-0.5"
-                  >
-                    <div className="relative w-[95px] h-[85px] rounded-xl overflow-hidden shrink-0">
-                      <img src={resort.image} alt={resort.name} className="w-full h-full object-cover" />
-                      <span className="absolute top-1.5 left-1.5 bg-gold text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                        {resort.tag}
-                      </span>
-                    </div>
-                    <div className="flex flex-col justify-between flex-1 min-w-0">
-                      <div>
-                        <h4 className="text-sm font-bold text-text-dark truncate">{resort.name}</h4>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <MapPin size={10} className="text-text-gray shrink-0" />
-                          <span className="text-[11px] text-text-gray truncate">{resort.location}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-1.5">
-                        <div>
-                          <span className="text-sm font-extrabold text-text-dark">${resort.price}</span>
-                          <span className="text-[10px] text-text-gray">/night</span>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <button
-                            className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
-                              wishlist[resort.id]
-                                ? "bg-red-50 border-red-200"
-                                : "border-border-color hover:border-red-200"
-                            }`}
-                            onClick={() => toggleWishlist(resort.id)}
-                          >
-                            <Heart size={12} fill={wishlist[resort.id] ? "#EF4444" : "none"} stroke={wishlist[resort.id] ? "#EF4444" : "#6e6e73"} />
-                          </button>
-                          <div className="flex items-center gap-1">
-                            <Star size={11} fill="#c5a059" className="text-gold" />
-                            <span className="text-xs font-bold text-text-dark">{resort.rating}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="p-4 pb-24">
-            {children}
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto overscroll-contain bg-bg-light">
+        <div className="pb-24">
+          {children}
+          {location.pathname !== "/ai-planner" && <Footer />}
+        </div>
       </div>
 
       {/* ── RIVO MASCOT CHAT (Above bottom nav) ──── */}
@@ -570,33 +428,44 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           </button>
         </div>
 
-        <ul className="list-none flex flex-col gap-4 p-0 m-0 flex-1">
-          <li>
-            <button className="text-text-dark text-base font-semibold hover:text-gold transition-colors block bg-transparent border-none cursor-pointer text-left w-full" onClick={() => { navigate("/profile"); setIsDrawerOpen(false); }}>
-              👤 Profile
-            </button>
-          </li>
-          <li>
-            <button className="text-text-dark text-base font-semibold hover:text-gold transition-colors block bg-transparent border-none cursor-pointer text-left w-full" onClick={() => scrollToSection("explore")}>
-              🌍 Explore Stays
-            </button>
-          </li>
-          <li>
-            <button className="text-text-dark text-base font-semibold hover:text-gold transition-colors block bg-transparent border-none cursor-pointer text-left w-full" onClick={() => scrollToSection("why")}>
-              ✨ Why Reservo
-            </button>
-          </li>
-          <li>
-            <button className="text-text-dark text-base font-semibold hover:text-gold transition-colors block bg-transparent border-none cursor-pointer text-left w-full" onClick={() => { navigate("/experiences"); setIsDrawerOpen(false); }}>
-              🌅 Experiences
-            </button>
-          </li>
-          <hr className="border-none h-px bg-border-color my-1" />
-          <li className="flex flex-col gap-2.5">
-            <span className="text-[11px] uppercase tracking-wider text-text-gray font-bold">Sign In or Register</span>
-            <button className="w-full bg-transparent text-text-dark border border-border-color py-2.5 rounded-lg font-semibold hover:bg-text-dark hover:text-bg-white transition-all">Log In</button>
-            <button className="w-full bg-gold text-white py-2.5 border-none rounded-lg font-semibold hover:bg-gold-dark transition-all">Register / Sign Up</button>
-          </li>
+        <ul className="list-none flex flex-col gap-1.5 p-0 m-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+          {[
+            { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
+            { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" },
+            { type: "divider" },
+            { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
+            { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
+            { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },
+            { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
+            { type: "divider" },
+            { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
+            { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
+            { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
+            { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" }
+          ].map((item, idx) => {
+            if (item.type === "divider") {
+              return <hr key={idx} className="border-none h-px bg-border-color my-1 shrink-0" />;
+            }
+            const active = item.path && location.pathname === item.path;
+            return (
+              <li key={idx}>
+                <button
+                  onClick={() => {
+                    if (item.path) navigate(item.path);
+                    setIsDrawerOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl border-none transition text-sm font-semibold cursor-pointer text-left ${
+                    active 
+                      ? "bg-[#2F80ED]/10 text-primary" 
+                      : "bg-transparent text-text-dark hover:bg-bg-light"
+                  }`}
+                >
+                  <span className={active ? "text-primary" : "text-text-gray"}>{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
 

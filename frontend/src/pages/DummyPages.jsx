@@ -29,3 +29,7 @@ export function HelpCenter() {
 export function Support() {
   return <GenericPage title="Support" description="Get in touch with our customer support team." />;
 }
+
+export function Privacy() {
+  return <GenericPage title="Privacy Policy" description="Learn how we handle your personal data and protect your privacy." />;
+}

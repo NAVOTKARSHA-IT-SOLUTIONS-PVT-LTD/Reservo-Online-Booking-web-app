@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check } from "lucide-react";
+import ResortNavigationMap from "./ResortNavigationMap";
 
 export default function ResortDetails({ resort, isDarkMode, onBack }) {
   const navigate = useNavigate();
@@ -148,6 +149,30 @@ export default function ResortDetails({ resort, isDarkMode, onBack }) {
               </div>
             </div>
           </div>
+
+          {/* Spatial Tour Map Integration */}
+          {resort.mapPoints && resort.mapPoints.length > 0 && (
+            <ResortNavigationMap 
+              mapPoints={resort.mapPoints}
+              resortName={resort.name}
+              isDarkMode={isDarkMode}
+              onSelectSpot={(spot) => {
+                const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]') || document.querySelector('[aria-label="Chat with Rivo"]');
+                if (mascotBtn) {
+                  const chatOpen = document.querySelector('form button[type="submit"]');
+                  if (!chatOpen) mascotBtn.click();
+                  setTimeout(() => {
+                    const inputEl = document.querySelector('form input[placeholder*="Ask Rivo"]') || document.querySelector('form input[placeholder*="Ask"]');
+                    if (inputEl) {
+                      inputEl.value = `Tell me about ${spot.title} at ${resort.name}`;
+                      const event = new Event('input', { bubbles: true });
+                      inputEl.dispatchEvent(event);
+                    }
+                  }, 400);
+                }
+              }}
+            />
+          )}
 
         </div>
 

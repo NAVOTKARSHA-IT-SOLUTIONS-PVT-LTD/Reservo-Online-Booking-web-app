@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Heart, Moon, Sun, Globe, ChevronDown } from "lucide-react";
+import { 
+  Menu, X, Heart, Moon, Sun, Globe, ChevronDown,
+  LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
+  LayoutGrid, BookOpen, Bell, Settings
+} from "lucide-react";
 import logoImage from "../assets/images/logo.png";
 
 function Header({ isDark, onToggleTheme, wishlist = [] }) {
@@ -113,6 +117,11 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                 </button>
               </li>
               <li>
+                <Link to="/ai-planner" className={getNavLinkClass(location.pathname === "/ai-planner")}>
+                  ✨ AI Planner
+                </Link>
+              </li>
+              <li>
                 <button className={getNavLinkClass(isHome && activeSection === "why")} onClick={() => scrollToSection("why")}>
                   Why Us
                 </button>
@@ -177,17 +186,44 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           <h3 className="text-xl font-bold text-text-dark">Menu</h3>
           <button className="bg-transparent text-text-gray hover:text-text-dark border-none cursor-pointer" onClick={toggleMenu}><X size={24} /></button>
         </div>
-        <ul className="flex flex-col gap-6 p-0 m-0 list-none text-[16px] font-semibold text-text-dark overflow-y-auto">
-          <li><Link to="/" onClick={toggleMenu} className="hover:text-primary text-text-dark decoration-none">Home</Link></li>
-          <li><button onClick={() => scrollToSection("explore")} className="bg-transparent border-none font-semibold hover:text-primary text-text-dark cursor-pointer text-left p-0">Explore Stays</button></li>
-          <li><button onClick={() => scrollToSection("why")} className="bg-transparent border-none font-semibold hover:text-primary text-text-dark cursor-pointer text-left p-0">Why Reservo</button></li>
-          <li><Link to="/experiences" onClick={toggleMenu} className="hover:text-primary text-text-dark decoration-none block">Experiences</Link></li>
-          <li><Link to="/rewards" onClick={toggleMenu} className="hover:text-primary text-text-dark decoration-none block">Rewards</Link></li>
-          <li><button onClick={() => scrollToSection("testimonials")} className="bg-transparent border-none font-semibold hover:text-primary text-text-dark cursor-pointer text-left p-0">Reviews</button></li>
-          <li><Link to="/contact" onClick={toggleMenu} className="hover:text-primary text-text-dark decoration-none block">Contact</Link></li>
-          <hr className="border-none h-px bg-border-color my-2 w-full" />
-          <li><Link to="/profile" onClick={toggleMenu} className="hover:text-primary text-text-dark decoration-none block">👤 Profile Settings</Link></li>
-          <li><Link to="/wishlist" onClick={toggleMenu} className="hover:text-primary text-text-dark decoration-none block flex items-center gap-1.5">❤️ Wishlist <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">{wishlist.length}</span></Link></li>
+        <ul className="list-none flex flex-col gap-1.5 p-0 m-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+          {[
+            { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
+            { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" },
+            { type: "divider" },
+            { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
+            { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
+            { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },
+            { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
+            { type: "divider" },
+            { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
+            { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
+            { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
+            { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" }
+          ].map((item, idx) => {
+            if (item.type === "divider") {
+              return <hr key={idx} className="border-none h-px bg-border-color my-1 shrink-0" />;
+            }
+            const active = item.path && location.pathname === item.path;
+            return (
+              <li key={idx}>
+                <button
+                  onClick={() => {
+                    if (item.path) navigate(item.path);
+                    setIsMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl border-none transition text-sm font-semibold cursor-pointer text-left ${
+                    active 
+                      ? "bg-[#2F80ED]/10 text-primary" 
+                      : "bg-transparent text-text-dark hover:bg-bg-light"
+                  }`}
+                >
+                  <span className={active ? "text-primary" : "text-text-gray"}>{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </>

@@ -206,10 +206,10 @@ function PopularDestinations({ wishlist = [], toggleWishlist }) {
           </div>
 
           {/* Right Trust Badges & Controls */}
-          <div className="flex flex-col items-end gap-3.5">
-            <div className="flex flex-wrap justify-end gap-3 bg-bg-white rounded-[20px] p-2 shadow-[0_5px_15px_rgba(0,0,0,0.02)] border border-border-color transition-colors duration-300">
+          <div className="flex flex-col items-start lg:items-end gap-3.5 w-full lg:w-auto">
+            <div className="flex flex-wrap gap-3 bg-bg-white rounded-[20px] p-2 shadow-[0_5px_15px_rgba(0,0,0,0.02)] border border-border-color transition-colors duration-300 w-full lg:w-auto">
               
-              <div className="flex items-center gap-2 px-2 py-1 border-r border-border-color">
+              <div className="flex items-center gap-2 px-2 py-1 border-r border-border-color flex-1 lg:flex-initial">
                 <div className="w-8 h-8 rounded-full bg-bg-light flex items-center justify-center text-primary transition-colors duration-300">
                   <ShieldCheck size={16} />
                 </div>
@@ -219,7 +219,7 @@ function PopularDestinations({ wishlist = [], toggleWishlist }) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 px-2 py-1 border-r border-border-color">
+              <div className="flex items-center gap-2 px-2 py-1 border-r border-border-color flex-1 lg:flex-initial">
                 <div className="w-8 h-8 rounded-full bg-bg-light flex items-center justify-center text-primary transition-colors duration-300">
                   <Star size={16} className="fill-current" />
                 </div>
@@ -229,7 +229,7 @@ function PopularDestinations({ wishlist = [], toggleWishlist }) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 px-2 py-1">
+              <div className="flex items-center gap-2 px-2 py-1 flex-1 lg:flex-initial">
                 <div className="w-8 h-8 rounded-full bg-bg-light flex items-center justify-center text-primary transition-colors duration-300">
                   <HeadphonesIcon size={16} />
                 </div>
@@ -240,7 +240,7 @@ function PopularDestinations({ wishlist = [], toggleWishlist }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between lg:justify-end w-full lg:w-auto gap-3">
               <button className="flex items-center gap-1.5 text-primary font-bold text-[13px] hover:text-primary-dark bg-transparent border-none cursor-pointer transition-colors px-2">
                 View All Stays <ArrowRight size={14} />
               </button>

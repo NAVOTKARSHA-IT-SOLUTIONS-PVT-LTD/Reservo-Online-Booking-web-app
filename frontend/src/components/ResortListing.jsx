@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, Heart, MapPin, Sparkles, ChevronRight, SlidersHorizontal, ArrowUpDown, RotateCcw, Check, X, ArrowLeft } from 'lucide-react';
 import { CATEGORIES, RESORTS } from '../data/resortsData';
 
@@ -48,6 +48,48 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     setActiveCategory('all');
     setSortBy('recommended');
   };
+
+  useEffect(() => {
+    const applyRivoMode = (mode) => {
+      if (!mode) return;
+      setIsFilterOpen(true);
+      if (mode === "luxury") {
+        setSortBy("price-high");
+        setMaxPrice(40000);
+        setSelectedAmenities(["Personal AI Butler", "Private Beach Access"]);
+      } else if (mode === "budget") {
+        setSortBy("price-low");
+        setMaxPrice(15000);
+        setSelectedAmenities([]);
+      } else if (mode === "relax") {
+        setSortBy("rating-high");
+        setMaxPrice(40000);
+        setSelectedAmenities(["Aura Ayurvedic Spa", "Infinity Edge Pool"]);
+      } else if (mode === "adventure") {
+        setSortBy("popular");
+        setMaxPrice(40000);
+        setSelectedAmenities(["Private Helipad Access", "Scuba & Water Sports"]);
+      } else if (mode === "support") {
+        resetAllFilters();
+      }
+    };
+
+    // Check if there is an active mode set in localStorage on mount
+    const savedMode = localStorage.getItem("reservo-active-mode");
+    if (savedMode) {
+      applyRivoMode(savedMode);
+      // Clear it after applying so it doesn't lock filters on every page load
+      localStorage.removeItem("reservo-active-mode");
+    }
+
+    const handleRivoMode = (e) => {
+      const mode = e.detail?.mode;
+      applyRivoMode(mode);
+    };
+
+    window.addEventListener("rivo-mode", handleRivoMode);
+    return () => window.removeEventListener("rivo-mode", handleRivoMode);
+  }, []);
 
   // Filter Logic
   const filteredResorts = RESORTS.filter(resort => {

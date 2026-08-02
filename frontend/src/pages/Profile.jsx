@@ -24,7 +24,7 @@ function Profile() {
       property: b.resortName,
       dates: `${new Date(b.checkin).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${new Date(b.checkout).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
       status: b.status,
-      amount: `$${b.total}`
+      amount: `₹${b.total.toLocaleString()}`
     }));
 
     return [

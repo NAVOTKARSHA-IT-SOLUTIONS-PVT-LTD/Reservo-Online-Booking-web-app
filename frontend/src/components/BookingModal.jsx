@@ -17,7 +17,37 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
   const taxes = Math.round(subtotal * 0.12);
   const grandTotal = subtotal + taxes;
 
-  const bookingCode = `RES-${Math.floor(100000 + Math.random() * 900000)}`;
+  const [bookingCode] = useState(() => `RES-${Math.floor(100000 + Math.random() * 900000)}`);
+
+  const handleConfirm = () => {
+    setIsConfirmed(true);
+    try {
+      const existing = JSON.parse(localStorage.getItem("reservo-bookings") || "[]");
+      const newBooking = {
+        id: bookingCode,
+        resortName: resort.name,
+        checkin: "2026-09-12",
+        checkout: "2026-09-15",
+        status: "Confirmed",
+        total: grandTotal
+      };
+      existing.unshift(newBooking);
+      localStorage.setItem("reservo-bookings", JSON.stringify(existing));
+
+      // Show success toast
+      const toast = document.getElementById("toast");
+      const toastMessage = document.getElementById("toast-message");
+      if (toast && toastMessage) {
+        toastMessage.textContent = `Suite checkout for ${resort.name} confirmed!`;
+        toast.classList.add("show");
+        setTimeout(() => {
+          toast.classList.remove("show");
+        }, 3500);
+      }
+    } catch (e) {
+      console.error("Failed to save booking:", e);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 font-sans animate-fade-in">
@@ -169,7 +199,7 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
         <div className={`p-6 border-t ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
           {!isConfirmed ? (
             <button
-              onClick={() => setIsConfirmed(true)}
+              onClick={handleConfirm}
               className="w-full py-3.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg transition"
             >
               Confirm & Pay ₹{grandTotal.toLocaleString()}

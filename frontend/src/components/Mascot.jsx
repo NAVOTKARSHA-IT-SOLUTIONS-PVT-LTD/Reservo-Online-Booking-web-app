@@ -141,6 +141,7 @@ function Mascot({ isDark, setIsDark }) {
   const handleSelectMode = (mode) => {
     setActiveMode(mode.id);
     setRivoAvatar(mode.avatar);
+    localStorage.setItem("reservo-active-mode", mode.id);
 
     let replyMessage = "";
     if (mode.id === "luxury") {

@@ -45,7 +45,7 @@ function Hero() {
   };
 
   return (
-    <section className="relative w-full h-screen min-h-[700px] flex items-center justify-center pt-20 pb-16 overflow-hidden">
+    <section className="relative w-full min-h-[620px] md:min-h-[700px] md:h-screen flex items-center justify-center pt-24 pb-32 md:pb-16 overflow-hidden">
       
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
@@ -67,21 +67,24 @@ function Hero() {
           </div>
 
           {/* Title */}
-          <h1 className="font-extrabold text-[46px] sm:text-[56px] lg:text-[70px] leading-[1.05] mb-6 font-serif tracking-tight drop-shadow-xl">
+          <h1 className="font-extrabold text-[36px] sm:text-[56px] lg:text-[70px] leading-[1.05] mb-6 font-serif tracking-tight drop-shadow-xl">
             Book Smart.<br />
             Stay <span className="italic text-[#2F80ED] font-serif">Better.</span>
           </h1>
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row items-center gap-4 mb-8 md:mb-12">
             <button 
-              onClick={scrollToExplore}
+              onClick={() => navigate("/ai-planner")}
               className="w-full sm:w-auto bg-[#1B5CF8] text-white px-6 py-3.5 rounded-full text-[15px] font-bold border-none cursor-pointer flex items-center justify-center gap-2 hover:bg-[#1549d4] transition-all shadow-[0_10px_25px_rgba(27,92,248,0.4)]"
             >
-              Explore Resorts <ArrowRight size={18} />
+              <Sparkles size={18} /> Launch Rivo AI Planner
             </button>
-            <button className="w-full sm:w-auto bg-black/30 backdrop-blur-md border border-white/20 text-white px-6 py-3.5 rounded-full text-[15px] font-bold cursor-pointer flex items-center justify-center gap-2 hover:bg-black/50 transition-all shadow-lg">
-              <Play size={18} className="fill-current" /> Watch Demo
+            <button 
+              onClick={scrollToExplore}
+              className="w-full sm:w-auto bg-black/30 backdrop-blur-md border border-white/20 text-white px-6 py-3.5 rounded-full text-[15px] font-bold cursor-pointer flex items-center justify-center gap-2 hover:bg-black/50 transition-all shadow-lg"
+            >
+              Explore Resorts <ArrowRight size={18} />
             </button>
           </div>
 
@@ -165,7 +168,10 @@ function Hero() {
               </div>
             </div>
 
-            <button className="w-full bg-bg-white border border-border-color text-primary py-3.5 rounded-2xl font-bold text-[14px] flex items-center justify-center gap-2 hover:border-primary hover:text-primary-dark transition-all duration-300 shadow-sm cursor-pointer">
+            <button 
+              onClick={() => navigate("/ai-planner")}
+              className="w-full bg-bg-white border border-border-color text-primary py-3.5 rounded-2xl font-bold text-[14px] flex items-center justify-center gap-2 hover:border-primary hover:text-primary-dark transition-all duration-300 shadow-sm cursor-pointer"
+            >
               <Wand2 size={16} /> Plan My Trip
             </button>
 
@@ -198,7 +204,7 @@ function Hero() {
       </div>
 
       {/* Floating Bottom Search Bar */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-[1100px] bg-bg-white/95 backdrop-blur-xl rounded-[100px] p-2 shadow-[0_30px_60px_rgba(47,128,237,0.15)] flex flex-col md:flex-row items-center justify-between border border-border-color transition-colors duration-300 z-20">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-[1100px] bg-bg-white/95 backdrop-blur-xl rounded-3xl md:rounded-[100px] p-2 md:p-3 shadow-[0_30px_60px_rgba(47,128,237,0.15)] flex flex-col md:flex-row items-center justify-between border border-border-color transition-colors duration-300 z-20">
         
         <div className="flex-1 flex flex-col md:flex-row items-center w-full divide-y md:divide-y-0 md:divide-x divide-border-color">
           
@@ -266,7 +272,7 @@ function Hero() {
 
         <button 
           onClick={handleSearch}
-          className="w-full md:w-auto bg-primary hover:bg-primary-dark text-white px-8 py-3.5 rounded-full font-bold text-[14px] flex items-center justify-center gap-2 border-none cursor-pointer transition-all shadow-[0_5px_15px_rgba(27,92,248,0.3)] shrink-0 ml-0 md:ml-2 mt-4 md:mt-0"
+          className="w-full md:w-auto bg-primary hover:bg-primary-dark text-white px-8 py-3.5 rounded-2xl md:rounded-full font-bold text-[14px] flex items-center justify-center gap-2 border-none cursor-pointer transition-all shadow-[0_5px_15px_rgba(27,92,248,0.3)] shrink-0 ml-0 md:ml-2 mt-4 md:mt-0"
         >
           <Search size={18} /> Search Stays
         </button>
