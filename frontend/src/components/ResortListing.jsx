@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useWishlist } from '../context/WishlistContext';
 import { Star, Heart, MapPin, Sparkles, ChevronRight, SlidersHorizontal, ArrowUpDown, RotateCcw, Check, X, ArrowLeft } from 'lucide-react';
 import { CATEGORIES, RESORTS } from '../data/resortsData';
 
@@ -18,14 +19,11 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
   const [minRating, setMinRating] = useState(0);
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [selectedPerks, setSelectedPerks] = useState([]);
-  const [favorites, setFavorites] = useState([]);
+  const { wishlist, toggleWishlist } = useWishlist();
 
-
-  const toggleFavorite = (id, e) => {
+  const toggleFavorite = (resort, e) => {
     e.stopPropagation();
-    setFavorites(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+    toggleWishlist(resort);
   };
 
   const toggleAmenity = (amenity) => {
@@ -386,7 +384,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                     : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
                 }`}>
                   {sortedResorts.map(resort => {
-                    const isFav = favorites.includes(resort.id);
+                    const isFav = wishlist.some(item => item.id === resort.id);
                     return (
                       <div
                         key={resort.id}
@@ -410,7 +408,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                           </div>
 
                           <button
-                            onClick={(e) => toggleFavorite(resort.id, e)}
+                            onClick={(e) => toggleFavorite(resort, e)}
                             className={`absolute top-4 right-4 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center transition hover:scale-110 shadow ${
                               isFav ? 'text-rose-500' : 'text-stone-700'
                             }`}

@@ -26,10 +26,37 @@ import { Careers, Terms, HelpCenter, Support, Privacy } from "./pages/DummyPages
 import ResortListing from "./components/ResortListing";
 import ResortDetails from "./components/ResortDetails";
 import { RESORTS } from "./data/resortsData";
+import { ALL_RESORTS } from "./data/resorts";
 
 import Experiences from "./pages/Experiences";
 import Profile from "./pages/Profile";
 import Wishlist from "./pages/Wishlist";
+import { useWishlist } from "./context/WishlistContext";
+
+import goaImage from "./assets/images/goa.jpg";
+import keralaImage from "./assets/images/kerala.jpg";
+import coorgImage from "./assets/images/coorg.jpg";
+import manaliImage from "./assets/images/manali.jpg";
+import jaipurImage from "./assets/images/jaipur.jpg";
+import udaipurImage from "./assets/images/udaipur.jpg";
+import shimlaImage from "./assets/images/shimla.jpg";
+import andamanImage from "./assets/images/andaman.jpg";
+
+const HOME_DESTINATIONS_MAP = {
+  1: { name: "Goa Coastline", location: "West Coast, India", price: 8000, image: goaImage },
+  2: { name: "Kerala Backwaters", location: "South Coast, India", price: 9000, image: keralaImage },
+  3: { name: "Solang Valley Manali", location: "Himachal Pradesh, India", price: 6500, image: manaliImage },
+  4: { name: "Coorg Hill Station", location: "Karnataka, India", price: 7200, image: coorgImage },
+  5: { name: "Coorg Forest Chalet", location: "Karnataka, India", price: 8500, image: coorgImage },
+  6: { name: "Udaipur Lake Palace", location: "Rajasthan, India", price: 15000, image: udaipurImage },
+  7: { name: "Jaipur Haveli", location: "Rajasthan, India", price: 12000, image: jaipurImage },
+  8: { name: "Shimla Log Cabin", location: "Himachal Pradesh, India", price: 5800, image: shimlaImage },
+  9: { name: "Manali Glamping Tents", location: "Himachal Pradesh, India", price: 7500, image: manaliImage },
+  10: { name: "Andaman Private Shore", location: "Andaman Islands, India", price: 18000, image: andamanImage },
+  11: { name: "Andaman Beach Cove", location: "Andaman Islands, India", price: 13500, image: andamanImage },
+  12: { name: "Shimla Alpine Resort", location: "Himachal Pradesh, India", price: 8200, image: shimlaImage },
+  13: { name: "Goa Heritage Villa", location: "Goa, India", price: 11000, image: goaImage }
+};
 import AIPlanner from "./pages/AIPlanner";
 import Dashboard from "./pages/Dashboard";
 import Bookings from "./pages/Bookings";
@@ -81,6 +108,7 @@ function ResortDetailsPageWrapper({ isDark }) {
   return (
     <ResortDetails
       resort={resort}
+      urlId={id}
       isDarkMode={isDark}
       onBack={() => navigate("/")}
     />
@@ -106,18 +134,27 @@ function App() {
     return localStorage.getItem("reservo-theme") === "dark";
   });
 
-  const [wishlist, setWishlist] = useState([1, 2, 3]);
+  const { wishlist, toggleWishlist } = useWishlist();
+  const wishlistIds = [];
+  wishlist.forEach((item) => {
+    if (typeof item.id === 'string' && item.id.startsWith('home-')) {
+      wishlistIds.push(parseInt(item.id.replace('home-', ''), 10));
+    } else if (typeof item.id === 'number') {
+      wishlistIds.push(item.id);
+    }
+  });
+
+  const handleToggleWishlist = (id) => {
+    const homeDest = HOME_DESTINATIONS_MAP[id];
+    if (homeDest) {
+      toggleWishlist({ id: `home-${id}`, ...homeDest });
+    }
+  };
 
   // Booking checkout states
   const [bookingResort, setBookingResort] = useState(null);
   const [bookingRoom, setBookingRoom] = useState(null);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
-
-  const toggleWishlist = (id) => {
-    setWishlist((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -167,7 +204,7 @@ function App() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-bg-light transition-colors duration-300">
       {/* Global Preloader Screen */}
       {showPreloader && (
         <Preloader onComplete={handlePreloaderComplete} />
@@ -183,9 +220,9 @@ function App() {
           </Routes>
         </main>
       ) : isMobile ? (
-        <MobileUI isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist}>
+        <MobileUI isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlistIds}>
           <Routes>
-            <Route path="/" element={<Home wishlist={wishlist} toggleWishlist={toggleWishlist} />} />
+            <Route path="/" element={<Home wishlist={wishlistIds} toggleWishlist={handleToggleWishlist} />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/rewards" element={<Rewards />} />
@@ -212,12 +249,12 @@ function App() {
           </Routes>
         </MobileUI>
       ) : (
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 bg-bg-light transition-colors duration-300">
           <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} />
 
           <main className={`flex-1 ${location.pathname === "/" ? "" : location.pathname === "/ai-planner" ? "pt-20" : "pt-28"}`}>
             <Routes>
-              <Route path="/" element={<Home wishlist={wishlist} toggleWishlist={toggleWishlist} />} />
+              <Route path="/" element={<Home wishlist={wishlistIds} toggleWishlist={handleToggleWishlist} />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/rewards" element={<Rewards />} />

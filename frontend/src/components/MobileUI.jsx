@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useWishlist } from "../context/WishlistContext";
 import {
   Menu, X, Moon, Sun, Heart, Bell, MapPin, Calendar, Users,
   Search, ArrowRight, Waves, Mountain, Home, Droplets,
@@ -140,7 +141,7 @@ const QUICK_REPLIES = [
 function MobileUI({ isDark, onToggleTheme, children }) {
   const [activeTab, setActiveTab] = useState("home");
   const [activeCategory, setActiveCategory] = useState("beach");
-  const [wishlist, setWishlist] = useState({});
+  const { wishlist, toggleWishlist } = useWishlist();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isMascotOpen, setIsMascotOpen] = useState(false);
   const [activeMode, setActiveMode] = useState("support");
@@ -153,7 +154,15 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const toggleWishlist = (id) => setWishlist((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleWishlistHandler = (resort) => {
+    toggleWishlist({
+      id: `mobile-${resort.id}`,
+      name: resort.name,
+      location: resort.location,
+      price: resort.price,
+      image: resort.image
+    });
+  };
 
   const scrollToSection = (id) => {
     setIsDrawerOpen(false);

@@ -1,11 +1,25 @@
 import React, { useState } from "react";
+import { useWishlist } from "../context/WishlistContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check } from "lucide-react";
 import ResortNavigationMap from "./ResortNavigationMap";
 
-export default function ResortDetails({ resort, isDarkMode, onBack }) {
+export default function ResortDetails({ resort, urlId, isDarkMode, onBack }) {
   const navigate = useNavigate();
-  const [isFavorited, setIsFavorited] = useState(false);
+  const { wishlist, toggleWishlist } = useWishlist();
+  const targetId = urlId ? (isNaN(urlId) ? urlId : `home-${urlId}`) : resort.id;
+  const isFavorited = wishlist.some((item) => item.id === targetId);
+
+  const toggleFavorite = () => {
+    if (isFavorited) {
+      const matchingItem = wishlist.find((item) => item.id === targetId);
+      if (matchingItem) {
+        toggleWishlist(matchingItem);
+      }
+    } else {
+      toggleWishlist({ ...resort, id: targetId });
+    }
+  };
   const [checkIn, setCheckIn] = useState("2026-05-12");
   const [checkOut, setCheckOut] = useState("2026-05-15");
   const [guests, setGuests] = useState("2 Guests, 1 Room");
@@ -52,7 +66,7 @@ export default function ResortDetails({ resort, isDarkMode, onBack }) {
               {/* Action Buttons */}
               <div className="flex items-center gap-3">
                 <button 
-                  onClick={() => setIsFavorited(!isFavorited)}
+                  onClick={toggleFavorite}
                   className="w-10 h-10 rounded-full bg-white/95 text-stone-400 flex items-center justify-center shadow-md hover:text-red-500 transition cursor-pointer border-none"
                 >
                   <Heart size={18} className={isFavorited ? "fill-red-500 text-red-500" : ""} />

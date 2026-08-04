@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Heart, Star, MapPin, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { useWishlist } from "../context/WishlistContext";
 
 // Import local images from Aditya's assets
 import manaliImg from "../assets/images/manali.jpg";
@@ -103,15 +104,18 @@ const RESORTS = [
 ];
 
 function FeaturedResorts() {
-  const [wishlist, setWishlist] = useState({});
+  const { wishlist, toggleWishlist } = useWishlist();
   const [sliderIndex, setSliderIndex] = useState(0);
 
-  const toggleWishlist = (id, e) => {
+  const toggleWishlistHandler = (resort, e) => {
     e.stopPropagation();
-    setWishlist(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+    toggleWishlist({
+      id: `featured-${resort.id}`,
+      name: resort.name,
+      location: resort.location,
+      price: resort.price,
+      image: resort.image
+    });
   };
 
   const handleQuickBook = (name) => {
@@ -208,12 +212,12 @@ function FeaturedResorts() {
 
                   <button 
                     className={`absolute top-3.75 right-3.75 bg-white/85 backdrop-blur-[8px] border-none w-9 h-9 rounded-full flex items-center justify-center text-[#121e1b] cursor-pointer transition-all duration-300 z-10 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-white hover:scale-110 ${
-                      wishlist[resort.id] ? "text-red-500" : ""
+                      wishlist.some(item => item.id === `featured-${resort.id}`) ? "text-red-500" : ""
                     }`}
                     aria-label="Add to Wishlist"
-                    onClick={(e) => toggleWishlist(resort.id, e)}
+                    onClick={(e) => toggleWishlistHandler(resort, e)}
                   >
-                    <Heart size={16} fill={wishlist[resort.id] ? "#EF4444" : "none"} stroke={wishlist[resort.id] ? "#EF4444" : "currentColor"} />
+                    <Heart size={16} fill={wishlist.some(item => item.id === `featured-${resort.id}`) ? "#EF4444" : "none"} stroke={wishlist.some(item => item.id === `featured-${resort.id}`) ? "#EF4444" : "currentColor"} />
                   </button>
                 </div>
 
