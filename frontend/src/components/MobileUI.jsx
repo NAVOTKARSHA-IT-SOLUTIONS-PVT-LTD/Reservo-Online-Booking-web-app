@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useWishlist } from "../context/WishlistContext";
 import {
@@ -153,6 +153,28 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   const [isTyping, setIsTyping] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const scrollContainerRef = useRef(null);
+
+  // Sync activeTab with current URL path
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === "/") {
+      setActiveTab("home");
+    } else if (path === "/search" || path === "/search-results" || path === "/resorts") {
+      setActiveTab("explore");
+    } else if (path === "/wishlist") {
+      setActiveTab("wishlist");
+    } else if (path === "/profile" || path === "/dashboard" || path === "/bookings" || path === "/notifications" || path === "/settings") {
+      setActiveTab("profile");
+    }
+  }, [location.pathname]);
+
+  // Scroll to top on navigation
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   const toggleWishlistHandler = (resort) => {
     toggleWishlist({
@@ -289,7 +311,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
       </header>
 
       {/* ── SCROLLABLE CONTENT ─────────────────────── */}
-      <div className="flex-1 overflow-y-auto overscroll-contain bg-bg-light">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overscroll-contain bg-bg-light">
         <div className="pb-24">
           {children}
           {location.pathname !== "/ai-planner" && <Footer />}

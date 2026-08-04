@@ -44,7 +44,7 @@ export default function Register() {
       <div className="w-full h-full lg:h-[90vh] lg:max-h-[800px] max-w-[1200px] bg-bg-white border border-border-color lg:rounded-[32px] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.04)] flex flex-col lg:flex-row">
         
         {/* LEFT COLUMN: HERO PANEL */}
-        <div className="relative w-full lg:w-[45%] h-[280px] lg:h-full bg-slate-900 text-white p-6 lg:p-10 flex flex-col justify-between shrink-0 overflow-hidden">
+        <div className="relative w-full lg:w-[45%] h-[280px] lg:h-full bg-slate-900 text-white p-6 lg:p-10 hidden lg:flex flex-col justify-between shrink-0 overflow-hidden">
           {/* Background Image overlay */}
           <div className="absolute inset-0 z-0">
             <img 

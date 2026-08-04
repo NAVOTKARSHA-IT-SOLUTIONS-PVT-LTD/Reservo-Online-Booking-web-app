@@ -45,7 +45,7 @@ function Hero() {
   };
 
   return (
-    <section className="relative w-full min-h-[620px] md:min-h-[700px] md:h-screen flex items-center justify-center pt-24 pb-32 md:pb-16 overflow-hidden">
+    <section className="relative w-full min-h-[620px] md:min-h-[700px] md:h-screen flex flex-col items-center justify-center pt-24 pb-16 md:pb-16 overflow-hidden">
       
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
@@ -204,7 +204,7 @@ function Hero() {
       </div>
 
       {/* Floating Bottom Search Bar */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-[1100px] bg-bg-white/95 backdrop-blur-xl rounded-3xl md:rounded-[100px] p-2 md:p-3 shadow-[0_30px_60px_rgba(47,128,237,0.15)] flex flex-col md:flex-row items-center justify-between border border-border-color transition-colors duration-300 z-20">
+      <div className="w-[95%] mx-auto relative md:absolute md:bottom-6 left-0 md:left-1/2 translate-x-0 md:-translate-x-1/2 max-w-[1100px] bg-bg-white/95 backdrop-blur-xl rounded-3xl md:rounded-[100px] p-4 md:p-3 mt-8 md:mt-0 shadow-[0_30px_60px_rgba(47,128,237,0.15)] flex flex-col md:flex-row items-center justify-between border border-border-color transition-colors duration-300 z-20">
         
         <div className="flex-1 flex flex-col md:flex-row items-center w-full divide-y md:divide-y-0 md:divide-x divide-border-color">
           

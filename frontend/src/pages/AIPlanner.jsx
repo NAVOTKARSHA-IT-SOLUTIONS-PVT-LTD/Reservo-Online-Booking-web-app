@@ -615,7 +615,7 @@ export default function AIPlanner() {
   };
 
   return (
-    <div className="h-[calc(100vh-112px)] flex flex-col bg-bg-light text-text-dark transition-colors duration-300 overflow-hidden font-sans">
+    <div className="h-[calc(100vh-121px)] md:h-[calc(100vh-112px)] flex flex-col bg-bg-light text-text-dark transition-colors duration-300 overflow-hidden font-sans">
       
       {/* Mobile Sub-Navigation Tabs */}
       <div className="md:hidden flex border-b border-border-color bg-bg-white shrink-0 p-2 gap-2">
