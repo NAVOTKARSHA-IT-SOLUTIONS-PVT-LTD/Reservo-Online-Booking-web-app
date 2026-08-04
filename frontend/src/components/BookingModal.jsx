@@ -50,7 +50,7 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 font-sans animate-fade-in">
+    <div className="fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 font-sans animate-fade-in">
       <div className={`rounded-3xl max-w-xl w-full border shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${
         isDarkMode ? 'bg-[#1E293B] border-[#334155] text-[#F8FAFC]' : 'bg-white border-[#E2E8F0] text-[#0F172A]'
       }`}>

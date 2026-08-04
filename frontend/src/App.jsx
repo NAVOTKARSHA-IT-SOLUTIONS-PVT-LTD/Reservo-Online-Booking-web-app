@@ -324,7 +324,7 @@ function App() {
       {/* Global Toast Notification Container */}
       <div 
         id="toast" 
-        className="fixed top-[30px] left-1/2 -translate-x-1/2 bg-[#121e1b] text-white px-6 py-3 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] flex items-center gap-2.5 text-sm font-medium z-[3000] opacity-0 pointer-events-none transition-opacity duration-300 [&.show]:opacity-100 [&.show]:pointer-events-auto"
+        className="fixed top-[30px] left-1/2 -translate-x-1/2 bg-[#121e1b] text-white px-6 py-3 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] flex items-center gap-2.5 text-sm font-medium z-[10000] opacity-0 pointer-events-none transition-opacity duration-300 [&.show]:opacity-100 [&.show]:pointer-events-auto"
       >
         <span id="toast-message"></span>
       </div>
