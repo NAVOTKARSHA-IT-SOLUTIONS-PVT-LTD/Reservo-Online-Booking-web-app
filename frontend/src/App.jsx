@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Routes, Route, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import Header from "./components/Header";
@@ -183,16 +183,22 @@ function App() {
     }
   }, [isDark]);
 
+  const lastProcessedKeyRef = useRef(null);
+
   useEffect(() => {
+    const key = location.key || (location.pathname + JSON.stringify(location.state || {}));
     if ((location.pathname === "/resorts" || location.pathname === "/search" || location.pathname === "/search-results") && location.state?.checkAvailabilityFor) {
-      const resortId = location.state.checkAvailabilityFor;
-      const resort = RESORTS.find((r) => r.id === resortId) || RESORTS[0];
-      if (resort) {
-        setBookingResort(resort);
-        setBookingRoom(null);
-        setIsCheckingAvailability(true);
+      if (lastProcessedKeyRef.current !== key) {
+        lastProcessedKeyRef.current = key;
+        const resortId = location.state.checkAvailabilityFor;
+        const resort = RESORTS.find((r) => r.id === resortId) || RESORTS[0];
+        if (resort) {
+          setBookingResort(resort);
+          setBookingRoom(null);
+          setIsCheckingAvailability(true);
+        }
+        navigate(location.pathname, { replace: true, state: {} });
       }
-      navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, navigate]);
 
