@@ -1,50 +1,74 @@
-import React, { useState } from "react";
-import { User, Mail, Phone, Globe, Shield, CreditCard, LogOut, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { motion, AnimatePresence } from "framer-motion";
+import { User, Mail, Phone, Globe, Shield, CreditCard, LogOut, CheckCircle2, AlertCircle } from "lucide-react";
+import { profileService } from "../services/profile.service";
+import { bookingService } from "../services/booking.service";
+import { ProfileSkeleton } from "../components/Skeleton";
+import ErrorScreen from "../components/ErrorScreen";
 import rivoSupport from "../assets/images/rivo_support.png";
 
+// Define schema for personal details validation
+const profileSchema = z.object({
+  name: z
+    .string()
+    .min(3, { message: "Name must be at least 3 characters." })
+    .max(40, { message: "Name cannot exceed 40 characters." }),
+  email: z
+    .string()
+    .min(1, { message: "Email is required." })
+    .email({ message: "Please enter a valid email address." }),
+  phone: z
+    .string()
+    .min(10, { message: "Phone number must be at least 10 digits." })
+});
+
 function Profile() {
-  const [profile, setProfile] = useState({
-    name: "Tausif Shaikh",
-    email: "tausif.shaikh@example.com",
-    phone: "+91 98765 43210",
-    tier: "Elite Diamond Status",
-    joined: "Member since July 2026",
-    points: "24,500 pts"
+  const [profile, setProfile] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeSection, setActiveSection] = useState("details");
+
+  // React Hook Form setup
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting, isDirty }
+  } = useForm({
+    resolver: zodResolver(profileSchema),
+    mode: "onChange"
   });
 
-  const [bookingHistory] = useState(() => {
-    let localBookings = [];
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      localBookings = JSON.parse(localStorage.getItem("reservo-bookings") || "[]");
-    } catch(e) {}
-    
-    // Map local bookings to the UI format
-    const formattedLocal = localBookings.map(b => ({
-      id: b.id,
-      property: b.resortName,
-      dates: `${new Date(b.checkin).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${new Date(b.checkout).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
-      status: b.status,
-      amount: `₹${b.total.toLocaleString()}`
-    }));
+      const [profileData, bookingsData] = await Promise.all([
+        profileService.getProfile(),
+        bookingService.getBookings()
+      ]);
+      setProfile(profileData);
+      setBookings(bookingsData);
+      // Populate form values
+      reset({
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone
+      });
+    } catch (err) {
+      setError(err.message || "Failed to load profile parameters.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return [
-      ...formattedLocal,
-      {
-        id: 1,
-        property: "Azure Bay Resort, Bali",
-        dates: "Aug 12 - Aug 18, 2026",
-        status: "Confirmed",
-        amount: "$1,470"
-      },
-      {
-        id: 2,
-        property: "Himalaya Escape, Manali",
-        dates: "Dec 22 - Dec 28, 2025",
-        status: "Completed",
-        amount: "$1,134"
-      }
-    ];
-  });
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const showGlobalToast = (msg) => {
     const toast = document.getElementById("toast");
@@ -58,10 +82,36 @@ function Profile() {
     }
   };
 
-  const saveSettings = (e) => {
-    e.preventDefault();
-    showGlobalToast("Profile configurations updated successfully!");
+  const onSubmit = async (formData) => {
+    try {
+      const result = await profileService.updateProfile(formData);
+      setProfile(result);
+      showGlobalToast("Profile configurations updated successfully!");
+      // Reset form with new values so it's not dirty anymore
+      reset(formData);
+    } catch (err) {
+      showGlobalToast(err.message || "Failed to update profile.");
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="py-30 pb-25 bg-bg-light min-h-screen">
+        <div className="w-[90%] max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-10 items-start">
+          <div className="bg-bg-white border border-border-color rounded-3xl p-7.5 shadow-custom h-96 shimmer" />
+          <ProfileSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-bg-light flex items-center justify-center p-6">
+        <ErrorScreen type="network" message={error} onRetry={loadData} />
+      </div>
+    );
+  }
 
   return (
     <div className="py-30 pb-25 bg-bg-light min-h-screen fade-up">
@@ -75,7 +125,7 @@ function Profile() {
               alt={profile.name} 
               className="w-full h-full rounded-full object-cover border-3 border-gold"
             />
-            <span className="absolute -bottom-1.25 left-1/2 -translate-x-1/2 bg-[#121e1b] text-white text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap shadow-[0_4px_10px_rgba(0,0,0,0.15)]">{profile.tier}</span>
+            <span className="absolute -bottom-1.25 left-1/2 -translate-x-1/2 bg-[#121e1b] text-white text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap shadow-[0_4px_10px_rgba(0,0,0,0.15)]">{profile.tier || "Elite Diamond Status"}</span>
           </div>
 
           <div className="profile-meta-info">
@@ -85,13 +135,32 @@ function Profile() {
 
           <div className="bg-bg-light border border-border-color p-3.75 rounded-2xl mb-6.25">
             <span className="text-[11px] uppercase tracking-wider text-text-gray font-bold block mb-1.25">Loyalty Points Available</span>
-            <h3 className="text-2xl font-extrabold text-text-dark">{profile.points}</h3>
+            <h3 className="text-2xl font-extrabold text-text-dark">{profile.points?.toLocaleString() || "24,500"} pts</h3>
           </div>
 
           <nav className="flex flex-col gap-2.5">
-            <a href="#details" className="flex items-center gap-2.5 px-4.5 py-3 rounded-lg text-sm font-semibold text-text-dark no-underline bg-bg-light"><User size={16} /> Personal Info</a>
-            <a href="#history" className="flex items-center gap-2.5 px-4.5 py-3 rounded-lg text-sm font-semibold text-text-gray no-underline transition-colors duration-300 bg-transparent border-none w-full text-left cursor-pointer hover:bg-bg-light hover:text-text-dark"><CreditCard size={16} /> Booking History</a>
-            <a href="#security" className="flex items-center gap-2.5 px-4.5 py-3 rounded-lg text-sm font-semibold text-text-gray no-underline transition-colors duration-300 bg-transparent border-none w-full text-left cursor-pointer hover:bg-bg-light hover:text-text-dark"><Shield size={16} /> Security</a>
+            <button 
+              onClick={() => setActiveSection("details")}
+              className={`flex items-center gap-2.5 px-4.5 py-3 rounded-lg text-sm font-semibold border-none cursor-pointer text-left w-full transition-colors ${
+                activeSection === "details" ? "text-text-dark bg-bg-light" : "text-text-gray bg-transparent hover:bg-bg-light hover:text-text-dark"
+              }`}
+            >
+              <User size={16} /> Personal Info
+            </button>
+            <button 
+              onClick={() => setActiveSection("history")}
+              className={`flex items-center gap-2.5 px-4.5 py-3 rounded-lg text-sm font-semibold border-none cursor-pointer text-left w-full transition-colors ${
+                activeSection === "history" ? "text-text-dark bg-bg-light" : "text-text-gray bg-transparent hover:bg-bg-light hover:text-text-dark"
+              }`}
+            >
+              <CreditCard size={16} /> Booking History
+            </button>
+            <button 
+              onClick={() => showGlobalToast("Security logs are protected.")}
+              className="flex items-center gap-2.5 px-4.5 py-3 rounded-lg text-sm font-semibold text-text-gray no-underline transition-colors duration-300 bg-transparent border-none w-full text-left cursor-pointer hover:bg-bg-light hover:text-text-dark"
+            >
+              <Shield size={16} /> Security
+            </button>
             <button 
               className="flex items-center gap-2.5 px-4.5 py-3 rounded-lg text-sm font-semibold text-red-500 no-underline transition-colors duration-300 bg-transparent border-none w-full text-left cursor-pointer hover:bg-red-500/5 mt-3.75"
               onClick={() => showGlobalToast("Account signed out.")}
@@ -113,85 +182,155 @@ function Profile() {
 
         {/* Right column details */}
         <main className="flex flex-col gap-7.5">
-          {/* Section 1 details */}
-          <div id="details" className="bg-bg-white border border-border-color rounded-3xl p-10 shadow-custom">
-            <h3 className="text-2xl font-extrabold text-text-dark mb-1.5">Personal Information</h3>
-            <p className="text-[13.5px] text-text-gray mb-7.5">Manage your basic accounts details and communication settings.</p>
+          {activeSection === "details" && (
+            <div className="bg-bg-white border border-border-color rounded-3xl p-10 shadow-custom animate-fade-in">
+              <h3 className="text-2xl font-extrabold text-text-dark mb-1.5">Personal Information</h3>
+              <p className="text-[13.5px] text-text-gray mb-7.5">Manage your basic accounts details and communication settings.</p>
 
-            <form onSubmit={saveSettings} className="flex flex-col gap-6.25">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1"><User size={12} /> Full Name</label>
-                  <input 
-                    type="text" 
-                    value={profile.name}
-                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                    className="p-3 px-4 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:border-gold focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1"><Mail size={12} /> Email Address</label>
-                  <input 
-                    type="email" 
-                    value={profile.email}
-                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    className="p-3 px-4 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:border-gold focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1"><Phone size={12} /> Mobile Number</label>
-                  <input 
-                    type="text" 
-                    value={profile.phone}
-                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                    className="p-3 px-4 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:border-gold focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1"><Globe size={12} /> Language / Currency</label>
-                  <select defaultValue="en_usd" className="p-3 px-4 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:border-gold focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]">
-                    <option value="en_usd">English (USD)</option>
-                    <option value="en_inr">English (INR)</option>
-                    <option value="es_eur">Español (EUR)</option>
-                  </select>
-                </div>
-              </div>
-
-              <button type="submit" className="self-start bg-primary text-bg-white border-none px-7.5 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-colors duration-300 hover:bg-gold hover:text-white hover:-translate-y-px">
-                Save Changes
-              </button>
-            </form>
-          </div>
-
-          {/* Section 2 details */}
-          <div id="history" className="bg-bg-white border border-border-color rounded-3xl p-10 shadow-custom">
-            <h3 className="text-2xl font-extrabold text-text-dark mb-1.5">Active & Past Reservations</h3>
-            <p className="text-[13.5px] text-text-gray mb-7.5">Real-time status updates of your digital keys and suite check-ins.</p>
-
-            <div className="flex flex-col gap-3.75">
-              {bookingHistory.map(bk => (
-                <div key={bk.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 bg-bg-light border border-border-color rounded-2xl gap-3.75 sm:gap-0">
-                  <div>
-                    <h4 className="text-base text-text-dark font-bold mb-1">{bk.property}</h4>
-                    <span className="text-xs text-text-gray">{bk.dates}</span>
+              <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6.25">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  
+                  {/* Full Name */}
+                  <div className="flex flex-col gap-2 relative">
+                    <label htmlFor="name" className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1">
+                      <User size={12} /> Full Name
+                    </label>
+                    <input 
+                      id="name"
+                      type="text" 
+                      {...register("name")}
+                      className={`p-3 px-4 rounded-lg border ${
+                        errors.name ? "border-red-500 focus:border-red-500" : "border-border-color focus:border-gold"
+                      } bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]`}
+                    />
+                    <AnimatePresence>
+                      {errors.name && (
+                        <motion.p 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="text-[10px] text-red-500 font-bold flex items-center gap-1 mt-0.5"
+                        >
+                          <AlertCircle size={10} /> {errors.name.message}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
                   </div>
-                  <div className="text-left sm:text-right flex flex-col items-start sm:items-end gap-2">
-                    <strong className="text-base text-text-dark">{bk.amount}</strong>
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                      bk.status === "Confirmed" 
-                        ? "bg-[#121e1b]/10 text-[#121e1b]" 
-                        : "bg-[#c5a059]/15 text-[#b58e45]"
-                    }`}>
-                      <CheckCircle2 size={12} /> {bk.status}
-                    </span>
+
+                  {/* Email */}
+                  <div className="flex flex-col gap-2 relative">
+                    <label htmlFor="email" className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1">
+                      <Mail size={12} /> Email Address
+                    </label>
+                    <input 
+                      id="email"
+                      type="email" 
+                      {...register("email")}
+                      className={`p-3 px-4 rounded-lg border ${
+                        errors.email ? "border-red-500 focus:border-red-500" : "border-border-color focus:border-gold"
+                      } bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]`}
+                    />
+                    <AnimatePresence>
+                      {errors.email && (
+                        <motion.p 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="text-[10px] text-red-500 font-bold flex items-center gap-1 mt-0.5"
+                        >
+                          <AlertCircle size={10} /> {errors.email.message}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="flex flex-col gap-2 relative">
+                    <label htmlFor="phone" className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1">
+                      <Phone size={12} /> Mobile Number
+                    </label>
+                    <input 
+                      id="phone"
+                      type="text" 
+                      {...register("phone")}
+                      className={`p-3 px-4 rounded-lg border ${
+                        errors.phone ? "border-red-500 focus:border-red-500" : "border-border-color focus:border-gold"
+                      } bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]`}
+                    />
+                    <AnimatePresence>
+                      {errors.phone && (
+                        <motion.p 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="text-[10px] text-red-500 font-bold flex items-center gap-1 mt-0.5"
+                        >
+                          <AlertCircle size={10} /> {errors.phone.message}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Language */}
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="languageSelect" className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1">
+                      <Globe size={12} /> Language / Currency
+                    </label>
+                    <select id="languageSelect" defaultValue="en_usd" className="p-3 px-4 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:border-gold focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]">
+                      <option value="en_usd">English (USD)</option>
+                      <option value="en_inr">English (INR)</option>
+                      <option value="es_eur">Español (EUR)</option>
+                    </select>
                   </div>
                 </div>
-              ))}
+
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting || !isDirty}
+                  className={`self-start border-none px-7.5 py-3 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-300 ${
+                    isSubmitting || !isDirty 
+                      ? "bg-slate-200 text-slate-400 cursor-not-allowed" 
+                      : "bg-primary text-bg-white hover:bg-gold hover:text-white hover:-translate-y-px"
+                  }`}
+                >
+                  {isSubmitting ? "Saving changes..." : "Save Changes"}
+                </button>
+              </form>
             </div>
-          </div>
+          )}
+
+          {activeSection === "history" && (
+            <div className="bg-bg-white border border-border-color rounded-3xl p-10 shadow-custom animate-fade-in">
+              <h3 className="text-2xl font-extrabold text-text-dark mb-1.5">Active & Past Reservations</h3>
+              <p className="text-[13.5px] text-text-gray mb-7.5">Real-time status updates of your digital keys and suite check-ins.</p>
+
+              <div className="flex flex-col gap-3.75">
+                {bookings.map(bk => (
+                  <div key={bk.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 bg-bg-light border border-border-color rounded-2xl gap-3.75 sm:gap-0">
+                    <div>
+                      <h4 className="text-base text-text-dark font-bold mb-1">{bk.resortName}</h4>
+                      <span className="text-xs text-text-gray">{bk.dates || `${new Date(bk.checkin).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${new Date(bk.checkout).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}</span>
+                    </div>
+                    <div className="text-left sm:text-right flex flex-col items-start sm:items-end gap-2">
+                      <strong className="text-base text-text-dark">{bk.amount || `₹${bk.total?.toLocaleString()}`}</strong>
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                        bk.status === "Confirmed" 
+                          ? "bg-[#121e1b]/10 text-[#121e1b]" 
+                          : "bg-[#c5a059]/15 text-[#b58e45]"
+                      }`}>
+                        <CheckCircle2 size={12} /> {bk.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {bookings.length === 0 && (
+                  <div className="text-center py-10 text-text-gray text-sm">
+                    No booking records found.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

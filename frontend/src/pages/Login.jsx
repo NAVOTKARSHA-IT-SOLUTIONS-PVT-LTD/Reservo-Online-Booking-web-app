@@ -1,49 +1,83 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Mail, Lock, Eye, EyeOff, ArrowRight, Globe, 
   ChevronDown, Gift, ShieldCheck, Star, HeadphonesIcon, 
   Sparkles 
 } from "lucide-react";
+import { authService } from "../services/auth.service";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import logoImage from "../assets/images/logo.png";
+
+// Define validation schema with Zod
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Email is required." })
+    .email({ message: "Please enter a valid email address." }),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters." })
+});
 
 export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [language, setLanguage] = useState("English");
-
-  // Form State
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [toastMsg, setToastMsg] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setToastMsg("Signed in successfully! Redirecting...");
-    setTimeout(() => {
-      setToastMsg("");
-      if (email.trim() === "reservo@mail.in") {
-        navigate("/admin/reservo");
-      } else if (email.trim() === "resort@mail.in") {
-        navigate("/admin/resort");
-      } else {
-        navigate("/dashboard"); // Route to dashboard
-      }
-    }, 2000);
+  // Setup React Hook Form with Zod resolver
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting, isValid }
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    mode: "onChange" // Live Validation
+  });
+
+  const onSubmit = async (data) => {
+    try {
+      const result = await authService.login(data.email, data.password);
+      setToastMsg("Signed in successfully! Redirecting...");
+      setTimeout(() => {
+        setToastMsg("");
+        if (result.user.role === "admin") {
+          navigate("/admin/reservo");
+        } else if (result.user.role === "resort_admin") {
+          navigate("/admin/resort");
+        } else {
+          navigate("/dashboard"); // Route to dashboard
+        }
+      }, 1500);
+    } catch (err) {
+      setToastMsg(err.message || "Failed to sign in. Please check your credentials.");
+      setTimeout(() => setToastMsg(""), 3000);
+    }
   };
 
   return (
     <div className="h-screen w-screen bg-bg-light flex items-center justify-center font-sans overflow-hidden transition-colors duration-300 p-0 lg:p-6 select-none">
       
       {/* Toast message overlay */}
-      {toastMsg && (
-        <div className="fixed top-6 right-6 z-[9999] bg-[#121e1b] text-white border border-[#334155] py-4 px-6 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-5 duration-300">
-          <Sparkles className="w-4 h-4 text-gold animate-pulse" />
-          <span className="text-xs font-bold">{toastMsg}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 right-6 z-[9999] bg-[#121e1b] text-white border border-[#334155] py-4 px-6 rounded-2xl shadow-2xl flex items-center gap-2.5"
+          >
+            <Sparkles className="w-4 h-4 text-gold animate-pulse" />
+            <span className="text-xs font-bold">{toastMsg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Split Container */}
       <div className="w-full h-full lg:h-[90vh] lg:max-h-[800px] max-w-[1200px] bg-bg-white border border-border-color lg:rounded-[32px] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.04)] flex flex-col lg:flex-row">
@@ -82,7 +116,7 @@ export default function Login() {
           <div className="relative z-20 space-y-5 hidden lg:block">
             {/* Rivo Overlay */}
             <div className="bg-[#0e1624]/80 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center gap-4">
-              <img src={rivoMascot} alt="Rivo mascot" className="w-11 h-11 rounded-full object-cover border-2 border-gold shadow-md shrink-0 animate-pulse" />
+              <img src={rivoMascot} alt="Rivo mascot" className="w-11 h-11 rounded-full object-cover border-2 border-gold shadow-md shrink-0" />
               <div>
                 <h4 className="text-[12px] font-bold text-white">Hi, I'm RIVO 👋</h4>
                 <p className="text-[9.5px] text-[#94A3B8] leading-normal mt-0.5">Your AI Travel Buddy. I'll help you plan the perfect trip just for you!</p>
@@ -149,33 +183,49 @@ export default function Login() {
               <p className="text-[11.5px] text-text-gray font-semibold">Sign in to continue your journey</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3.5">
-              <div className="space-y-1 flex flex-col">
-                <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Email Address</label>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {/* Email Address with Floating Label Effect */}
+              <div className="space-y-1 flex flex-col relative">
+                <label htmlFor="emailInput" className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-gray" />
                   <input 
+                    id="emailInput"
                     type="email" 
-                    required
                     placeholder="Enter your email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-bg-light border border-border-color text-text-dark rounded-xl text-[11.5px] font-semibold outline-none focus:border-primary transition"
+                    {...register("email")}
+                    className={`w-full pl-10 pr-4 py-2.5 bg-bg-light border ${
+                      errors.email ? "border-red-500 focus:border-red-500 focus:shadow-[0_0_0_2px_rgba(239,68,68,0.1)]" : "border-border-color focus:border-primary focus:shadow-[0_0_0_2px_rgba(13,71,161,0.1)]"
+                    } text-text-dark rounded-xl text-[11.5px] font-semibold outline-none transition-all duration-300`}
                   />
                 </div>
+                <AnimatePresence>
+                  {errors.email && (
+                    <motion.p 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="text-[10.5px] text-red-500 font-bold mt-1 ml-1"
+                    >
+                      {errors.email.message}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </div>
 
-              <div className="space-y-1 flex flex-col">
-                <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Password</label>
+              {/* Password */}
+              <div className="space-y-1 flex flex-col relative">
+                <label htmlFor="passwordInput" className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-gray" />
                   <input 
+                    id="passwordInput"
                     type={showPassword ? "text" : "password"} 
-                    required
                     placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 bg-bg-light border border-border-color text-text-dark rounded-xl text-[11.5px] font-semibold outline-none focus:border-primary transition"
+                    {...register("password")}
+                    className={`w-full pl-10 pr-10 py-2.5 bg-bg-light border ${
+                      errors.password ? "border-red-500 focus:border-red-500 focus:shadow-[0_0_0_2px_rgba(239,68,68,0.1)]" : "border-border-color focus:border-primary focus:shadow-[0_0_0_2px_rgba(13,71,161,0.1)]"
+                    } text-text-dark rounded-xl text-[11.5px] font-semibold outline-none transition-all duration-300`}
                   />
                   <button 
                     type="button"
@@ -185,6 +235,18 @@ export default function Login() {
                     {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
+                <AnimatePresence>
+                  {errors.password && (
+                    <motion.p 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="text-[10.5px] text-red-500 font-bold mt-1 ml-1"
+                    >
+                      {errors.password.message}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
               </div>
 
               <div className="text-right">
@@ -200,9 +262,14 @@ export default function Login() {
               {/* Submit Action */}
               <button 
                 type="submit"
-                className="w-full py-2.5 bg-primary hover:bg-primary-dark text-white font-extrabold text-[11px] uppercase tracking-wider rounded-xl shadow cursor-pointer border-none flex items-center justify-center gap-1.5"
+                disabled={isSubmitting || !isValid}
+                className={`w-full py-2.5 text-white font-extrabold text-[11px] uppercase tracking-wider rounded-xl shadow cursor-pointer border-none flex items-center justify-center gap-1.5 transition-all duration-300 ${
+                  isSubmitting || !isValid 
+                    ? "bg-slate-300 cursor-not-allowed text-slate-500 shadow-none" 
+                    : "bg-primary hover:bg-primary-dark"
+                }`}
               >
-                Sign In <ArrowRight className="w-3.5 h-3.5" />
+                {isSubmitting ? "Authenticating..." : <>Sign In <ArrowRight className="w-3.5 h-3.5" /></>}
               </button>
             </form>
 
@@ -217,7 +284,7 @@ export default function Login() {
               {[
                 { provider: "Google", logo: "https://www.svgrepo.com/show/475656/google-color.svg" },
                 { provider: "Apple", logo: "https://www.svgrepo.com/show/511330/apple-black.svg" },
-                { provider: "Facebook", logo: "https://www.svgrepo.com/show/475647/facebook-color.svg" }
+                { provider: "Microsoft", logo: "https://www.svgrepo.com/show/475633/microsoft-color.svg" }
               ].map(social => (
                 <button 
                   key={social.provider}

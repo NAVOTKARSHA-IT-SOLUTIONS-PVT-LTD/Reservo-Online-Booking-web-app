@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
-  Menu, X, Heart, Moon, Sun, Globe, ChevronDown,
+  Menu, X, Heart, Moon, Sun, Globe, ChevronDown, Check,
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
   LayoutGrid, BookOpen, Bell, Settings
 } from "lucide-react";
 import logoImage from "../assets/images/logo.png";
+import { motion, AnimatePresence } from "framer-motion";
 
 function Header({ isDark, onToggleTheme, wishlist = [] }) {
   const location = useLocation();
@@ -13,6 +14,18 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
+  const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+  const currencyMenuRef = useRef(null);
+
+  useEffect(() => {
+    const clickOutside = (e) => {
+      if (currencyMenuRef.current && !currencyMenuRef.current.contains(e.target)) {
+        setShowCurrencyMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", clickOutside);
+    return () => document.removeEventListener("mousedown", clickOutside);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -165,11 +178,53 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               </span>
             </Link>
 
-            <div className="relative group">
-              <button className="flex items-center gap-2 text-[14px] font-semibold px-4 py-2 rounded-full border border-border-color bg-bg-white text-text-dark hover:border-primary cursor-pointer transition-all">
-                <Globe size={16} />
-                <span>English</span> <ChevronDown size={14} />
+            <div className="relative" ref={currencyMenuRef}>
+              <button 
+                onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
+                className="flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-full border border-border-color bg-bg-white text-text-dark hover:border-primary cursor-pointer transition-all focus:outline-none"
+              >
+                <Globe size={15} className="text-text-gray" />
+                <span className="flex items-center gap-1.5">
+                  {(() => {
+                    const c = localStorage.getItem("reservo-currency") || "en_inr";
+                    if (c === "en_usd") return "🇺🇸 USD ($)";
+                    if (c === "es_eur") return "🇪🇺 EUR (€)";
+                    return "🇮🇳 INR (₹)";
+                  })()}
+                </span> 
+                <ChevronDown size={13} className="text-text-gray" />
               </button>
+              
+              <AnimatePresence>
+                {showCurrencyMenu && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-11 bg-bg-white border border-border-color rounded-2xl shadow-xl p-1.5 w-40 z-50 text-[11.5px] font-bold text-text-dark flex flex-col gap-0.5"
+                  >
+                    {[
+                      { code: "en_inr", label: "🇮🇳 INR (₹)" },
+                      { code: "en_usd", label: "🇺🇸 USD ($)" },
+                      { code: "es_eur", label: "🇪🇺 EUR (€)" }
+                    ].map((item) => (
+                      <button 
+                        key={item.code}
+                        onClick={() => {
+                          localStorage.setItem("reservo-currency", item.code);
+                          window.dispatchEvent(new Event("storage"));
+                          setShowCurrencyMenu(false);
+                        }}
+                        className="w-full text-left py-2 px-3 rounded-xl hover:bg-bg-light bg-transparent border-none cursor-pointer text-text-dark flex items-center justify-between transition-colors"
+                      >
+                        <span>{item.label}</span>
+                        {(localStorage.getItem("reservo-currency") || "en_inr") === item.code && <Check className="w-3.5 h-3.5 text-primary" />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <button className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all" onClick={toggleMenu}>

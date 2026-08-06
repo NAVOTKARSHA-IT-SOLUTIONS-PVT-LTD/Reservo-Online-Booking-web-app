@@ -1,18 +1,27 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { secureStorage } from "../services/secureStorage";
 
 const WishlistContext = createContext();
+const WISHLIST_KEY = "reservo-wishlist";
 
 export function WishlistProvider({ children }) {
   const [wishlist, setWishlist] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("reservo-wishlist") || "[]");
+      const secured = secureStorage.getItem(WISHLIST_KEY);
+      if (secured) return secured;
+      // Fallback/migration from plain text local storage
+      const plain = localStorage.getItem(WISHLIST_KEY);
+      return plain ? JSON.parse(plain) : [];
     } catch {
       return [];
     }
   });
 
   useEffect(() => {
-    localStorage.setItem("reservo-wishlist", JSON.stringify(wishlist));
+    secureStorage.setItem(WISHLIST_KEY, wishlist);
+    // Legacy sync for components that check raw localstorage
+    localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
+    
     // Dispatch standard storage event so other components sync
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("wishlist-updated"));

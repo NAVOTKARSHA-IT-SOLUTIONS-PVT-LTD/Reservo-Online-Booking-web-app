@@ -1,7 +1,12 @@
 import React from "react";
 import aboutImage from "../assets/images/about.jpg";
+import { useSEO } from "../hooks/useSEO";
 
 function About() {
+  useSEO({
+    title: "About Us",
+    description: "Discover Reservo's mission to curate premium vacation stays, luxury resorts, and high-end retreats with top-tier AI travel concierge support."
+  });
   return (
     <>
 

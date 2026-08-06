@@ -47,12 +47,25 @@ function Hero() {
   return (
     <section className="relative w-full min-h-[620px] md:min-h-[700px] md:h-screen flex flex-col items-center justify-center pt-24 pb-16 md:pb-16 overflow-hidden">
       
-      {/* Background Image */}
+      {/* Background Video */}
       <div className="absolute inset-0 z-0">
-        <img src={heroImage} alt="Luxury Resort Sunset" className="w-full h-full object-cover" />
-        {/* Adjusted overlay to be less dark overall, but enough for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60"></div>
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          poster={heroImage}
+          className="w-full h-full object-cover filter brightness-[0.75]"
+        >
+          <source 
+            src="https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c0b3d87db1c360be1c43ab87a070eb35&profile_id=139&oauth2_token_id=57447761" 
+            type="video/mp4" 
+          />
+          Your browser does not support the video tag.
+        </video>
+        {/* Adjusted overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/25 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/55"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-[1300px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-12 mt-10">
@@ -180,28 +193,6 @@ function Hero() {
 
       </div>
 
-      {/* Interactive AI Prompt Suggestions */}
-      <div className="absolute bottom-28 left-1/2 -translate-x-1/2 w-[95%] max-w-[1100px] z-20 flex items-center justify-center gap-2.5 flex-wrap hidden md:flex">
-        <span className="text-[11px] font-bold text-white/50 uppercase tracking-widest mr-1 flex items-center gap-1">
-          <Sparkles size={11} className="text-yellow-400" /> Try Prompts:
-        </span>
-        {[
-          { label: "🌴 Beach retreats in Bali", location: "Bali, Indonesia" },
-          { label: "🏔️ Fireplaces in Manali", location: "Manali, India" },
-          { label: "🏖️ Overwater villas in Maldives", location: "Maldives" }
-        ].map((prompt, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              setLocation(prompt.location);
-              setIsSearching(true);
-            }}
-            className="bg-black/40 backdrop-blur-md border border-white/10 text-white hover:border-gold hover:text-gold text-xs px-4.5 py-2 rounded-full cursor-pointer transition-all duration-300 shadow-md flex items-center gap-1 hover:scale-105"
-          >
-            {prompt.label}
-          </button>
-        ))}
-      </div>
 
       {/* Floating Bottom Search Bar */}
       <div className="w-[95%] mx-auto relative md:absolute md:bottom-6 left-0 md:left-1/2 translate-x-0 md:-translate-x-1/2 max-w-[1100px] bg-bg-white/95 backdrop-blur-xl rounded-3xl md:rounded-[100px] p-4 md:p-3 mt-8 md:mt-0 shadow-[0_30px_60px_rgba(47,128,237,0.15)] flex flex-col md:flex-row items-center justify-between border border-border-color transition-colors duration-300 z-20">

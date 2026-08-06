@@ -1,44 +1,88 @@
-import React, { useState } from "react";
-import { Bell, Sparkles, Star, Tag, ShieldCheck, MailOpen, Trash2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Bell, Sparkles, Star, Tag, MailOpen, Trash2, ShieldCheck } from "lucide-react";
+import { notificationService } from "../services/notification.service";
+import { NotificationSkeleton } from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
+import ErrorScreen from "../components/ErrorScreen";
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "Rivo Itinerary Generated ✨",
-      desc: "Your customized Goa vacation draft is saved. Navigate to Dashboard to view your active QR codes.",
-      time: "2 hours ago",
-      type: "planner",
-      unread: true,
-      icon: <Sparkles className="w-4 h-4 text-primary" />
-    },
-    {
-      id: 2,
-      title: "Points Loaded! 💎",
-      desc: "Earned +12,000 loyalty rewards points for completing checkouts at Azure Bay Resort Bali.",
-      time: "1 day ago",
-      type: "points",
-      unread: false,
-      icon: <Star className="w-4 h-4 text-amber-500 fill-current" />
-    },
-    {
-      id: 3,
-      title: "Exclusive Monsoon Offer 🌴",
-      desc: "Get 20% off on all Beach Resorts stays in Maldives and Goa using checkout code MONSOON20.",
-      time: "3 days ago",
-      type: "offer",
-      unread: false,
-      icon: <Tag className="w-4 h-4 text-emerald-500" />
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await notificationService.getNotifications();
+      setNotifications(data);
+    } catch (err) {
+      setError(err.message || "Failed to load notifications.");
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
   };
 
-  const handleDelete = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+    } catch (err) {
+      alert("Failed to mark notifications as read.");
+    }
   };
+
+  const handleDelete = async (id) => {
+    try {
+      await notificationService.deleteNotification(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (err) {
+      alert("Failed to delete notification.");
+    }
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case "planner":
+        return <Sparkles className="w-4 h-4 text-primary" />;
+      case "points":
+        return <Star className="w-4 h-4 text-amber-500 fill-current" />;
+      case "offer":
+        return <Tag className="w-4 h-4 text-emerald-500" />;
+      default:
+        return <Bell className="w-4 h-4 text-text-gray" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-bg-light pt-28 pb-20 px-6 font-sans">
+        <div className="max-w-[700px] mx-auto space-y-6">
+          <div className="border-b border-border-color pb-4">
+            <h1 className="text-3xl font-serif font-extrabold text-text-dark">Notifications</h1>
+            <p className="text-sm text-text-gray mt-1">Fetching your messages...</p>
+          </div>
+          <div className="space-y-4">
+            <NotificationSkeleton />
+            <NotificationSkeleton />
+            <NotificationSkeleton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-bg-light pt-28 pb-20 px-6 flex items-center justify-center">
+        <ErrorScreen type="network" message={error} onRetry={fetchNotifications} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg-light pt-28 pb-20 px-6 font-sans transition-colors duration-300">
@@ -75,7 +119,7 @@ export default function Notifications() {
 
               {/* Icon container */}
               <div className="w-9 h-9 rounded-full bg-bg-light flex items-center justify-center shrink-0">
-                {n.icon}
+                {getNotificationIcon(n.type)}
               </div>
 
               {/* Content body */}
@@ -90,7 +134,7 @@ export default function Notifications() {
               {/* Action delete */}
               <button 
                 onClick={() => handleDelete(n.id)}
-                className="w-8 h-8 rounded-full hover:bg-red-500/5 text-text-gray hover:text-red-500 flex items-center justify-center border-none bg-transparent cursor-pointer shrink-0 align-self-center"
+                className="w-8 h-8 rounded-full hover:bg-red-500/5 text-text-gray hover:text-red-500 flex items-center justify-center border-none bg-transparent cursor-pointer shrink-0 self-center"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -99,13 +143,11 @@ export default function Notifications() {
           ))}
 
           {notifications.length === 0 && (
-            <div className="text-center py-20 border border-dashed border-border-color rounded-3xl bg-bg-white shadow-sm space-y-3">
-              <Bell className="w-12 h-12 text-text-gray mx-auto" />
-              <div>
-                <h3 className="text-base font-bold text-text-dark">Inbox is empty</h3>
-                <p className="text-xs text-text-gray mt-1">You are all caught up for today.</p>
-              </div>
-            </div>
+            <EmptyState 
+              title="Inbox is empty"
+              description="You are all caught up for today. We will let you know when something new comes up."
+              icon={Bell}
+            />
           )}
         </div>
 

@@ -120,6 +120,63 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Settings Box 3: Connected Accounts */}
+        <div className="bg-bg-white border border-border-color rounded-3xl p-6 shadow-sm space-y-5">
+          <h3 className="text-base font-serif font-bold text-text-dark flex items-center gap-2 border-b border-border-color pb-3">
+            <Shield className="w-4 h-4 text-emerald-500" /> Connected Social Accounts
+          </h3>
+
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5 object-contain" />
+                <div>
+                  <h4 className="text-xs font-bold text-text-dark">Google Connection</h4>
+                  <p className="text-[10px] text-text-gray mt-0.5">Connected as user@gmail.com</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setToastMsg("Google account unlinked.")}
+                className="px-4 py-1.5 border border-red-200 text-red-500 rounded-xl text-[10px] font-bold cursor-pointer bg-transparent hover:bg-red-50 transition border-none"
+              >
+                Disconnect
+              </button>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <img src="https://www.svgrepo.com/show/511330/apple-black.svg" alt="Apple" className="w-5 h-5 object-contain" />
+                <div>
+                  <h4 className="text-xs font-bold text-text-dark">Apple Connection</h4>
+                  <p className="text-[10px] text-text-gray mt-0.5">Securely linked via Apple ID</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setToastMsg("Apple account connection initiated...")}
+                className="px-4 py-1.5 border border-border-color text-text-dark rounded-xl text-[10px] font-bold cursor-pointer bg-transparent hover:bg-bg-light transition border-none"
+              >
+                Connect
+              </button>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <img src="https://www.svgrepo.com/show/475633/microsoft-color.svg" alt="Microsoft" className="w-5 h-5 object-contain" />
+                <div>
+                  <h4 className="text-xs font-bold text-text-dark">Microsoft Connection</h4>
+                  <p className="text-[10px] text-text-gray mt-0.5">Link corporate or outlook logins</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setToastMsg("Microsoft account connection initiated...")}
+                className="px-4 py-1.5 border border-border-color text-text-dark rounded-xl text-[10px] font-bold cursor-pointer bg-transparent hover:bg-bg-light transition border-none"
+              >
+                Connect
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Action Button */}
         <button
           onClick={handleSave}

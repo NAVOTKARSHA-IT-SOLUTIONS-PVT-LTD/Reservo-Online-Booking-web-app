@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useWishlist } from '../context/WishlistContext';
 import { Star, Heart, MapPin, Sparkles, ChevronRight, SlidersHorizontal, ArrowUpDown, RotateCcw, Check, X, ArrowLeft } from 'lucide-react';
-import { CATEGORIES, RESORTS } from '../data/resortsData';
+import { CATEGORIES } from '../data/resortsData';
+import { resortService } from '../services/resort.service';
+import { ResortCardSkeleton } from './Skeleton';
+import EmptyState from './EmptyState';
+import ErrorScreen from './ErrorScreen';
 
 export default function ResortListing({ onSelectResort, activeCategory: propActiveCategory = 'all', setActiveCategory: propSetActiveCategory, isDarkMode, onAskRivo }) {
   const [internalCategory, setInternalCategory] = useState(propActiveCategory);
   const activeCategory = propSetActiveCategory ? propActiveCategory : internalCategory;
   const setActiveCategory = propSetActiveCategory || setInternalCategory;
+
+  // Resorts data states
+  const [resorts, setResorts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Filter Panel Toggle State
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -20,6 +29,46 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [selectedPerks, setSelectedPerks] = useState([]);
   const { wishlist, toggleWishlist } = useWishlist();
+
+  // Currency Converter states
+  const [currencySymbol, setCurrencySymbol] = useState("₹");
+  const [exchangeRate, setExchangeRate] = useState(1);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const cur = localStorage.getItem("reservo-currency") || "en_inr";
+      if (cur === "en_usd") {
+        setCurrencySymbol("$");
+        setExchangeRate(0.012);
+      } else if (cur === "es_eur") {
+        setCurrencySymbol("€");
+        setExchangeRate(0.011);
+      } else {
+        setCurrencySymbol("₹");
+        setExchangeRate(1);
+      }
+    };
+    handleStorage();
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const fetchResorts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await resortService.getAllResorts();
+      setResorts(data);
+    } catch (err) {
+      setError(err.message || "Failed to load luxury stays.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResorts();
+  }, []);
 
   const toggleFavorite = (resort, e) => {
     e.stopPropagation();
@@ -90,7 +139,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
   }, []);
 
   // Filter Logic
-  const filteredResorts = RESORTS.filter(resort => {
+  const filteredResorts = resorts.filter(resort => {
     const matchesCategory = activeCategory === 'all' || resort.category === activeCategory;
     const matchesPrice = resort.price <= maxPrice;
     const matchesRating = resort.rating >= minRating;
@@ -264,6 +313,14 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     </div>
   );
 
+  if (error) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4 py-8 flex items-center justify-center min-h-[50vh]">
+        <ErrorScreen type="network" message={error} onRetry={fetchResorts} />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-sans space-y-12">
       {/* MOBILE EXCLUSIVE FULL-SCREEN SORT & FILTER VIEW (Only shown when filter is open on Mobile) */}
@@ -348,7 +405,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
 
             <div className="flex items-center justify-between sm:justify-end gap-4">
               <span className={`text-xs font-medium ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-                Showing <strong className={isDarkMode ? 'text-white' : 'text-[#0F172A]'}>{sortedResorts.length}</strong> stays
+                Showing <strong className={isDarkMode ? 'text-white' : 'text-[#0F172A]'}>{loading ? "..." : sortedResorts.length}</strong> stays
               </span>
 
               {/* Sort & Filter Button Toggle */}
@@ -377,7 +434,18 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
             <div className={`transition-all duration-500 ease-in-out w-full ${
               isFilterOpen ? 'lg:w-2/3' : 'lg:w-full'
             }`}>
-              {sortedResorts.length > 0 ? (
+              {loading ? (
+                /* Shimmer Loader Grid */
+                <div className={`grid gap-6 ${
+                  isFilterOpen
+                    ? 'grid-cols-1 md:grid-cols-2'
+                    : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                }`}>
+                  {[...Array(6)].map((_, i) => (
+                    <ResortCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : sortedResorts.length > 0 ? (
                 <div className={`grid gap-6 transition-all duration-500 ${
                   isFilterOpen
                     ? 'grid-cols-1 md:grid-cols-2'
@@ -399,6 +467,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                             src={resort.heroImage}
                             alt={resort.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
                           />
 
                           <div className="absolute top-4 left-4">
@@ -417,7 +486,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                           </button>
 
                           <div className="absolute bottom-4 right-4 bg-[#0F172A]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-white text-xs font-bold shadow border border-slate-700">
-                            from <span className="text-[#60A5FA] text-sm">{resort.currency}{resort.price.toLocaleString()}</span>/night
+                            from <span className="text-[#60A5FA] text-sm">{currencySymbol}{(Math.round(resort.price * exchangeRate)).toLocaleString()}</span>/night
                           </div>
                         </div>
 
@@ -464,19 +533,13 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                   })}
                 </div>
               ) : (
-                <div className={`rounded-3xl p-12 text-center border space-y-4 ${
-                  isDarkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-                }`}>
-                  <Sparkles className="w-10 h-10 text-[#2563EB] mx-auto animate-bounce" />
-                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>No stays match your criteria</h3>
-                  <p className={`text-xs ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Try resetting your filters or adjusting your price slider.</p>
-                  <button
-                    onClick={resetAllFilters}
-                    className="px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-full shadow transition inline-flex items-center gap-2"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" /> Reset All Filters
-                  </button>
-                </div>
+                <EmptyState 
+                  title="No resorts match your criteria"
+                  description="Try resetting your filters, selecting a different search query, or shifting your price sliders."
+                  ctaText="Reset All Filters"
+                  onCtaClick={resetAllFilters}
+                  icon={SlidersHorizontal}
+                />
               )}
             </div>
 

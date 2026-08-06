@@ -1,5 +1,8 @@
-import React, { useState } from "react";
-import { Gift, Award, TrendingUp, CreditCard, Tag, Heart, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Gift, Award, TrendingUp, CreditCard, Tag, Heart, X, Sparkles, RefreshCw } from "lucide-react";
+import { rewardService } from "../services/reward.service";
+import { Skeleton } from "../components/Skeleton";
+import ErrorScreen from "../components/ErrorScreen";
 
 function RewardCard({ icon, title, description, badge, onLearnMore }) {
   return (
@@ -28,6 +31,60 @@ function RewardCard({ icon, title, description, badge, onLearnMore }) {
 
 export default function Rewards() {
   const [activeReward, setActiveReward] = useState(null);
+  const [rewardStatus, setRewardStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [redeeming, setRedeeming] = useState(false);
+
+  const fetchStatus = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await rewardService.getRewardStatus();
+      setRewardStatus(data);
+    } catch (err) {
+      setError(err.message || "Failed to load rewards stats.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+  }, []);
+
+  const showGlobalToast = (msg) => {
+    const toast = document.getElementById("toast");
+    const toastMessage = document.getElementById("toast-message");
+    if (toast && toastMessage) {
+      toastMessage.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3500);
+    }
+  };
+
+  const handleRedeem = async () => {
+    if (rewardStatus.points < 5000) {
+      showGlobalToast("You need at least 5,000 points to redeem a coupon!");
+      return;
+    }
+    setRedeeming(true);
+    try {
+      const result = await rewardService.redeemPoints(5000);
+      setRewardStatus(prev => ({
+        ...prev,
+        points: result.updatedPoints,
+        couponsCount: result.couponsCount
+      }));
+      showGlobalToast("Successfully redeemed 5,000 points for a discount coupon! 💎");
+    } catch (err) {
+      showGlobalToast(err.message || "Redemption failed.");
+    } finally {
+      setRedeeming(false);
+    }
+  };
 
   const CARDS_DATA = [
     {
@@ -63,12 +120,35 @@ export default function Rewards() {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-bg-light pt-32 pb-20 font-sans">
+        <div className="max-w-[1200px] mx-auto w-[92%] space-y-10">
+          <div className="text-center space-y-3">
+            <Skeleton variant="text" className="w-48 h-8 mx-auto rounded-full" />
+            <Skeleton variant="text" className="w-1/2 h-10 mx-auto" />
+            <Skeleton variant="text" className="w-1/3 h-5 mx-auto" />
+          </div>
+          <div className="h-64 rounded-[32px] shimmer bg-bg-white border border-border-color" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-bg-light pt-32 pb-20 px-6 flex items-center justify-center">
+        <ErrorScreen type="network" message={error} onRetry={fetchStatus} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-bg-light pt-32 pb-20">
       <div className="max-w-[1200px] mx-auto w-[92%]">
         
         {/* Header */}
-        <div className="text-center max-w-[600px] mx-auto mb-16 fade-up">
+        <div className="text-center max-w-[600px] mx-auto mb-16 animate-fade-in">
           <div className="inline-flex items-center gap-2 bg-gold/10 text-gold font-bold text-sm px-4 py-1.5 rounded-full mb-4 border border-gold/20">
             <Award size={16} /> Reservo Elite
           </div>
@@ -80,29 +160,44 @@ export default function Rewards() {
           </p>
         </div>
 
-        {/* User Status (Mock) */}
+        {/* User Status (Mock Service Integrated) */}
         <div className="bg-primary border border-border-color rounded-[32px] p-8 md:p-12 text-white mb-16 flex flex-col md:flex-row items-center justify-between shadow-[0_20px_50px_rgba(15,23,42,0.15)] relative overflow-hidden">
           {/* Background glow */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-gold/20 blur-[80px] rounded-full pointer-events-none"></div>
           
           <div className="z-10 text-center md:text-left mb-8 md:mb-0">
             <h2 className="text-2xl font-bold mb-2">Welcome back, Tausif!</h2>
-            <p className="text-white/70 mb-4">You are currently a <strong className="text-gold">Gold Member</strong></p>
+            <p className="text-white/70 mb-4">You are currently a <strong className="text-gold">{rewardStatus.membershipLevel}</strong></p>
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[140px]">
                 <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Total Points</div>
-                <div className="text-3xl font-extrabold font-number text-gold">12,450</div>
+                <div className="text-3xl font-extrabold font-number text-gold">{rewardStatus.points.toLocaleString()}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[140px]">
                 <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Available Coupons</div>
-                <div className="text-3xl font-extrabold font-number">3</div>
+                <div className="text-3xl font-extrabold font-number">{rewardStatus.couponsCount}</div>
               </div>
             </div>
           </div>
           <div className="z-10">
-            <button className="bg-gold text-white font-bold py-3.5 px-8 rounded-xl border-none cursor-pointer hover:bg-gold-dark hover:scale-105 transition-all shadow-[0_10px_20px_rgba(212,166,79,0.3)]">
-              Redeem Points
+            <button 
+              onClick={handleRedeem}
+              disabled={redeeming || rewardStatus.points < 5000}
+              className={`font-bold py-3.5 px-8 rounded-xl border-none transition-all shadow-[0_10px_20px_rgba(212,166,79,0.3)] flex items-center gap-2 ${
+                redeeming || rewardStatus.points < 5000 
+                  ? "bg-slate-500/50 text-white/50 cursor-not-allowed shadow-none" 
+                  : "bg-gold text-white cursor-pointer hover:bg-gold-dark hover:scale-105"
+              }`}
+            >
+              {redeeming ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" /> Redeeming...
+                </>
+              ) : (
+                "Redeem 5,000 pts"
+              )}
             </button>
+            <span className="block text-center text-[10px] text-white/60 mt-2 font-medium">5,000 points = 1 Coupon pass</span>
           </div>
         </div>
 
@@ -145,7 +240,7 @@ export default function Rewards() {
             <div className="p-4 bg-bg-light border border-border-color rounded-2xl">
               <h4 className="text-xs uppercase tracking-wider text-text-dark font-bold mb-2">How to redeem:</h4>
               <p className="text-xs text-text-gray m-0 leading-relaxed">
-                Go to your profile page by clicking on your avatar at the top right, navigate to 'Loyalty Points', and select 'Redeem' to convert points into reservation coupons. Alternatively, tell Rivo chatbot *"Redeem my points"* to proceed automatically!
+                Redeem points immediately using the card at the top. Once converted, your coupon passes will be active automatically during checkouts. Or tell Rivo chatbot *"Redeem my loyalty points"*!
               </p>
             </div>
           </div>
