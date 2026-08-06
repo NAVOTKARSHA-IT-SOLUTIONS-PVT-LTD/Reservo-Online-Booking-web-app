@@ -64,6 +64,8 @@ import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ReservoAdminPortal from "./pages/ReservoAdminPortal";
+import ResortAdminPortal from "./pages/ResortAdminPortal";
 
 import rivoMascot from "./assets/images/rivo_mascot.jpg";
 
@@ -218,11 +220,13 @@ function App() {
 
       {/* Default browser mouse pointer used (CustomCursor removed for smooth performance) */}
 
-      {location.pathname === "/login" || location.pathname === "/register" ? (
+      {location.pathname === "/login" || location.pathname === "/register" || location.pathname.startsWith("/admin") ? (
         <main className="flex-1 min-h-screen overflow-hidden">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/admin/reservo" element={<ReservoAdminPortal />} />
+            <Route path="/admin/resort" element={<ResortAdminPortal />} />
           </Routes>
         </main>
       ) : isMobile ? (

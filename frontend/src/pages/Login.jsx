@@ -24,7 +24,13 @@ export default function Login() {
     setToastMsg("Signed in successfully! Redirecting...");
     setTimeout(() => {
       setToastMsg("");
-      navigate("/dashboard"); // Route to dashboard
+      if (email.trim() === "reservo@mail.in") {
+        navigate("/admin/reservo");
+      } else if (email.trim() === "resort@mail.in") {
+        navigate("/admin/resort");
+      } else {
+        navigate("/dashboard"); // Route to dashboard
+      }
     }, 2000);
   };
 

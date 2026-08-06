@@ -2,49 +2,41 @@ package com.reservo.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "users")
+@Table(name = "payments")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name;
-
     @Column(nullable = false, unique = true)
-    private String email;
+    private String transactionId;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "booking_id", nullable = false)
+    private Booking booking;
 
     @Column(nullable = false)
-    private String password;
+    private BigDecimal amount;
 
-    private String phone;
+    private String paymentMethod; // e.g. "CREDIT_CARD", "UPI", "PAYPAL"
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status;
-
-    private String avatarUrl;
+    private PaymentStatus status;
 
     @Builder.Default
     private Instant createdAt = Instant.now();
 
-    public enum Role {
-        ROLE_ADMIN, ROLE_OWNER, ROLE_CUSTOMER
-    }
-
-    public enum UserStatus {
-        ACTIVE, INACTIVE, BLOCKED
+    public enum PaymentStatus {
+        PENDING, SUCCESS, FAILED, REFUNDED
     }
 }

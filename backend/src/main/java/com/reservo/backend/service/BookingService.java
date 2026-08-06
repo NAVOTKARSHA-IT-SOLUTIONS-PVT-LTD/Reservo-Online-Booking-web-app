@@ -1,117 +1,74 @@
 package com.reservo.backend.service;
 
-import com.reservo.backend.dto.BookingRequest;
-import com.reservo.backend.dto.BookingResponse;
-import com.reservo.backend.entity.Booking;
+import com.reservo.backend.exception.ResourceNotFoundException;
+import com.reservo.backend.entity.*;
+import com.reservo.backend.repository.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class BookingService {
-     private final List<Booking> bookings = new ArrayList<>();
-    private Long bookingIdCounter = 1L;
 
-    // Create Booking
-    public BookingResponse createBooking(BookingRequest request) {
+    private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
+    private final ResortRepository resortRepository;
+    private final RoomRepository roomRepository;
+    private final EmailService emailService;
 
-        Booking booking = new Booking();
+    @Transactional
+    public Booking createBooking(Long userId, Long resortId, Long roomId, LocalDate checkIn, LocalDate checkOut, BigDecimal amount) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+        Resort resort = resortRepository.findById(resortId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + resortId));
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
 
-        booking.setBookingId(bookingIdCounter++);
-        booking.setResortId(request.getResortId());
-        booking.setUserId(request.getUserId());
-        booking.setCheckIn(request.getCheckIn());
-        booking.setCheckOut(request.getCheckOut());
-        booking.setGuests(request.getGuests());
+        String code = "RS" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-        // Dummy price calculation
-        booking.setTotalPrice(request.getGuests() * 2000);
+        Booking booking = Booking.builder()
+                .bookingCode(code)
+                .user(user)
+                .resort(resort)
+                .room(room)
+                .checkInDate(checkIn)
+                .checkOutDate(checkOut)
+                .totalAmount(amount)
+                .status(Booking.BookingStatus.CONFIRMED)
+                .bookingSource(Booking.BookingSource.DIRECT)
+                .build();
 
-        booking.setStatus("CONFIRMED");
+        booking = bookingRepository.save(booking);
 
-        bookings.add(booking);
+        emailService.sendBookingConfirmationEmail(user.getEmail(), user.getName(), code, resort.getName(), amount.toString());
 
-        return convertToResponse(booking);
+        return booking;
     }
 
-    // Get All Bookings
-    public List<BookingResponse> getAllBookings() {
-
-        List<BookingResponse> responseList = new ArrayList<>();
-
-        for (Booking booking : bookings) {
-            responseList.add(convertToResponse(booking));
-        }
-
-        return responseList;
+    public List<Booking> getUserBookings(Long userId) {
+        return bookingRepository.findByUserId(userId);
     }
 
-    // Get Booking By ID
-    public BookingResponse getBookingById(Long bookingId) {
-
-        for (Booking booking : bookings) {
-
-            if (booking.getBookingId().equals(bookingId)) {
-                return convertToResponse(booking);
-            }
-        }
-
-        throw new RuntimeException("Booking not found with ID: " + bookingId);
+    public List<Booking> getAllBookings() {
+        return bookingRepository.findAll();
     }
 
-    // Update Booking
-    public BookingResponse updateBooking(Long bookingId, BookingRequest request) {
-
-        for (Booking booking : bookings) {
-
-            if (booking.getBookingId().equals(bookingId)) {
-
-                booking.setResortId(request.getResortId());
-                booking.setUserId(request.getUserId());
-                booking.setCheckIn(request.getCheckIn());
-                booking.setCheckOut(request.getCheckOut());
-                booking.setGuests(request.getGuests());
-
-                booking.setTotalPrice(request.getGuests() * 2000);
-
-                return convertToResponse(booking);
-            }
-        }
-
-        throw new RuntimeException("Booking not found with ID: " + bookingId);
+    public Booking getBookingById(Long bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with ID: " + bookingId));
     }
 
-    // Cancel Booking
-    public void cancelBooking(Long bookingId) {
-
-        for (Booking booking : bookings) {
-
-            if (booking.getBookingId().equals(bookingId)) {
-
-                booking.setStatus("CANCELLED");
-                return;
-            }
-        }
-
-        throw new RuntimeException("Booking not found with ID: " + bookingId);
+    public Booking updateBookingStatus(Long bookingId, Booking.BookingStatus status) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with ID: " + bookingId));
+        booking.setStatus(status);
+        return bookingRepository.save(booking);
     }
-
-    // Convert Booking Entity to BookingResponse DTO
-    private BookingResponse convertToResponse(Booking booking) {
-
-        BookingResponse response = new BookingResponse();
-
-        response.setBookingId(booking.getBookingId());
-        response.setResortId(booking.getResortId());
-        response.setUserId(booking.getUserId());
-        response.setCheckIn(booking.getCheckIn());
-        response.setCheckOut(booking.getCheckOut());
-        response.setGuests(booking.getGuests());
-        response.setTotalPrice(booking.getTotalPrice());
-        response.setStatus(booking.getStatus());
-
-        return response;
-    }
-
 }

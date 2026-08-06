@@ -1,0 +1,40 @@
+package com.reservo.backend.controller;
+
+import com.reservo.backend.dto.ApiResponse;
+import com.reservo.backend.entity.Resort;
+import com.reservo.backend.service.ResortService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/resorts")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+public class ResortController {
+
+    private final ResortService resortService;
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<Resort>>> getAllResorts() {
+        return ResponseEntity.ok(ApiResponse.success(resortService.getAllApprovedResorts()));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<Resort>> getResortById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(resortService.getResortById(id)));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<Resort>>> searchByLocation(@RequestParam String location) {
+        return ResponseEntity.ok(ApiResponse.success(resortService.searchByLocation(location)));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<Resort>> createResort(@RequestBody Resort resort) {
+        Resort created = resortService.createResort(resort);
+        return ResponseEntity.ok(ApiResponse.success(created, "Resort submitted for approval"));
+    }
+}

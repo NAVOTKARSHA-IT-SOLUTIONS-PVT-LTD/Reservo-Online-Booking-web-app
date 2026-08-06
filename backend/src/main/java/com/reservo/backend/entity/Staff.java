@@ -5,12 +5,12 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "users")
+@Table(name = "staff_members")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class Staff {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,32 +19,22 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
+    private String role; // e.g. "Owner", "Manager", "Reception", "Housekeeping", "Finance"
+
+    @Column(nullable = false)
+    private String department;
+
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)
-    private String password;
+    private String status; // e.g. "Active", "Inactive"
 
-    private String phone;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status;
-
-    private String avatarUrl;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "resort_id")
+    private Resort resort;
 
     @Builder.Default
     private Instant createdAt = Instant.now();
-
-    public enum Role {
-        ROLE_ADMIN, ROLE_OWNER, ROLE_CUSTOMER
-    }
-
-    public enum UserStatus {
-        ACTIVE, INACTIVE, BLOCKED
-    }
 }

@@ -1,88 +1,68 @@
 package com.reservo.backend.entity;
 
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Instant;
 
+@Entity
+@Table(name = "bookings")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Booking {
-    private Long bookingId;
 
-    private Long resortId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private Long userId;
+    @Column(nullable = false, unique = true)
+    private String bookingCode;
 
-    private LocalDate checkIn;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    private LocalDate checkOut;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "resort_id", nullable = false)
+    private Resort resort;
 
-    private int guests;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room;
 
-    private double totalPrice;
+    @Column(nullable = false)
+    private LocalDate checkInDate;
 
-    private String status;
+    @Column(nullable = false)
+    private LocalDate checkOutDate;
 
-    public Booking() {
+    @Builder.Default
+    private Integer guestsCount = 2;
+
+    @Builder.Default
+    private Integer roomsCount = 1;
+
+    @Column(nullable = false)
+    private BigDecimal totalAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private BookingStatus status;
+
+    @Enumerated(EnumType.STRING)
+    private BookingSource bookingSource;
+
+    @Builder.Default
+    private Instant createdAt = Instant.now();
+
+    public enum BookingStatus {
+        PENDING, CONFIRMED, CANCELLED, COMPLETED
     }
 
-    public Long getBookingId() {
-        return bookingId;
-    }
-
-    public void setBookingId(Long bookingId) {
-        this.bookingId = bookingId;
-    }
-
-    public Long getResortId() {
-        return resortId;
-    }
-
-    public void setResortId(Long resortId) {
-        this.resortId = resortId;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public LocalDate getCheckIn() {
-        return checkIn;
-    }
-
-    public void setCheckIn(LocalDate checkIn) {
-        this.checkIn = checkIn;
-    }
-
-    public LocalDate getCheckOut() {
-        return checkOut;
-    }
-
-    public void setCheckOut(LocalDate checkOut) {
-        this.checkOut = checkOut;
-    }
-
-    public int getGuests() {
-        return guests;
-    }
-
-    public void setGuests(int guests) {
-        this.guests = guests;
-    }
-
-    public double getTotalPrice() {
-        return totalPrice;
-    }
-
-    public void setTotalPrice(double totalPrice) {
-        this.totalPrice = totalPrice;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
+    public enum BookingSource {
+        DIRECT, SEARCH, REFERRAL, OTHERS
     }
 }
