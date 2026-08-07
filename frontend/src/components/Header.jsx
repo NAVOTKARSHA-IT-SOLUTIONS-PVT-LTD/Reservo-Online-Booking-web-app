@@ -95,7 +95,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
   };
 
   const isHome = location.pathname === "/";
-  const navLinkClass = "relative text-[14px] font-semibold transition-colors duration-300 cursor-pointer border-none bg-transparent text-text-dark hover:text-primary py-1.5 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:transition-transform after:duration-300";
+  const navLinkClass = "inline-flex items-center justify-center h-8 relative text-[14px] font-semibold transition-colors duration-300 cursor-pointer border-none bg-transparent text-text-dark hover:text-primary after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:transition-transform after:duration-300";
   const getNavLinkClass = (isActive) =>
     `${navLinkClass} ${isActive ? "text-primary after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100"}`;
 
@@ -181,7 +181,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
             <div className="relative" ref={currencyMenuRef}>
               <button 
                 onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
-                className="flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-full border border-border-color bg-bg-white text-text-dark hover:border-primary cursor-pointer transition-all focus:outline-none"
+                className="flex items-center gap-2 text-[13px] font-semibold h-10 px-4 rounded-full border border-border-color bg-bg-white text-text-dark hover:border-primary cursor-pointer transition-all focus:outline-none"
               >
                 <Globe size={15} className="text-text-gray" />
                 <span className="flex items-center gap-1.5">
