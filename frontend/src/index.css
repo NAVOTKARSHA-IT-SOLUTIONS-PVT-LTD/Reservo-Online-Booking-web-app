@@ -97,6 +97,19 @@ body.dark-theme {
   }
 }
 
+@keyframes bounce-rivo {
+  0%, 100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.02) rotate(1.5deg);
+  }
+}
+
+@utility animate-bounce-rivo {
+  animation: bounce-rivo 4s ease-in-out infinite;
+}
+
 body {
   background-color: var(--color-bg-light);
   color: var(--color-text-dark);

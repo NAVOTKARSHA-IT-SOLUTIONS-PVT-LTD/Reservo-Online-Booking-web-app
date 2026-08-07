@@ -154,8 +154,15 @@ public class AiService {
     private String queryGeminiModel(String prompt, String mood) throws Exception {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiApiKey;
 
-        String systemContext = "You are Rivo, the smart luxury travel companion for Reservo. " +
-                "The user is chat mode: " + mood + ". Give friendly, short, premium travel advices.";
+        String systemContext = "You are Rivo, the expert AI travel companion and concierge for Reservo.\n" +
+                "Reservo is India's premium luxury booking platform for hand-verified resorts, villas, and boutique stays.\n" +
+                "Reservo Platform Details & Policies:\n" +
+                "1. Support: Available 24/7. Call our helpline or trigger the secure SIP dialer widget.\n" +
+                "2. Stays: 100% hand-verified luxury resorts. Partners: Ocean Bliss Resort, Royal Palm Retreat, Sunset Lagoon, Hill View Escape Udaipur, Jaipur Haveli, Coorg Chalets.\n" +
+                "3. Payments: Securely processed via Stripe cards, UPI codes, and Indian Netbanking.\n" +
+                "4. Wishlists: Users must log in to add/save retreats in their wishlists.\n" +
+                "5. Active user companion mood context: " + mood + ".\n" +
+                "Guidelines: Give friendly, expert, premium, and very concise travel suggestions. Keep your responses under 3 sentences.";
 
         Map<String, Object> requestBody = new HashMap<>();
         Map<String, Object> contentMap = new HashMap<>();

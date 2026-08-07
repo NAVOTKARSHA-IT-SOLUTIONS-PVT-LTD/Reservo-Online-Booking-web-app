@@ -95,7 +95,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
   };
 
   const isHome = location.pathname === "/";
-  const navLinkClass = "inline-flex items-center justify-center h-8 relative text-[14px] font-semibold transition-colors duration-300 cursor-pointer border-none bg-transparent text-text-dark hover:text-primary after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:transition-transform after:duration-300";
+  const navLinkClass = "inline-flex items-center justify-center h-8 relative text-[15px] font-semibold transition-colors duration-300 cursor-pointer border-none bg-transparent text-text-dark hover:text-primary after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:transition-transform after:duration-300";
   const getNavLinkClass = (isActive) =>
     `${navLinkClass} ${isActive ? "text-primary after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100"}`;
 
@@ -111,8 +111,8 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 no-underline">
             <img src={logoImage} alt="R" className="h-9 w-auto object-contain" />
-            <span className="text-[20px] font-extrabold tracking-[0.5px] text-text-dark font-serif transition-colors duration-300">
-              Reserv<span className="text-primary">o</span>
+            <span className="text-[22px] font-extrabold tracking-[0.5px] bg-gradient-to-r from-text-dark via-primary to-[#2563eb] bg-clip-text text-transparent font-serif transition-colors duration-300">
+              Reservo
             </span>
           </Link>
 
@@ -186,10 +186,11 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                 <Globe size={15} className="text-text-gray" />
                 <span className="flex items-center gap-1.5">
                   {(() => {
-                    const c = localStorage.getItem("reservo-currency") || "en_inr";
-                    if (c === "en_usd") return "🇺🇸 USD ($)";
-                    if (c === "es_eur") return "🇪🇺 EUR (€)";
-                    return "🇮🇳 INR (₹)";
+                    const lang = localStorage.getItem("reservo-language") || "en";
+                    const langLabel = lang === "hi" ? "हिन्दी" : lang === "es" ? "Español" : lang === "fr" ? "Français" : "English";
+                    const curr = localStorage.getItem("reservo-currency") || "en_inr";
+                    const currLabel = curr === "en_usd" ? "USD" : curr === "es_eur" ? "EUR" : "INR";
+                    return `${langLabel} • ${currLabel}`;
                   })()}
                 </span> 
                 <ChevronDown size={13} className="text-text-gray" />
@@ -202,26 +203,57 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-11 bg-bg-white border border-border-color rounded-2xl shadow-xl p-1.5 w-40 z-50 text-[11.5px] font-bold text-text-dark flex flex-col gap-0.5"
+                    className="absolute right-0 top-11 bg-bg-white border border-border-color rounded-2xl shadow-xl p-4 w-52 z-50 text-[11.5px] font-bold text-text-dark flex flex-col gap-3"
                   >
-                    {[
-                      { code: "en_inr", label: "🇮🇳 INR (₹)" },
-                      { code: "en_usd", label: "🇺🇸 USD ($)" },
-                      { code: "es_eur", label: "🇪🇺 EUR (€)" }
-                    ].map((item) => (
-                      <button 
-                        key={item.code}
-                        onClick={() => {
-                          localStorage.setItem("reservo-currency", item.code);
-                          window.dispatchEvent(new Event("storage"));
-                          setShowCurrencyMenu(false);
-                        }}
-                        className="w-full text-left py-2 px-3 rounded-xl hover:bg-bg-light bg-transparent border-none cursor-pointer text-text-dark flex items-center justify-between transition-colors"
-                      >
-                        <span>{item.label}</span>
-                        {(localStorage.getItem("reservo-currency") || "en_inr") === item.code && <Check className="w-3.5 h-3.5 text-primary" />}
-                      </button>
-                    ))}
+                    <div>
+                      <div className="text-[9px] uppercase tracking-wider text-text-gray mb-1.5 px-1">Language</div>
+                      <div className="flex flex-col gap-0.5">
+                        {[
+                          { code: "en", label: "🇺🇸 English" },
+                          { code: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
+                          { code: "es", label: "🇪🇸 Español (Spanish)" },
+                          { code: "fr", label: "🇫🇷 Français (French)" }
+                        ].map((item) => (
+                          <button 
+                            key={item.code}
+                            onClick={() => {
+                              localStorage.setItem("reservo-language", item.code);
+                              window.dispatchEvent(new Event("storage"));
+                              setShowCurrencyMenu(false);
+                              toast(`Language switched to ${item.label.split(' ')[1]}!`, "success");
+                            }}
+                            className="w-full text-left py-1.5 px-2 rounded-xl hover:bg-bg-light bg-transparent border-none cursor-pointer text-text-dark flex items-center justify-between transition-colors font-semibold"
+                          >
+                            <span>{item.label}</span>
+                            {(localStorage.getItem("reservo-language") || "en") === item.code && <Check className="w-3.5 h-3.5 text-primary" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border-color pt-2.5">
+                      <div className="text-[9px] uppercase tracking-wider text-text-gray mb-1.5 px-1">Currency</div>
+                      <div className="flex flex-col gap-0.5">
+                        {[
+                          { code: "en_inr", label: "🇮🇳 INR (₹)" },
+                          { code: "en_usd", label: "🇺🇸 USD ($)" },
+                          { code: "es_eur", label: "🇪🇺 EUR (€)" }
+                        ].map((item) => (
+                          <button 
+                            key={item.code}
+                            onClick={() => {
+                              localStorage.setItem("reservo-currency", item.code);
+                              window.dispatchEvent(new Event("storage"));
+                              setShowCurrencyMenu(false);
+                            }}
+                            className="w-full text-left py-1.5 px-2 rounded-xl hover:bg-bg-light bg-transparent border-none cursor-pointer text-text-dark flex items-center justify-between transition-colors font-semibold"
+                          >
+                            <span>{item.label}</span>
+                            {(localStorage.getItem("reservo-currency") || "en_inr") === item.code && <Check className="w-3.5 h-3.5 text-primary" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

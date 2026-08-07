@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import logoImage from "../assets/images/logo.png";
 
 // Inline SVG components for brand and utility icons
 const GlobeIcon = ({ className = "w-4 h-4" }) => (
@@ -106,11 +107,9 @@ function Footer() {
             {/* Left Side: Logo and tagline */}
             <div className="flex flex-col items-center md:items-start text-center md:text-left">
               <Link to="/" className="flex items-center gap-2 no-underline text-white">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-serif text-2xl font-bold bg-[#2563EB] text-white">
-                  R
-                </div>
-                <span className="text-[24px] font-extrabold tracking-[1px] font-serif text-white">
-                  Reserv<span className="text-[#2563EB]">o</span>
+                <img src={logoImage} alt="R" className="h-9 w-auto object-contain" />
+                <span className="text-[20px] font-extrabold tracking-[0.5px] font-serif text-white transition-colors duration-300">
+                  Reservo
                 </span>
               </Link>
               <p className="text-slate-400 text-sm mt-3">
@@ -173,11 +172,9 @@ function Footer() {
           {/* Left Column: Brand & Social */}
           <div className="lg:col-span-3">
             <Link to="/" className="flex items-center gap-2 no-underline mb-6">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center font-serif text-3xl font-bold bg-[#0D47A1] text-white">
-                R
-              </div>
-              <span className="text-[28px] font-extrabold tracking-[1px] text-text-dark font-serif transition-colors duration-300">
-                Reserv<span className="text-[#2563EB]">o</span>
+              <img src={logoImage} alt="R" className="h-10 w-auto object-contain" />
+              <span className="text-[24px] font-extrabold tracking-[0.5px] text-text-dark font-serif transition-colors duration-300">
+                Reservo
               </span>
             </Link>
             

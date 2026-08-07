@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { secureStorage } from "../services/secureStorage";
+import { authService } from "../services/auth.service";
 
 const WishlistContext = createContext();
 const WISHLIST_KEY = "reservo-wishlist";
@@ -28,6 +29,11 @@ export function WishlistProvider({ children }) {
   }, [wishlist]);
 
   const toggleWishlist = (resort) => {
+    if (!authService.isAuthenticated()) {
+      alert("Please log in to save items to your wishlist.");
+      window.location.href = "/login";
+      return;
+    }
     setWishlist((prev) => {
       const exists = prev.some((item) => item.id === resort.id);
       if (exists) {

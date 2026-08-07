@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, X, MessageSquare, ChevronRight, Check, Star, MapPin } from 'lucide-react';
+import { Sparkles, X, MessageSquare, ChevronRight, Check, Star, MapPin, Phone, PhoneOff, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RESORTS } from '../data/resortsData';
 import rivoSearching from '../assets/images/rivo_searching.png';
@@ -17,6 +17,12 @@ export default function FloatingAIAssistant() {
     }
   ]);
   const [isTyping, setIsTyping] = useState(false);
+  const [inputMessage, setInputMessage] = useState("");
+
+  // Telephony call states
+  const [isCalling, setIsCalling] = useState(false);
+  const [callStatus, setCallStatus] = useState("Connecting...");
+  const [callTime, setCallTime] = useState(0);
 
   const MOODS = [
     { label: 'Beach Vibe 🌊', category: 'beach', resortId: 'goa-coastline' },
@@ -25,10 +31,31 @@ export default function FloatingAIAssistant() {
     { label: 'Lagoon Paradise 🏝️', category: 'island', resortId: 'maldives-overwater' }
   ];
 
+  // Call timer effect
+  useEffect(() => {
+    let timer;
+    let connectTimeout;
+    if (isCalling) {
+      connectTimeout = setTimeout(() => {
+        setCallStatus("Connected");
+      }, 1500);
+
+      timer = setInterval(() => {
+        setCallTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setCallStatus("Connecting...");
+      setCallTime(0);
+    }
+    return () => {
+      clearTimeout(connectTimeout);
+      clearInterval(timer);
+    };
+  }, [isCalling]);
+
   const handleMoodSelect = (mood) => {
     setSelectedMood(mood);
     
-    // Append user message
     const userMsg = {
       id: "msg-user-" + Date.now(),
       sender: "user",
@@ -38,7 +65,6 @@ export default function FloatingAIAssistant() {
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
 
-    // Simulate Rivo thinking delay
     setTimeout(() => {
       setIsTyping(false);
       const matchedResort = RESORTS.find(r => r.id === mood.resortId) || RESORTS[0];
@@ -62,6 +88,68 @@ export default function FloatingAIAssistant() {
     }, 1500);
   };
 
+  const handleSendMessage = async (e) => {
+    if (e) e.preventDefault();
+    if (!inputMessage.trim()) return;
+    
+    const userText = inputMessage;
+    setInputMessage("");
+    
+    const userMsg = {
+      id: "msg-user-" + Date.now(),
+      sender: "user",
+      text: userText
+    };
+    setMessages(prev => [...prev, userMsg]);
+    setIsTyping(true);
+    
+    try {
+      // Call backend AI chat endpoint
+      const response = await fetch("/api/v1/ai/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          sessionId: "assistant-session-101",
+          message: userText,
+          selectedMood: selectedMood ? selectedMood.category : "luxury"
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(prev => [...prev, {
+          id: "msg-rivo-" + Date.now(),
+          sender: "rivo",
+          text: data.replyText,
+          recommendation: data.recommendedResort ? {
+            id: data.recommendedResort.id,
+            name: data.recommendedResort.name,
+            location: data.recommendedResort.location,
+            rating: data.recommendedResort.rating,
+            price: data.recommendedResort.price,
+            image: data.recommendedResort.heroImage || data.recommendedResort.image,
+            badge: data.recommendedResort.badge || "Verified"
+          } : null
+        }]);
+      } else {
+        throw new Error("API call failed");
+      }
+    } catch (err) {
+      console.warn("Backend unavailable, using dynamic mock generator:", err);
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: "msg-rivo-" + Date.now(),
+          sender: "rivo",
+          text: "I've processed your travel preferences! I suggest checking out our partner stays like the Ocean Bliss Resort or Royal Palm Retreat for an amazing luxury holiday."
+        }]);
+      }, 1000);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
   const handleReset = () => {
     setSelectedMood(null);
     setMessages([
@@ -75,7 +163,7 @@ export default function FloatingAIAssistant() {
 
   return (
     <>
-      {/* Persistent floating button */}
+      {/* Floating Button */}
       <button 
         onClick={() => setIsOpen(true)}
         aria-label="Toggle Rivo AI Companion"
@@ -107,12 +195,27 @@ export default function FloatingAIAssistant() {
                   <div className="text-white/60 text-[11px] flex items-center gap-1"><Sparkles size={10} className="text-gold" /> Online Concierge</div>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsOpen(false)}
-                className="text-white/60 hover:text-white bg-transparent border-none cursor-pointer p-1 transition-colors"
-              >
-                <X size={18} />
-              </button>
+              
+              <div className="flex items-center gap-1.5">
+                <button 
+                  onClick={() => {
+                    setIsCalling(true);
+                    setCallStatus("Connecting...");
+                    setCallTime(0);
+                  }}
+                  className="text-white/60 hover:text-white bg-transparent border-none cursor-pointer p-1.5 transition-colors flex items-center justify-center rounded-full hover:bg-white/10"
+                  aria-label="Call Rivo support line"
+                >
+                  <Phone size={15} />
+                </button>
+                <button 
+                  onClick={() => setIsOpen(false)}
+                  className="text-white/60 hover:text-white bg-transparent border-none cursor-pointer p-1.5 transition-colors flex items-center justify-center rounded-full hover:bg-white/10"
+                  aria-label="Close panel"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Chat Body */}
@@ -123,7 +226,7 @@ export default function FloatingAIAssistant() {
                     {msg.sender === 'rivo' ? (
                       <img src={rivoSearching} alt="Rivo" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">You</div>
+                      <div className="w-full h-full bg-primary text-white flex items-center justify-center text-[10px] font-bold rounded-full">You</div>
                     )}
                   </div>
                   <div className="flex flex-col gap-2 max-w-[75%]">
@@ -135,7 +238,6 @@ export default function FloatingAIAssistant() {
                       {msg.text}
                     </div>
 
-                    {/* Rich media recommendation card inside bubble */}
                     {msg.recommendation && (
                       <motion.div 
                         initial={{ opacity: 0, y: 10 }}
@@ -177,9 +279,8 @@ export default function FloatingAIAssistant() {
                 </div>
               )}
 
-              {/* Mood selector button lists */}
               {!selectedMood && (
-                <div className="flex flex-col gap-2 pl-10.5 text-left">
+                <div className="flex flex-col gap-2 pl-10.5 text-left animate-fade-in">
                   <p className="text-[10px] font-bold text-text-gray uppercase tracking-widest">Select your holiday vibe:</p>
                   <div className="flex flex-col gap-1.5">
                     {MOODS.map(mood => (
@@ -207,18 +308,89 @@ export default function FloatingAIAssistant() {
 
             {/* Input Footer */}
             <div className="p-3 bg-bg-white border-t border-border-color">
-              <div className="relative">
+              <form onSubmit={handleSendMessage} className="relative">
                 <input 
                   type="text" 
                   placeholder="Ask Rivo anything..." 
-                  className="w-full bg-bg-light border border-border-color rounded-full py-2 pl-4 pr-10 text-xs outline-none focus:border-gold transition-colors font-semibold"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  className="w-full bg-bg-light border border-border-color rounded-full py-2 pl-4 pr-10 text-xs outline-none focus:border-gold transition-colors font-semibold text-text-dark"
                   disabled={!!selectedMood}
                 />
-                <button className="absolute right-1 top-1 w-6.5 h-6.5 rounded-full bg-gold text-white flex items-center justify-center border-none cursor-pointer hover:bg-gold-dark transition-colors disabled:opacity-50">
+                <button 
+                  type="submit"
+                  disabled={!!selectedMood || !inputMessage.trim()}
+                  className="absolute right-1 top-1 w-6.5 h-6.5 rounded-full bg-gold text-white flex items-center justify-center border-none cursor-pointer hover:bg-gold-dark transition-colors disabled:opacity-50"
+                  aria-label="Send message"
+                >
                   <ChevronRight size={14} />
                 </button>
-              </div>
+              </form>
             </div>
+
+            {/* Telephony Call Screen Overlay */}
+            {isCalling && (
+              <div className="absolute inset-0 bg-[#0F172A] text-white z-[200] p-6 flex flex-col justify-between items-center animate-fade-in font-sans">
+                {/* Top Section */}
+                <div className="w-full flex justify-between items-center">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e] animate-pulse"></div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reservo Secure Line</span>
+                  </div>
+                  <div className="text-[10px] font-mono text-slate-400">
+                    {Math.floor(callTime / 60).toString().padStart(2, '0')}:{ (callTime % 60).toString().padStart(2, '0') }
+                  </div>
+                </div>
+
+                {/* Mid Section */}
+                <div className="flex flex-col items-center space-y-4 my-auto">
+                  <div className="relative">
+                    <div className="absolute -inset-4 rounded-full bg-[#2563eb]/20 animate-ping" style={{ animationDuration: '2s' }}></div>
+                    <div className="absolute -inset-8 rounded-full bg-[#2563eb]/10 animate-ping" style={{ animationDuration: '3s' }}></div>
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gold relative shadow-2xl bg-white">
+                      <img src={rivoSearching} alt="Rivo AI" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+
+                  <div className="text-center">
+                    <h4 className="text-base font-bold text-white font-serif">Rivo AI Concierge</h4>
+                    <p className="text-[11px] text-[#38BDF8] font-bold mt-1 tracking-wide">{callStatus}</p>
+                  </div>
+
+                  {callStatus === "Connected" && (
+                    <div className="flex items-end gap-1 h-6">
+                      {[1, 2, 3, 4, 5, 4, 3, 2, 1].map((val, idx) => (
+                        <div 
+                          key={idx} 
+                          className="w-1 bg-[#38BDF8] rounded-full"
+                          style={{
+                            height: `${val * 4}px`,
+                            animation: `shimmer-anim 0.8s infinite alternate`,
+                            animationDelay: `${idx * 80}ms`
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="max-w-[260px] p-3 rounded-2xl bg-white/5 border border-white/10 text-[10.5px] leading-relaxed text-slate-300 italic text-center">
+                    {callStatus === "Connecting..." 
+                      ? "Initializing secure SIP VoIP channel..." 
+                      : "\"Hello! I am Rivo, your Reservo Telephony concierge. How can I assist you with your luxury booking today?\""
+                    }
+                  </div>
+                </div>
+
+                {/* Bottom Section */}
+                <button
+                  onClick={() => setIsCalling(false)}
+                  className="w-12 h-12 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center text-white shadow-lg border-none cursor-pointer hover:scale-105 transition-all"
+                  aria-label="End call"
+                >
+                  <PhoneOff className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

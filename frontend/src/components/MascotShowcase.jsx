@@ -109,14 +109,14 @@ function MascotShowcase() {
 
           {/* Right Column: Display Area with active Mascot image */}
           <div className="flex justify-center w-full">
-            <div className="bg-bg-white border border-border-color rounded-[24px] p-6 w-full max-w-[400px] shadow-custom relative flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-gradient-to-br from-sky-50/80 via-bg-white to-[#2563eb]/5 border border-sky-100 dark:border-slate-800/80 dark:from-slate-900/90 dark:via-[#111A2E]/90 dark:to-sky-950/40 rounded-[32px] p-6 w-full max-w-[400px] shadow-custom relative flex flex-col items-center text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/20">
               {/* Highlight Badge */}
               <span className="absolute top-4 left-4 bg-gold text-white px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center shadow-[0_4px_10px_rgba(197,160,89,0.2)]">
                 <Sparkles size={10} className="mr-1" /> {activeTab.badge}
               </span>
 
               {/* Image Frame */}
-              <div className="w-[150px] h-[150px] rounded-full overflow-hidden border-4 border-border-color mt-4 mb-6 shadow-custom bg-bg-light">
+              <div className="w-[150px] h-[150px] rounded-full overflow-hidden border-4 border-sky-200/50 dark:border-slate-700/80 mt-4 mb-6 shadow-lg bg-gradient-to-tr from-sky-100 to-sky-50/20 dark:from-slate-800 dark:to-sky-900/30">
                 <img 
                   src={activeTab.image} 
                   alt={`Rivo ${activeTabId}`}
