@@ -171,7 +171,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
-            <Link to="/wishlist" className="relative bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all">
+            <Link to="/wishlist" aria-label="View Wishlist" className="relative bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all">
               <Heart size={18} />
               <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-bg-white">
                 {wishlist.length}
@@ -227,7 +227,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               </AnimatePresence>
             </div>
 
-            <button className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all" onClick={toggleMenu}>
+            <button aria-label="Open Navigation Menu" className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all" onClick={toggleMenu}>
               <Menu size={20} />
             </button>
           </div>

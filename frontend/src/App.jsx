@@ -51,6 +51,7 @@ import Testimonials from "./components/Testimonials";
 import FAQ from "./components/FAQ";
 import MascotShowcase from "./components/MascotShowcase";
 import ResortListing from "./components/ResortListing";
+import ResortDetails from "./components/ResortDetails";
 
 // Simple Loading Indicator for Suspense
 function PageLoader() {

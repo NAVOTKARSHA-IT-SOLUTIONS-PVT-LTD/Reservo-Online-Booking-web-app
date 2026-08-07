@@ -16,7 +16,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import heroImage from "../assets/images/hero.png";
+const heroImage = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=70&fm=webp";
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 
 function Hero() {
@@ -144,7 +144,7 @@ function Hero() {
             
             <div className="flex items-center gap-2 mb-2">
               <Sparkles size={18} className="text-primary" />
-              <h3 className="text-[18px] font-extrabold text-text-dark transition-colors duration-300">AI Trip Planner</h3>
+              <h2 className="text-[18px] font-extrabold text-text-dark transition-colors duration-300">AI Trip Planner</h2>
             </div>
             <p className="text-[12px] text-text-gray font-medium mb-6 transition-colors duration-300">We'll plan your perfect trip tailored for you</p>
 
@@ -202,9 +202,10 @@ function Hero() {
           {/* Location */}
           <div className="flex-1 flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group">
             <MapPin size={20} className="text-gray-400 group-hover:text-primary transition-colors" />
-            <div className="flex flex-col w-full">
-              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Where to?</span>
+            <div className="flex flex-col w-full text-left">
+              <label htmlFor="search-location" className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Where to?</label>
               <input 
+                id="search-location"
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
@@ -217,9 +218,10 @@ function Hero() {
           {/* Check In */}
           <div className="flex-1 flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group">
             <Calendar size={20} className="text-gray-400 group-hover:text-primary transition-colors" />
-            <div className="flex flex-col w-full">
-              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Check In</span>
+            <div className="flex flex-col w-full text-left">
+              <label htmlFor="search-checkin" className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Check In</label>
               <input 
+                id="search-checkin"
                 type="text"
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
@@ -232,9 +234,10 @@ function Hero() {
           {/* Check Out */}
           <div className="flex-1 flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group">
             <Calendar size={20} className="text-gray-400 group-hover:text-primary transition-colors" />
-            <div className="flex flex-col w-full">
-              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Check Out</span>
+            <div className="flex flex-col w-full text-left">
+              <label htmlFor="search-checkout" className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Check Out</label>
               <input 
+                id="search-checkout"
                 type="text"
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
@@ -247,9 +250,10 @@ function Hero() {
           {/* Guests */}
           <div className="flex-1 flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group">
             <Users size={20} className="text-gray-400 group-hover:text-primary transition-colors" />
-            <div className="flex flex-col w-full">
-              <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Guests & Rooms</span>
+            <div className="flex flex-col w-full text-left">
+              <label htmlFor="search-guests" className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Guests & Rooms</label>
               <input 
+                id="search-guests"
                 type="text"
                 value={guests}
                 onChange={(e) => setGuests(e.target.value)}

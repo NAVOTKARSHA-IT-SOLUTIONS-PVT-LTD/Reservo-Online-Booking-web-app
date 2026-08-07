@@ -172,10 +172,11 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     <div className="space-y-6">
       {/* 1. Sort Options */}
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1">
+        <label htmlFor="filter-sort" className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1">
           <ArrowUpDown className="w-3.5 h-3.5 text-[#2563EB]" /> Sort By
         </label>
         <select
+          id="filter-sort"
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
           className={`w-full p-3 rounded-xl border text-xs font-bold cursor-pointer focus:outline-none focus:border-[#2563EB] ${
@@ -193,10 +194,11 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
       {/* 2. Price Range */}
       <div className="space-y-2.5 pt-2 border-t border-stone-200 dark:border-stone-700">
         <div className="flex justify-between items-center text-xs">
-          <label className="font-bold uppercase tracking-wider text-stone-400">Max Budget / Night</label>
+          <label htmlFor="filter-price" className="font-bold uppercase tracking-wider text-stone-400">Max Budget / Night</label>
           <span className="font-bold text-[#2563EB] text-sm">₹{maxPrice.toLocaleString()}</span>
         </div>
         <input
+          id="filter-price"
           type="range"
           min="5000"
           max="40000"

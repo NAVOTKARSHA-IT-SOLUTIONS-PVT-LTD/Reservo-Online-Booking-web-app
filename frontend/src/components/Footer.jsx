@@ -135,13 +135,13 @@ function Footer() {
             <div className="flex flex-col items-center md:items-end gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Follow Us</span>
               <div className="flex gap-3">
-                <a href="#" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                <a href="#" aria-label="Visit Reservo Instagram" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
                   <InstagramIcon className="w-4 h-4" />
                 </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                <a href="#" aria-label="Visit Reservo Facebook" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
                   <FacebookIcon className="w-4 h-4" />
                 </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                <a href="#" aria-label="Visit Reservo Twitter" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
                   <TwitterIcon className="w-4 h-4" />
                 </a>
               </div>
@@ -186,16 +186,16 @@ function Footer() {
             </p>
 
             <div className="flex gap-3">
-              <a href="#" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
+              <a href="#" aria-label="Visit Reservo Globe Portal" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
                 <GlobeIcon className="w-4 h-4" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
+              <a href="#" aria-label="Visit Reservo Facebook Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
                 <FacebookIcon className="w-4 h-4" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
+              <a href="#" aria-label="Visit Reservo Instagram Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
                 <InstagramIcon className="w-4 h-4" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
+              <a href="#" aria-label="Visit Reservo Youtube Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
                 <YoutubeIcon className="w-4 h-4" />
               </a>
             </div>

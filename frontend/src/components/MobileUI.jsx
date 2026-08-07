@@ -299,11 +299,13 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           <button
             className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-bg-light transition-colors border-none bg-transparent cursor-pointer"
             onClick={() => { setActiveTab("wishlist"); navigate("/wishlist"); }}
+            aria-label="View Wishlist"
           >
             <Heart size={18} className="text-text-dark" />
           </button>
           <button
             className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-bg-light transition-colors border-none bg-transparent cursor-pointer"
+            aria-label="View Notifications"
           >
             <Bell size={18} className="text-text-dark" />
           </button>

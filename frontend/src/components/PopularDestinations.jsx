@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Heart, Star, ChevronLeft, ChevronRight, Waves, Mountain, TreePine, Home, Tent, Palmtree, ArrowRight, ShieldCheck, HeadphonesIcon } from "lucide-react";
 
-import goaImage from "../assets/images/goa.jpg";
-import keralaImage from "../assets/images/kerala.jpg";
-import coorgImage from "../assets/images/coorg.jpg";
-import manaliImage from "../assets/images/manali.jpg";
-import jaipurImage from "../assets/images/jaipur.jpg";
-import udaipurImage from "../assets/images/udaipur.jpg";
-import shimlaImage from "../assets/images/shimla.jpg";
-import andamanImage from "../assets/images/andaman.jpg";
+const goaImage = "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=70&fm=webp";
+const keralaImage = "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&w=800&q=70&fm=webp";
+const coorgImage = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=70&fm=webp";
+const manaliImage = "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=70&fm=webp";
+const jaipurImage = "https://images.unsplash.com/photo-1477587458883-47135fbdb5ee?auto=format&fit=crop&w=800&q=70&fm=webp";
+const udaipurImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=70&fm=webp";
+const shimlaImage = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=70&fm=webp";
+const andamanImage = "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?auto=format&fit=crop&w=800&q=70&fm=webp";
 
 const CATEGORIES = [
   { id: "beach", label: "Beach Resorts", icon: <Waves size={16} /> },

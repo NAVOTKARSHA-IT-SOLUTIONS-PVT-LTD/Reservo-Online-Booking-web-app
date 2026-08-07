@@ -16,7 +16,7 @@
   --color-bg-white: #ffffff;
   
   --color-text-dark: #0A2342;
-  --color-text-gray: #8A9AAF;
+  --color-text-gray: #4A5D73;
   --color-border-color: #E7EEF8;
   --shadow-custom: 0 12px 36px rgba(10, 35, 66, 0.06);
 }
@@ -32,7 +32,7 @@ body.dark-theme {
   --color-bg-light: #0A1120;
   --color-bg-white: #111A2E;
   --color-text-dark: #F1F6FF;
-  --color-text-gray: #91A3BF;
+  --color-text-gray: #A3B8D9;
   --color-border-color: #1E2A44;
   --shadow-custom: 0 15px 35px rgba(0, 0, 0, 0.4);
 }
