@@ -80,35 +80,12 @@ const HOME_DESTINATIONS_MAP = {
 };
 
 // Main Home Page Component
-function Home({ wishlist, toggleWishlist }) {
-  // Sync currency values
-  const [currencySymbol, setCurrencySymbol] = useState("₹");
-  const [exchangeRate, setExchangeRate] = useState(1);
-
-  useEffect(() => {
-    const handleStorage = () => {
-      const cur = localStorage.getItem("reservo-currency") || "en_inr";
-      if (cur === "en_usd") {
-        setCurrencySymbol("$");
-        setExchangeRate(0.012);
-      } else if (cur === "es_eur") {
-        setCurrencySymbol("€");
-        setExchangeRate(0.011);
-      } else {
-        setCurrencySymbol("₹");
-        setExchangeRate(1);
-      }
-    };
-    handleStorage();
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
+function Home({ wishlist, toggleWishlist, currencySymbol, exchangeRate }) {
   return (
     <>
       <Hero />
       <RecentlyViewed currencySymbol={currencySymbol} rates={exchangeRate} />
-      <PopularDestinations wishlist={wishlist} toggleWishlist={toggleWishlist} />
+      <PopularDestinations wishlist={wishlist} toggleWishlist={toggleWishlist} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />
       <WhyChooseUs />
       <Testimonials />
       <FAQ />
@@ -118,7 +95,7 @@ function Home({ wishlist, toggleWishlist }) {
 }
 
 // Wrapper for Resort Details page
-function ResortDetailsPageWrapper({ isDark }) {
+function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -168,6 +145,8 @@ function ResortDetailsPageWrapper({ isDark }) {
       urlId={id}
       isDarkMode={isDark}
       onBack={() => navigate("/")}
+      currencySymbol={currencySymbol}
+      exchangeRate={exchangeRate}
     />
   );
 }
@@ -181,6 +160,29 @@ function App() {
   const [isDark, setIsDark] = useState(() => {
     return localStorage.getItem("reservo-theme") === "dark";
   });
+
+  // Shared currency states
+  const [currencySymbol, setCurrencySymbol] = useState("₹");
+  const [exchangeRate, setExchangeRate] = useState(1);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const cur = localStorage.getItem("reservo-currency") || "en_inr";
+      if (cur === "en_usd") {
+        setCurrencySymbol("$");
+        setExchangeRate(0.012);
+      } else if (cur === "es_eur") {
+        setCurrencySymbol("€");
+        setExchangeRate(0.011);
+      } else {
+        setCurrencySymbol("₹");
+        setExchangeRate(1);
+      }
+    };
+    handleStorage();
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   // Preloader state
   const [showPreloader, setShowPreloader] = useState(() => {
@@ -357,7 +359,7 @@ function App() {
       >
         <Suspense fallback={<PageLoader />}>
           <Routes location={location}>
-            <Route path="/" element={<Home wishlist={wishlistIds} toggleWishlist={handleToggleWishlist} />} />
+            <Route path="/" element={<Home wishlist={wishlistIds} toggleWishlist={handleToggleWishlist} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/rewards" element={<Rewards />} />
@@ -379,7 +381,7 @@ function App() {
             <Route path="/search" element={renderResortListing()} />
             <Route path="/search-results" element={renderResortListing()} />
             <Route path="/resorts" element={renderResortListing()} />
-            <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} />} />
+            <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />} />
             <Route path="/experiences" element={<Experiences />} />
             <Route path="/wishlist" element={<Wishlist onBook={(resort) => setBookingResort(resort)} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Sparkles, ArrowRight } from "lucide-react";
+import { useTranslation } from "../hooks/useTranslation";
 
 // Import all Rivo mascot images
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
@@ -52,6 +53,7 @@ const SHOWCASE_TABS = [
 ];
 
 function MascotShowcase() {
+  const { t } = useTranslation();
   const [activeTabId, setActiveTabId] = useState("welcome");
 
   const activeTab = SHOWCASE_TABS.find(tab => tab.id === activeTabId) || SHOWCASE_TABS[0];
@@ -62,10 +64,10 @@ function MascotShowcase() {
         
         {/* Section Header */}
         <div className="text-center mb-6">
-          <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-2">MEET RIVO</span>
-          <h2 className="text-[24px] sm:text-[28px] md:text-[34px] font-bold text-center text-primary mb-2">Your AI Travel Companion</h2>
+          <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-2">{t("meet_rivo")}</span>
+          <h2 className="text-[24px] sm:text-[28px] md:text-[34px] font-bold text-center text-primary mb-2">{t("companion")}</h2>
           <p className="max-w-[720px] mx-auto mb-4 text-center text-text-gray text-[14px] leading-relaxed">
-            Rivo is your personal travel concierge, powered by AI to seamlessly curate and manage every aspect of your trip.
+            {t("concierge_service")}
           </p>
         </div>
 
@@ -74,9 +76,9 @@ function MascotShowcase() {
           
           {/* Left Column: Mascot profile details */}
           <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-            <h3 className="text-[24px] text-text-dark font-extrabold mb-2 leading-tight">Always at your service</h3>
+            <h3 className="text-[24px] text-text-dark font-extrabold mb-2 leading-tight">{t("always_service")}</h3>
             <p className="text-[13.5px] leading-relaxed text-text-gray mb-4 max-w-[520px] mx-auto lg:mx-0">
-              From crafting bespoke itineraries to live key handovers, Rivo takes the friction out of luxury hospitality.
+              {t("friction_free")}
             </p>
 
             {/* Vertical Tab Selectors */}

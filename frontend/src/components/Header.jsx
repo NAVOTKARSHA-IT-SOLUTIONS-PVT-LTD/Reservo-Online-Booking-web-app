@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "../hooks/useTranslation";
 import { 
   Menu, X, Heart, Moon, Sun, Globe, ChevronDown, Check,
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
@@ -11,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 function Header({ isDark, onToggleTheme, wishlist = [] }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
@@ -121,17 +123,17 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
             <ul className="flex gap-8 list-none m-0 p-0 items-center">
               <li>
                 <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className={getNavLinkClass(isHome && activeSection === "home")}>
-                  Home
+                  {t("home")}
                 </Link>
               </li>
               <li>
                 <button className={getNavLinkClass(isHome && activeSection === "explore")} onClick={() => scrollToSection("explore")}>
-                  Explore
+                  {t("explore")}
                 </button>
               </li>
               <li>
                 <Link to="/ai-planner" className={getNavLinkClass(location.pathname === "/ai-planner")}>
-                  ✨ AI Planner
+                  ✨ {t("ai_planner")}
                 </Link>
               </li>
               <li>
@@ -156,7 +158,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               </li>
               <li>
                 <Link to="/contact" className={getNavLinkClass(location.pathname === "/contact")}>
-                  Contact
+                  {t("contact")}
                 </Link>
               </li>
             </ul>

@@ -154,8 +154,11 @@ const DESTINATIONS = [
   }
 ];
 
-function PopularDestinations({ wishlist = [], toggleWishlist }) {
+import { useTranslation } from "../hooks/useTranslation";
+
+function PopularDestinations({ wishlist = [], toggleWishlist, currencySymbol = "₹", exchangeRate = 1 }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activeCat, setActiveCat] = useState("beach");
 
   const filteredDestinations = DESTINATIONS.filter(
@@ -198,10 +201,10 @@ function PopularDestinations({ wishlist = [], toggleWishlist }) {
               <div className="w-8 h-0.5 bg-primary"></div>
             </div>
             <h2 className="text-[24px] sm:text-[30px] font-extrabold text-text-dark mb-1.5 font-serif transition-colors duration-300">
-              Trending <span className="text-primary">Vacation Stays</span>
+              {t("popular_destinations")}
             </h2>
             <p className="text-text-gray text-[13.5px] leading-relaxed max-w-[420px] transition-colors duration-300">
-              Discover gorgeous corners around the world, verified for absolute comfort and luxury.
+              {t("discover_stays")}
             </p>
           </div>
 
@@ -309,9 +312,9 @@ function PopularDestinations({ wishlist = [], toggleWishlist }) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="text-text-gray/80 text-[11px] font-medium block">from</span>
+                      <span className="text-text-gray/80 text-[11px] font-medium block">{t("from")}</span>
                       <div className="text-[16px] font-extrabold text-text-dark transition-colors duration-300">
-                        ₹{dest.price}<span className="text-[12px] text-text-gray font-medium">/night</span>
+                        {currencySymbol}{(Math.round(dest.price * exchangeRate)).toLocaleString()}<span className="text-[12px] text-text-gray font-medium"> / {t("per_night")}</span>
                       </div>
                     </div>
                   </div>

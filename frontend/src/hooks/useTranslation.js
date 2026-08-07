@@ -1,0 +1,167 @@
+import { useState, useEffect } from "react";
+
+const TRANSLATIONS = {
+  en: {
+    home: "Home",
+    explore: "Explore",
+    ai_planner: "AI Planner",
+    contact: "Contact",
+    my_bookings: "My Bookings",
+    wishlist: "Wishlist",
+    about_us: "About Us",
+    meet_rivo: "MEET RIVO",
+    companion: "Your AI Travel Companion",
+    concierge_service: "Rivo is your personal travel concierge, powered by AI to seamlessly curate and manage every aspect of your trip.",
+    always_service: "Always at your service",
+    friction_free: "From crafting bespoke itineraries to live key handovers, Rivo takes the friction out of luxury hospitality.",
+    select_vibe: "Select your holiday vibe:",
+    start_over: "Start Over",
+    ask_rivo: "Ask Rivo anything...",
+    from: "from",
+    per_night: "per night",
+    best_price: "Best Price",
+    verified_stays: "Verified Stays",
+    quality_checked: "Quality checked",
+    value_guaranteed: "Value guaranteed",
+    support_247: "24/7 Support",
+    secure_booking: "100% Secure Booking",
+    connecting: "Connecting...",
+    connected: "Connected",
+    telephony_concierge: "Rivo AI Concierge",
+    secure_line: "Reservo Secure Line",
+    quick_book: "Quick Book",
+    view_details: "View Details →",
+    popular_destinations: "Popular Stays",
+    discover_stays: "Discover curated retreats tailored for luxury escapes.",
+    m1_greeting: "Hi! I'm Rivo, your personal travel concierge. Tell me what kind of vibe you're looking for, and I'll find the perfect stay.",
+    connecting_sip: "Initializing secure SIP VoIP channel...",
+    telephony_greeting: "\"Hello! I am Rivo, your Reservo Telephony concierge. How can I assist you with your luxury booking today?\""
+  },
+  hi: {
+    home: "मुख्य पृष्ठ",
+    explore: "खोजें",
+    ai_planner: "एआई प्लानर",
+    contact: "संपर्क",
+    my_bookings: "मेरी बुकिंग",
+    wishlist: "पसंदीदा",
+    about_us: "हमारे बारे में",
+    meet_rivo: "रिवो से मिलें",
+    companion: "आपका एआई यात्रा साथी",
+    concierge_service: "रिवो आपका व्यक्तिगत यात्रा सहायक है, जो आपकी यात्रा के हर पहलू को व्यवस्थित करने के लिए एआई द्वारा संचालित है।",
+    always_service: "हमेशा आपकी सेवा में",
+    friction_free: "कस्टम यात्रा कार्यक्रम तैयार करने से लेकर लाइव सहायता तक, रिवो आपकी यात्रा को आसान बनाता है।",
+    select_vibe: "अपनी छुट्टियों का मिजाज चुनें:",
+    start_over: "शुरू से शुरू करें",
+    ask_rivo: "रिवो से कुछ भी पूछें...",
+    from: "से",
+    per_night: "प्रति रात",
+    best_price: "सर्वोत्तम मूल्य",
+    verified_stays: "सत्यापित ठहरने के स्थान",
+    quality_checked: "गुणवत्ता जांची गई",
+    value_guaranteed: "मूल्य की गारंटी",
+    support_247: "24/7 सहायता",
+    secure_booking: "100% सुरक्षित बुकिंग",
+    connecting: "कनेक्ट हो रहा है...",
+    connected: "कनेक्टेड",
+    telephony_concierge: "रिवो एआई कंसीयज",
+    secure_line: "रिजर्वो सुरक्षित लाइन",
+    quick_book: "त्वरित बुकिंग",
+    view_details: "विवरण देखें →",
+    popular_destinations: "लोकप्रिय ठहरने के स्थान",
+    discover_stays: "लक्ज़री गेटअवे के लिए क्यूरेटेड रिट्रीट खोजें।",
+    m1_greeting: "नमस्ते! मैं रिवो हूँ, आपका व्यक्तिगत यात्रा सहायक। मुझे बताएं कि आप किस तरह का माहौल तलाश रहे हैं, और मैं आपके लिए सही ठहराव ढूंढ लूंगा।",
+    connecting_sip: "सुरक्षित एसआईपी वीओआईपी चैनल प्रारंभ किया जा रहा है...",
+    telephony_greeting: "\"नमस्ते! मैं रिवो हूँ, आपका रिजर्वो टेलीफोनी कंसीयज। आज मैं आपकी लक्ज़री बुकिंग में कैसे मदद कर सकता हूँ?\""
+  },
+  es: {
+    home: "Inicio",
+    explore: "Explorar",
+    ai_planner: "Planificador de IA",
+    contact: "Contacto",
+    my_bookings: "Mis Reservas",
+    wishlist: "Favoritos",
+    about_us: "Nosotros",
+    meet_rivo: "CONOCE A RIVO",
+    companion: "Tu Compañero de Viaje IA",
+    concierge_service: "Rivo es tu conserje de viaje personal, impulsado por IA para organizar y gestionar sin problemas cada aspecto de tu viaje.",
+    always_service: "Siempre a tu servicio",
+    friction_free: "Desde la creación de itinerarios a medida hasta la entrega de llaves en vivo, Rivo elimina la fricción de la hospitalidad de lujo.",
+    select_vibe: "Selecciona tu vibra vacacional:",
+    start_over: "Empezar de nuevo",
+    ask_rivo: "Pregúntale a Rivo lo que sea...",
+    from: "desde",
+    per_night: "por noche",
+    best_price: "Mejor Precio",
+    verified_stays: "Estancias Veracadas",
+    quality_checked: "Calidad comprobada",
+    value_guaranteed: "Valor garantizado",
+    support_247: "Soporte 24/7",
+    secure_booking: "Reserva 100% Segura",
+    connecting: "Conectando...",
+    connected: "Conectado",
+    telephony_concierge: "Conserje de IA de Rivo",
+    secure_line: "Línea Segura Reservo",
+    quick_book: "Reserva Rápida",
+    view_details: "Ver Detalles →",
+    popular_destinations: "Alojamientos Populares",
+    discover_stays: "Descubra retiros seleccionados y adaptados para escapadas de lujo.",
+    m1_greeting: "¡Hola! Soy Rivo, tu conserje de viaje personal. Cuéntame qué tipo de ambiente buscas y encontraré la estancia perfecta.",
+    connecting_sip: "Inicializando canal SIP VoIP seguro...",
+    telephony_greeting: "\"¡Hola! Soy Rivo, tu conserje de telefonía de Reservo. ¿Cómo puedo ayudarte hoy con tu reserva de lujo?\""
+  },
+  fr: {
+    home: "Accueil",
+    explore: "Explorer",
+    ai_planner: "Planificateur IA",
+    contact: "Contact",
+    my_bookings: "Mes Réservations",
+    wishlist: "Favoris",
+    about_us: "À Propos",
+    meet_rivo: "RENCONTREZ RIVO",
+    companion: "Votre Compagnon de Voyage IA",
+    concierge_service: "Rivo est votre concierge de voyage personnel, propulsé par l'IA pour organiser et gérer de manière transparente chaque aspect de votre voyage.",
+    always_service: "Toujours à votre service",
+    friction_free: "De la création d'itinéraires sur mesure à la remise des clés en direct, Rivo élimine les tracas de l'hôtellerie de luxe.",
+    select_vibe: "Sélectionnez votre ambiance de vacances :",
+    start_over: "Recommencer",
+    ask_rivo: "Demandez n'importe quoi à Rivo...",
+    from: "à partir de",
+    per_night: "par nuit",
+    best_price: "Meilleur Prix",
+    verified_stays: "Séjours Vérifiés",
+    quality_checked: "Qualité vérifiée",
+    value_guaranteed: "Valeur garantie",
+    support_247: "Support 24/7",
+    secure_booking: "Réservation 100% Securisée",
+    connecting: "Connexion...",
+    connected: "Connecté",
+    telephony_concierge: "Concierge IA Rivo",
+    secure_line: "Ligne Sécurisée Reservo",
+    quick_book: "Réservation Rapide",
+    view_details: "Voir les Détails →",
+    popular_destinations: "Séjours Populaires",
+    discover_stays: "Découvrez des retraites sélectionnées pour des escapades de luxe.",
+    m1_greeting: "Salut! Je suis Rivo, votre concierge de voyage personnel. Dites-moi quel genre d'ambiance vous recherchez, et je trouverai le séjour parfait.",
+    connecting_sip: "Initialisation du canal SIP VoIP sécurisé...",
+    telephony_greeting: "\"Bonjour! Je suis Rivo, votre concierge Reservo Téléphonie. Comment puis-je vous aider aujourd'hui avec votre réservation de luxe?\""
+  }
+};
+
+export function useTranslation() {
+  const [lang, setLang] = useState(() => localStorage.getItem("reservo-language") || "en");
+
+  useEffect(() => {
+    const handleStorage = () => {
+      setLang(localStorage.getItem("reservo-language") || "en");
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  const t = (key) => {
+    const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+    return dict[key] || TRANSLATIONS.en[key] || key;
+  };
+
+  return { t, lang };
+}

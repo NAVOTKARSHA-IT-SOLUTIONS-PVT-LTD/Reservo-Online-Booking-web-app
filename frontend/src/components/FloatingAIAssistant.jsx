@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '../hooks/useTranslation';
 import { Sparkles, X, MessageSquare, ChevronRight, Check, Star, MapPin, Phone, PhoneOff, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RESORTS } from '../data/resortsData';
@@ -7,6 +8,7 @@ import rivoSearching from '../assets/images/rivo_searching.png';
 
 export default function FloatingAIAssistant() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMood, setSelectedMood] = useState(null);
   const [messages, setMessages] = useState([
@@ -235,7 +237,7 @@ export default function FloatingAIAssistant() {
                         ? 'bg-primary text-white rounded-tr-none text-right'
                         : 'bg-bg-white text-text-dark rounded-tl-none text-left border border-border-color'
                     }`}>
-                      {msg.text}
+                      {msg.id === 'm1' ? t('m1_greeting') : msg.text}
                     </div>
 
                     {msg.recommendation && (
@@ -281,7 +283,7 @@ export default function FloatingAIAssistant() {
 
               {!selectedMood && (
                 <div className="flex flex-col gap-2 pl-10.5 text-left animate-fade-in">
-                  <p className="text-[10px] font-bold text-text-gray uppercase tracking-widest">Select your holiday vibe:</p>
+                  <p className="text-[10px] font-bold text-text-gray uppercase tracking-widest">{t('select_vibe')}</p>
                   <div className="flex flex-col gap-1.5">
                     {MOODS.map(mood => (
                       <button 
@@ -301,7 +303,7 @@ export default function FloatingAIAssistant() {
                   onClick={handleReset}
                   className="mt-2 py-1.5 px-4 self-center bg-bg-white border border-border-color hover:border-primary text-text-dark text-[10px] font-bold rounded-lg cursor-pointer transition"
                 >
-                  Start Over
+                  {t('start_over')}
                 </button>
               )}
             </div>
@@ -311,7 +313,7 @@ export default function FloatingAIAssistant() {
               <form onSubmit={handleSendMessage} className="relative">
                 <input 
                   type="text" 
-                  placeholder="Ask Rivo anything..." 
+                  placeholder={t('ask_rivo')} 
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   className="w-full bg-bg-light border border-border-color rounded-full py-2 pl-4 pr-10 text-xs outline-none focus:border-gold transition-colors font-semibold text-text-dark"
@@ -335,7 +337,7 @@ export default function FloatingAIAssistant() {
                 <div className="w-full flex justify-between items-center">
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e] animate-pulse"></div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reservo Secure Line</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('secure_line')}</span>
                   </div>
                   <div className="text-[10px] font-mono text-slate-400">
                     {Math.floor(callTime / 60).toString().padStart(2, '0')}:{ (callTime % 60).toString().padStart(2, '0') }
@@ -353,8 +355,8 @@ export default function FloatingAIAssistant() {
                   </div>
 
                   <div className="text-center">
-                    <h4 className="text-base font-bold text-white font-serif">Rivo AI Concierge</h4>
-                    <p className="text-[11px] text-[#38BDF8] font-bold mt-1 tracking-wide">{callStatus}</p>
+                    <h4 className="text-base font-bold text-white font-serif">{t('telephony_concierge')}</h4>
+                    <p className="text-[11px] text-[#38BDF8] font-bold mt-1 tracking-wide">{callStatus === "Connecting..." ? t('connecting') : t('connected')}</p>
                   </div>
 
                   {callStatus === "Connected" && (
@@ -375,8 +377,8 @@ export default function FloatingAIAssistant() {
 
                   <div className="max-w-[260px] p-3 rounded-2xl bg-white/5 border border-white/10 text-[10.5px] leading-relaxed text-slate-300 italic text-center">
                     {callStatus === "Connecting..." 
-                      ? "Initializing secure SIP VoIP channel..." 
-                      : "\"Hello! I am Rivo, your Reservo Telephony concierge. How can I assist you with your luxury booking today?\""
+                      ? t('connecting_sip') 
+                      : t('telephony_greeting')
                     }
                   </div>
                 </div>

@@ -4,8 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check } from "lucide-react";
 import ResortNavigationMap from "./ResortNavigationMap";
 
-export default function ResortDetails({ resort, urlId, isDarkMode, onBack }) {
+import { useTranslation } from "../hooks/useTranslation";
+
+export default function ResortDetails({ resort, urlId, isDarkMode, onBack, currencySymbol = "₹", exchangeRate = 1 }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { wishlist, toggleWishlist } = useWishlist();
   const targetId = urlId ? (isNaN(urlId) ? urlId : `home-${urlId}`) : resort.id;
   const isFavorited = wishlist.some((item) => item.id === targetId);
@@ -25,7 +28,8 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack }) {
   const [guests, setGuests] = useState("2 Guests, 1 Room");
 
   // Format price
-  const formattedPrice = resort.price ? resort.price.toLocaleString() : "8,000";
+  const convertedPriceVal = resort.price ? Math.round(resort.price * exchangeRate) : 8000;
+  const formattedPrice = convertedPriceVal.toLocaleString();
 
   const handleCheckAvailability = () => {
     // Navigate to listing page and trigger booking modal
@@ -196,9 +200,9 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack }) {
             
             {/* Rates Header */}
             <div>
-              <span className="text-xs text-text-gray/80 font-medium block">from</span>
+              <span className="text-xs text-text-gray/80 font-medium block">{t("from")}</span>
               <div className="text-[28px] font-extrabold text-text-dark transition-colors duration-300">
-                {resort.currency || "₹"}{formattedPrice} <span className="text-sm text-text-gray font-semibold">/night</span>
+                {currencySymbol}{formattedPrice} <span className="text-sm text-text-gray font-semibold">/ {t("per_night")}</span>
               </div>
               <span className="text-xs text-text-gray/70 block mt-0.5">Inclusive of taxes</span>
             </div>
