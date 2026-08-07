@@ -16,7 +16,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-const heroImage = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=70&fm=webp";
+import heroImage from "../assets/images/hero.png";
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 
 function Hero() {
