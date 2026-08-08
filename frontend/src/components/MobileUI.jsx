@@ -314,7 +314,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
 
       {/* ── SCROLLABLE CONTENT ─────────────────────── */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overscroll-contain bg-[var(--color-bg-light)] text-[var(--color-text-dark)]">
-        <div className="pb-20">
+        <div className="pb-0">
           {children}
           {location.pathname !== "/ai-planner" && <Footer />}
         </div>
