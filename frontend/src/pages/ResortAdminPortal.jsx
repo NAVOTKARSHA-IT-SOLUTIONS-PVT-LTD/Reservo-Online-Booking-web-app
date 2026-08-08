@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function ResortAdminPortal() {
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Theme Detection & Observer
   const [isDarkMode, setIsDarkMode] = useState(
@@ -226,6 +227,14 @@ export default function ResortAdminPortal() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-light)] text-[var(--color-text-dark)] flex flex-col lg:flex-row transition-all duration-300">
       
+      {/* Sidebar Backdrop Overlay on Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-45 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Toast Notification Container */}
       {toast && (
         <div className="fixed top-6 right-6 z-[9999] bg-primary text-white py-4 px-6 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-5 duration-300">
@@ -235,15 +244,23 @@ export default function ResortAdminPortal() {
       )}
 
       {/* Sidebar Section */}
-      <aside className="w-full lg:w-[260px] bg-[var(--color-bg-white)] border-r border-[var(--color-border-color)] flex flex-col shrink-0 sticky top-0 h-screen z-40 overflow-y-auto">
-        <div className="p-6 border-b border-[var(--color-border-color)] flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-serif text-lg font-bold">
-            R
+      <aside className={`fixed inset-y-0 left-0 w-[260px] bg-[var(--color-bg-white)] border-r border-[var(--color-border-color)] flex flex-col shrink-0 z-50 overflow-y-auto transition-transform duration-300 transform lg:translate-x-0 lg:static lg:h-screen ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="p-6 border-b border-[var(--color-border-color)] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-serif text-lg font-bold">
+              R
+            </div>
+            <div>
+              <h2 className="text-sm font-bold tracking-[0.5px]">Reservo PMS</h2>
+              <span className="text-[9px] text-primary font-bold uppercase tracking-wider">PMS Enterprise Extranet</span>
+            </div>
           </div>
-          <div>
-            <h2 className="text-sm font-bold tracking-[0.5px]">Reservo PMS</h2>
-            <span className="text-[9px] text-primary font-bold uppercase tracking-wider">PMS Enterprise Extranet</span>
-          </div>
+          <button 
+            className="lg:hidden p-1 bg-transparent border-none text-[var(--color-text-gray)] hover:text-[var(--color-text-dark)] cursor-pointer"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className="p-4 flex-1 space-y-0.5">
@@ -266,7 +283,10 @@ export default function ResortAdminPortal() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setIsSidebarOpen(false);
+                }}
                 className={`w-full py-2 px-3.5 rounded-xl text-left text-[11.5px] font-bold transition flex items-center gap-3 cursor-pointer border-none bg-transparent ${activeTab === item.id ? "bg-primary text-white" : "text-[var(--color-text-gray)] hover:bg-white/5 hover:text-[var(--color-text-dark)]"}`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
@@ -295,8 +315,21 @@ export default function ResortAdminPortal() {
       </aside>
 
       {/* Main Viewport */}
-      <main className="flex-grow p-6 lg:p-8 overflow-y-auto max-h-screen">
+      <main className="flex-grow p-4 lg:p-8 overflow-y-auto max-h-screen">
         
+        {/* Mobile topbar */}
+        <div className="flex items-center justify-between lg:hidden bg-[var(--color-bg-white)] border-b border-[var(--color-border-color)] px-4 py-3 mb-6 -mx-4 -mt-4 shadow-sm">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-1 text-[var(--color-text-dark)] bg-transparent border-none cursor-pointer flex items-center justify-center rounded-lg hover:bg-[var(--color-border-color)]/20"
+            aria-label="Open menu drawer"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <span className="font-serif font-bold text-sm tracking-wide text-primary">Reservo PMS Console</span>
+          <div className="w-6 h-6" />
+        </div>
+
         {/* Sticky Header Actions */}
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 border-b border-[var(--color-border-color)] pb-6">
           <div>

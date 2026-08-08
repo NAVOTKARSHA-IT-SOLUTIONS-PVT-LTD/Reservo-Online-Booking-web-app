@@ -269,52 +269,52 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[8000] md:hidden bg-bg-white flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[8000] md:hidden bg-[var(--color-bg-white)] text-[var(--color-text-dark)] flex flex-col overflow-hidden">
 
       {/* ── TOP BAR ─────────────────────────────────── */}
-      <header className="sticky top-0 z-[99] flex items-center justify-between px-4 py-3 bg-bg-white/95 backdrop-blur-xl border-b border-border-color shrink-0">
+      <header className="sticky top-0 z-[99] flex items-center justify-between px-4 py-3 bg-[var(--color-bg-white)]/95 backdrop-blur-xl border-b border-[var(--color-border-color)] shrink-0">
         <button
-          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-bg-light transition-colors border-none bg-transparent cursor-pointer"
+          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--color-bg-light)] transition-colors border-none bg-transparent cursor-pointer"
           onClick={() => setIsDrawerOpen(true)}
           aria-label="Open menu"
         >
-          <Menu size={20} className="text-text-dark" />
+          <Menu size={20} className="text-[var(--color-text-dark)]" />
         </button>
 
         <div className="flex items-center gap-1.5">
-          <img src={rivoMascot} alt="Rivo" className="w-5 h-5 rounded-full object-cover border border-border-color" />
-          <span className="text-sm font-extrabold tracking-[3px] text-text-dark uppercase">
+          <img src={rivoMascot} alt="Rivo" className="w-5 h-5 rounded-full object-cover border border-[var(--color-border-color)]" />
+          <span className="text-sm font-extrabold tracking-[3px] text-[var(--color-text-dark)] uppercase">
             RESERV<span className="text-gold">O</span>
           </span>
         </div>
 
         <div className="flex items-center gap-0.5">
           <button
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-bg-light transition-colors border-none bg-transparent cursor-pointer"
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--color-bg-light)] transition-colors border-none bg-transparent cursor-pointer"
             onClick={onToggleTheme}
             aria-label="Toggle Theme"
           >
-            {isDark ? <Sun size={18} className="text-gold" /> : <Moon size={18} className="text-text-dark" />}
+            {isDark ? <Sun size={18} className="text-gold" /> : <Moon size={18} className="text-[var(--color-text-dark)]" />}
           </button>
           <button
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-bg-light transition-colors border-none bg-transparent cursor-pointer"
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--color-bg-light)] transition-colors border-none bg-transparent cursor-pointer"
             onClick={() => { setActiveTab("wishlist"); navigate("/wishlist"); }}
             aria-label="View Wishlist"
           >
-            <Heart size={18} className="text-text-dark" />
+            <Heart size={18} className="text-[var(--color-text-dark)]" />
           </button>
           <button
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-bg-light transition-colors border-none bg-transparent cursor-pointer"
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--color-bg-light)] transition-colors border-none bg-transparent cursor-pointer"
             aria-label="View Notifications"
           >
-            <Bell size={18} className="text-text-dark" />
+            <Bell size={18} className="text-[var(--color-text-dark)]" />
           </button>
         </div>
       </header>
 
       {/* ── SCROLLABLE CONTENT ─────────────────────── */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overscroll-contain bg-bg-light">
-        <div className="pb-24">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overscroll-contain bg-[var(--color-bg-light)] text-[var(--color-text-dark)]">
+        <div className="pb-20">
           {children}
           {location.pathname !== "/ai-planner" && <Footer />}
         </div>
@@ -324,7 +324,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
       <div className="fixed bottom-[72px] right-4 z-[8500]">
         {/* Chat Popup */}
         {isMascotOpen && (
-          <div className="absolute bottom-[60px] right-0 w-[300px] h-[420px] bg-bg-white border border-border-color rounded-2xl shadow-[0_15px_45px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <div className="absolute bottom-[60px] right-0 w-[300px] h-[420px] bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-2xl shadow-[0_15px_45px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-300">
             {/* Chat Header */}
             <div className="bg-[#121e1b] px-4 py-3 flex items-center gap-2.5 border-b border-white/5 shrink-0">
               <img src={rivoAvatar} alt="Rivo" className="w-7 h-7 rounded-full object-cover border border-white/20" />
@@ -348,7 +348,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
                   className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all border cursor-pointer ${
                     activeMode === m.id
                       ? 'bg-[#2563EB] text-white border-[#2563EB]'
-                      : 'bg-white text-slate-600 border-slate-200'
+                      : 'bg-[var(--color-bg-white)] text-slate-600 border-slate-200'
                   }`}
                 >
                   {m.emoji} {m.label}
@@ -374,33 +374,32 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               ))}
               {isTyping && (
                 <div className="flex items-center gap-2 self-start">
-                  <img src={rivoAvatar} alt="Rivo" className="w-6 h-6 rounded-full object-cover border border-border-color shrink-0" />
-                  <div className="bg-bg-white border border-border-color px-3 py-2 rounded-[14px] flex gap-1 items-center">
-                    <span className="w-1.5 h-1.5 bg-text-gray rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 bg-text-gray rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 bg-text-gray rounded-full animate-bounce" />
+                  <img src={rivoAvatar} alt="Rivo" className="w-6 h-6 rounded-full object-cover border border-[var(--color-border-color)] shrink-0" />
+                  <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] px-3 py-2 rounded-[14px] flex gap-1 items-center">
+                    <span className="text-[11px] font-bold text-[var(--color-text-gray)]">👋 Ask:</span>
+                    <span className="text-[11px] font-bold text-[var(--color-text-dark)] truncate max-w-[140px]">{activeTab.suggestionLabel}</span>
                   </div>
                 </div>
               )}
             </div>
             {/* Quick Replies */}
             {messages.length === 1 && !isTyping && (
-              <div className="flex flex-col gap-1.5 px-3 py-2 bg-bg-light border-t border-border-color shrink-0">
-                {QUICK_REPLIES.map((r) => (
-                  <button key={r.key} className="bg-bg-white text-text-dark border border-border-color px-3 py-1.5 rounded-xl text-[11.5px] text-left cursor-pointer transition-colors hover:bg-bg-light hover:text-gold" onClick={() => handleSend(r.text)}>
+              <div className="bg-[var(--color-bg-light)] px-4 py-2 flex flex-col gap-1.5 border-t border-[var(--color-border-color)] shrink-0">
+                {activeTab.suggestions.map((r) => (
+                  <button key={r.key} className="bg-[var(--color-bg-white)] text-[var(--color-text-dark)] border border-[var(--color-border-color)] px-3 py-1.5 rounded-xl text-[11.5px] text-left cursor-pointer transition-colors hover:bg-[var(--color-bg-light)] hover:text-gold" onClick={() => handleSend(r.text)}>
                     {r.text}
                   </button>
                 ))}
               </div>
             )}
             {/* Input */}
-            <form className="flex px-3 py-2.5 border-t border-border-color bg-bg-white items-center gap-2 shrink-0" onSubmit={(e) => { e.preventDefault(); handleSend(inputVal); }}>
+            <form className="flex px-3 py-2.5 border-t border-[var(--color-border-color)] bg-[var(--color-bg-white)] items-center gap-2 shrink-0" onSubmit={(e) => { e.preventDefault(); handleSend(inputVal); }}>
               <input
                 type="text"
                 placeholder="Ask Rivo..."
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
-                className="flex-1 border-none outline-none px-2.5 py-1.5 text-[12.5px] bg-bg-light rounded-lg text-text-dark"
+                className="flex-1 border-none outline-none px-2.5 py-1.5 text-[12.5px] bg-[var(--color-bg-light)] rounded-lg text-[var(--color-text-dark)]"
               />
               <button type="submit" className="bg-[#121e1b] text-white w-7 h-7 rounded-full flex items-center justify-center border-none cursor-pointer hover:bg-gold shrink-0">
                 <Send size={13} />
@@ -411,7 +410,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
 
         {/* Mascot Trigger Button */}
         <button
-          className="w-12 h-12 rounded-full bg-bg-white border-2 border-gold shadow-[0_8px_25px_rgba(0,0,0,0.2)] flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:scale-110 p-0"
+          className="w-12 h-12 rounded-full bg-[var(--color-bg-white)] border-2 border-gold shadow-[0_8px_25px_rgba(0,0,0,0.2)] flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:scale-110 p-0"
           onClick={() => setIsMascotOpen(!isMascotOpen)}
           aria-label="Chat with Rivo"
         >
@@ -420,7 +419,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
       </div>
 
       {/* ── BOTTOM NAV ─────────────────────────────── */}
-      <nav className="h-[68px] bg-bg-white/95 backdrop-blur-xl border-t border-border-color flex items-center justify-around px-2 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[8100]">
+      <nav className="h-[68px] bg-[var(--color-bg-white)]/95 backdrop-blur-xl border-t border-[var(--color-border-color)] flex items-center justify-around px-2 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[8100]">
         {[
           { id: "home", label: "Home", icon: <Home size={20} />, action: () => { setActiveTab("home"); navigate("/"); } },
           { id: "explore", label: "Explore", icon: <Search size={20} />, action: () => { setActiveTab("explore"); navigate("/search"); } },
@@ -430,7 +429,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           <button
             key={tab.id}
             className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all bg-transparent border-none cursor-pointer ${
-              activeTab === tab.id ? "text-gold" : "text-text-gray hover:text-text-dark"
+              activeTab === tab.id ? "text-gold" : "text-[var(--color-text-gray)] hover:text-[var(--color-text-dark)]"
             }`}
             onClick={tab.action}
           >
@@ -449,13 +448,13 @@ function MobileUI({ isDark, onToggleTheme, children }) {
         onClick={() => setIsDrawerOpen(false)}
       />
       <div
-        className={`fixed top-0 right-0 bottom-0 w-72 bg-bg-white border-l border-border-color p-6 shadow-[-10px_0_40px_rgba(0,0,0,0.1)] transition-transform duration-400 ease-out z-[9001] flex flex-col ${
+        className={`fixed top-0 right-0 bottom-0 w-72 bg-[var(--color-bg-white)] border-l border-[var(--color-border-color)] p-6 shadow-[-10px_0_40px_rgba(0,0,0,0.1)] transition-transform duration-400 ease-out z-[9001] flex flex-col ${
           isDrawerOpen ? "translate-x-0" : "translate-x-full"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-6 border-b border-border-color pb-4">
-          <h3 className="text-lg font-bold text-text-dark">Account & Menu</h3>
+        <div className="flex justify-between items-center mb-6 border-b border-[var(--color-border-color)] pb-4">
+          <h3 className="text-lg font-bold text-[var(--color-text-dark)]">Account & Menu</h3>
           <button className="bg-transparent border-none cursor-pointer text-text-gray hover:text-text-dark" onClick={() => setIsDrawerOpen(false)}>
             <X size={22} />
           </button>
@@ -490,7 +489,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
                   className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl border-none transition text-sm font-semibold cursor-pointer text-left ${
                     active 
                       ? "bg-[#2F80ED]/10 text-primary" 
-                      : "bg-transparent text-text-dark hover:bg-bg-light"
+                      : "bg-transparent text-[var(--color-text-dark)] hover:bg-[var(--color-bg-light)]"
                   }`}
                 >
                   <span className={active ? "text-primary" : "text-text-gray"}>{item.icon}</span>

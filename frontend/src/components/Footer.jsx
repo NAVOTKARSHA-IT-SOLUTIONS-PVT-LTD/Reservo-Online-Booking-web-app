@@ -38,6 +38,21 @@ const TwitterIcon = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
+const XIcon = ({ className = "w-4 h-4" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M4 4l11.733 16h4.267l-11.733 -16z" />
+    <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" />
+  </svg>
+);
+
+const LinkedInIcon = ({ className = "w-4 h-4" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect x="2" y="9" width="4" height="12" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+
 const MapPinIcon = ({ className = "w-4 h-4" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -134,14 +149,20 @@ function Footer() {
             <div className="flex flex-col items-center md:items-end gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Follow Us</span>
               <div className="flex gap-3">
-                <a href="#" aria-label="Visit Reservo Instagram" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Instagram" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
                   <InstagramIcon className="w-4 h-4" />
                 </a>
-                <a href="#" aria-label="Visit Reservo Facebook" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Facebook" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
                   <FacebookIcon className="w-4 h-4" />
                 </a>
-                <a href="#" aria-label="Visit Reservo Twitter" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
-                  <TwitterIcon className="w-4 h-4" />
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo X" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                  <XIcon className="w-4 h-4" />
+                </a>
+                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo LinkedIn" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                  <LinkedInIcon className="w-4 h-4" />
+                </a>
+                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo YouTube" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                  <YoutubeIcon className="w-4 h-4" />
                 </a>
               </div>
             </div>
@@ -183,16 +204,19 @@ function Footer() {
             </p>
 
             <div className="flex gap-3">
-              <a href="#" aria-label="Visit Reservo Globe Portal" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
-                <GlobeIcon className="w-4 h-4" />
-              </a>
-              <a href="#" aria-label="Visit Reservo Facebook Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Facebook Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
                 <FacebookIcon className="w-4 h-4" />
               </a>
-              <a href="#" aria-label="Visit Reservo Instagram Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Instagram Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
                 <InstagramIcon className="w-4 h-4" />
               </a>
-              <a href="#" aria-label="Visit Reservo Youtube Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo X Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
+                <XIcon className="w-4 h-4" />
+              </a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo LinkedIn Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
+                <LinkedInIcon className="w-4 h-4" />
+              </a>
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo YouTube Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
                 <YoutubeIcon className="w-4 h-4" />
               </a>
             </div>

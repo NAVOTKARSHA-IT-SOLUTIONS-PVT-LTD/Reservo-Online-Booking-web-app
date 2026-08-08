@@ -122,7 +122,7 @@ function MascotShowcase() {
                 <img 
                   src={activeTab.image} 
                   alt={`Rivo ${activeTabId}`}
-                  className="w-full h-full object-cover animate-bounce-rivo"
+                  className="w-full h-full object-cover transition-transform duration-300"
                 />
               </div>
 

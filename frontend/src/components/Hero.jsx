@@ -45,7 +45,7 @@ function Hero() {
   };
 
   return (
-    <section className="relative w-full min-h-[620px] md:min-h-[700px] md:h-screen flex flex-col items-center justify-center pt-24 pb-16 md:pb-16 overflow-hidden">
+    <section className="relative w-full min-h-[600px] md:min-h-[700px] md:h-screen flex flex-col items-center justify-center pt-16 md:pt-24 pb-12 md:pb-16 overflow-hidden">
       
       {/* Background Video */}
       <div className="absolute inset-0 z-0">
@@ -68,7 +68,7 @@ function Hero() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/55"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-[1300px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-12 mt-10">
+      <div className="relative z-10 w-full max-w-[1300px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-12 mt-4 md:mt-10">
         
         {/* Left Content Area */}
         <div className="flex-1 max-w-[600px] text-white">
@@ -274,7 +274,7 @@ function Hero() {
       </div>
 
       {/* Scroll Down Indicator */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-70 animate-bounce cursor-pointer" onClick={scrollToExplore}>
+      <div className="hidden md:flex absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-70 animate-bounce cursor-pointer" onClick={scrollToExplore}>
         <div className="w-7 h-7 rounded-full border border-white flex items-center justify-center">
           <ArrowDown size={14} className="text-white" />
         </div>
