@@ -310,6 +310,27 @@ export default function Login() {
               </button>
             </div>
 
+            {/* Business Partner CTA */}
+            <div className="border-t border-border-color pt-4 mt-2 space-y-3 w-full shrink-0">
+              <div className="text-[9px] text-text-gray font-extrabold uppercase tracking-wider text-center">
+                Reservo Business Partner Onboarding
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/partner")}
+                className="w-full py-3 bg-gradient-to-r from-[#1e293b] to-[#0f172a] hover:from-primary hover:to-primary-dark text-white rounded-2xl flex items-center justify-between px-5 cursor-pointer shadow-md transition-all duration-300 group border-none"
+              >
+                <div className="flex items-center gap-3 text-left">
+                  <span className="text-xl">🏨</span>
+                  <div>
+                    <h5 className="text-[11px] font-bold text-white uppercase tracking-wide">Register Your Property</h5>
+                    <p className="text-[9px] text-white/70 font-semibold mt-0.5">Become a Reservo Business Partner</p>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+
             {/* Premium promo box */}
             <div 
               onClick={() => navigate("/register")}

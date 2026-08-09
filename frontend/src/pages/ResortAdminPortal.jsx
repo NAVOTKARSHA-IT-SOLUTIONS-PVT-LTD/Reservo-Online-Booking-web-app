@@ -4,7 +4,8 @@ import {
   MessageSquare, Gift, Shield, Bell, Settings, LogOut, 
   Search, Plus, Filter, Trash2, Edit3, ArrowLeft, 
   FileText, Sparkles, AlertCircle, CheckCircle, BarChart3, 
-  Upload, Check, X, ShieldCheck, PieChart, Layers, HelpCircle, UserCheck
+  Upload, Check, X, ShieldCheck, PieChart, Layers, HelpCircle, UserCheck,
+  Camera
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -105,6 +106,96 @@ export default function ResortAdminPortal() {
     { time: "1 hour ago", user: "Platform", action: "Review Submitted", details: "Guest Priya Patel left a 5-star review" },
     { time: "2 hours ago", user: "Admin", action: "Resort Approved", details: "Royal Palm Retreat approved for live status" }
   ]);
+
+  // Social feed posts state for the resort
+  const [posts, setPosts] = useState([
+    { id: 1, resortId: 1, type: "image", mediaUrl: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80", caption: "🌴 Sunsets & Sanctuary. Our newly updated private infinity pool suite is ready to welcome you.", createdAt: "2026-08-08T10:30:00.000Z" },
+    { id: 2, resortId: 1, type: "image", mediaUrl: "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=600&q=80", caption: "🍳 Luxury breakfast by the private beachfront cove. Complimentary for all our premium suite bookings.", createdAt: "2026-08-07T08:15:00.000Z" }
+  ]);
+
+  const [newPostForm, setNewPostForm] = useState({
+    type: "image",
+    mediaUrl: "",
+    caption: ""
+  });
+
+  useEffect(() => {
+    const fetchResortPosts = async () => {
+      try {
+        const res = await fetch("/api/v1/resorts/1/posts");
+        if (res.ok) {
+          const body = await res.json();
+          if (body.data && body.data.length > 0) {
+            setPosts(body.data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load backend posts, using local defaults:", err);
+      }
+    };
+    fetchResortPosts();
+  }, []);
+
+  const handlePublishPost = async (e) => {
+    e.preventDefault();
+    if (!newPostForm.caption) {
+      showToast("Please write a post caption!");
+      return;
+    }
+
+    let defaultUrl = newPostForm.mediaUrl.trim();
+    if (!defaultUrl) {
+      defaultUrl = "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80";
+    }
+
+    const postPayload = {
+      type: newPostForm.type,
+      mediaUrl: defaultUrl,
+      caption: newPostForm.caption
+    };
+
+    try {
+      const response = await fetch("/api/v1/resorts/1/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postPayload)
+      });
+
+      if (response.ok) {
+        const body = await response.json();
+        if (body.data) {
+          setPosts(prev => [body.data, ...prev]);
+          showToast("Social post published to your resort feed!");
+          setNewPostForm({ type: "image", mediaUrl: "", caption: "" });
+        }
+      } else {
+        const localSaved = {
+          id: Date.now(),
+          resortId: 1,
+          type: postPayload.type,
+          mediaUrl: postPayload.mediaUrl,
+          caption: postPayload.caption,
+          createdAt: new Date().toISOString()
+        };
+        setPosts(prev => [localSaved, ...prev]);
+        showToast("Post added (local offline fallback)!");
+        setNewPostForm({ type: "image", mediaUrl: "", caption: "" });
+      }
+    } catch (err) {
+      console.error(err);
+      const localSaved = {
+        id: Date.now(),
+        resortId: 1,
+        type: postPayload.type,
+        mediaUrl: postPayload.mediaUrl,
+        caption: postPayload.caption,
+        createdAt: new Date().toISOString()
+      };
+      setPosts(prev => [localSaved, ...prev]);
+      showToast("Post added (local offline fallback)!");
+      setNewPostForm({ type: "image", mediaUrl: "", caption: "" });
+    }
+  };
 
   const [reviews, setReviews] = useState([
     { id: 1, author: "Priya Patel", score: 5, sentiment: "Positive", text: "Exceptional beachfront services, staff was extremely hospitable!", status: "Featured" },
@@ -267,6 +358,7 @@ export default function ResortAdminPortal() {
           {[
             { id: "dashboard", label: "Dashboard", icon: Activity },
             { id: "resorts", label: "Resorts", icon: Building },
+            { id: "posts", label: "Resort Feed", icon: Camera },
             { id: "rooms", label: "Rooms & Inventory", icon: Bed },
             { id: "bookings", label: "Bookings", icon: Calendar },
             { id: "calendar", label: "Calendar Matrix", icon: Calendar },
@@ -1037,6 +1129,105 @@ export default function ResortAdminPortal() {
             </div>
 
             <button onClick={() => showToast("Business profile updated.")} className="py-2.5 px-6 bg-primary text-white text-xs font-bold rounded-xl cursor-pointer border-none hover:bg-primary-dark transition">Save Settings</button>
+          </div>
+        )}
+
+        {/* -------------------- TAB CONTENT: RESORT SOCIAL FEED -------------------- */}
+        {activeTab === "posts" && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center border-b border-[var(--color-border-color)] pb-4">
+              <div>
+                <h3 className="text-sm font-bold tracking-wider uppercase text-white/75">Resort Social Feed</h3>
+                <p className="text-[10px] text-[var(--color-text-gray)] mt-0.5">Publish live visual stories & events to your resort's public detail page tab.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-left">
+              {/* Publisher Panel */}
+              <div className="lg:col-span-1 bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-5 rounded-2xl space-y-4">
+                <h4 className="text-xs font-bold uppercase text-[var(--color-text-dark)] flex items-center gap-1.5 border-b border-[var(--color-border-color)] pb-2.5">
+                  <Camera className="w-4 h-4 text-primary animate-pulse" /> Publish Visual Story
+                </h4>
+
+                <form onSubmit={handlePublishPost} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Post Type</label>
+                    <select
+                      value={newPostForm.type}
+                      onChange={(e) => setNewPostForm({ ...newPostForm, type: e.target.value })}
+                      className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none cursor-pointer"
+                    >
+                      <option value="image">📸 Photo Post</option>
+                      <option value="video">🎥 Video Story</option>
+                      <option value="event">🎉 Special Event</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Media Asset Image URL (Optional)</label>
+                    <input
+                      type="url"
+                      value={newPostForm.mediaUrl}
+                      onChange={(e) => setNewPostForm({ ...newPostForm, mediaUrl: e.target.value })}
+                      placeholder="e.g. https://images.unsplash.com/..."
+                      className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                    />
+                    <p className="text-[8px] text-[var(--color-text-gray)] italic mt-0.5">If left blank, a default luxury resort photo will be assigned.</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Post Caption *</label>
+                    <textarea
+                      rows="4"
+                      required
+                      value={newPostForm.caption}
+                      onChange={(e) => setNewPostForm({ ...newPostForm, caption: e.target.value })}
+                      placeholder="Tell travellers about your beach party, spa discounts, new pool side cocktails, or special menus..."
+                      className="w-full p-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold cursor-pointer transition border-none flex items-center justify-center gap-1.5"
+                  >
+                    <Sparkles className="w-4 h-4" /> Publish to Feed
+                  </button>
+                </form>
+              </div>
+
+              {/* Feed Grid Viewer */}
+              <div className="lg:col-span-2 space-y-4">
+                <h4 className="text-xs font-bold uppercase text-[var(--color-text-dark)] flex items-center gap-1.5">
+                  🎥 Live Feed Stream ({posts.length})
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {posts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-2xl overflow-hidden flex flex-col justify-between shadow-sm hover:shadow transition animate-in fade-in duration-200"
+                    >
+                      <div className="relative h-44 w-full bg-slate-900 overflow-hidden shrink-0">
+                        <img src={post.mediaUrl} alt="Post Media" className="w-full h-full object-cover" />
+                        <span className="absolute top-3 right-3 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white rounded-full text-[8px] font-bold uppercase tracking-wider">
+                          {post.type === "image" ? "📸 Image" : post.type === "video" ? "🎥 Video" : "🎉 Event"}
+                        </span>
+                      </div>
+                      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                        <p className="text-xs text-[var(--color-text-dark)] font-semibold leading-relaxed line-clamp-3">
+                          {post.caption}
+                        </p>
+                        <div className="flex justify-between items-center text-[9px] text-[var(--color-text-gray)] font-semibold border-t border-[var(--color-border-color)] pt-2.5 mt-auto">
+                          <span>Published</span>
+                          <span>{new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

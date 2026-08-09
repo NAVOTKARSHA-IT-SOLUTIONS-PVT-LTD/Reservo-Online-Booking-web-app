@@ -5,6 +5,7 @@
 -- =============================================================================
 
 -- DROP TABLES IN REVERSE ORDER OF DEPENDENCY (FOR CLEAN RUNS)
+DROP TABLE IF EXISTS resort_posts;
 DROP TABLE IF EXISTS ai_itineraries;
 DROP TABLE IF EXISTS ai_chat_messages;
 DROP TABLE IF EXISTS ai_chat_sessions;
@@ -206,4 +207,15 @@ CREATE TABLE ai_itineraries (
     budget_level VARCHAR(255) NOT NULL,
     itinerary_json TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 16. RESORT POSTS
+CREATE TABLE resort_posts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    resort_id BIGINT NOT NULL,
+    type VARCHAR(50),
+    media_url VARCHAR(255),
+    caption TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (resort_id) REFERENCES resorts(id) ON DELETE CASCADE
 );

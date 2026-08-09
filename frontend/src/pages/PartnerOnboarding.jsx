@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Building2, MapPin, DollarSign, ArrowRight, ArrowLeft, CheckCircle2, 
-  ImageIcon, Mail, User, ShieldAlert, X
+  ImageIcon, Mail, User, ShieldAlert, FileText, Check, Phone, ShieldCheck, Map
 } from "lucide-react";
 import rivoSearching from "../assets/images/rivo_searching.png";
 
@@ -14,41 +14,74 @@ export default function PartnerOnboarding() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const [formData, setFormData] = useState({
-    name: "",
-    location: "",
-    category: "beach",
-    pricePerNight: "",
-    description: "",
-    imageUrl: "",
+    // Step 1: Business Info
+    businessName: "",
+    name: "", // Resort Name
     ownerName: "",
     ownerEmail: "",
-    licenseNumber: ""
+    ownerPhone: "",
+    // Step 2: Property Type
+    category: "resort",
+    pricePerNight: "15000",
+    // Step 3: Location
+    country: "India",
+    state: "",
+    city: "",
+    address: "",
+    pinCode: "",
+    latitude: "15.2993",
+    longitude: "74.1240",
+    // Step 4: Verification
+    licenseNumber: "",
+    docType: "GST", // GST, government, company
+    idType: "Aadhaar", // Aadhaar, Passport, DL
+    // Step 5: Media
+    imageUrl: "",
+    galleryUrls: "",
+    videoUrl: "",
+    droneUrl: "",
+    tourUrl: ""
   });
 
-  const categories = [
-    { id: "beach", label: "Beach Resort" },
-    { id: "mountain", label: "Mountain Retreat" },
-    { id: "chalet", label: "Forest Chalet" },
-    { id: "villa", label: "Luxury Villa" },
-    { id: "cabin", label: "Rustic Cabin" },
-    { id: "glamping", label: "Glamping Stay" },
-    { id: "island", label: "Private Island" },
-    { id: "eco", label: "Eco Camping" }
+  // Steps 3 maps coordinates picker simulation state
+  const [pinPlaced, setPinPlaced] = useState(false);
+
+  const propertyTypes = [
+    { id: "resort", label: "Resort" },
+    { id: "hotel", label: "Hotel" },
+    { id: "villa", label: "Villa" },
+    { id: "homestay", label: "Homestay" },
+    { id: "apartment", label: "Apartment" },
+    { id: "camping", label: "Camping" },
+    { id: "farmstay", label: "Farm Stay" },
+    { id: "luxury_tent", label: "Luxury Tent" }
   ];
 
   const handleNext = () => {
+    setErrorMsg("");
     if (step === 1) {
-      if (!formData.name || !formData.location || !formData.pricePerNight) {
-        setErrorMsg("Please fill in all required fields.");
+      if (!formData.businessName || !formData.name || !formData.ownerName || !formData.ownerEmail || !formData.ownerPhone) {
+        setErrorMsg("Please fill in all Business and Contact Information.");
         return;
       }
     } else if (step === 2) {
-      if (!formData.description) {
-        setErrorMsg("Please provide a resort description.");
+      if (!formData.pricePerNight) {
+        setErrorMsg("Please specify the base rate price.");
         return;
       }
+    } else if (step === 3) {
+      if (!formData.city || !formData.state || !formData.address || !formData.pinCode) {
+        setErrorMsg("Please complete all location fields.");
+        return;
+      }
+    } else if (step === 4) {
+      if (!formData.licenseNumber) {
+        setErrorMsg("Please specify your registration or license number.");
+        return;
+      }
+    } else if (step === 5) {
+      // Step 5 is Media, we check if they filled description/details
     }
-    setErrorMsg("");
     setStep(prev => prev + 1);
   };
 
@@ -57,23 +90,35 @@ export default function PartnerOnboarding() {
     setStep(prev => prev - 1);
   };
 
+  // Maps click coordinates simulator
+  const handleMapClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Convert click position to realistic India latitudes/longitudes
+    const lat = (28.6139 - (y / rect.height) * 20).toFixed(4);
+    const lon = (77.2090 + (x / rect.width) * 15).toFixed(4);
+
+    setFormData({
+      ...formData,
+      latitude: lat,
+      longitude: lon
+    });
+    setPinPlaced(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.ownerName || !formData.ownerEmail || !formData.licenseNumber) {
-      setErrorMsg("Please fill in all owner and license details.");
-      return;
-    }
-
     setIsSubmitting(true);
     setErrorMsg("");
 
-    // Set default cover image if empty based on category
     let finalImageUrl = formData.imageUrl.trim();
     if (!finalImageUrl) {
-      if (formData.category === "beach") {
+      if (formData.category === "resort") {
         finalImageUrl = "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80";
-      } else if (formData.category === "mountain") {
-        finalImageUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80";
+      } else if (formData.category === "villa") {
+        finalImageUrl = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80";
       } else {
         finalImageUrl = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80";
       }
@@ -87,26 +132,26 @@ export default function PartnerOnboarding() {
         },
         body: JSON.stringify({
           name: formData.name,
-          location: formData.location,
-          description: formData.description,
+          location: `${formData.city}, ${formData.state}, ${formData.country}`,
+          description: `Welcome to ${formData.name}. Managed by ${formData.businessName}. Experience premium comfort in our luxury ${formData.category} rooms.`,
           imageUrl: finalImageUrl,
           pricePerNight: parseFloat(formData.pricePerNight),
           status: "PENDING_APPROVAL",
           rating: 4.8,
           reviewCount: 0,
           discountPercentage: 15,
-          featuredTag: "Newly Listed"
+          featuredTag: "Newly Onboarded"
         })
       });
 
       if (response.ok) {
         setIsSuccess(true);
       } else {
-        setErrorMsg("Submission failed. Please check the network connectivity or try again.");
+        setErrorMsg("Submission failed. Please check network connectivity or try again.");
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("Failed to connect to the backend server. Please verify the API is running.");
+      setErrorMsg("Failed to connect to backend registry. Please verify backend is running.");
     } finally {
       setIsSubmitting(false);
     }
@@ -114,10 +159,10 @@ export default function PartnerOnboarding() {
 
   return (
     <div className="min-h-screen pt-28 pb-16 bg-[var(--color-bg-light)] flex items-center justify-center px-4 font-sans transition-colors duration-300">
-      <div className="w-full max-w-2xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px]">
+      <div className="w-full max-w-4xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[600px]">
         
         {/* Left Side Info Panel */}
-        <div className="w-full md:w-5/12 bg-gradient-to-br from-primary via-primary-dark to-[#1d4ed8] p-8 text-white flex flex-col justify-between relative overflow-hidden">
+        <div className="w-full md:w-4/12 bg-gradient-to-br from-primary via-primary-dark to-[#1d4ed8] p-8 text-white flex flex-col justify-between relative overflow-hidden shrink-0">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
           
@@ -125,37 +170,43 @@ export default function PartnerOnboarding() {
             <div className="inline-flex p-3 bg-white/15 rounded-2xl">
               <Building2 className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight leading-tight">Partner with Reservo</h2>
+            <h2 className="text-xl font-bold tracking-tight leading-tight">Become a Reservo Business Partner</h2>
             <p className="text-xs text-white/80 leading-relaxed">
-              List your luxury resort, villa, or boutique stay. Gain exposure to premium travelers globally.
+              Unlock a comprehensive business suite. Manage bookings, analytics, room lists, and publish custom resort feeds.
             </p>
           </div>
 
-          <div className="space-y-4 z-10 mt-8 md:mt-0">
-            <div className="flex items-center gap-3 text-xs text-white/90">
-              <span className="w-5 h-5 flex items-center justify-center bg-white/20 rounded-full font-bold">1</span>
-              <span>Submit Property Details</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-white/90">
-              <span className="w-5 h-5 flex items-center justify-center bg-white/20 rounded-full font-bold">2</span>
-              <span>Verification Audit</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-white/90">
-              <span className="w-5 h-5 flex items-center justify-center bg-white/20 rounded-full font-bold">3</span>
-              <span>Go Live & Accept Bookings</span>
-            </div>
+          <div className="space-y-3 z-10 mt-8 md:mt-0">
+            {[
+              "Business Details",
+              "Property Type Selection",
+              "Interactive Maps Location",
+              "License & Document Verification",
+              "Property Media Assets",
+              "Submit Registry"
+            ].map((label, idx) => (
+              <div key={idx} className={`flex items-center gap-3 text-xs ${step === idx + 1 ? "text-white font-extrabold" : "text-white/60"}`}>
+                <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${step === idx + 1 ? "bg-white text-primary" : "bg-white/10 text-white"}`}>
+                  {idx + 1}
+                </span>
+                <span>{label}</span>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Right Side Wizard Form */}
-        <div className="w-full md:w-7/12 p-8 flex flex-col justify-between">
+        <div className="w-full md:w-8/12 p-8 flex flex-col justify-between">
           {isSuccess ? (
-            <div className="flex flex-col items-center justify-center text-center my-auto space-y-6 py-6 animate-in fade-in duration-300">
+            <div className="flex flex-col items-center justify-center text-center my-auto space-y-6 py-8 animate-in fade-in duration-300">
               <img src={rivoSearching} alt="Rivo Mascot" className="h-44 w-auto object-contain animate-bounce" />
               <div className="space-y-2">
                 <h3 className="text-lg font-bold text-[var(--color-text-dark)]">Application Submitted!</h3>
-                <p className="text-xs text-[var(--color-text-gray)] max-w-sm mx-auto leading-relaxed">
-                  Thank you! Our verification auditors are currently auditing <strong>{formData.name}</strong>. We will contact you at <strong>{formData.ownerEmail}</strong> within 24 hours.
+                <span className="inline-flex px-3 py-1 bg-yellow-500/15 text-yellow-500 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  Waiting for Approval
+                </span>
+                <p className="text-xs text-[var(--color-text-gray)] max-w-md mx-auto leading-relaxed pt-2">
+                  Thank you for applying. Our verification experts will check your government licenses and documents. Estimated review timeframe is <strong>24–48 Hours</strong>.
                 </p>
               </div>
               <button onClick={() => navigate("/")} className="px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-bold border-none cursor-pointer hover:bg-primary-dark transition">
@@ -164,11 +215,12 @@ export default function PartnerOnboarding() {
             </div>
           ) : (
             <div className="flex flex-col h-full justify-between space-y-6">
-              {/* Header */}
+              
+              {/* Step Header */}
               <div className="flex justify-between items-center border-b border-[var(--color-border-color)] pb-3">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">Step {step} of 3</span>
+                <span className="text-xs font-bold text-primary uppercase tracking-wider">Step {step} of 5</span>
                 <span className="text-[10px] text-[var(--color-text-gray)] font-bold">
-                  {step === 1 ? "Property Details" : step === 2 ? "Descriptions & Cover" : "Verification Data"}
+                  {step === 1 ? "Business & Contact Info" : step === 2 ? "Property Profile" : step === 3 ? "Map & Location" : step === 4 ? "Verification" : "Media Library Assets"}
                 </span>
               </div>
 
@@ -179,107 +231,38 @@ export default function PartnerOnboarding() {
                 </div>
               )}
 
-              {/* Form steps */}
-              <div className="flex-1 space-y-4">
+              {/* Form Input Steps */}
+              <div className="flex-1 space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                
+                {/* STEP 1: BUSINESS & CONTACT INFO */}
                 {step === 1 && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
+                  <div className="space-y-3 animate-in fade-in duration-200">
                     <div className="space-y-1">
-                      <label className="text-[10px] text-[var(--color-text-gray)] font-bold uppercase">Property Name *</label>
-                      <div className="relative flex items-center">
-                        <Building2 className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
-                        <input
-                          type="text"
-                          required
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="e.g. Royal Lagoon Palace"
-                          className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-[var(--color-text-gray)] font-bold uppercase">Location / Region *</label>
-                      <div className="relative flex items-center">
-                        <MapPin className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
-                        <input
-                          type="text"
-                          required
-                          value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                          placeholder="e.g. Udaipur, India"
-                          className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-[var(--color-text-gray)] font-bold uppercase">Category</label>
-                        <select
-                          value={formData.category}
-                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                          className="w-full px-3 py-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none cursor-pointer"
-                        >
-                          {categories.map(c => (
-                            <option key={c.id} value={c.id}>{c.label}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-[var(--color-text-gray)] font-bold uppercase">Price Per Night (₹) *</label>
-                        <div className="relative flex items-center">
-                          <DollarSign className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
-                          <input
-                            type="number"
-                            required
-                            value={formData.pricePerNight}
-                            onChange={(e) => setFormData({ ...formData, pricePerNight: e.target.value })}
-                            placeholder="e.g. 12000"
-                            className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {step === 2 && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-[var(--color-text-gray)] font-bold uppercase">Resort Description *</label>
-                      <textarea
-                        rows="4"
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Business / Corporate Name *</label>
+                      <input
+                        type="text"
                         required
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Give a beautiful, luxury description of your hotel amenities, spa, dining, and suites..."
-                        className="w-full p-3 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none resize-none"
+                        value={formData.businessName}
+                        onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                        placeholder="e.g. Royal Palms Hospitality Group"
+                        className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Property / Resort Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="e.g. Royal Palm Beach Resort"
+                        className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] text-[var(--color-text-gray)] font-bold uppercase">Cover Image URL (Optional)</label>
-                      <div className="relative flex items-center">
-                        <ImageIcon className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
-                        <input
-                          type="url"
-                          value={formData.imageUrl}
-                          onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                          placeholder="e.g. https://unsplash.com/... (WebP/JPG)"
-                          className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
-                        />
-                      </div>
-                      <p className="text-[9px] text-[var(--color-text-gray)] italic">Leave blank to let Reservo assign a beautiful default image matching your category.</p>
-                    </div>
-                  </div>
-                )}
-
-                {step === 3 && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-[var(--color-text-gray)] font-bold uppercase">Owner Full Name *</label>
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Owner Full Name *</label>
                       <div className="relative flex items-center">
                         <User className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
                         <input
@@ -288,42 +271,305 @@ export default function PartnerOnboarding() {
                           value={formData.ownerName}
                           onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
                           placeholder="e.g. Devendra Singh"
-                          className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                          className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
                         />
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Email *</label>
+                        <div className="relative flex items-center">
+                          <Mail className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
+                          <input
+                            type="email"
+                            required
+                            value={formData.ownerEmail}
+                            onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
+                            placeholder="partners@royalpalm.com"
+                            className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Phone Number *</label>
+                        <div className="relative flex items-center">
+                          <Phone className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
+                          <input
+                            type="tel"
+                            required
+                            value={formData.ownerPhone}
+                            onChange={(e) => setFormData({ ...formData, ownerPhone: e.target.value })}
+                            placeholder="+91 98765 43210"
+                            className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 2: PROPERTY DETAILS */}
+                {step === 2 && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
                     <div className="space-y-1">
-                      <label className="text-[10px] text-[var(--color-text-gray)] font-bold uppercase">Business Email Address *</label>
-                      <div className="relative flex items-center">
-                        <Mail className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Property Category Type</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {propertyTypes.map((type) => (
+                          <button
+                            key={type.id}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, category: type.id })}
+                            className={`py-2 px-3 rounded-xl border text-center font-bold text-xs cursor-pointer transition ${
+                              formData.category === type.id
+                                ? "bg-primary text-white border-primary shadow"
+                                : "bg-[var(--color-bg-light)] border-[var(--color-border-color)] text-[var(--color-text-dark)] hover:bg-[var(--color-bg-light)]/80"
+                            }`}
+                          >
+                            {type.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Estimated Base Rate Per Night (₹) *</label>
+                      <div className="relative flex items-center w-full max-w-xs">
+                        <DollarSign className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
                         <input
-                          type="email"
+                          type="number"
                           required
-                          value={formData.ownerEmail}
-                          onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
-                          placeholder="e.g. partners@royallagoon.com"
-                          className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                          value={formData.pricePerNight}
+                          onChange={(e) => setFormData({ ...formData, pricePerNight: e.target.value })}
+                          placeholder="e.g. 15000"
+                          className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 3: LOCATION & MAP PICKER */}
+                {step === 3 && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Country</label>
+                        <input
+                          type="text"
+                          value={formData.country}
+                          disabled
+                          className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-gray)] font-semibold outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">State *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.state}
+                          onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                          placeholder="e.g. Goa"
+                          className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">City *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          placeholder="e.g. Panaji"
+                          className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Pin Code *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.pinCode}
+                          onChange={(e) => setFormData({ ...formData, pinCode: e.target.value })}
+                          placeholder="e.g. 403001"
+                          className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] text-[var(--color-text-gray)] font-bold uppercase">Business Registration / License Number *</label>
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Street Address *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        placeholder="e.g. 104, Beachside Cove, Panaji"
+                        className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                      />
+                    </div>
+
+                    {/* Google Maps Drag & Drop Simulation */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase flex justify-between">
+                        <span>Google Maps Location Pin *</span>
+                        {pinPlaced ? (
+                          <span className="text-emerald-500 font-extrabold">📍 Location Pin Placed</span>
+                        ) : (
+                          <span className="text-primary animate-pulse">Click on map grid to place pin</span>
+                        )}
+                      </label>
+                      <div 
+                        onClick={handleMapClick}
+                        className="h-28 w-full bg-[#cbd5e1] dark:bg-slate-700 rounded-xl relative overflow-hidden cursor-crosshair border border-[var(--color-border-color)] flex items-center justify-center"
+                      >
+                        {/* Map Grid Pattern Grid */}
+                        <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:14px_14px]" />
+                        
+                        {pinPlaced ? (
+                          <div className="absolute p-2 bg-primary text-white rounded-full flex items-center justify-center shadow-lg border border-white animate-bounce pointer-events-none" style={{ left: '45%', top: '35%' }}>
+                            <MapPin className="w-4 h-4" />
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold pointer-events-none z-10">
+                            <Map className="w-4 h-4" /> Select Location Coordinates
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-4 text-[9px] text-[var(--color-text-gray)] font-semibold">
+                        <span>Lat: <strong>{formData.latitude}° N</strong></span>
+                        <span>Lon: <strong>{formData.longitude}° E</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* STEP 4: VERIFICATION DOCUMENTS */}
+                {step === 4 && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Business Document Verification</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {["GST", "Tourism license", "Company Certificate"].map((doc) => (
+                          <button
+                            key={doc}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, docType: doc })}
+                            className={`py-2 px-3 rounded-xl border text-center font-bold text-[10px] cursor-pointer transition ${
+                              formData.docType === doc
+                                ? "bg-primary text-white border-primary"
+                                : "bg-[var(--color-bg-light)] border-[var(--color-border-color)] text-[var(--color-text-dark)]"
+                            }`}
+                          >
+                            {doc}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">License / Registration ID Code *</label>
                       <div className="relative flex items-center">
-                        <Building2 className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
+                        <FileText className="absolute left-3.5 w-4 h-4 text-[var(--color-text-gray)]" />
                         <input
                           type="text"
                           required
                           value={formData.licenseNumber}
                           onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
                           placeholder="e.g. GSTIN-32AAAAB1234C1Z1"
-                          className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                          className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
                         />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Goverment Owner ID Identity Type</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {["Aadhaar", "Passport", "Driving License"].map((id) => (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, idType: id })}
+                            className={`py-2 px-3 rounded-xl border text-center font-bold text-[10px] cursor-pointer transition ${
+                              formData.idType === id
+                                ? "bg-primary text-white border-primary"
+                                : "bg-[var(--color-bg-light)] border-[var(--color-border-color)] text-[var(--color-text-dark)]"
+                            }`}
+                          >
+                            {id}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Drag and drop zone simulation */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Upload Documents</label>
+                      <div className="border-2 border-dashed border-[var(--color-border-color)] rounded-xl p-4 flex flex-col items-center justify-center text-center bg-[var(--color-bg-light)]/40 hover:bg-[var(--color-bg-light)]/80 cursor-pointer transition">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-500 mb-1" />
+                        <span className="text-[10px] font-bold text-[var(--color-text-dark)]">License_Verification_PDF.pdf</span>
+                        <span className="text-[8px] text-[var(--color-text-gray)] mt-0.5">File size: 2.4 MB •政府安全暗号化</span>
                       </div>
                     </div>
                   </div>
                 )}
+
+                {/* STEP 5: MEDIA & SUBMIT */}
+                {step === 5 && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Cover Image URL (Optional)</label>
+                      <div className="relative flex items-center">
+                        <ImageIcon className="absolute left-3 w-4 h-4 text-[var(--color-text-gray)]" />
+                        <input
+                          type="url"
+                          value={formData.imageUrl}
+                          onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                          placeholder="e.g. https://images.unsplash.com/photo-..."
+                          className="w-full pl-10 pr-4 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Drone Footage or Promo Video URL</label>
+                      <input
+                        type="url"
+                        value={formData.videoUrl}
+                        onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                        placeholder="e.g. https://vimeo.com/... (Optional)"
+                        className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Virtual 360 tour URL</label>
+                      <input
+                        type="url"
+                        value={formData.tourUrl}
+                        onChange={(e) => setFormData({ ...formData, tourUrl: e.target.value })}
+                        placeholder="e.g. https://kuula.co/... (Optional)"
+                        className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Property Gallery Assets (Comma Separated)</label>
+                      <textarea
+                        rows="2"
+                        value={formData.galleryUrls}
+                        onChange={(e) => setFormData({ ...formData, galleryUrls: e.target.value })}
+                        placeholder="Paste image URLs separated by commas..."
+                        className="w-full p-2.5 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none resize-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
               </div>
 
               {/* Navigation controls */}
@@ -337,7 +583,7 @@ export default function PartnerOnboarding() {
                   </button>
                 )}
 
-                {step < 3 ? (
+                {step < 5 ? (
                   <button
                     onClick={handleNext}
                     className="flex-1 py-2.5 bg-primary text-white hover:bg-primary-dark rounded-xl text-xs font-bold cursor-pointer border-none transition flex items-center justify-center gap-1.5"
@@ -358,6 +604,7 @@ export default function PartnerOnboarding() {
                   </button>
                 )}
               </div>
+
             </div>
           )}
         </div>

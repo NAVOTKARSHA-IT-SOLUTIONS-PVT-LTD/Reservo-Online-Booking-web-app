@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useWishlist } from "../context/WishlistContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check } from "lucide-react";
@@ -26,6 +26,34 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const [checkIn, setCheckIn] = useState("2026-05-12");
   const [checkOut, setCheckOut] = useState("2026-05-15");
   const [guests, setGuests] = useState("2 Guests, 1 Room");
+
+  const [activeDetailTab, setActiveDetailTab] = useState("overview");
+  const [resortPosts, setResortPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+
+  useEffect(() => {
+    if (activeDetailTab === "posts") {
+      setLoadingPosts(true);
+      fetch(`/api/v1/resorts/${resort.id || 1}/posts`)
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error("Failed to load posts");
+        })
+        .then(body => {
+          if (body.data) setResortPosts(body.data);
+          setLoadingPosts(false);
+        })
+        .catch(err => {
+          console.error(err);
+          // Local fallback
+          setResortPosts([
+            { id: 1, resortId: resort.id || 1, type: "image", mediaUrl: resort.heroImage || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80", caption: `🌴 Sunsets & Sanctuary. Our newly updated private infinity pool suite is ready to welcome you to ${resort.name || "our resort"}.`, createdAt: new Date().toISOString() },
+            { id: 2, resortId: resort.id || 1, type: "image", mediaUrl: "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=600&q=80", caption: "🍳 Luxury breakfast by the private beachfront cove. Complimentary for all our premium suite bookings.", createdAt: new Date(Date.now() - 86400000).toISOString() }
+          ]);
+          setLoadingPosts(false);
+        });
+    }
+  }, [activeDetailTab, resort.id]);
 
   // Format price
   const convertedPriceVal = resort.price ? Math.round(resort.price * exchangeRate) : 8000;
@@ -168,29 +196,117 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             </div>
           </div>
 
-          {/* Spatial Tour Map Integration */}
-          {resort.mapPoints && resort.mapPoints.length > 0 && (
-            <ResortNavigationMap 
-              mapPoints={resort.mapPoints}
-              resortName={resort.name}
-              isDarkMode={isDarkMode}
-              onSelectSpot={(spot) => {
-                const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]') || document.querySelector('[aria-label="Chat with Rivo"]');
-                if (mascotBtn) {
-                  const chatOpen = document.querySelector('form button[type="submit"]');
-                  if (!chatOpen) mascotBtn.click();
-                  setTimeout(() => {
-                    const inputEl = document.querySelector('form input[placeholder*="Ask Rivo"]') || document.querySelector('form input[placeholder*="Ask"]');
-                    if (inputEl) {
-                      inputEl.value = `Tell me about ${spot.title} at ${resort.name}`;
-                      const event = new Event('input', { bubbles: true });
-                      inputEl.dispatchEvent(event);
-                    }
-                  }, 400);
-                }
-              }}
-            />
-          )}
+          {/* Tabs bar */}
+          <div className="flex border-b border-border-color gap-6 mt-6 shrink-0 overflow-x-auto pb-1 text-left">
+            {[
+              { id: "overview", label: "Overview" },
+              { id: "location", label: "Location & Spots" },
+              { id: "posts", label: "Resort Feed" }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveDetailTab(tab.id)}
+                className={`pb-3 text-xs font-bold uppercase tracking-wider bg-transparent border-none cursor-pointer transition-all duration-300 ${
+                  activeDetailTab === tab.id
+                    ? "text-primary border-b-2 border-primary font-extrabold"
+                    : "text-text-gray hover:text-text-dark"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content panel */}
+          <div className="mt-4">
+            {activeDetailTab === "overview" && (
+              <div className="space-y-4 text-left animate-in fade-in duration-200">
+                <p className="text-text-dark text-xs sm:text-sm leading-relaxed">
+                  {resort.description || "Experience the perfect blend of luxury and nature. Relax by the beach, indulge in world-class amenities, and create unforgettable memories."}
+                </p>
+                
+                {/* Amenities list */}
+                <h4 className="text-xs font-bold uppercase text-text-dark tracking-wide pt-2">Featured Amenities</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {["Beachfront Access", "Infinity Pool", "Wellness Spa Center", "High-speed Wi-Fi", "Signature Fine Dining", "24/7 Butler Service"].map((amenity, i) => (
+                    <div key={i} className="flex items-center gap-2 p-2 bg-bg-light rounded-xl border border-border-color text-xs font-semibold text-text-dark">
+                      <Check className="w-3.5 h-3.5 text-primary" /> {amenity}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeDetailTab === "location" && (
+              <div className="space-y-4 text-left animate-in fade-in duration-200">
+                {resort.mapPoints && resort.mapPoints.length > 0 ? (
+                  <ResortNavigationMap 
+                    mapPoints={resort.mapPoints}
+                    resortName={resort.name}
+                    isDarkMode={isDarkMode}
+                    onSelectSpot={(spot) => {
+                      const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]') || document.querySelector('[aria-label="Chat with Rivo"]');
+                      if (mascotBtn) {
+                        const chatOpen = document.querySelector('form button[type="submit"]');
+                        if (!chatOpen) mascotBtn.click();
+                        setTimeout(() => {
+                          const inputEl = document.querySelector('form input[placeholder*="Ask Rivo"]') || document.querySelector('form input[placeholder*="Ask"]');
+                          if (inputEl) {
+                            inputEl.value = `Tell me about ${spot.title} at ${resort.name}`;
+                            const event = new Event('input', { bubbles: true });
+                            inputEl.dispatchEvent(event);
+                          }
+                        }, 400);
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="p-6 text-center text-xs text-text-gray font-semibold border border-border-color rounded-2xl">
+                    No map points or local spots configured for this resort.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeDetailTab === "posts" && (
+              <div className="space-y-4 text-left animate-in fade-in duration-200">
+                {loadingPosts ? (
+                  <div className="flex items-center justify-center py-10 gap-2">
+                    <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-semibold text-text-gray">Fetching latest stories...</span>
+                  </div>
+                ) : resortPosts.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-text-gray font-semibold border border-border-color rounded-2xl">
+                    This resort hasn't posted any updates yet. Check back soon!
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {resortPosts.map((post) => (
+                      <div
+                        key={post.id}
+                        className="bg-bg-white border border-border-color rounded-2xl overflow-hidden shadow-sm hover:shadow transition"
+                      >
+                        <div className="h-44 w-full bg-slate-900 overflow-hidden relative">
+                          <img src={post.mediaUrl} alt="Resort Post" className="w-full h-full object-cover" />
+                          <span className="absolute top-3 right-3 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white rounded-full text-[8px] font-bold uppercase tracking-wider">
+                            {post.type === "image" ? "📸 Story" : post.type === "video" ? "🎥 Video" : "🎉 Event"}
+                          </span>
+                        </div>
+                        <div className="p-4 space-y-2">
+                          <p className="text-xs text-text-dark font-semibold leading-relaxed line-clamp-3">
+                            {post.caption}
+                          </p>
+                          <div className="text-[9px] text-text-gray font-bold border-t border-border-color pt-2 mt-2">
+                            {new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
         </div>
 
