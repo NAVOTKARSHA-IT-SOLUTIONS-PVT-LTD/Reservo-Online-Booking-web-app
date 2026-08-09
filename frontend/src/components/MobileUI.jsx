@@ -6,7 +6,7 @@ import {
   Search, ArrowRight, Waves, Mountain, Home, Droplets,
   Sparkles, Star, ChevronRight, User, Send,
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
-  LayoutGrid, BookOpen, Settings
+  LayoutGrid, BookOpen, Settings, LogOut
 } from "lucide-react";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
@@ -464,6 +464,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
         <ul className="list-none flex flex-col gap-1.5 p-0 m-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
           {(() => {
             const isLoggedIn = authService.isAuthenticated();
+            const user = authService.getCurrentUser();
             const handleListPropertyClick = () => {
               if (!isLoggedIn) {
                 navigate("/register?role=resort_admin");
@@ -475,7 +476,9 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               ...(!isLoggedIn ? [
                 { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
                 { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" }
-              ] : []),
+              ] : [
+                { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || "User"})`, path: "/profile" }
+              ]),
               { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", action: handleListPropertyClick },
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
@@ -483,10 +486,14 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },
               { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
               { type: "divider" },
-              { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
-              { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
-              { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
-              { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" }
+              ...(isLoggedIn ? [
+                { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
+                { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
+                { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
+                { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" },
+                { type: "divider" },
+                { type: "item", icon: <LogOut size={18} />, label: "Logout", action: () => { authService.logout(); navigate("/"); window.location.reload(); } }
+              ] : [])
             ];
           })().map((item, idx) => {
             if (item.type === "divider") {
