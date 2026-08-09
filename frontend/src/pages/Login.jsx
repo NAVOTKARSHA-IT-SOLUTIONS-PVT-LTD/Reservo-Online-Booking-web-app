@@ -31,6 +31,15 @@ export default function Login() {
   const [language, setLanguage] = useState("English");
   const [toastMsg, setToastMsg] = useState("");
 
+  const [roleMode, setRoleMode] = useState("traveller");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("role") === "resort_admin") {
+      setRoleMode("business");
+    }
+  }, []);
+
   // Setup React Hook Form with Zod resolver
   const {
     register,
@@ -44,15 +53,25 @@ export default function Login() {
   const onSubmit = async (data) => {
     try {
       const result = await authService.login(data.email, data.password);
+      
+      // If logging in as business partner, override or verify role Mode
+      let finalRole = result.user.role;
+      if (roleMode === "business") {
+        finalRole = "resort_admin";
+        result.user.role = "resort_admin";
+        localStorage.setItem("reservo_user", JSON.stringify(result.user));
+      }
+
       setToastMsg("Signed in successfully! Redirecting...");
       setTimeout(() => {
         setToastMsg("");
-        if (result.user.role === "admin") {
+        if (finalRole === "admin") {
           navigate("/admin/reservo");
-        } else if (result.user.role === "resort_admin") {
+        } else if (finalRole === "resort_admin") {
+          // Redirect resort managers straight to their administrative Extranet PMS!
           navigate("/admin/resort");
         } else {
-          navigate("/dashboard"); // Route to dashboard
+          navigate("/dashboard");
         }
       }, 1500);
     } catch (err) {
@@ -177,13 +196,43 @@ export default function Login() {
           </div>
 
           {/* Form wrapper */}
-          <div className="max-w-[360px] w-full my-auto py-4 space-y-5">
+          <div className="max-w-[360px] w-full my-auto py-2 space-y-4">
             <div className="space-y-0.5">
-              <h1 className="text-2xl lg:text-3xl font-serif font-extrabold text-text-dark">Welcome Back</h1>
-              <p className="text-[11.5px] text-text-gray font-semibold">Sign in to continue your journey</p>
+              <h1 className="text-2xl lg:text-3xl font-serif font-extrabold text-text-dark">
+                {roleMode === "business" ? "Business Portal Sign In" : "Welcome Back"}
+              </h1>
+              <p className="text-[11.5px] text-text-gray font-semibold">
+                {roleMode === "business" ? "Access your Reservo partner account extranet" : "Sign in to continue your journey"}
+              </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Role Mode Toggle Tabs */}
+            <div className="grid grid-cols-2 gap-2 bg-bg-light p-1 rounded-2xl border border-border-color">
+              <button
+                type="button"
+                onClick={() => setRoleMode("traveller")}
+                className={`py-1.5 text-[10.5px] font-bold rounded-xl border-none cursor-pointer transition ${
+                  roleMode === "traveller"
+                    ? "bg-bg-white text-primary shadow-sm"
+                    : "bg-transparent text-text-gray hover:text-text-dark"
+                }`}
+              >
+                🎒 Traveller
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleMode("business")}
+                className={`py-1.5 text-[10.5px] font-bold rounded-xl border-none cursor-pointer transition ${
+                  roleMode === "business"
+                    ? "bg-bg-white text-primary shadow-sm"
+                    : "bg-transparent text-text-gray hover:text-text-dark"
+                }`}
+              >
+                🏨 Business Partner
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
               {/* Email Address with Floating Label Effect */}
               <div className="space-y-1 flex flex-col relative">
                 <label htmlFor="emailInput" className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Email Address</label>
@@ -317,15 +366,19 @@ export default function Login() {
               </div>
               <button
                 type="button"
-                onClick={() => navigate("/partner")}
+                onClick={() => setRoleMode(roleMode === "business" ? "traveller" : "business")}
                 style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
                 className="w-full py-2.5 text-white rounded-2xl flex items-center justify-between px-5 cursor-pointer shadow-md transition-all duration-300 group border-none"
               >
                 <div className="flex items-center gap-3 text-left">
                   <span className="text-lg">🏨</span>
                   <div>
-                    <h5 className="text-[10px] font-bold text-white uppercase tracking-wide">Register Your Property</h5>
-                    <p className="text-[8.5px] text-white/70 font-semibold mt-0.5">Become a Reservo Business Partner</p>
+                    <h5 className="text-[10px] font-bold text-white uppercase tracking-wide">
+                      {roleMode === "business" ? "Switch to Traveller Sign In" : "Register Your Property"}
+                    </h5>
+                    <p className="text-[8.5px] text-white/70 font-semibold mt-0.5">
+                      {roleMode === "business" ? "Go back to personal sign in" : "Become a Reservo Business Partner"}
+                    </p>
                   </div>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-white group-hover:translate-x-1 transition-transform" />

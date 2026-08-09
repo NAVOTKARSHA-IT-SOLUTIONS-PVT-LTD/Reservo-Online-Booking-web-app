@@ -14,6 +14,7 @@ import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
 import { ALL_RESORTS } from "../data/resorts";
+import { authService } from "../services/auth.service";
 import Footer from "./Footer";
 
 const COMPANION_MODES = [
@@ -461,20 +462,33 @@ function MobileUI({ isDark, onToggleTheme, children }) {
         </div>
 
         <ul className="list-none flex flex-col gap-1.5 p-0 m-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
-          {[
-            { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
-            { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" },
-            { type: "divider" },
-            { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
-            { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
-            { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },
-            { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
-            { type: "divider" },
-            { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
-            { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
-            { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
-            { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" }
-          ].map((item, idx) => {
+          {(() => {
+            const isLoggedIn = authService.isAuthenticated();
+            const handleListPropertyClick = () => {
+              if (!isLoggedIn) {
+                navigate("/register?role=resort_admin");
+              } else {
+                navigate("/partner");
+              }
+            };
+            return [
+              ...(!isLoggedIn ? [
+                { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
+                { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" }
+              ] : []),
+              { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", action: handleListPropertyClick },
+              { type: "divider" },
+              { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
+              { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
+              { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },
+              { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
+              { type: "divider" },
+              { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
+              { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
+              { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
+              { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" }
+            ];
+          })().map((item, idx) => {
             if (item.type === "divider") {
               return <hr key={idx} className="border-none h-px bg-border-color my-1 shrink-0" />;
             }
@@ -483,7 +497,8 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               <li key={idx}>
                 <button
                   onClick={() => {
-                    if (item.path) navigate(item.path);
+                    if (item.action) item.action();
+                    else if (item.path) navigate(item.path);
                     setIsDrawerOpen(false);
                   }}
                   className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl border-none transition text-sm font-semibold cursor-pointer text-left ${

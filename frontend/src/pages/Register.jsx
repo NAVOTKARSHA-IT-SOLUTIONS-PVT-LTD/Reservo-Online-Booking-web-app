@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +34,18 @@ export default function Register() {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [language, setLanguage] = useState("English");
   const [toastMsg, setToastMsg] = useState("");
+
+  const [roleMode, setRoleMode] = useState("traveller");
+  const [businessName, setBusinessName] = useState("");
+  const [resortName, setResortName] = useState("");
+  const [ownerPhone, setOwnerPhone] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("role") === "resort_admin") {
+      setRoleMode("business");
+    }
+  }, []);
 
   // Setup Hook Form
   const {
@@ -79,11 +91,34 @@ export default function Register() {
   const onSubmit = async (data) => {
     try {
       await authService.register(data.name, data.email, data.password);
-      setToastMsg("Account created successfully! Welcome to Reservo.");
-      setTimeout(() => {
-        setToastMsg("");
-        navigate("/login"); // Redirect to login
-      }, 2000);
+      
+      if (roleMode === "business") {
+        const mockUser = {
+          id: "usr-" + Math.random().toString(36).substr(2, 9),
+          name: resortName || data.name,
+          email: data.email,
+          role: "resort_admin",
+          tier: "Business Extranet Partner",
+          joined: `Member since ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}`,
+          points: 0,
+          businessName: businessName,
+          ownerPhone: ownerPhone
+        };
+        localStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
+        localStorage.setItem("reservo_user", JSON.stringify(mockUser));
+        
+        setToastMsg("Business Account Registered! Opening property onboarding...");
+        setTimeout(() => {
+          setToastMsg("");
+          navigate("/partner");
+        }, 2000);
+      } else {
+        setToastMsg("Account created successfully! Welcome to Reservo.");
+        setTimeout(() => {
+          setToastMsg("");
+          navigate("/login");
+        }, 2000);
+      }
     } catch (err) {
       setToastMsg(err.message || "Failed to create account. Please try again.");
       setTimeout(() => setToastMsg(""), 3000);
@@ -205,14 +240,84 @@ export default function Register() {
             )}
           </div>
 
-          {/* Form wrapper */}
-          <div className="max-w-[360px] w-full my-auto py-4 space-y-5">
+          <div className="max-w-[360px] w-full my-auto py-2 space-y-4">
             <div className="space-y-0.5">
-              <h1 className="text-2xl lg:text-3xl font-serif font-extrabold text-text-dark">Create Account</h1>
-              <p className="text-[11.5px] text-text-gray font-semibold">Sign up to begin your journey</p>
+              <h1 className="text-2xl lg:text-3xl font-serif font-extrabold text-text-dark">
+                {roleMode === "business" ? "Partner Registration" : "Create Account"}
+              </h1>
+              <p className="text-[11.5px] text-text-gray font-semibold">
+                {roleMode === "business" ? "Register your hotel or resort company on Reservo" : "Sign up to begin your journey"}
+              </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Role Mode Toggle Tabs */}
+            <div className="grid grid-cols-2 gap-2 bg-bg-light p-1 rounded-2xl border border-border-color">
+              <button
+                type="button"
+                onClick={() => setRoleMode("traveller")}
+                className={`py-1.5 text-[10.5px] font-bold rounded-xl border-none cursor-pointer transition ${
+                  roleMode === "traveller"
+                    ? "bg-bg-white text-primary shadow-sm"
+                    : "bg-transparent text-text-gray hover:text-text-dark"
+                }`}
+              >
+                🎒 Traveller
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleMode("business")}
+                className={`py-1.5 text-[10.5px] font-bold rounded-xl border-none cursor-pointer transition ${
+                  roleMode === "business"
+                    ? "bg-bg-white text-primary shadow-sm"
+                    : "bg-transparent text-text-gray hover:text-text-dark"
+                }`}
+              >
+                🏨 Business Partner
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+
+              {/* Business Partner Mode Fields */}
+              {roleMode === "business" && (
+                <div className="space-y-3 border-b border-border-color pb-3 animate-in fade-in duration-200 text-left">
+                  <div className="space-y-1 flex flex-col relative">
+                    <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Business Company Name *</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      placeholder="e.g. Royal Palms Hospitality Group"
+                      className="w-full px-4 py-2 bg-bg-light border border-border-color text-text-dark rounded-xl text-[11.5px] font-semibold outline-none focus:border-primary transition"
+                    />
+                  </div>
+
+                  <div className="space-y-1 flex flex-col relative">
+                    <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Resort / Hotel Name *</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={resortName}
+                      onChange={(e) => setResortName(e.target.value)}
+                      placeholder="e.g. Ocean Bliss Resort"
+                      className="w-full px-4 py-2 bg-bg-light border border-border-color text-text-dark rounded-xl text-[11.5px] font-semibold outline-none focus:border-primary transition"
+                    />
+                  </div>
+
+                  <div className="space-y-1 flex flex-col relative">
+                    <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Contact Phone *</label>
+                    <input 
+                      type="tel" 
+                      required
+                      value={ownerPhone}
+                      onChange={(e) => setOwnerPhone(e.target.value)}
+                      placeholder="e.g. +91 98765 43210"
+                      className="w-full px-4 py-2 bg-bg-light border border-border-color text-text-dark rounded-xl text-[11.5px] font-semibold outline-none focus:border-primary transition"
+                    />
+                  </div>
+                </div>
+              )}
               
               {/* Full Name with Character Counter */}
               <div className="space-y-1 flex flex-col relative">
@@ -388,15 +493,19 @@ export default function Register() {
               </div>
               <button
                 type="button"
-                onClick={() => navigate("/partner")}
+                onClick={() => setRoleMode(roleMode === "business" ? "traveller" : "business")}
                 style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
                 className="w-full py-2.5 text-white rounded-2xl flex items-center justify-between px-5 cursor-pointer shadow-md transition-all duration-300 group border-none"
               >
                 <div className="flex items-center gap-3 text-left">
                   <span className="text-lg">🏨</span>
                   <div>
-                    <h5 className="text-[10px] font-bold text-white uppercase tracking-wide">Register Your Property</h5>
-                    <p className="text-[8.5px] text-white/70 font-semibold mt-0.5">Become a Reservo Business Partner</p>
+                    <h5 className="text-[10px] font-bold text-white uppercase tracking-wide">
+                      {roleMode === "business" ? "Switch to Traveller Registration" : "Register Your Property"}
+                    </h5>
+                    <p className="text-[8.5px] text-white/70 font-semibold mt-0.5">
+                      {roleMode === "business" ? "Go back to personal account" : "Become a Reservo Business Partner"}
+                    </p>
                   </div>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-white group-hover:translate-x-1 transition-transform" />

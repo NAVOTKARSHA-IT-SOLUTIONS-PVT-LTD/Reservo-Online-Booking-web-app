@@ -20,6 +20,15 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
   const currencyMenuRef = useRef(null);
 
+  const handleListPropertyClick = () => {
+    const isLoggedIn = authService.isAuthenticated();
+    if (!isLoggedIn) {
+      navigate("/register?role=resort_admin");
+    } else {
+      navigate("/partner");
+    }
+  };
+
   useEffect(() => {
     const clickOutside = (e) => {
       if (currencyMenuRef.current && !currencyMenuRef.current.contains(e.target)) {
@@ -168,6 +177,12 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           {/* Right Actions */}
           <div className="flex items-center gap-4">
             <button 
+              onClick={handleListPropertyClick}
+              className="hidden md:inline-flex items-center justify-center text-xs font-bold px-4 h-10 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white rounded-full transition-all cursor-pointer shrink-0"
+            >
+              List Your Property
+            </button>
+            <button 
               onClick={onToggleTheme} 
               className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all"
             >
@@ -284,9 +299,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                 { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
                 { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" }
               ] : []),
-              ...(isLoggedIn ? [
-                { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", path: "/partner" }
-              ] : []),
+              { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", action: handleListPropertyClick },
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
@@ -307,7 +320,8 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               <li key={idx}>
                 <button
                   onClick={() => {
-                    if (item.path) navigate(item.path);
+                    if (item.action) item.action();
+                    else if (item.path) navigate(item.path);
                     setIsMenuOpen(false);
                   }}
                   className={`w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl border-none transition text-sm font-semibold cursor-pointer text-left ${

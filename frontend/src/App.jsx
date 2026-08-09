@@ -386,7 +386,7 @@ function App() {
             <Route path="/experiences" element={<Experiences />} />
             <Route path="/wishlist" element={<Wishlist onBook={(resort) => setBookingResort(resort)} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />
-            <Route path="/partner" element={<PartnerOnboarding />} />
+            <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
