@@ -166,6 +166,9 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
 
           {/* Right Actions */}
           <div className="flex items-center gap-4">
+            <Link to="/partner" className="hidden md:inline-flex items-center justify-center text-xs font-bold px-4 h-10 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white rounded-full transition-all no-underline shrink-0">
+              List Your Property
+            </Link>
             <button 
               onClick={onToggleTheme} 
               className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all"
@@ -279,6 +282,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           {[
             { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
             { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" },
+            { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", path: "/partner" },
             { type: "divider" },
             { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
             { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },

@@ -35,6 +35,7 @@ const Login = React.lazy(() => import("./pages/Login"));
 const Register = React.lazy(() => import("./pages/Register"));
 const ReservoAdminPortal = React.lazy(() => import("./pages/ReservoAdminPortal"));
 const ResortAdminPortal = React.lazy(() => import("./pages/ResortAdminPortal"));
+const PartnerOnboarding = React.lazy(() => import("./pages/PartnerOnboarding"));
 
 // Lazy-loaded dummy pages
 const Careers = React.lazy(() => import("./pages/DummyPages").then(m => ({ default: m.Careers })));
@@ -385,6 +386,7 @@ function App() {
             <Route path="/experiences" element={<Experiences />} />
             <Route path="/wishlist" element={<Wishlist onBook={(resort) => setBookingResort(resort)} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />
+            <Route path="/partner" element={<PartnerOnboarding />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
