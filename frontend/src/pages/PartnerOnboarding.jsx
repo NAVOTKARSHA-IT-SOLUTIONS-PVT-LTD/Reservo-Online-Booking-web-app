@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Building2, MapPin, DollarSign, ArrowRight, ArrowLeft, CheckCircle2, 
-  ImageIcon, Mail, User, ShieldAlert, FileText, Check, Phone, ShieldCheck, Map
+  ImageIcon, Mail, User, ShieldAlert, FileText, Check, Phone, ShieldCheck, Map,
+  Upload
 } from "lucide-react";
 import rivoSearching from "../assets/images/rivo_searching.png";
 
@@ -12,6 +13,19 @@ export default function PartnerOnboarding() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploadedFile({
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(1) + " MB"
+      });
+    }
+  };
 
   const [formData, setFormData] = useState({
     // Step 1: Business Info
@@ -506,13 +520,33 @@ export default function PartnerOnboarding() {
                       </div>
                     </div>
 
-                    {/* Drag and drop zone simulation */}
+                    {/* Drag and drop zone */}
                     <div className="space-y-1">
-                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Upload Documents</label>
-                      <div className="border-2 border-dashed border-[var(--color-border-color)] rounded-xl p-4 flex flex-col items-center justify-center text-center bg-[var(--color-bg-light)]/40 hover:bg-[var(--color-bg-light)]/80 cursor-pointer transition">
-                        <CheckCircle2 className="w-6 h-6 text-emerald-500 mb-1" />
-                        <span className="text-[10px] font-bold text-[var(--color-text-dark)]">License_Verification_PDF.pdf</span>
-                        <span className="text-[8px] text-[var(--color-text-gray)] mt-0.5">File size: 2.4 MB •政府安全暗号化</span>
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Upload Documents *</label>
+                      <input 
+                        type="file" 
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden" 
+                        accept=".pdf,.png,.jpg,.jpeg"
+                      />
+                      <div 
+                        onClick={() => fileInputRef.current.click()}
+                        className="border-2 border-dashed border-[var(--color-border-color)] rounded-xl p-6 flex flex-col items-center justify-center text-center bg-[var(--color-bg-light)]/40 hover:bg-[var(--color-bg-light)]/80 cursor-pointer transition hover:border-primary"
+                      >
+                        {uploadedFile ? (
+                          <>
+                            <CheckCircle2 className="w-6 h-6 text-emerald-500 mb-1" />
+                            <span className="text-[10px] font-bold text-[var(--color-text-dark)]">{uploadedFile.name}</span>
+                            <span className="text-[8px] text-[var(--color-text-gray)] mt-0.5">File size: {uploadedFile.size} • Uploaded & Encrypted</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 text-[var(--color-text-gray)] mb-1" />
+                            <span className="text-[10px] font-bold text-[var(--color-text-dark)]">Click to Upload Document</span>
+                            <span className="text-[8px] text-[var(--color-text-gray)] mt-0.5">Supports PDF, PNG, JPG (Max 5MB)</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

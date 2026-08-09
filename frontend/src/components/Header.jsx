@@ -4,7 +4,7 @@ import { useTranslation } from "../hooks/useTranslation";
 import { 
   Menu, X, Heart, Moon, Sun, Globe, ChevronDown, Check,
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
-  LayoutGrid, BookOpen, Bell, Settings, User, LogOut
+  LayoutGrid, BookOpen, Bell, Settings, User, LogOut, Sliders
 } from "lucide-react";
 import logoImage from "../assets/images/logo.png";
 import { motion, AnimatePresence } from "framer-motion";
@@ -304,6 +304,12 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
               { type: "divider" },
               ...(isLoggedIn ? [
+                ...(user?.role === "admin" ? [
+                  { type: "item", icon: <Sliders size={18} />, label: "Platform Admin Control", path: "/admin/reservo" }
+                ] : []),
+                ...(user?.role === "admin" || user?.role === "resort_admin" ? [
+                  { type: "item", icon: <LayoutGrid size={18} />, label: "Resort PMS Extranet", path: "/admin/resort" }
+                ] : []),
                 { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
                 { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
                 { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },

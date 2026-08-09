@@ -6,7 +6,8 @@ import {
   FileText, Sparkles, AlertCircle, CheckCircle, BarChart3, 
   Upload, Check, X, ShieldCheck, PieChart, Layers, HelpCircle, 
   UserCheck, Heart, MapPin, ToggleLeft, ToggleRight, Database, 
-  Wifi, Sliders, RefreshCw, Command, Smile, Frown, ShieldAlert
+  Wifi, Sliders, RefreshCw, Command, Smile, Frown, ShieldAlert,
+  Menu
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 

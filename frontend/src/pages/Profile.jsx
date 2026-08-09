@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -6,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, Phone, Globe, Shield, CreditCard, LogOut, CheckCircle2, AlertCircle } from "lucide-react";
 import { profileService } from "../services/profile.service";
 import { bookingService } from "../services/booking.service";
+import { authService } from "../services/auth.service";
 import { ProfileSkeleton } from "../components/Skeleton";
 import ErrorScreen from "../components/ErrorScreen";
 import rivoSupport from "../assets/images/rivo_support.png";
@@ -26,6 +28,8 @@ const profileSchema = z.object({
 });
 
 function Profile() {
+  const navigate = useNavigate();
+  const user = authService.getCurrentUser();
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -163,7 +167,12 @@ function Profile() {
             </button>
             <button 
               className="flex items-center gap-2.5 px-4.5 py-3 rounded-lg text-sm font-semibold text-red-500 no-underline transition-colors duration-300 bg-transparent border-none w-full text-left cursor-pointer hover:bg-red-500/5 mt-3.75"
-              onClick={() => showGlobalToast("Account signed out.")}
+              onClick={() => {
+                authService.logout().then(() => {
+                  navigate("/");
+                  window.location.reload();
+                });
+              }}
             >
               <LogOut size={16} /> Sign Out
             </button>
@@ -184,6 +193,36 @@ function Profile() {
         <main className="flex flex-col gap-7.5">
           {activeSection === "details" && (
             <div className="bg-bg-white border border-border-color rounded-3xl p-10 shadow-custom animate-fade-in">
+              {user?.role === "resort_admin" && (
+                <div className="mb-6 p-5 rounded-2xl bg-slate-900/5 border border-slate-900/10 flex flex-col gap-3 text-left">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] bg-primary text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      Business Extranet Partner
+                    </span>
+                    <span className="text-xs text-emerald-500 font-bold flex items-center gap-1">
+                      <CheckCircle2 size={12} className="text-emerald-500" /> Verified Partner
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-text-dark mt-1">
+                    <div>
+                      <span className="block text-[9.5px] text-text-gray uppercase tracking-wider">Company Name</span>
+                      <strong className="text-sm mt-0.5 block">{user.businessName || "Reservo Partner Group"}</strong>
+                    </div>
+                    <div>
+                      <span className="block text-[9.5px] text-text-gray uppercase tracking-wider">Registered Resort</span>
+                      <strong className="text-sm mt-0.5 block">{user.name || "Reservo Partner Resort"}</strong>
+                    </div>
+                    <div>
+                      <span className="block text-[9.5px] text-text-gray uppercase tracking-wider">Extranet Email</span>
+                      <strong className="text-sm mt-0.5 block">{user.email}</strong>
+                    </div>
+                    <div>
+                      <span className="block text-[9.5px] text-text-gray uppercase tracking-wider">Owner Contact</span>
+                      <strong className="text-sm mt-0.5 block">{user.ownerPhone || "+91 98765 43210"}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
               <h3 className="text-2xl font-extrabold text-text-dark mb-1.5">Personal Information</h3>
               <p className="text-[13.5px] text-text-gray mb-7.5">Manage your basic accounts details and communication settings.</p>
 
