@@ -10,6 +10,7 @@ import {
   Sparkles, User 
 } from "lucide-react";
 import { authService } from "../services/auth.service";
+import { secureStorage } from "../services/secureStorage";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import logoImage from "../assets/images/logo.png";
 
@@ -108,8 +109,8 @@ export default function Register() {
           businessName: businessName,
           ownerPhone: ownerPhone
         };
-        localStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
-        localStorage.setItem("reservo_user", JSON.stringify(mockUser));
+        secureStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
+        secureStorage.setItem("reservo_user", mockUser);
         
         setToastMsg("Business Account Registered! Opening property onboarding...");
         setTimeout(() => {
@@ -127,8 +128,8 @@ export default function Register() {
           joined: `Member since ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}`,
           points: 100,
         };
-        localStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
-        localStorage.setItem("reservo_user", JSON.stringify(mockUser));
+        secureStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
+        secureStorage.setItem("reservo_user", mockUser);
 
         setToastMsg("Account created successfully! Welcome to Reservo.");
         setTimeout(() => {

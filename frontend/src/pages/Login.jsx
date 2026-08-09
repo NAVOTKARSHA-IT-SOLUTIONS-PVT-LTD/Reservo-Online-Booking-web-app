@@ -10,6 +10,7 @@ import {
   Sparkles 
 } from "lucide-react";
 import { authService } from "../services/auth.service";
+import { secureStorage } from "../services/secureStorage";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import logoImage from "../assets/images/logo.png";
 
@@ -69,17 +70,19 @@ export default function Login() {
           businessName: roleMode === "business" ? "Royal Palms Hospitality Group" : null,
           ownerPhone: roleMode === "business" ? "+91 98765 43210" : null
         };
-        localStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
-        localStorage.setItem("reservo_user", JSON.stringify(mockUser));
+        secureStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
+        secureStorage.setItem("reservo_user", mockUser);
         result = { user: mockUser };
       }
       
       // If logging in as business partner, override or verify role Mode
       let finalRole = result.user.role;
       if (roleMode === "business") {
-        finalRole = "resort_admin";
-        result.user.role = "resort_admin";
-        localStorage.setItem("reservo_user", JSON.stringify(result.user));
+        if (finalRole !== "admin" && finalRole !== "resort_admin") {
+          finalRole = "resort_admin";
+          result.user.role = "resort_admin";
+        }
+        secureStorage.setItem("reservo_user", result.user);
       }
 
       setToastMsg("Signed in successfully! Redirecting...");

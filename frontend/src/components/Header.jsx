@@ -309,7 +309,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                 { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
                 { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" },
                 { type: "divider" },
-                { type: "item", icon: <LogOut size={18} />, label: "Logout", action: () => { authService.logout(); navigate("/"); window.location.reload(); } }
+                { type: "item", icon: <LogOut size={18} />, label: "Logout", action: () => { authService.logout().then(() => { navigate("/"); window.location.reload(); }); } }
               ] : [])
             ];
           })().map((item, idx) => {
