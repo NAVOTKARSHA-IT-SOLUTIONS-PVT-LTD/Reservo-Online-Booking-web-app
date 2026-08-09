@@ -211,6 +211,7 @@ export default function AIPlanner() {
   const [activeTab, setActiveTab] = useState("chat"); // "chat" or "form"
   const [activeMobileTab, setActiveMobileTab] = useState("chat"); // "chat", "itinerary", "checkout"
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [sessionId] = useState(() => "session-planner-" + Math.random().toString(36).substring(2, 10));
   
   // Chat dialogue state
   const [chatInput, setChatInput] = useState("");
@@ -274,7 +275,7 @@ export default function AIPlanner() {
   };
 
   // Natural Language Parser & Decision Generator
-  const runAIEngine = (userInputText) => {
+  const runAIEngine = async (userInputText) => {
     setIsAnalyzing(true);
     
     const steps = [
@@ -290,236 +291,254 @@ export default function AIPlanner() {
     steps.forEach((step, idx) => {
       setTimeout(() => {
         setThinkingStep(step);
-      }, idx * 400);
+      }, idx * 300);
     });
 
-    setTimeout(() => {
-      let parsedBudget = preferences.budget;
-      let parsedGuests = preferences.travellers;
-      let parsedNights = preferences.nights;
-      let isNearMumbai = false;
+    let parsedBudget = preferences.budget;
+    let parsedGuests = preferences.travellers;
+    let parsedNights = preferences.nights;
+    let isNearMumbai = false;
 
-      if (userInputText) {
-        const text = userInputText.toLowerCase();
-        
-        // 1. Match Indian Lakhs financial scaling (e.g. 5 lakhs, 5lakh, 5l)
-        const lakhsMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:lakh|lakhs|l)\b/);
-        if (lakhsMatch) {
-          parsedBudget = parseFloat(lakhsMatch[1]) * 100000;
-        } else {
-          // Standard budget check
-          const budgetMatch = text.match(/(?:budget|under|for|around)\s*(?:₹|rs)?\s*(\d+)\s*(?:k)?/);
-          if (budgetMatch) {
-            let val = parseInt(budgetMatch[1], 10);
-            if (text.includes(budgetMatch[1] + "k")) val *= 1000;
-            parsedBudget = val;
-          } else {
-            const kMatch = text.match(/(\d+)\s*k/);
-            if (kMatch) parsedBudget = parseInt(kMatch[1], 10) * 1000;
-          }
-        }
-
-        // 2. Headcount parsing
-        if (text.includes("couple") || text.includes("honeymoon") || text.includes("2 people") || text.includes("2 adults")) {
-          parsedGuests = 2;
-        } else {
-          const guestMatch = text.match(/(\d+)\s*(?:people|person|guest|adult|members)/);
-          if (guestMatch) parsedGuests = parseInt(guestMatch[1], 10);
-        }
-
-        // 3. Nights duration parsing
-        const nightMatch = text.match(/(\d+)\s*(?:night|day)/);
-        if (nightMatch) parsedNights = parseInt(nightMatch[1], 10);
-
-        if (text.includes("mumbai") || text.includes("near mumbai") || text.includes("maharashtra")) {
-          isNearMumbai = true;
-        }
-      }
-
-      // 4. Strict inventory verification from local RESORTS database
-      let queryLoc = "";
-      if (userInputText) {
-        const text = userInputText.toLowerCase();
-        const locations = ["goa", "kerala", "udaipur", "manali", "maldives"];
-        for (const loc of locations) {
-          if (text.includes(loc)) {
-            queryLoc = loc;
-            break;
-          }
-        }
-      }
-
-      let matchedResorts = RESORTS;
-      if (queryLoc) {
-        matchedResorts = RESORTS.filter(r => (r.region || "").toLowerCase() === queryLoc);
-      } else if (isNearMumbai) {
-        matchedResorts = RESORTS.filter(r => {
-          const meta = REGION_METADATA[r.id];
-          return meta && meta.nearMumbai;
-        });
-      }
-
-      // Fallback message if requested location is not in our inventory
-      if (userInputText && queryLoc && matchedResorts.length === 0) {
-        setIsAnalyzing(false);
-        setOptions([]);
-        setSelectedOption(null);
-        setMessages(prev => [
-          ...prev,
-          {
-            id: Date.now(),
-            sender: "rivo",
-            text: `I couldn't find any resorts in **${queryLoc.toUpperCase()}** in our database. Currently, Reservo specializes in handpicked premium properties in **Goa**, **Udaipur**, **Kerala**, **Manali**, and the **Maldives**. Let's plan an amazing trip to one of these spots instead!`,
-            avatar: rivoMascot,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }
-        ]);
-        return;
-      }
-
-      const resort = matchedResorts[0] || RESORTS[0];
-      const meta = REGION_METADATA[resort.id] || REGION_METADATA["goa-coastline"];
-
-      // 5. Dynamic cost scaling & room capacity allocations
-      // We map the resort's roomTypes to Option A, B, C. 
-      // If roomTypes is less than 3, we pad by varying transport & activities bundles
-      const roomTypes = resort.roomTypes;
-      const baseRoomTypes = [
-        roomTypes[roomTypes.length - 1] || roomTypes[0], // Option A (Luxury / highest suite)
-        roomTypes[1] || roomTypes[0],                     // Option B (Balanced / mid suite)
-        roomTypes[0]                                      // Option C (Budget / standard suite)
-      ];
-
-      const generated = baseRoomTypes.map((room, idx) => {
-        // Extract room capacity (e.g. "2 Guests" -> 2)
-        const cap = parseInt(room.capacity.replace(/\D/g, ""), 10) || 2;
-        
-        // Calculate dynamic room count needed
-        const roomsNeeded = Math.ceil(parsedGuests / cap);
-
-        // Core cost sums
-        const hotelCost = room.price * parsedNights * roomsNeeded;
-        
-        // Transport costs (Option A: flight, Option B: flight/train, Option C: train/self drive)
-        let transportMode = preferences.transport;
-        if (idx === 0) transportMode = "flight";
-        else if (idx === 2) transportMode = "train";
-        
-        const transportCost = (meta.transportOptions[transportMode] || 3000) * parsedGuests;
-        
-        // Food costs
-        const foodCostPerDay = preferences.food === "Veg" ? 800 : 1200;
-        const totalFoodCost = foodCostPerDay * parsedGuests * parsedNights;
-
-        // Activities
-        const selectedActivities = meta.activities.slice(0, idx === 0 ? 3 : idx === 1 ? 2 : 1);
-        const activitiesCost = selectedActivities.reduce((sum, a) => sum + a.cost, 0) * parsedGuests;
-
-        const cabCost = 1500 * parsedNights;
-        const subtotal = hotelCost + transportCost + totalFoodCost + activitiesCost + cabCost;
-        const taxes = Math.round(subtotal * 0.12);
-        const grandTotal = subtotal + taxes;
-
-        // Option rating scores
-        let luxuryScore = idx === 0 ? 5.0 : idx === 1 ? 4.3 : 3.8;
-        let romanticScore = resort.category === "beach" ? 4.8 : 4.2;
-        let familyScore = resort.category === "mountain" ? 4.7 : 4.1;
-        let adventureScore = resort.category === "mountain" ? 4.9 : 3.5;
-        let valueScore = idx === 2 ? 4.9 : idx === 1 ? 4.5 : 3.9;
-
-        const label = idx === 0 ? "Luxury Escape" : idx === 1 ? "Balanced / Recommended" : "Budget Value";
-
-        // Day-wise hourly timeline mapping
-        const day1Events = [
-          { time: "11:30 AM", title: `Arrival in ${meta.region}`, desc: `Cab pick-up transit to ${resort.name}` },
-          { time: "01:00 PM", title: "Resort Check-In", desc: `Welcome drinks and check-in to ${roomsNeeded}x ${room.title}` },
-          { time: "02:00 PM", title: "Lunch by the Pool", desc: "Enjoy delicious local delicacies with a view" },
-          { time: "08:00 PM", title: "Dinner Night", desc: "Fine course dinner served by the resort beachside" }
-        ];
-
-        const day2Events = [
-          { time: "08:00 AM", title: "Breakfast with a View", desc: "Healthy buffet breakfast selection" },
-          { time: "10:00 AM", title: `${selectedActivities[0]?.name || "Local Excursions"}`, desc: "Included resort activity excursion" },
-          { time: "04:00 PM", title: "Leisure & Spa", desc: "Access to private sauna and pool facilities" },
-          { time: "08:00 PM", title: "BBQ Dinner Night", desc: "Live music acoustic show & grill BBQ dinner" }
-        ];
-
-        const day3Events = [
-          { time: "09:00 AM", title: "Buffet Breakfast", desc: "Final morning breakfast and pool walk" },
-          { time: "11:00 AM", title: "Resort Checkout", desc: "Checkout from room and baggage assistance" },
-          { time: "01:00 PM", title: "Departure Transit", desc: "Cab drop back to airport / station" }
-        ];
-
-        return {
-          id: `opt-${idx + 1}`,
-          type: idx === 0 ? "A" : idx === 1 ? "B" : "C",
-          title: `${resort.name} - ${label}`,
-          resortName: resort.name,
-          resortImage: resort.heroImage,
-          location: resort.location,
-          roomTitle: `${roomsNeeded}x ${room.title}`,
-          grandTotal,
-          guests: parsedGuests,
-          nights: parsedNights,
-          weather: meta.weather,
-          bestMonths: meta.bestMonths,
-          safety: meta.safety,
-          scores: { luxury: luxuryScore, romantic: romanticScore, family: familyScore, adventure: adventureScore, value: valueScore },
-          breakdown: { hotel: hotelCost, transport: transportCost, food: totalFoodCost, activities: activitiesCost, taxes, cab: cabCost, buffer: 0 },
-          activities: selectedActivities,
-          pros: idx === 0 ? ["All activities included", "Butler service"] : ["Free cancellation", "Spa voucher"],
-          cons: idx === 0 ? ["Premium rate"] : ["Standard suite"],
-          resortDetails: resort,
-          itinerary: { day1: day1Events, day2: day2Events, day3: day3Events }
-        };
-      });
-
-      const sorted = [...generated].sort((a, b) => b.grandTotal - a.grandTotal);
-      sorted[0].type = "A"; 
-      if (sorted[1]) sorted[1].type = "B"; 
-      if (sorted[2]) sorted[2].type = "C"; 
-
-      const recommended = sorted[0]; // Set Option A as default selection
+    if (userInputText) {
+      const text = userInputText.toLowerCase();
       
-      let replyText = "";
-      if (recommended.grandTotal > parsedBudget) {
-        const overshoot = recommended.grandTotal - parsedBudget;
-        replyText = `Hi! I'm RIVO 👋\n\nI parsed your Goa request for ${parsedGuests} guests. The premium Option A slightly exceeds your ₹${parsedBudget.toLocaleString()} budget by ₹${overshoot.toLocaleString()}.\n\n⚠️ **Rivo Budget Optimization options:**\n- Switch to **Option B** or **C** (saves up to ₹${(recommended.grandTotal - sorted[2].grandTotal).toLocaleString()} by selecting lower suite allocations).\n- Change dates to mid-week rates (saves 15%).`;
+      // 1. Match Indian Lakhs financial scaling (e.g. 5 lakhs, 5lakh, 5l)
+      const lakhsMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:lakh|lakhs|l)\b/);
+      if (lakhsMatch) {
+        parsedBudget = parseFloat(lakhsMatch[1]) * 100000;
       } else {
-        const savings = parsedBudget - recommended.grandTotal;
-        replyText = `Hi! I'm RIVO 👋\n\nI parsed your Goa request for ${parsedGuests} guests. Option A is fully under your ₹${parsedBudget.toLocaleString()} budget (saves ₹${savings.toLocaleString()})! I've booked ${recommended.roomTitle} at *${recommended.resortName}*. Enjoy your luxury vacation!`;
+        // Standard budget check
+        const budgetMatch = text.match(/(?:budget|under|for|around)\s*(?:₹|rs)?\s*(\d+)\s*(?:k)?/);
+        if (budgetMatch) {
+          let val = parseInt(budgetMatch[1], 10);
+          if (text.includes(budgetMatch[1] + "k")) val *= 1000;
+          parsedBudget = val;
+        } else {
+          const kMatch = text.match(/(\d+)\s*k/);
+          if (kMatch) parsedBudget = parseInt(kMatch[1], 10) * 1000;
+        }
       }
 
-      setOptions(sorted);
-      setSelectedOption(sorted[0]); 
+      // 2. Headcount parsing
+      if (text.includes("couple") || text.includes("honeymoon") || text.includes("2 people") || text.includes("2 adults")) {
+        parsedGuests = 2;
+      } else {
+        const guestMatch = text.match(/(\d+)\s*(?:people|person|guest|adult|members)/);
+        if (guestMatch) parsedGuests = parseInt(guestMatch[1], 10);
+      }
+
+      // 3. Nights duration parsing
+      const nightMatch = text.match(/(\d+)\s*(?:night|day)/);
+      if (nightMatch) parsedNights = parseInt(nightMatch[1], 10);
+
+      if (text.includes("mumbai") || text.includes("near mumbai") || text.includes("maharashtra")) {
+        isNearMumbai = true;
+      }
+    }
+
+    // 4. Strict inventory verification from local RESORTS database
+    let queryLoc = "";
+    if (userInputText) {
+      const text = userInputText.toLowerCase();
+      const locations = ["goa", "kerala", "udaipur", "manali", "maldives"];
+      for (const loc of locations) {
+        if (text.includes(loc)) {
+          queryLoc = loc;
+          break;
+        }
+      }
+    }
+
+    let matchedResorts = RESORTS;
+    if (queryLoc) {
+      matchedResorts = RESORTS.filter(r => (r.region || "").toLowerCase() === queryLoc);
+    } else if (isNearMumbai) {
+      matchedResorts = RESORTS.filter(r => {
+        const meta = REGION_METADATA[r.id];
+        return meta && meta.nearMumbai;
+      });
+    }
+
+    // Fallback message if requested location is not in our inventory
+    if (userInputText && queryLoc && matchedResorts.length === 0) {
       setIsAnalyzing(false);
-      setActiveMobileTab("itinerary");
-
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+      setOptions([]);
+      setSelectedOption(null);
       setMessages(prev => [
         ...prev,
         {
           id: Date.now(),
           sender: "rivo",
-          text: replyText,
+          text: `I couldn't find any resorts in **${queryLoc.toUpperCase()}** in our database. Currently, Reservo specializes in handpicked premium properties in **Goa**, **Udaipur**, **Kerala**, **Manali**, and the **Maldives**. Let's plan an amazing trip to one of these spots instead!`,
           avatar: rivoMascot,
-          time: timeStr
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
+      return;
+    }
 
-      setPreferences(prev => ({
-        ...prev,
-        budget: parsedBudget,
-        travellers: parsedGuests,
-        nights: parsedNights
-      }));
+    const resort = matchedResorts[0] || RESORTS[0];
+    const meta = REGION_METADATA[resort.id] || REGION_METADATA["goa-coastline"];
 
-    }, 3000);
+    // Try fetching dynamic travel itinerary timeline from the live Spring Boot AI backend
+    let timelineEvents = null;
+    try {
+      const destName = queryLoc ? queryLoc.charAt(0).toUpperCase() + queryLoc.slice(1) : "Goa";
+      const apiResponse = await fetch("/api/v1/ai/itinerary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          destination: destName,
+          days: parsedNights + 1,
+          interests: preferences.style ? [preferences.style] : ["Relaxation"],
+          budget: parsedBudget > 200000 ? "luxury" : "balanced"
+        })
+      });
+
+      if (apiResponse.ok) {
+        const resBody = await apiResponse.json();
+        if (resBody.data) {
+          const parsedData = JSON.parse(resBody.data);
+          if (parsedData && parsedData.timeline) {
+            timelineEvents = {};
+            parsedData.timeline.forEach(t => {
+              timelineEvents[`day${t.day}`] = t.activities;
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch live itinerary from Spring Boot, using local default timelines:", err);
+    }
+
+    const roomTypes = resort.roomTypes;
+    const baseRoomTypes = [
+      roomTypes[roomTypes.length - 1] || roomTypes[0], // Option A (Luxury / highest suite)
+      roomTypes[1] || roomTypes[0],                     // Option B (Balanced / mid suite)
+      roomTypes[0]                                      // Option C (Budget / standard suite)
+    ];
+
+    const generated = baseRoomTypes.map((room, idx) => {
+      const cap = parseInt(room.capacity.replace(/\D/g, ""), 10) || 2;
+      const roomsNeeded = Math.ceil(parsedGuests / cap);
+      const hotelCost = room.price * parsedNights * roomsNeeded;
+      
+      let transportMode = preferences.transport;
+      if (idx === 0) transportMode = "flight";
+      else if (idx === 2) transportMode = "train";
+      
+      const transportCost = (meta.transportOptions[transportMode] || 3000) * parsedGuests;
+      const foodCostPerDay = preferences.food === "Veg" ? 800 : 1200;
+      const totalFoodCost = foodCostPerDay * parsedGuests * parsedNights;
+
+      const selectedActivities = meta.activities.slice(0, idx === 0 ? 3 : idx === 1 ? 2 : 1);
+      const activitiesCost = selectedActivities.reduce((sum, a) => sum + a.cost, 0) * parsedGuests;
+      const cabCost = 1500 * parsedNights;
+      const subtotal = hotelCost + transportCost + totalFoodCost + activitiesCost + cabCost;
+      const taxes = Math.round(subtotal * 0.12);
+      const grandTotal = subtotal + taxes;
+
+      let luxuryScore = idx === 0 ? 5.0 : idx === 1 ? 4.3 : 3.8;
+      let romanticScore = resort.category === "beach" ? 4.8 : 4.2;
+      let familyScore = resort.category === "mountain" ? 4.7 : 4.1;
+      let adventureScore = resort.category === "mountain" ? 4.9 : 3.5;
+      let valueScore = idx === 2 ? 4.9 : idx === 1 ? 4.5 : 3.9;
+
+      const label = idx === 0 ? "Luxury Escape" : idx === 1 ? "Balanced / Recommended" : "Budget Value";
+
+      const day1Events = [
+        { time: "11:30 AM", title: `Arrival in ${meta.region}`, desc: `Cab pick-up transit to ${resort.name}` },
+        { time: "01:00 PM", title: "Resort Check-In", desc: `Welcome drinks and check-in to ${roomsNeeded}x ${room.title}` },
+        { time: "02:00 PM", title: "Lunch by the Pool", desc: "Enjoy delicious local delicacies with a view" },
+        { time: "08:00 PM", title: "Dinner Night", desc: "Fine course dinner served by the resort beachside" }
+      ];
+
+      const day2Events = [
+        { time: "08:00 AM", title: "Breakfast with a View", desc: "Healthy buffet breakfast selection" },
+        { time: "10:00 AM", title: `${selectedActivities[0]?.name || "Local Excursions"}`, desc: "Included resort activity excursion" },
+        { time: "04:00 PM", title: "Leisure & Spa", desc: "Access to private sauna and pool facilities" },
+        { time: "08:00 PM", title: "BBQ Dinner Night", desc: "Live music acoustic show & grill BBQ dinner" }
+      ];
+
+      const day3Events = [
+        { time: "09:00 AM", title: "Buffet Breakfast", desc: "Final morning breakfast and pool walk" },
+        { time: "11:00 AM", title: "Resort Checkout", desc: "Checkout from room and baggage assistance" },
+        { time: "01:00 PM", title: "Departure Transit", desc: "Cab drop back to airport / station" }
+      ];
+
+      let finalItinerary = { day1: day1Events, day2: day2Events, day3: day3Events };
+      if (timelineEvents) {
+        finalItinerary = timelineEvents;
+      }
+
+      return {
+        id: `opt-${idx + 1}`,
+        type: idx === 0 ? "A" : idx === 1 ? "B" : "C",
+        title: `${resort.name} - ${label}`,
+        resortName: resort.name,
+        resortImage: resort.heroImage,
+        location: resort.location,
+        roomTitle: `${roomsNeeded}x ${room.title}`,
+        grandTotal,
+        guests: parsedGuests,
+        nights: parsedNights,
+        weather: meta.weather,
+        bestMonths: meta.bestMonths,
+        safety: meta.safety,
+        scores: { luxury: luxuryScore, romantic: romanticScore, family: familyScore, adventure: adventureScore, value: valueScore },
+        breakdown: { hotel: hotelCost, transport: transportCost, food: totalFoodCost, activities: activitiesCost, taxes, cab: cabCost, buffer: 0 },
+        activities: selectedActivities,
+        pros: idx === 0 ? ["All activities included", "Butler service"] : ["Free cancellation", "Spa voucher"],
+        cons: idx === 0 ? ["Premium rate"] : ["Standard suite"],
+        resortDetails: resort,
+        itinerary: finalItinerary
+      };
+    });
+
+    const sorted = [...generated].sort((a, b) => b.grandTotal - a.grandTotal);
+    sorted[0].type = "A"; 
+    if (sorted[1]) sorted[1].type = "B"; 
+    if (sorted[2]) sorted[2].type = "C"; 
+
+    const recommended = sorted[0];
+    
+    let replyText = "";
+    if (recommended.grandTotal > parsedBudget) {
+      const overshoot = recommended.grandTotal - parsedBudget;
+      replyText = `Hi! I'm RIVO 👋\n\nI parsed your request for ${parsedGuests} guests. The premium Option A slightly exceeds your ₹${parsedBudget.toLocaleString()} budget by ₹${overshoot.toLocaleString()}.\n\n⚠️ **Rivo Budget Optimization options:**\n- Switch to **Option B** or **C** (saves up to ₹${(recommended.grandTotal - sorted[2].grandTotal).toLocaleString()} by selecting lower suite allocations).\n- Change dates to mid-week rates (saves 15%).`;
+    } else {
+      const savings = parsedBudget - recommended.grandTotal;
+      replyText = `Hi! I'm RIVO 👋\n\nI parsed your request for ${parsedGuests} guests. Option A is fully under your ₹${parsedBudget.toLocaleString()} budget (saves ₹${savings.toLocaleString()})! I've mapped ${recommended.roomTitle} at *${recommended.resortName}*. Enjoy your luxury vacation!`;
+    }
+
+    setOptions(sorted);
+    setSelectedOption(sorted[0]); 
+    setIsAnalyzing(false);
+    setActiveMobileTab("itinerary");
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: "rivo",
+        text: replyText,
+        avatar: rivoMascot,
+        time: timeStr
+      }
+    ]);
+
+    setPreferences(prev => ({
+      ...prev,
+      budget: parsedBudget,
+      travellers: parsedGuests,
+      nights: parsedNights
+    }));
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
 
@@ -532,7 +551,61 @@ export default function AIPlanner() {
       { id: Date.now(), sender: "user", text: userText, time: timeStr }
     ]);
     setChatInput("");
-    runAIEngine(userText);
+    setIsAnalyzing(true);
+
+    try {
+      const apiResponse = await fetch("/api/v1/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: sessionId,
+          message: userText,
+          selectedMood: "luxury"
+        })
+      });
+
+      if (apiResponse.ok) {
+        const body = await apiResponse.json();
+        if (body.data) {
+          // If the message text contains keywords suggesting planning, run the planner engine
+          const lowerText = userText.toLowerCase();
+          const needsPlanning = lowerText.includes("plan") || lowerText.includes("goa") || lowerText.includes("udaipur") || lowerText.includes("kerala") || lowerText.includes("manali") || lowerText.includes("maldives");
+          
+          setMessages(prev => [
+            ...prev,
+            {
+              id: Date.now(),
+              sender: "rivo",
+              text: body.data.replyText,
+              avatar: rivoMascot,
+              time: timeStr,
+              recommendation: body.data.recommendedResort
+            }
+          ]);
+
+          if (needsPlanning) {
+            runAIEngine(userText);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Chat API call failed, using fallback:", err);
+      // Fallback
+      setTimeout(() => {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: Date.now(),
+            sender: "rivo",
+            text: "I'm having a little trouble connecting right now. Let's plan our next getaway soon!",
+            avatar: rivoMascot,
+            time: timeStr
+          }
+        ]);
+      }, 1000);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const triggerAdjustment = (type) => {
