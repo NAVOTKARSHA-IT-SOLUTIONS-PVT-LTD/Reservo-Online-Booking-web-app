@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import logoImage from "../assets/images/logo.png";
 import { motion, AnimatePresence } from "framer-motion";
+import { authService } from "../services/auth.service";
 
 function Header({ isDark, onToggleTheme, wishlist = [] }) {
   const location = useLocation();
@@ -166,9 +167,6 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
 
           {/* Right Actions */}
           <div className="flex items-center gap-4">
-            <Link to="/partner" className="hidden md:inline-flex items-center justify-center text-xs font-bold px-4 h-10 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white rounded-full transition-all no-underline shrink-0">
-              List Your Property
-            </Link>
             <button 
               onClick={onToggleTheme} 
               className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all"
@@ -279,21 +277,28 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           <button className="bg-transparent text-text-gray hover:text-text-dark border-none cursor-pointer" onClick={toggleMenu}><X size={24} /></button>
         </div>
         <ul className="list-none flex flex-col gap-1.5 p-0 m-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
-          {[
-            { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
-            { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" },
-            { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", path: "/partner" },
-            { type: "divider" },
-            { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
-            { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
-            { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },
-            { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
-            { type: "divider" },
-            { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
-            { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
-            { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
-            { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" }
-          ].map((item, idx) => {
+          {(() => {
+            const isLoggedIn = authService.isAuthenticated();
+            return [
+              ...(!isLoggedIn ? [
+                { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
+                { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" }
+              ] : []),
+              ...(isLoggedIn ? [
+                { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", path: "/partner" }
+              ] : []),
+              { type: "divider" },
+              { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
+              { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
+              { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },
+              { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
+              { type: "divider" },
+              { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
+              { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
+              { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
+              { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" }
+            ];
+          })().map((item, idx) => {
             if (item.type === "divider") {
               return <hr key={idx} className="border-none h-px bg-border-color my-1 shrink-0" />;
             }

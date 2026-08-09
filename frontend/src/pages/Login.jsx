@@ -273,14 +273,14 @@ export default function Login() {
               </button>
             </form>
 
-            <div className="relative flex py-1.5 items-center">
+            <div className="relative flex py-1 items-center">
               <div className="flex-grow border-t border-border-color"></div>
               <span className="flex-shrink mx-3 text-[9px] text-text-gray font-bold uppercase tracking-wider">or continue with</span>
               <div className="flex-grow border-t border-border-color"></div>
             </div>
 
             {/* Social Connects */}
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-3 gap-2 w-full">
               {[
                 { provider: "Google", logo: "https://www.svgrepo.com/show/475656/google-color.svg" },
                 { provider: "Apple", logo: "https://www.svgrepo.com/show/511330/apple-black.svg" },
@@ -290,16 +290,16 @@ export default function Login() {
                   key={social.provider}
                   type="button"
                   onClick={() => setToastMsg(`Sign in with ${social.provider} coming soon!`)}
-                  className="w-full py-2 bg-bg-white border border-border-color hover:bg-bg-light text-text-dark rounded-xl text-[10.5px] font-extrabold flex items-center justify-center gap-2 cursor-pointer transition"
+                  className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
+                  title={`Continue with ${social.provider}`}
                 >
-                  <img src={social.logo} alt={social.provider} className="w-3.5 h-3.5 object-contain" />
-                  <span>Continue with {social.provider}</span>
+                  <img src={social.logo} alt={social.provider} className="w-4 h-4 object-contain" />
                 </button>
               ))}
             </div>
 
             {/* Bottom link toggle */}
-            <div className="text-center text-[11px] font-semibold text-text-gray">
+            <div className="text-center text-[11px] font-semibold text-text-gray py-0.5">
               <span>Don't have an account?</span>{" "}
               <button 
                 type="button"
@@ -311,47 +311,31 @@ export default function Login() {
             </div>
 
             {/* Business Partner CTA */}
-            <div className="border-t border-border-color pt-4 mt-2 space-y-3 w-full shrink-0">
-              <div className="text-[9px] text-text-gray font-extrabold uppercase tracking-wider text-center">
+            <div className="border-t border-border-color pt-3 mt-1.5 space-y-2 w-full shrink-0">
+              <div className="text-[8px] text-[var(--color-text-gray)] font-extrabold uppercase tracking-wider text-center">
                 Reservo Business Partner Onboarding
               </div>
               <button
                 type="button"
                 onClick={() => navigate("/partner")}
-                className="w-full py-3 bg-gradient-to-r from-[#1e293b] to-[#0f172a] hover:from-primary hover:to-primary-dark text-white rounded-2xl flex items-center justify-between px-5 cursor-pointer shadow-md transition-all duration-300 group border-none"
+                style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
+                className="w-full py-2.5 text-white rounded-2xl flex items-center justify-between px-5 cursor-pointer shadow-md transition-all duration-300 group border-none"
               >
                 <div className="flex items-center gap-3 text-left">
-                  <span className="text-xl">🏨</span>
+                  <span className="text-lg">🏨</span>
                   <div>
-                    <h5 className="text-[11px] font-bold text-white uppercase tracking-wide">Register Your Property</h5>
-                    <p className="text-[9px] text-white/70 font-semibold mt-0.5">Become a Reservo Business Partner</p>
+                    <h5 className="text-[10px] font-bold text-white uppercase tracking-wide">Register Your Property</h5>
+                    <p className="text-[8.5px] text-white/70 font-semibold mt-0.5">Become a Reservo Business Partner</p>
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 text-white group-hover:translate-x-1 transition-transform" />
               </button>
-            </div>
-
-            {/* Premium promo box */}
-            <div 
-              onClick={() => navigate("/register")}
-              className="bg-primary/5 hover:bg-primary/10 border border-primary/10 p-3 rounded-2xl flex items-center justify-between cursor-pointer transition shrink-0"
-            >
-              <div className="flex items-center gap-3 text-left">
-                <div className="w-8.5 h-8.5 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <Gift className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-bold text-text-dark">New here?</h4>
-                  <p className="text-[9.5px] text-text-gray font-semibold mt-0.5">Sign up and get exciting offers on first booking!</p>
-                </div>
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-primary shrink-0" />
             </div>
 
           </div>
 
           {/* Bottom Copyright info */}
-          <div className="text-[9px] text-text-gray font-bold shrink-0 mt-4">
+          <div className="text-[9px] text-text-gray font-bold shrink-0 mt-2">
             © 2026 Reservo. All rights reserved.
           </div>
 
