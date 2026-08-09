@@ -177,12 +177,6 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           {/* Right Actions */}
           <div className="flex items-center gap-4">
             <button 
-              onClick={handleListPropertyClick}
-              className="hidden md:inline-flex items-center justify-center text-xs font-bold px-4 h-10 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white rounded-full transition-all cursor-pointer shrink-0"
-            >
-              List Your Property
-            </button>
-            <button 
               onClick={onToggleTheme} 
               className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all"
             >
