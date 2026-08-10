@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/documents")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ResortDocumentController {
 
     private final ResortDocumentRepository resortDocumentRepository;

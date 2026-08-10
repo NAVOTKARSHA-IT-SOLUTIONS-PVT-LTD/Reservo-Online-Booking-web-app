@@ -429,8 +429,8 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/admin/reservo" element={<ProtectedRoute allowedRoles={["admin"]}><ReservoAdminPortal /></ProtectedRoute>} />
-              <Route path="/admin/resort" element={<ProtectedRoute allowedRoles={["resort_admin", "admin"]}><ResortAdminPortal /></ProtectedRoute>} />
+              <Route path="/admin/reservo" element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]}><ReservoAdminPortal /></ProtectedRoute>} />
+              <Route path="/admin/resort" element={<ProtectedRoute allowedRoles={["ROLE_OWNER", "ROLE_ADMIN"]}><ResortAdminPortal /></ProtectedRoute>} />
             </Routes>
           </Suspense>
         </main>

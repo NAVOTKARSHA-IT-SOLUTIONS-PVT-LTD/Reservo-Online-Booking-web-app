@@ -193,7 +193,7 @@ function Profile() {
         <main className="flex flex-col gap-7.5">
           {activeSection === "details" && (
             <div className="bg-bg-white border border-border-color rounded-3xl p-10 shadow-custom animate-fade-in">
-              {user?.role === "resort_admin" && (
+              {user?.role === "ROLE_OWNER" && (
                 <div className="mb-6 p-5 rounded-2xl bg-slate-900/5 border border-slate-900/10 flex flex-col gap-3 text-left">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] bg-primary text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">

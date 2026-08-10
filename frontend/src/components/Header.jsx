@@ -304,10 +304,10 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
               { type: "divider" },
               ...(isLoggedIn ? [
-                ...(user?.role === "admin" ? [
+                ...(user?.role === "ROLE_ADMIN" ? [
                   { type: "item", icon: <Sliders size={18} />, label: "Platform Admin Control", path: "/admin/reservo" }
                 ] : []),
-                ...(user?.role === "admin" || user?.role === "resort_admin" ? [
+                ...(user?.role === "ROLE_ADMIN" || user?.role === "ROLE_OWNER" ? [
                   { type: "item", icon: <LayoutGrid size={18} />, label: "Resort PMS Extranet", path: "/admin/resort" }
                 ] : []),
                 { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },

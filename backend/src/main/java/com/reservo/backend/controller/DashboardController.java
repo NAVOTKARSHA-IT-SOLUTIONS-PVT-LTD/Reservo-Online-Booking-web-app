@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class DashboardController {
 
     private final DashboardService dashboardService;

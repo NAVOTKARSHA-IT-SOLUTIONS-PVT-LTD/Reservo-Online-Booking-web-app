@@ -10,7 +10,6 @@ import {
   Sparkles 
 } from "lucide-react";
 import { authService } from "../services/auth.service";
-import { secureStorage } from "../services/secureStorage";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import logoImage from "../assets/images/logo.png";
 
@@ -31,6 +30,14 @@ export default function Login() {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [language, setLanguage] = useState("English");
   const [toastMsg, setToastMsg] = useState("");
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetOtp, setResetOtp] = useState("");
+  const [resetOtpSent, setResetOtpSent] = useState(false);
+  const [resetOtpVerified, setResetOtpVerified] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   const [roleMode, setRoleMode] = useState("traveller");
 
@@ -45,6 +52,7 @@ export default function Login() {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors, isSubmitting, isValid }
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -53,44 +61,15 @@ export default function Login() {
 
   const onSubmit = async (data) => {
     try {
-      let result;
-      try {
-        result = await authService.login(data.email, data.password);
-      } catch (networkError) {
-        console.warn("Backend offline or in development, using high-fidelity local demo login instead:", networkError);
-        const mockRole = roleMode === "business" ? "resort_admin" : "user";
-        const mockUser = {
-          id: "usr-" + Math.random().toString(36).substr(2, 9),
-          name: roleMode === "business" ? "Resort Extranet Partner" : "Luxury Traveller",
-          email: data.email,
-          role: mockRole,
-          tier: roleMode === "business" ? "Business Extranet Partner" : "Gold Tier",
-          joined: `Member since ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}`,
-          points: 1250,
-          businessName: roleMode === "business" ? "Royal Palms Hospitality Group" : null,
-          ownerPhone: roleMode === "business" ? "+91 98765 43210" : null
-        };
-        secureStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
-        secureStorage.setItem("reservo_user", mockUser);
-        result = { user: mockUser };
-      }
-      
-      // If logging in as business partner, override or verify role Mode
-      let finalRole = result.user.role;
-      if (roleMode === "business") {
-        if (finalRole !== "admin" && finalRole !== "resort_admin") {
-          finalRole = "resort_admin";
-          result.user.role = "resort_admin";
-        }
-        secureStorage.setItem("reservo_user", result.user);
-      }
+      const result = await authService.login(data.email, data.password);
+      const finalRole = result.role;
 
       setToastMsg("Signed in successfully! Redirecting...");
       setTimeout(() => {
         setToastMsg("");
-        if (finalRole === "admin") {
+        if (finalRole === "ROLE_ADMIN") {
           navigate("/admin/reservo");
-        } else if (finalRole === "resort_admin") {
+        } else if (finalRole === "ROLE_OWNER") {
           // Redirect resort managers straight to their administrative Extranet PMS!
           navigate("/admin/resort");
         } else {
@@ -100,6 +79,76 @@ export default function Login() {
     } catch (err) {
       setToastMsg(err.message || "Failed to sign in. Please check your credentials.");
       setTimeout(() => setToastMsg(""), 3000);
+    }
+  };
+
+  const requestPasswordReset = async () => {
+    const email = resetEmail.trim();
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      setToastMsg("Enter your email address first.");
+      return;
+    }
+    try {
+      setIsResetting(true);
+      const message = await authService.requestPasswordReset(email);
+      setResetOtpSent(true);
+      setResetOtp("");
+      setResetOtpVerified(false);
+      setToastMsg(message);
+    } catch (err) {
+      setToastMsg(err.message || "Could not request a password reset.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const verifyResetOtp = async () => {
+    const email = resetEmail.trim();
+    if (resetOtp.length !== 6) {
+      setToastMsg("Enter the 6-digit code from your email.");
+      return;
+    }
+    try {
+      setIsResetting(true);
+      await authService.verifyOtp(email, resetOtp);
+      setResetOtpVerified(true);
+      setToastMsg("Code verified. Enter your new password.");
+    } catch (err) {
+      setResetOtpVerified(false);
+      setToastMsg(err.message || "Verification code is invalid.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const confirmPasswordReset = async () => {
+    const email = resetEmail.trim();
+    if (!resetOtpVerified) {
+      setToastMsg("Verify the email code first.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setToastMsg("Your new password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setToastMsg("New password and confirmation do not match.");
+      return;
+    }
+    try {
+      setIsResetting(true);
+      const message = await authService.resetPassword(email, resetOtp, newPassword);
+      setShowReset(false);
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setResetOtp("");
+      setResetOtpVerified(false);
+      setResetOtpSent(false);
+      setToastMsg(message);
+    } catch (err) {
+      setToastMsg(err.message || "Could not reset your password.");
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -324,12 +373,95 @@ export default function Login() {
               <div className="text-right">
                 <button 
                   type="button"
-                  onClick={() => setToastMsg("Password reset request sent to your inbox.")}
+                  onClick={() => {
+                    setShowReset(true);
+                    setResetEmail(getValues("email") || "");
+                    setResetOtpSent(false);
+                    setResetOtpVerified(false);
+                    setResetOtp("");
+                  }}
                   className="text-[10px] font-bold text-primary hover:underline bg-transparent border-none cursor-pointer"
                 >
-                  Forgot Password?
+                  {isResetting ? "Please wait..." : "Forgot Password?"}
                 </button>
               </div>
+
+              {showReset && (
+                <div className="space-y-2 rounded-xl border border-border-color bg-bg-light p-3">
+                  <p className="text-[10px] font-bold text-text-dark">Reset password with email code</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(event) => {
+                        setResetEmail(event.target.value);
+                        setResetOtpSent(false);
+                        setResetOtpVerified(false);
+                      }}
+                      placeholder="Email address"
+                      className="min-w-0 flex-1 rounded-lg border border-border-color bg-bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={requestPasswordReset}
+                      disabled={isResetting}
+                      className="rounded-lg border-none bg-primary px-3 py-1.5 text-[9px] font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                    >
+                      {isResetting ? "Sending..." : resetOtpSent ? "Resend" : "Send code"}
+                    </button>
+                  </div>
+                  {resetOtpSent && <>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={resetOtp}
+                      onChange={(event) => {
+                        setResetOtp(event.target.value.replace(/\D/g, ""));
+                        setResetOtpVerified(false);
+                      }}
+                      placeholder="6-digit OTP"
+                      className="min-w-0 flex-1 rounded-lg border border-border-color bg-bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={verifyResetOtp}
+                      disabled={isResetting || resetOtp.length !== 6}
+                      className="rounded-lg border border-primary bg-bg-white px-3 py-1.5 text-[9px] font-bold text-primary disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+                    >
+                      {resetOtpVerified ? "Verified" : "Verify"}
+                    </button>
+                  </div>
+                  {resetOtpVerified && (
+                    <>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(event) => setNewPassword(event.target.value)}
+                        placeholder="New password (6+ characters)"
+                        className="w-full rounded-lg border border-border-color bg-bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
+                      />
+                      <input
+                        type="password"
+                        value={confirmNewPassword}
+                        onChange={(event) => setConfirmNewPassword(event.target.value)}
+                        placeholder="Confirm new password"
+                        className="w-full rounded-lg border border-border-color bg-bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={confirmPasswordReset}
+                        disabled={isResetting}
+                        className="w-full rounded-lg border-none bg-primary px-3 py-2 text-[10px] font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+                        {isResetting ? "Resetting..." : "Set New Password"}
+                      </button>
+                    </>
+                  )}
+                  </>}
+                </div>
+              )}
 
               {/* Submit Action */}
               <button 

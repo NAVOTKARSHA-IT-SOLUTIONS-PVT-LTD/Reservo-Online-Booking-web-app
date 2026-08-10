@@ -120,7 +120,11 @@ export default function FloatingAIAssistant() {
       });
       
       if (response.ok) {
-        const data = await response.json();
+        const responseBody = await response.json();
+        const data = responseBody.data;
+        if (!data) {
+          throw new Error("The AI service returned an invalid response.");
+        }
         setMessages(prev => [...prev, {
           id: "msg-rivo-" + Date.now(),
           sender: "rivo",

@@ -16,7 +16,6 @@ import java.io.ByteArrayInputStream;
 @RestController
 @RequestMapping("/api/v1/admin/reports")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ReportController {
 
     private final ReportService reportService;
