@@ -5,6 +5,7 @@ import { Sparkles, X, MessageSquare, ChevronRight, Check, Star, MapPin, Phone, P
 import { motion, AnimatePresence } from 'framer-motion';
 import { RESORTS } from '../data/resortsData';
 import rivoSearching from '../assets/images/rivo_searching.png';
+import { apiClient } from '../services/apiClient';
 
 export default function FloatingAIAssistant() {
   const navigate = useNavigate();
@@ -107,24 +108,14 @@ export default function FloatingAIAssistant() {
     
     try {
       // Call backend AI chat endpoint
-      const response = await fetch("/api/v1/ai/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          sessionId: "assistant-session-101",
-          message: userText,
-          selectedMood: selectedMood ? selectedMood.category : "luxury"
-        })
+      const responseBody = await apiClient.post("/api/v1/ai/chat", {
+        sessionId: "assistant-session-101",
+        message: userText,
+        selectedMood: selectedMood ? selectedMood.category : "luxury"
       });
       
-      if (response.ok) {
-        const responseBody = await response.json();
+      if (responseBody && responseBody.success && responseBody.data) {
         const data = responseBody.data;
-        if (!data) {
-          throw new Error("The AI service returned an invalid response.");
-        }
         setMessages(prev => [...prev, {
           id: "msg-rivo-" + Date.now(),
           sender: "rivo",
@@ -145,10 +136,17 @@ export default function FloatingAIAssistant() {
     } catch (err) {
       console.warn("Backend unavailable, using dynamic mock generator:", err);
       setTimeout(() => {
+        const msg = userText.toLowerCase();
+        let reply = "I've processed your travel preferences! I suggest checking out our partner stays like the Ocean Bliss Resort or Royal Palm Retreat for an amazing luxury holiday.";
+        if (msg.includes("available") || msg.includes("resort") || msg.includes("list")) {
+          reply = "Here are our available luxury resorts:\n\n🌴 **Ocean Bliss Resort** - Goa, India\n🌴 **Royal Palm Retreat** - Bali, Indonesia\n🌴 **Sunset Lagoon Resort** - Maldives\n🌴 **Hill View Escape** - Udaipur, India\n\nLet me know if you'd like to learn more about any of these retreats!";
+        } else if (msg.includes("hello") || msg.includes("hi ")) {
+          reply = "Greetings! I'm Rivo, your luxury travel companion. How can I assist you with your booking today?";
+        }
         setMessages(prev => [...prev, {
           id: "msg-rivo-" + Date.now(),
           sender: "rivo",
-          text: "I've processed your travel preferences! I suggest checking out our partner stays like the Ocean Bliss Resort or Royal Palm Retreat for an amazing luxury holiday."
+          text: reply
         }]);
       }, 1000);
     } finally {
