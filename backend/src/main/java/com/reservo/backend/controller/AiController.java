@@ -27,7 +27,9 @@ public class AiController {
 
     @PostMapping("/itinerary")
     public ResponseEntity<ApiResponse<String>> generateItinerary(@RequestBody AiItineraryRequest request) {
-        String itineraryJson = aiService.generateItinerary(request);
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = (auth != null) ? auth.getName() : null;
+        String itineraryJson = aiService.generateItinerary(request, userEmail);
         return ResponseEntity.ok(ApiResponse.success(itineraryJson, "Itinerary generated successfully"));
     }
 

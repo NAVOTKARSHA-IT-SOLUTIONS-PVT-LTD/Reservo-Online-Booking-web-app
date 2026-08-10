@@ -12,6 +12,8 @@ import com.reservo.backend.repository.AiChatMessageRepository;
 import com.reservo.backend.repository.AiChatSessionRepository;
 import com.reservo.backend.repository.AiItineraryRepository;
 import com.reservo.backend.repository.ResortRepository;
+import com.reservo.backend.repository.BookingRepository;
+import com.reservo.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +34,8 @@ public class AiService {
     private final AiChatMessageRepository messageRepository;
     private final AiItineraryRepository itineraryRepository;
     private final ResortRepository resortRepository;
+    private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -104,10 +108,22 @@ public class AiService {
     /**
      * Generates a travel itinerary. Checks cache database prior to external LLM requests.
      */
-    public String generateItinerary(AiItineraryRequest request) {
+    /**
+     * Generates a travel itinerary. Checks cache database prior to external LLM requests.
+     */
+    public String generateItinerary(AiItineraryRequest request, String userEmail) {
         String dest = request.getDestination();
         int days = request.getDays();
         String budget = request.getBudget() != null ? request.getBudget() : "luxury";
+
+        List<com.reservo.backend.entity.Booking> userBookings = new ArrayList<>();
+        if (userEmail != null && !userEmail.equalsIgnoreCase("anonymousUser")) {
+            userRepository.findByEmail(userEmail).ifPresent(u -> {
+                userBookings.addAll(bookingRepository.findByUserId(u.getId()));
+            });
+        }
+
+        List<Resort> activeResorts = resortRepository.findByLocationContainingIgnoreCase(dest);
 
         // 1. Check Cache
         Optional<AiItinerary> cached = itineraryRepository
@@ -121,7 +137,7 @@ public class AiService {
         String itineraryJson = "";
         if (geminiApiKey != null && !geminiApiKey.trim().isEmpty()) {
             try {
-                itineraryJson = queryGeminiItinerary(dest, days, request.getInterests(), budget);
+                itineraryJson = queryGeminiItinerary(dest, days, request.getInterests(), budget, userBookings, activeResorts);
             } catch (Exception e) {
                 log.warn("Gemini Itinerary Generation failed. Using mock planner fallback: {}", e.getMessage());
                 itineraryJson = generateLocalMockItinerary(dest, days, budget);
@@ -154,15 +170,22 @@ public class AiService {
     private String queryGeminiModel(String prompt, String mood) throws Exception {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiApiKey;
 
+        List<Resort> resortsList = resortRepository.findAll();
+        StringBuilder resortsCtx = new StringBuilder();
+        resortsCtx.append("We have the following verified resorts in our database:\n");
+        for (Resort r : resortsList) {
+            resortsCtx.append("- ").append(r.getName()).append(" located at ").append(r.getLocation()).append(" (Price: ").append(r.getPricePerNight()).append(")\n");
+        }
+
         String systemContext = "You are Rivo, the expert AI travel companion and concierge for Reservo.\n" +
                 "Reservo is India's premium luxury booking platform for hand-verified resorts, villas, and boutique stays.\n" +
                 "Reservo Platform Details & Policies:\n" +
                 "1. Support: Available 24/7. Call our helpline or trigger the secure SIP dialer widget.\n" +
-                "2. Stays: 100% hand-verified luxury resorts. Partners: Ocean Bliss Resort, Royal Palm Retreat, Sunset Lagoon, Hill View Escape Udaipur, Jaipur Haveli, Coorg Chalets.\n" +
+                "2. Stays Context:\n" + resortsCtx.toString() + "\n" +
                 "3. Payments: Securely processed via Stripe cards, UPI codes, and Indian Netbanking.\n" +
                 "4. Wishlists: Users must log in to add/save retreats in their wishlists.\n" +
                 "5. Active user companion mood context: " + mood + ".\n" +
-                "Guidelines: Give friendly, expert, premium, and very concise travel suggestions. Keep your responses under 3 sentences.";
+                "Guidelines: Give friendly, expert, premium, and very concise travel suggestions. Recommend only our verified resorts listed above. Keep your responses under 3 sentences.";
 
         Map<String, Object> requestBody = new HashMap<>();
         Map<String, Object> contentMap = new HashMap<>();
@@ -179,16 +202,40 @@ public class AiService {
         return parseTextFromGeminiResponse(response);
     }
 
-    private String queryGeminiItinerary(String dest, int days, List<String> interests, String budget) throws Exception {
+    private String queryGeminiItinerary(String dest, int days, List<String> interests, String budget, 
+                                        List<com.reservo.backend.entity.Booking> bookings, 
+                                        List<Resort> resorts) throws Exception {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiApiKey;
 
-        String prompt = String.format("Generate a %d-day itinerary for %s. Interests: %s. Budget: %s.",
-                days, dest, String.join(", ", interests), budget);
+        StringBuilder context = new StringBuilder();
+        context.append("You are Rivo, Reservo's travel buddy. Generate a realistic JSON itinerary.\n");
+        if (bookings != null && !bookings.isEmpty()) {
+            context.append("User has confirmed bookings in ").append(dest).append(":\n");
+            for (com.reservo.backend.entity.Booking b : bookings) {
+                if (b.getResort() != null && b.getResort().getLocation().toLowerCase().contains(dest.toLowerCase())) {
+                    context.append("- Resort: ").append(b.getResort().getName())
+                           .append(" (Address: ").append(b.getResort().getLocation()).append(")")
+                           .append(" from ").append(b.getCheckInDate()).append(" to ").append(b.getCheckOutDate()).append("\n");
+                }
+            }
+        }
+
+        if (resorts != null && !resorts.isEmpty()) {
+            context.append("Approved partner resorts available to suggest in ").append(dest).append(":\n");
+            for (Resort r : resorts) {
+                context.append("- ").append(r.getName()).append(" in ").append(r.getLocation())
+                       .append(" (Price: ").append(r.getPricePerNight()).append(" per night, rating: ").append(r.getRating()).append(")\n");
+            }
+        }
+
+        String systemPrompt = context.toString();
+        String promptText = String.format("%s\nGenerate a %d-day itinerary for %s. Interests: %s. Budget: %s. Use the user's booked stay details for their activities on those days, and recommend our approved partner resorts for accommodation or dinners.",
+            systemPrompt, days, dest, String.join(", ", interests), budget);
 
         Map<String, Object> requestBody = new HashMap<>();
         Map<String, Object> contentMap = new HashMap<>();
         Map<String, Object> partMap = new HashMap<>();
-        partMap.put("text", prompt);
+        partMap.put("text", promptText);
         contentMap.put("parts", Collections.singletonList(partMap));
         requestBody.put("contents", Collections.singletonList(contentMap));
 

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { RESORTS } from "../data/resortsData";
+import { apiClient } from "../services/apiClient";
 
 // Rivo Mascots
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
@@ -384,27 +385,20 @@ export default function AIPlanner() {
     let timelineEvents = null;
     try {
       const destName = queryLoc ? queryLoc.charAt(0).toUpperCase() + queryLoc.slice(1) : "Goa";
-      const apiResponse = await fetch("/api/v1/ai/itinerary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          destination: destName,
-          days: parsedNights + 1,
-          interests: preferences.style ? [preferences.style] : ["Relaxation"],
-          budget: parsedBudget > 200000 ? "luxury" : "balanced"
-        })
+      const resBody = await apiClient.post("/api/v1/ai/itinerary", {
+        destination: destName,
+        days: parsedNights + 1,
+        interests: preferences.style ? [preferences.style] : ["Relaxation"],
+        budget: parsedBudget > 200000 ? "luxury" : "balanced"
       });
 
-      if (apiResponse.ok) {
-        const resBody = await apiResponse.json();
-        if (resBody.data) {
-          const parsedData = JSON.parse(resBody.data);
-          if (parsedData && parsedData.timeline) {
-            timelineEvents = {};
-            parsedData.timeline.forEach(t => {
-              timelineEvents[`day${t.day}`] = t.activities;
-            });
-          }
+      if (resBody && resBody.success && resBody.data) {
+        const parsedData = JSON.parse(resBody.data);
+        if (parsedData && parsedData.timeline) {
+          timelineEvents = {};
+          parsedData.timeline.forEach(t => {
+            timelineEvents[`day${t.day}`] = t.activities;
+          });
         }
       }
     } catch (err) {
