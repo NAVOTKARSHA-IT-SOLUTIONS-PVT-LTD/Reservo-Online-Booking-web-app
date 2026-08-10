@@ -117,6 +117,28 @@ function Mascot({ isDark, setIsDark }) {
   const [activeMode, setActiveMode] = useState("support");
   const [rivoAvatar, setRivoAvatar] = useState(rivoSupport);
 
+  const renderFormattedText = (text) => {
+    if (!text) return "";
+    const lines = text.split("\n");
+    return lines.map((line, lineIdx) => {
+      const tokens = line.split(/(\*\*.*?\*\*|\*.*?\*)/);
+      const elements = tokens.map((token, tokenIdx) => {
+        if (token.startsWith("**") && token.endsWith("**")) {
+          return <strong key={tokenIdx} className="font-extrabold text-[#2563EB]">{token.slice(2, -2)}</strong>;
+        }
+        if (token.startsWith("*") && token.endsWith("*")) {
+          return <em key={tokenIdx} className="italic text-slate-500 font-bold">{token.slice(1, -1)}</em>;
+        }
+        return token;
+      });
+      return (
+        <span key={lineIdx} className="block min-h-[1.2em]">
+          {elements}
+        </span>
+      );
+    });
+  };
+
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -279,12 +301,12 @@ function Mascot({ isDark, setIsDark }) {
                 {msg.sender === "rivo" && (
                   <img src={rivoAvatar} alt="Rivo" className="w-7 h-7 rounded-full object-cover border border-border-color shrink-0" />
                 )}
-                <div className={`px-4 py-3 rounded-[18px] text-[13.5px] leading-relaxed shadow-[0_2px_8px_rgba(0,0,0,0.02)] whitespace-pre-line ${
+                <div className={`px-4 py-3 rounded-[18px] text-[13.5px] leading-relaxed shadow-[0_2px_8px_rgba(0,0,0,0.02)] ${
                   msg.sender === "user" 
                     ? "bg-[#121e1b] text-white rounded-tr-[4px]" 
                     : "bg-bg-white text-text-dark rounded-tl-[4px] border border-border-color"
                 }`}>
-                  {msg.text}
+                  {renderFormattedText(msg.text)}
                 </div>
               </div>
             ))}
