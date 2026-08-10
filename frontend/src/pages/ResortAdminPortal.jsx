@@ -5,7 +5,7 @@ import {
   Search, Plus, Filter, Trash2, Edit3, ArrowLeft, 
   FileText, Sparkles, AlertCircle, CheckCircle, BarChart3, 
   Upload, Check, X, ShieldCheck, PieChart, Layers, HelpCircle, UserCheck,
-  Camera
+  Camera, Menu
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
