@@ -45,11 +45,24 @@ public class EmailService {
                 <body style="font-family: 'Poppins', sans-serif; padding: 20px;">
                     <h3>Your Reservo Verification Code</h3>
                     <h1 style="color: #105B5C; letter-spacing: 5px;">%s</h1>
-                    <p>This OTP will expire in 10 minutes.</p>
+                    <p>This OTP expires in 5 minutes.</p>
                 </body>
                 </html>
                 """.formatted(otpCode);
         
+        sendHtmlEmail(toEmail, subject, body);
+    }
+
+    public void sendPasswordResetOtp(String toEmail, String otpCode) {
+        String subject = "Reservo - Password Reset Code";
+        String body = """
+                <html><body style="font-family: 'Poppins', sans-serif; padding: 20px;">
+                    <h3>Reset your Reservo password</h3>
+                    <h1 style="color: #105B5C; letter-spacing: 5px;">%s</h1>
+                    <p>Use this code to reset your password. It expires in 5 minutes.</p>
+                    <p>If you did not request this, you can safely ignore this email.</p>
+                </body></html>
+                """.formatted(otpCode);
         sendHtmlEmail(toEmail, subject, body);
     }
 

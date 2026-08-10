@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/resorts")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ResortPostController {
 
     private final ResortPostRepository resortPostRepository;

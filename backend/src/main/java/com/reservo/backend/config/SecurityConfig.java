@@ -1,12 +1,21 @@
 package com.reservo.backend.config;
 
+import com.reservo.backend.security.CustomUserDetailsService;
+import com.reservo.backend.security.JwtAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -15,7 +24,44 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final CustomUserDetailsService customUserDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    /**
+     * Argon2id Password Encoder with secure parameters for production use.
+     * Parameters based on OWASP recommendations (2024):
+     * - Memory: 64MB (65536 KB) - balances security and performance
+     * - Parallelism: 4 threads - utilizes modern multi-core processors
+     * - Iterations: 3 - provides adequate computational cost
+     * - Hash length: 32 bytes (256 bits) - standard for Argon2id
+     * - Salt length: 16 bytes (128 bits) - sufficient for unique salts
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new Argon2PasswordEncoder(
+            16,  // salt length
+            32,  // hash length
+            3,   // iterations
+            65536, // memory (64MB)
+            4    // parallelism
+        );
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(customUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -23,10 +69,23 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/**").permitAll()
+                // Public endpoints
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup", "/api/v1/auth/otp/**", "/api/v1/auth/password-reset/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                .anyRequest().permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/resorts/**", "/api/v1/offers/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/ai/chat", "/api/v1/ai/itinerary").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/resorts/**").hasAnyRole("OWNER", "ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/documents/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/staff/**", "/api/v1/documents/**").hasAnyRole("OWNER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/offers/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/offers/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/bookings/**").authenticated()
+                .requestMatchers("/api/v1/user/**").authenticated()
+                .anyRequest().authenticated()
             )
+            .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers
                 .contentSecurityPolicy(csp -> csp.policyDirectives(
                     "default-src 'self'; " +

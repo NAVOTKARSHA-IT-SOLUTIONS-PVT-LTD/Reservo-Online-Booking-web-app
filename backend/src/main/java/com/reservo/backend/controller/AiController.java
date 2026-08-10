@@ -15,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/ai")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AiController {
 
     private final AiService aiService;

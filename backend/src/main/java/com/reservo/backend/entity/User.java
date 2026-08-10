@@ -22,8 +22,10 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
-    private String password;
+    // Security Requirement: Store Argon2id hash, never plain-text password
+    // Column length increased to accommodate Argon2id hash format
+    @Column(name = "password_hash", nullable = false, length = 255)
+    private String passwordHash;
 
     private String phone;
 
@@ -37,8 +39,35 @@ public class User {
 
     private String avatarUrl;
 
+    // Security Requirement: User Authentication fields
+    @Column(name = "login_provider", length = 50)
+    @Builder.Default
+    private String loginProvider = "LOCAL"; // LOCAL, GOOGLE, FACEBOOK, etc.
+
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Column(name = "account_locked", nullable = false)
+    @Builder.Default
+    private boolean accountLocked = false;
+
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
+
+    @Column(name = "updated_at", nullable = false)
+    @Builder.Default
+    private Instant updatedAt = Instant.now();
+
+    // JPA lifecycle callback to update timestamp
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
 
     public enum Role {
         ROLE_ADMIN, ROLE_OWNER, ROLE_CUSTOMER

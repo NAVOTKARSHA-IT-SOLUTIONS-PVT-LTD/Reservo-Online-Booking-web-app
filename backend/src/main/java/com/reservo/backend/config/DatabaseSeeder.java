@@ -5,6 +5,7 @@ import com.reservo.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -18,6 +19,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final ResortRepository resortRepository;
     private final RoomRepository roomRepository;
     private final BookingRepository bookingRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
@@ -28,18 +30,20 @@ public class DatabaseSeeder implements CommandLineRunner {
             userRepository.save(User.builder()
                     .name("Resort Partner")
                     .email("resort@mail.in")
-                    .password("password")
+                    .passwordHash(passwordEncoder.encode("password"))
                     .role(User.Role.ROLE_OWNER)
                     .status(User.UserStatus.ACTIVE)
+                    .emailVerified(true)
                     .build());
 
             // Reservo Team Admin login
             userRepository.save(User.builder()
                     .name("Reservo Team Admin")
                     .email("reservo@mail.in")
-                    .password("password")
+                    .passwordHash(passwordEncoder.encode("password"))
                     .role(User.Role.ROLE_ADMIN)
                     .status(User.UserStatus.ACTIVE)
+                    .emailVerified(true)
                     .build());
 
             log.info("User accounts seeded successfully!");

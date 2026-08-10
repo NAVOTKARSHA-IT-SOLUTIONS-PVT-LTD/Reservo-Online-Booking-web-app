@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { authService } from "../services/auth.service";
 import ErrorScreen from "./ErrorScreen";
@@ -8,8 +8,45 @@ import ErrorScreen from "./ErrorScreen";
  */
 export default function ProtectedRoute({ children, allowedRoles }) {
   const location = useLocation();
-  const isAuthenticated = authService.isAuthenticated();
-  const user = authService.getCurrentUser();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const authStatus = authService.isAuthenticated();
+        if (authStatus) {
+          setIsAuthenticated(true);
+          setUser(authService.getCurrentUser());
+          
+          // Validate token with backend
+          const currentUser = await authService.refreshCurrentUser();
+          if (currentUser) {
+            setUser(currentUser);
+          } else {
+            // Token is invalid, clear it
+            setIsAuthenticated(false);
+          }
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     // Redirect to login and save the location they tried to go to

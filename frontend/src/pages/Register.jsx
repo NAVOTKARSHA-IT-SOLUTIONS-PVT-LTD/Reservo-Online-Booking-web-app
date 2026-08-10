@@ -10,7 +10,6 @@ import {
   Sparkles, User 
 } from "lucide-react";
 import { authService } from "../services/auth.service";
-import { secureStorage } from "../services/secureStorage";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import logoImage from "../assets/images/logo.png";
 
@@ -40,6 +39,11 @@ export default function Register() {
   const [businessName, setBusinessName] = useState("");
   const [resortName, setResortName] = useState("");
   const [ownerPhone, setOwnerPhone] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -53,6 +57,7 @@ export default function Register() {
     register,
     handleSubmit,
     watch,
+    getValues,
     formState: { errors, isSubmitting, isValid }
   } = useForm({
     resolver: zodResolver(registerSchema),
@@ -60,7 +65,14 @@ export default function Register() {
   });
 
   const nameVal = watch("name", "") || "";
+  const emailVal = watch("email", "") || "";
   const passwordVal = watch("password", "") || "";
+
+  useEffect(() => {
+    setOtpSent(false);
+    setOtpVerified(false);
+    setOtpCode("");
+  }, [emailVal]);
 
   // Password strength calculation
   const getPasswordStrength = (pass) => {
@@ -89,54 +101,56 @@ export default function Register() {
 
   const strength = getPasswordStrength(passwordVal);
 
+  const handleSendOtp = async () => {
+    const email = getValues("email");
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      setToastMsg("Enter a valid email address before requesting an OTP.");
+      return;
+    }
+    try {
+      setIsSendingOtp(true);
+      await authService.sendOtp(email);
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtpCode("");
+      setToastMsg("Verification code sent. Check your email.");
+    } catch (err) {
+      setToastMsg(err.message || "Could not send verification code.");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) {
+      setToastMsg("Enter the 6-digit verification code.");
+      return;
+    }
+    try {
+      setIsVerifyingOtp(true);
+      await authService.verifyOtp(emailVal, otpCode);
+      setOtpVerified(true);
+      setToastMsg("Email verified. You can now create your account.");
+    } catch (err) {
+      setOtpVerified(false);
+      setToastMsg(err.message || "Verification code is invalid.");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
   const onSubmit = async (data) => {
     try {
-      try {
-        await authService.register(data.name, data.email, data.password);
-      } catch (networkError) {
-        console.warn("Backend offline or in development, registering locally:", networkError);
+      if (!otpVerified) {
+        throw new Error("Verify your email OTP before creating an account.");
       }
-      
-      if (roleMode === "business") {
-        const mockUser = {
-          id: "usr-" + Math.random().toString(36).substr(2, 9),
-          name: resortName || data.name,
-          email: data.email,
-          role: "resort_admin",
-          tier: "Business Extranet Partner",
-          joined: `Member since ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}`,
-          points: 0,
-          businessName: businessName,
-          ownerPhone: ownerPhone
-        };
-        secureStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
-        secureStorage.setItem("reservo_user", mockUser);
-        
-        setToastMsg("Business Account Registered! Opening property onboarding...");
-        setTimeout(() => {
-          setToastMsg("");
-          navigate("/partner");
-        }, 2000);
-      } else {
-        // Log in the traveller immediately for offline demo ease!
-        const mockUser = {
-          id: "usr-" + Math.random().toString(36).substr(2, 9),
-          name: data.name,
-          email: data.email,
-          role: "user",
-          tier: "Gold Tier",
-          joined: `Member since ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}`,
-          points: 100,
-        };
-        secureStorage.setItem("reservo_auth_token", "mock-jwt-token-xyz-123456789");
-        secureStorage.setItem("reservo_user", mockUser);
-
-        setToastMsg("Account created successfully! Welcome to Reservo.");
-        setTimeout(() => {
-          setToastMsg("");
-          navigate("/dashboard");
-        }, 2000);
-      }
+      const role = roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER";
+      await authService.register(data.name, data.email, data.password, otpCode, roleMode === "business" ? ownerPhone : null, role);
+      setToastMsg("Account created successfully. Redirecting...");
+      setTimeout(() => {
+        setToastMsg("");
+        navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard");
+      }, 1200);
     } catch (err) {
       setToastMsg(err.message || "Failed to create account. Please try again.");
       setTimeout(() => setToastMsg(""), 3000);
@@ -398,6 +412,45 @@ export default function Register() {
                 </AnimatePresence>
               </div>
 
+              {/* Email verification */}
+              <div className="space-y-2 rounded-xl border border-border-color bg-bg-light p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[9.5px] font-bold uppercase tracking-wider text-text-gray">Email verification</span>
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={isSendingOtp}
+                    className="rounded-lg border-none bg-primary px-3 py-1.5 text-[9px] font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {isSendingOtp ? "Sending..." : otpSent ? "Resend OTP" : "Send OTP"}
+                  </button>
+                </div>
+                {otpSent && (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(event) => {
+                        setOtpCode(event.target.value.replace(/\D/g, ""));
+                        setOtpVerified(false);
+                      }}
+                      placeholder="6-digit OTP"
+                      className="min-w-0 flex-1 rounded-lg border border-border-color bg-bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyOtp}
+                      disabled={isVerifyingOtp || otpCode.length !== 6}
+                      className="rounded-lg border border-primary bg-bg-white px-3 py-1.5 text-[9px] font-bold text-primary disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+                    >
+                      {isVerifyingOtp ? "Checking..." : otpVerified ? "Verified" : "Verify"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Password & Strength Meter */}
               <div className="space-y-1 flex flex-col relative">
                 <label htmlFor="passwordInput" className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Password</label>
@@ -456,9 +509,9 @@ export default function Register() {
               {/* Submit Action */}
               <button 
                 type="submit"
-                disabled={isSubmitting || !isValid}
+                disabled={isSubmitting || !isValid || !otpVerified}
                 className={`w-full py-2.5 text-white font-extrabold text-[11px] uppercase tracking-wider rounded-xl shadow cursor-pointer border-none flex items-center justify-center gap-1.5 transition-all duration-300 ${
-                  isSubmitting || !isValid 
+                  isSubmitting || !isValid || !otpVerified
                     ? "bg-slate-300 cursor-not-allowed text-slate-500 shadow-none" 
                     : "bg-primary hover:bg-primary-dark"
                 }`}
