@@ -10,6 +10,29 @@ import { apiClient } from '../services/apiClient';
 export default function FloatingAIAssistant() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const renderFormattedText = (text) => {
+    if (!text) return "";
+    const lines = text.split("\n");
+    return lines.map((line, lineIdx) => {
+      const tokens = line.split(/(\*\*.*?\*\*|\*.*?\*)/);
+      const elements = tokens.map((token, tokenIdx) => {
+        if (token.startsWith("**") && token.endsWith("**")) {
+          return <strong key={tokenIdx} className="font-extrabold text-primary">{token.slice(2, -2)}</strong>;
+        }
+        if (token.startsWith("*") && token.endsWith("*")) {
+          return <em key={tokenIdx} className="italic text-text-gray font-bold">{token.slice(1, -1)}</em>;
+        }
+        return token;
+      });
+      return (
+        <div key={lineIdx} className={lineIdx > 0 ? "mt-1" : ""}>
+          {elements}
+        </div>
+      );
+    });
+  };
+
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMood, setSelectedMood] = useState(null);
   const [messages, setMessages] = useState([
@@ -239,7 +262,7 @@ export default function FloatingAIAssistant() {
                         ? 'bg-primary text-white rounded-tr-none text-right'
                         : 'bg-bg-white text-text-dark rounded-tl-none text-left border border-border-color'
                     }`}>
-                      {msg.id === 'm1' ? t('m1_greeting') : msg.text}
+                      {msg.id === 'm1' ? t('m1_greeting') : renderFormattedText(msg.text)}
                     </div>
 
                     {msg.recommendation && (
