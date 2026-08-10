@@ -1,42 +1,65 @@
-import { mockRequest } from "./api.helper";
+import { apiClient } from "./apiClient";
 import { RESORTS } from "../data/resortsData";
 import { ALL_RESORTS } from "../data/resorts";
 
 export const resortService = {
   async getAllResorts() {
-    return mockRequest(RESORTS, 0.01, "Failed to load resorts. Please try again.");
+    try {
+      const result = await apiClient.get("/api/v1/resorts");
+      if (result && result.success && result.data && result.data.length > 0) {
+        return result.data.map(item => this.mapBackendResort(item));
+      }
+      throw new Error("Empty list");
+    } catch (e) {
+      console.warn("Fallback to static resort listings:", e);
+      return RESORTS;
+    }
   },
 
   async getSearchResorts() {
-    // Uses ALL_RESORTS for search results page
-    return mockRequest(ALL_RESORTS, 0.01, "Failed to load search results.");
+    try {
+      const result = await apiClient.get("/api/v1/resorts");
+      if (result && result.success && result.data && result.data.length > 0) {
+        return result.data.map(item => this.mapBackendResort(item));
+      }
+      throw new Error("Empty list");
+    } catch (e) {
+      console.warn("Fallback to static search listings:", e);
+      return ALL_RESORTS;
+    }
   },
 
   async getResortById(id) {
-    const idMap = {
-      "1": "goa-coastline",
-      "2": "kerala-backwaters",
-      "3": "himalayan-chalet",
-      "4": "himalayan-chalet",
-      "5": "himalayan-chalet",
-      "6": "udaipur-palace",
-      "7": "udaipur-palace",
-      "8": "himalayan-chalet",
-      "9": "himalayan-chalet",
-      "10": "maldives-overwater",
-      "11": "goa-coastline",
-      "12": "himalayan-chalet",
-      "13": "udaipur-palace"
-    };
-
-    const mappedId = idMap[id] || id;
-    const resort = RESORTS.find((r) => r.id === mappedId) || RESORTS[0];
-    
-    return mockRequest(resort, 0.02, `Failed to load resort details for ID: ${id}`);
+    try {
+      const result = await apiClient.get(`/api/v1/resorts/${id}`);
+      if (result && result.success && result.data) {
+        return this.mapBackendResort(result.data);
+      }
+      throw new Error("Resort not found");
+    } catch (e) {
+      console.warn("Fallback to static details for ID:", id, e);
+      const idMap = {
+        "1": "goa-coastline",
+        "2": "kerala-backwaters",
+        "3": "himalayan-chalet",
+        "4": "himalayan-chalet",
+        "5": "himalayan-chalet",
+        "6": "udaipur-palace",
+        "7": "udaipur-palace",
+        "8": "himalayan-chalet",
+        "9": "himalayan-chalet",
+        "10": "maldives-overwater",
+        "11": "goa-coastline",
+        "12": "himalayan-chalet",
+        "13": "udaipur-palace"
+      };
+      const mappedId = idMap[id] || id;
+      return RESORTS.find((r) => r.id === mappedId) || RESORTS[0];
+    }
   },
 
   async getCategories() {
-    const categories = [
+    return [
       { id: 'all', label: 'All Stays', icon: 'Sparkles' },
       { id: 'beach', label: 'Beach Resorts', icon: 'Waves' },
       { id: 'mountain', label: 'Mountain Retreats', icon: 'Mountain' },
@@ -47,6 +70,24 @@ export const resortService = {
       { id: 'island', label: 'Private Islands', icon: 'Palmtree' },
       { id: 'eco', label: 'Eco Camping', icon: 'Compass' }
     ];
-    return mockRequest(categories);
+  },
+
+  mapBackendResort(item) {
+    return {
+      id: item.id,
+      name: item.name,
+      location: item.location,
+      description: item.description,
+      image: item.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80",
+      heroImage: item.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80",
+      price: item.pricePerNight,
+      rating: item.rating || 4.5,
+      reviewCount: item.reviewCount || 0,
+      featuredTag: item.featuredTag,
+      discount: item.discountPercentage || 0,
+      amenities: ["WiFi", "Pool", "Spa", "Gym", "Restaurant", "Beach Access"],
+      perks: ["Free Cancellation", "Breakfast Included", "Transfer Services"],
+      category: "beach"
+    };
   }
 };

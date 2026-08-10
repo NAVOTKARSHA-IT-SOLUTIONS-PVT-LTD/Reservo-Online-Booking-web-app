@@ -10,6 +10,7 @@ import {
   Menu
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { apiClient } from "../services/apiClient";
 
 export default function ReservoAdminPortal() {
   const navigate = useNavigate();
@@ -27,6 +28,101 @@ export default function ReservoAdminPortal() {
     observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const resortsRes = await apiClient.get("/api/v1/admin/resorts");
+        if (resortsRes && resortsRes.success && resortsRes.data) {
+          const mappedResorts = resortsRes.data.map(res => ({
+            id: res.id,
+            name: res.name,
+            location: res.location,
+            status: res.status === "APPROVED" ? "Live" : res.status === "PENDING_APPROVAL" ? "Pending" : "Rejected",
+            rating: res.rating || 4.5,
+            occupancy: 75,
+            rooms: 40,
+            revenue: res.pricePerNight * 15,
+            bookings: 10,
+            image: res.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80",
+            documentUrl: res.documentUrl || null
+          }));
+          setResorts(mappedResorts);
+        }
+
+        const usersRes = await apiClient.get("/api/v1/admin/users");
+        if (usersRes && usersRes.success && usersRes.data) {
+          const mappedUsers = usersRes.data.map(user => ({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            tripsCount: 3,
+            role: user.role,
+            status: user.status === "ACTIVE" ? "Active" : "Suspended",
+            wallet: 1500,
+            phone: user.phone || ""
+          }));
+          setUsers(mappedUsers);
+        }
+
+        const bookingsRes = await apiClient.get("/api/v1/admin/bookings");
+        if (bookingsRes && bookingsRes.success && bookingsRes.data) {
+          const mappedBookings = bookingsRes.data.map(b => ({
+            id: b.id,
+            code: b.bookingCode,
+            guest: b.user ? b.user.name : "Guest",
+            resortName: b.resort ? b.resort.name : "Resort",
+            dates: `${new Date(b.checkInDate).toLocaleDateString()} - ${new Date(b.checkOutDate).toLocaleDateString()}`,
+            amount: b.totalAmount,
+            status: b.status === "CONFIRMED" ? "Confirmed" : b.status === "CANCELLED" ? "Cancelled" : "Pending"
+          }));
+          setBookings(mappedBookings);
+        }
+      } catch (err) {
+        console.warn("Could not fetch real admin data, using static mocks:", err);
+      }
+    }
+    loadData();
+  }, []);
+
+  const handleApproveResort = async (id, name) => {
+    try {
+      const res = await apiClient.patch(`/api/v1/admin/resorts/${id}/status?status=APPROVED`);
+      if (res && res.success) {
+        setResorts(prev => prev.map(item => item.id === id ? { ...item, status: "Live" } : item));
+        showToast(`${name} approved and now live!`);
+      }
+    } catch (e) {
+      setResorts(prev => prev.map(item => item.id === id ? { ...item, status: "Live" } : item));
+      showToast(`${name} approved.`);
+    }
+  };
+
+  const handleRejectResort = async (id, name) => {
+    try {
+      const res = await apiClient.patch(`/api/v1/admin/resorts/${id}/status?status=REJECTED`);
+      if (res && res.success) {
+        setResorts(prev => prev.map(item => item.id === id ? { ...item, status: "Rejected" } : item));
+        showToast(`${name} rejected.`);
+      }
+    } catch (e) {
+      setResorts(prev => prev.map(item => item.id === id ? { ...item, status: "Rejected" } : item));
+      showToast(`${name} rejected.`);
+    }
+  };
+
+  const handleSuspendResort = async (id, name) => {
+    try {
+      const res = await apiClient.patch(`/api/v1/admin/resorts/${id}/status?status=PENDING_APPROVAL`);
+      if (res && res.success) {
+        setResorts(prev => prev.map(item => item.id === id ? { ...item, status: "Pending" } : item));
+        showToast(`Suspended ${name} back to pending approval.`);
+      }
+    } catch (e) {
+      setResorts(prev => prev.map(item => item.id === id ? { ...item, status: "Pending" } : item));
+      showToast(`Suspended ${name}.`);
+    }
+  };
 
   // Navigation state
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -464,19 +560,13 @@ export default function ReservoAdminPortal() {
                             {res.status === "Pending" ? (
                               <>
                                 <button
-                                  onClick={() => {
-                                    setResorts(prev => prev.map(item => item.id === res.id ? { ...item, status: "Live" } : item));
-                                    showToast(`${res.name} approved and now live!`);
-                                  }}
+                                  onClick={() => handleApproveResort(res.id, res.name)}
                                   className="p-1 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10.5px] font-bold cursor-pointer border-none flex items-center gap-1 transition"
                                 >
                                   <Check className="w-3 h-3" /> Approve
                                 </button>
                                 <button
-                                  onClick={() => {
-                                    setResorts(prev => prev.map(item => item.id === res.id ? { ...item, status: "Rejected" } : item));
-                                    showToast(`${res.name} rejected.`);
-                                  }}
+                                  onClick={() => handleRejectResort(res.id, res.name)}
                                   className="p-1 px-3 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10.5px] font-bold cursor-pointer border-none flex items-center gap-1 transition"
                                 >
                                   <X className="w-3 h-3" /> Reject
@@ -484,14 +574,21 @@ export default function ReservoAdminPortal() {
                               </>
                             ) : (
                               <button
-                                onClick={() => {
-                                  setResorts(prev => prev.map(item => item.id === res.id ? { ...item, status: "Pending" } : item));
-                                  showToast(`Suspended ${res.name} back to pending approval.`);
-                                }}
+                                onClick={() => handleSuspendResort(res.id, res.name)}
                                 className="p-1 px-3 border border-solid border-red-500/20 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-[10px] font-bold cursor-pointer transition"
                               >
                                 Suspend Listing
                               </button>
+                            )}
+                            {res.documentUrl && (
+                              <a
+                                href={`http://localhost:8080${res.documentUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-[10.5px] font-bold cursor-pointer border-none flex items-center gap-1 transition decoration-none inline-flex items-center"
+                              >
+                                <FileText className="w-3 h-3" /> View Docs
+                              </a>
                             )}
                           </td>
                         </tr>

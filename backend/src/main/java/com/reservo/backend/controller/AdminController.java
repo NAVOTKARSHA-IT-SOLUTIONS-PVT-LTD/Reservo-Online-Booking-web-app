@@ -35,6 +35,11 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(adminService.getPendingResorts()));
     }
 
+    @GetMapping("/resorts")
+    public ResponseEntity<ApiResponse<List<Resort>>> getAllResorts() {
+        return ResponseEntity.ok(ApiResponse.success(adminService.getAllResorts()));
+    }
+
     @PatchMapping("/resorts/{id}/status")
     public ResponseEntity<ApiResponse<Resort>> updateResortStatus(
             @PathVariable Long id,

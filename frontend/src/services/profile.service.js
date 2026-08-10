@@ -1,31 +1,52 @@
-import { mockRequest } from "./api.helper";
 import { secureStorage } from "./secureStorage";
+import { apiClient } from "./apiClient";
 
 const USER_KEY = "reservo_user";
 
-const DEFAULT_PROFILE = {
-  name: "Tausif Shaikh",
-  email: "tausif.shaikh@example.com",
-  phone: "+91 98765 43210",
-  tier: "Elite Diamond Status",
-  joined: "Member since July 2026",
-  points: "24,500 pts"
-};
-
 export const profileService = {
   async getProfile() {
-    let profile = secureStorage.getItem(USER_KEY);
-    if (!profile) {
-      profile = DEFAULT_PROFILE;
-      secureStorage.setItem(USER_KEY, profile);
+    try {
+      const result = await apiClient.get("/api/v1/user/profile");
+      if (result && result.success && result.data) {
+        const profile = {
+          ...result.data,
+          tier: "Elite Diamond Status",
+          joined: "Member since July 2026",
+          points: "24,500 pts"
+        };
+        secureStorage.setItem(USER_KEY, profile);
+        return profile;
+      }
+      throw new Error("Failed to load profile");
+    } catch (e) {
+      console.warn("Fallback to local storage profile:", e);
+      return secureStorage.getItem(USER_KEY) || {
+        name: "User Profile",
+        email: "user@mail.in",
+        phone: "+91 98765 43210",
+        tier: "Elite Diamond Status",
+        joined: "Member since July 2026",
+        points: "24,500 pts"
+      };
     }
-    return mockRequest(profile, 0.01, "Failed to load user profile.");
   },
 
   async updateProfile(updatedDetails) {
-    let profile = secureStorage.getItem(USER_KEY) || DEFAULT_PROFILE;
-    profile = { ...profile, ...updatedDetails };
-    secureStorage.setItem(USER_KEY, profile);
-    return mockRequest(profile, 0.02, "Failed to update profile settings.");
+    try {
+      const result = await apiClient.put("/api/v1/user/profile", updatedDetails);
+      if (result && result.success && result.data) {
+        const currentProfile = secureStorage.getItem(USER_KEY) || {};
+        const profile = {
+          ...currentProfile,
+          ...result.data,
+        };
+        secureStorage.setItem(USER_KEY, profile);
+        return profile;
+      }
+      throw new Error("Failed to update profile");
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
   }
 };

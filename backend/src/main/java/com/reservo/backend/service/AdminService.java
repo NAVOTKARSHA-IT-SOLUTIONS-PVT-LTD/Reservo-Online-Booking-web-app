@@ -36,6 +36,10 @@ public class AdminService {
         return resortRepository.findByStatus(Resort.ResortStatus.PENDING_APPROVAL);
     }
 
+    public List<Resort> getAllResorts() {
+        return resortRepository.findAll();
+    }
+
     @Transactional
     public Resort updateResortStatus(Long resortId, Resort.ResortStatus status, String adminUsername) {
         Resort resort = resortRepository.findById(resortId)
