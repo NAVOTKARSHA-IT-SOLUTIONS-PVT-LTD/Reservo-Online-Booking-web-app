@@ -302,6 +302,18 @@ public class AiService {
 
     private String generateLocalMockReply(String message, String mood) {
         String msg = message.toLowerCase();
+        if (msg.contains("available") || msg.contains("resort") || msg.contains("list")) {
+            List<Resort> approved = resortRepository.findByStatus(Resort.ResortStatus.APPROVED);
+            if (approved == null || approved.isEmpty()) {
+                return "We currently don't have any live resorts in our system, but our default collections are: Ocean Bliss Resort, Royal Palm Retreat, Sunset Lagoon, and Hill View Escape.";
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("Here are our available luxury resorts:\n");
+            for (Resort r : approved) {
+                sb.append("- ").append(r.getName()).append(" in ").append(r.getLocation()).append(" (₹").append(r.getPricePerNight()).append("/night)\n");
+            }
+            return sb.toString();
+        }
         if (msg.contains("hello") || msg.contains("hi ")) {
             return "Greetings! I'm Rivo, your luxury travel guide. Are you looking to plan a relaxation getaway, explore adventurous mountains, or find beachfront suite deals?";
         }
