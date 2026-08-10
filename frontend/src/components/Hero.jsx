@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Search, 
   MapPin, 
@@ -22,6 +22,15 @@ import SearchLoadingOverlay from "./SearchLoadingOverlay";
 function Hero() {
   const navigate = useNavigate();
   const [isSearching, setIsSearching] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   
   // Search state
   const [location, setLocation] = useState("Bali, Indonesia");
@@ -48,7 +57,7 @@ function Hero() {
     <section className="relative w-full min-h-[600px] md:min-h-[700px] md:h-screen flex flex-col items-center justify-center pt-16 md:pt-24 pb-12 md:pb-16 overflow-hidden">
       
       {/* Background Video */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 overflow-hidden" style={{ transform: `translateY(${scrollY * 0.3}px) scale(${1 + scrollY * 0.0002})` }}>
         <video 
           autoPlay 
           loop 
@@ -71,7 +80,7 @@ function Hero() {
       <div className="relative z-10 w-full max-w-[1300px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-12 mt-4 md:mt-10">
         
         {/* Left Content Area */}
-        <div className="flex-1 max-w-[600px] text-white">
+        <div className="flex-1 max-w-[600px] text-white" style={{ transform: `translateY(${-scrollY * 0.08}px)`, opacity: Math.max(0, 1 - scrollY / 700) }}>
           
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-black/20 backdrop-blur-md mb-6 shadow-lg">
@@ -139,7 +148,7 @@ function Hero() {
         </div>
 
         {/* Right Content - AI Planner Glass Card */}
-        <div className="hidden lg:block w-[350px]">
+        <div className="hidden lg:block w-[350px]" style={{ transform: `translateY(${-scrollY * 0.14}px)`, opacity: Math.max(0, 1 - scrollY / 650) }}>
           <div className="bg-bg-white/70 backdrop-blur-2xl border border-border-color/60 rounded-[32px] p-6 shadow-[0_30px_60px_rgba(0,0,0,0.15)] transition-colors duration-300">
             
             <div className="flex items-center gap-2 mb-2">
