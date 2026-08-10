@@ -548,50 +548,54 @@ export default function AIPlanner() {
     setIsAnalyzing(true);
 
     try {
-      const apiResponse = await fetch("/api/v1/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: sessionId,
-          message: userText,
-          selectedMood: "luxury"
-        })
+      const responseBody = await apiClient.post("/api/v1/ai/chat", {
+        sessionId: sessionId,
+        message: userText,
+        selectedMood: "luxury"
       });
 
-      if (apiResponse.ok) {
-        const body = await apiResponse.json();
-        if (body.data) {
-          // If the message text contains keywords suggesting planning, run the planner engine
-          const lowerText = userText.toLowerCase();
-          const needsPlanning = lowerText.includes("plan") || lowerText.includes("goa") || lowerText.includes("udaipur") || lowerText.includes("kerala") || lowerText.includes("manali") || lowerText.includes("maldives");
-          
-          setMessages(prev => [
-            ...prev,
-            {
-              id: Date.now(),
-              sender: "rivo",
-              text: body.data.replyText,
-              avatar: rivoMascot,
-              time: timeStr,
-              recommendation: body.data.recommendedResort
-            }
-          ]);
-
-          if (needsPlanning) {
-            runAIEngine(userText);
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Chat API call failed, using fallback:", err);
-      // Fallback
-      setTimeout(() => {
+      if (responseBody && responseBody.success && responseBody.data) {
+        // If the message text contains keywords suggesting planning, run the planner engine
+        const lowerText = userText.toLowerCase();
+        const needsPlanning = lowerText.includes("plan") || lowerText.includes("goa") || lowerText.includes("udaipur") || lowerText.includes("kerala") || lowerText.includes("manali") || lowerText.includes("maldives");
+        
         setMessages(prev => [
           ...prev,
           {
             id: Date.now(),
             sender: "rivo",
-            text: "I'm having a little trouble connecting right now. Let's plan our next getaway soon!",
+            text: responseBody.data.replyText,
+            avatar: rivoMascot,
+            time: timeStr,
+            recommendation: responseBody.data.recommendedResort
+          }
+        ]);
+
+        if (needsPlanning) {
+          runAIEngine(userText);
+        }
+      } else {
+        throw new Error("API call failed");
+      }
+    } catch (err) {
+      console.error("Chat API call failed, using fallback:", err);
+      // Fallback
+      setTimeout(() => {
+        const msg = userText.toLowerCase();
+        let reply = "I'm having a little trouble connecting right now. Let's plan our next getaway soon!";
+        
+        if (msg.includes("available") || msg.includes("resort") || msg.includes("list")) {
+          reply = "Here are our available luxury resorts:\n\n🌴 **Ocean Bliss Resort** - Goa, India\n🌴 **Royal Palm Retreat** - Bali, Indonesia\n🌴 **Sunset Lagoon Resort** - Maldives\n🌴 **Hill View Escape** - Udaipur, India\n\nLet me know if you'd like to learn more about any of these retreats!";
+        } else if (msg.includes("hello") || msg.includes("hi ")) {
+          reply = "Greetings! I'm Rivo, your luxury travel companion. How can I assist you with your booking today?";
+        }
+
+        setMessages(prev => [
+          ...prev,
+          {
+            id: Date.now(),
+            sender: "rivo",
+            text: reply,
             avatar: rivoMascot,
             time: timeStr
           }
@@ -663,21 +667,23 @@ export default function AIPlanner() {
 
   const formatMessageText = (text) => {
     if (!text) return "";
-    return text.split("\n").map((line, lineIdx) => {
-      const boldSplit = line.split("**");
-      const elements = boldSplit.map((part, index) => {
-        if (index % 2 === 1) {
-          return <strong key={index} className="font-extrabold text-primary">{part}</strong>;
+    const lines = text.split("\n");
+    return lines.map((line, lineIdx) => {
+      const tokens = line.split(/(\*\*.*?\*\*|\*.*?\*)/);
+      const elements = tokens.map((token, tokenIdx) => {
+        if (token.startsWith("**") && token.endsWith("**")) {
+          return <strong key={tokenIdx} className="font-extrabold text-primary">{token.slice(2, -2)}</strong>;
         }
-        const italicSplit = part.split("*");
-        return italicSplit.map((subpart, subindex) => {
-          if (subindex % 2 === 1) {
-            return <em key={`${index}-${subindex}`} className="italic text-primary font-semibold">{subpart}</em>;
-          }
-          return subpart;
-        });
+        if (token.startsWith("*") && token.endsWith("*")) {
+          return <em key={tokenIdx} className="italic text-text-gray font-bold">{token.slice(1, -1)}</em>;
+        }
+        return token;
       });
-      return <span key={lineIdx} className="block min-h-[1.2em]">{elements}</span>;
+      return (
+        <span key={lineIdx} className="block min-h-[1.2em]">
+          {elements}
+        </span>
+      );
     });
   };
 
