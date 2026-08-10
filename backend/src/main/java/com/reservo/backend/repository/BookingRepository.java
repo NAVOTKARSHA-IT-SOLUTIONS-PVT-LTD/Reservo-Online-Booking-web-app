@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,4 +21,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("SELECT b.bookingSource, COUNT(b) FROM Booking b GROUP BY b.bookingSource")
     List<Object[]> countBookingsBySource();
+
+    @Query("SELECT b FROM Booking b WHERE b.resort.id = :resortId AND b.status <> 'CANCELLED' AND b.checkInDate < :checkOutDate AND b.checkOutDate > :checkInDate")
+    List<Booking> findOverlappingBookings(Long resortId, LocalDate checkInDate, LocalDate checkOutDate);
 }
