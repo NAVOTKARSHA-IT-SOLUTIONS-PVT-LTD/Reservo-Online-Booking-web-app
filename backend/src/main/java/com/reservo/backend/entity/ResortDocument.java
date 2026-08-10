@@ -25,6 +25,10 @@ public class ResortDocument {
 
     private LocalDate expiryDate;
 
+    private String documentUrl; // URL or path of the uploaded file
+
+    private String fileSize; // Formatted size of the file
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "resort_id", nullable = false)
     private Resort resort;

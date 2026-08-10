@@ -157,6 +157,8 @@ CREATE TABLE resort_documents (
     name VARCHAR(255) NOT NULL,
     status VARCHAR(255) NOT NULL,
     expiry_date DATE,
+    document_url VARCHAR(512),
+    file_size VARCHAR(100),
     resort_id BIGINT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (resort_id) REFERENCES resorts(id) ON DELETE CASCADE

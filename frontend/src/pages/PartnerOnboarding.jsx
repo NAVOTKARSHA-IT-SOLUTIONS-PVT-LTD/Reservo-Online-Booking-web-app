@@ -6,6 +6,7 @@ import {
   Upload
 } from "lucide-react";
 import rivoSearching from "../assets/images/rivo_searching.png";
+import { apiClient } from "../services/apiClient";
 
 export default function PartnerOnboarding() {
   const navigate = useNavigate();
@@ -17,13 +18,33 @@ export default function PartnerOnboarding() {
   const [uploadedFile, setUploadedFile] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      setUploadedFile({
-        name: file.name,
-        size: (file.size / (1024 * 1024)).toFixed(1) + " MB"
-      });
+      setErrorMsg("");
+      const body = new FormData();
+      body.append("file", file);
+      try {
+        setUploadedFile({ name: "Uploading...", size: "" });
+        const result = await apiClient.post("/api/v1/documents/upload", body);
+        if (result.success && result.data) {
+          setUploadedFile({
+            name: result.data.fileName,
+            size: result.data.fileSize
+          });
+          setFormData(prev => ({
+            ...prev,
+            documentUrl: result.data.fileUrl,
+            fileSize: result.data.fileSize
+          }));
+        } else {
+          throw new Error(result.message || "Failed to upload document");
+        }
+      } catch (err) {
+        console.error("Document upload error:", err);
+        setUploadedFile(null);
+        setErrorMsg("Document upload failed: " + err.message);
+      }
     }
   };
 
@@ -49,6 +70,8 @@ export default function PartnerOnboarding() {
     licenseNumber: "",
     docType: "GST", // GST, government, company
     idType: "Aadhaar", // Aadhaar, Passport, DL
+    documentUrl: "",
+    fileSize: "",
     // Step 5: Media
     imageUrl: "",
     galleryUrls: "",
@@ -139,33 +162,41 @@ export default function PartnerOnboarding() {
     }
 
     try {
-      const response = await fetch("/api/v1/resorts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          location: `${formData.city}, ${formData.state}, ${formData.country}`,
-          description: `Welcome to ${formData.name}. Managed by ${formData.businessName}. Experience premium comfort in our luxury ${formData.category} rooms.`,
-          imageUrl: finalImageUrl,
-          pricePerNight: parseFloat(formData.pricePerNight),
-          status: "PENDING_APPROVAL",
-          rating: 4.8,
-          reviewCount: 0,
-          discountPercentage: 15,
-          featuredTag: "Newly Onboarded"
-        })
+      const result = await apiClient.post("/api/v1/resorts", {
+        name: formData.name,
+        location: `${formData.city}, ${formData.state}, ${formData.country}`,
+        description: `Welcome to ${formData.name}. Managed by ${formData.businessName}. Experience premium comfort in our luxury ${formData.category} rooms.`,
+        imageUrl: finalImageUrl,
+        pricePerNight: parseFloat(formData.pricePerNight),
+        status: "PENDING_APPROVAL",
+        rating: 4.8,
+        reviewCount: 0,
+        discountPercentage: 15,
+        featuredTag: "Newly Onboarded"
       });
 
-      if (response.ok) {
+      if (result && result.success) {
+        // If a document was uploaded, register it linked to the newly created resort
+        if (formData.documentUrl && result.data && result.data.id) {
+          try {
+            await apiClient.post("/api/v1/documents", {
+              name: `${formData.docType} Verification File (${formData.idType})`,
+              status: "Verification Pending",
+              documentUrl: formData.documentUrl,
+              fileSize: formData.fileSize,
+              resort: { id: result.data.id }
+            });
+          } catch (docErr) {
+            console.error("Failed to link document registry:", docErr);
+          }
+        }
         setIsSuccess(true);
       } else {
-        setErrorMsg("Submission failed. Please check network connectivity or try again.");
+        setErrorMsg("Submission failed. Please verify connection or fields.");
       }
     } catch (err) {
       console.error(err);
-      setErrorMsg("Failed to connect to backend registry. Please verify backend is running.");
+      setErrorMsg("Failed to connect to backend: " + err.message);
     } finally {
       setIsSubmitting(false);
     }
