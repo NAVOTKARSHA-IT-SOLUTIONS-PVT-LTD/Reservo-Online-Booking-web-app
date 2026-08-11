@@ -31,7 +31,7 @@ async function request(endpoint, options = {}) {
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     secureStorage.removeItem(TOKEN_KEY);
     secureStorage.removeItem("reservo_user");
     if (!window.location.pathname.includes("/login")) {
