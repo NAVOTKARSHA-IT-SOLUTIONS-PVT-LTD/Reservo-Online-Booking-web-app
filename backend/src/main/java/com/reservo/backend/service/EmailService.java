@@ -81,7 +81,7 @@ public class EmailService {
                 log.error("Failed to send email to {}: {}", toEmail, e.getMessage());
             }
         } else {
-            log.warn("JavaMailSender is not configured. Email logged to console.");
+            log.warn("JavaMailSender is not configured. Email logged to console. Body:\n{}", htmlBody);
         }
     }
 }
