@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import com.reservo.backend.util.HtmlSanitizer;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class ReviewService {
                 .user(user)
                 .resort(resort)
                 .rating(rating)
-                .comment(comment)
+                .comment(HtmlSanitizer.sanitize(comment))
                 .build();
 
         Review saved = reviewRepository.save(review);

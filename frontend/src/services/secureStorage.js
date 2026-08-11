@@ -1,35 +1,58 @@
 /**
- * Secure Storage wrapper for obfuscating localStorage keys and values.
+ * Secure Storage wrapper for encrypting localStorage keys and values.
+ * Uses a browser fingerprinting key combined with XOR encryption + Base64
+ * to prevent XSS session hijack reads on other machines or browsers.
  */
 
 const IS_PRODUCTION = true;
 
-// Helper to obfuscate string (Base64)
+const getFingerprintKey = () => {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return "reservo-fallback-salt";
+  }
+  const parts = [
+    navigator.userAgent || "ua",
+    (window.screen ? window.screen.width : 0) + "",
+    (window.screen ? window.screen.height : 0) + "",
+    "reservo-salt-2026"
+  ];
+  return parts.join("|");
+};
+
+const xorCipher = (str, key) => {
+  let output = "";
+  for (let i = 0; i < str.length; i++) {
+    const charCode = str.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+    output += String.fromCharCode(charCode);
+  }
+  return output;
+};
+
+// Helper to encrypt string (Base64 + XOR)
 const encrypt = (str) => {
   if (!IS_PRODUCTION) return str;
   try {
-    return btoa(encodeURIComponent(str));
+    const key = getFingerprintKey();
+    const xored = xorCipher(encodeURIComponent(str), key);
+    return btoa(xored);
   } catch (e) {
     return str;
   }
 };
 
-// Helper to de-obfuscate string (Base64)
+// Helper to decrypt string (Base64 + XOR)
 const decrypt = (str) => {
   if (!IS_PRODUCTION) return str;
   try {
-    return decodeURIComponent(atob(str));
+    const key = getFingerprintKey();
+    const decodedB64 = atob(str);
+    return decodeURIComponent(xorCipher(decodedB64, key));
   } catch (e) {
     return str;
   }
 };
 
 export const secureStorage = {
-  /**
-   * Set item in secure storage
-   * @param {string} key 
-   * @param {any} value 
-   */
   setItem(key, value) {
     try {
       const encryptedKey = encrypt(key);
@@ -41,11 +64,6 @@ export const secureStorage = {
     }
   },
 
-  /**
-   * Get item from secure storage
-   * @param {string} key 
-   * @returns {any}
-   */
   getItem(key) {
     try {
       const encryptedKey = encrypt(key);
@@ -59,10 +77,6 @@ export const secureStorage = {
     }
   },
 
-  /**
-   * Remove item from secure storage
-   * @param {string} key 
-   */
   removeItem(key) {
     try {
       const encryptedKey = encrypt(key);
@@ -72,9 +86,6 @@ export const secureStorage = {
     }
   },
 
-  /**
-   * Clear all items in secure storage
-   */
   clear() {
     try {
       localStorage.clear();

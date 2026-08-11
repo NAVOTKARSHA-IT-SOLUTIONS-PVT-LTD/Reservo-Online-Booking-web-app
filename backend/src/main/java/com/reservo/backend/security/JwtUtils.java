@@ -2,7 +2,10 @@ package com.reservo.backend.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -10,6 +13,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+@Slf4j
 @Component
 public class JwtUtils {
 
@@ -19,8 +23,20 @@ public class JwtUtils {
     @Value("${app.jwt.expiration-ms:86400000}")
     private long jwtExpirationMs;
 
+    private SecretKey signingKey;
+
+    @PostConstruct
+    public void init() {
+        if ("9a4f2c8d3e7b1a5c6d8e2f0a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c".equals(jwtSecret)) {
+            log.warn("JWT secret is using the default configuration fallback. An ephemeral random signing key has been generated for this session to secure tokens.");
+            signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+        } else {
+            signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return signingKey;
     }
 
     public String generateToken(String email, String role) {

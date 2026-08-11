@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
+import com.reservo.backend.util.HtmlSanitizer;
 
 import java.time.Instant;
 import java.util.Map;
@@ -61,10 +62,10 @@ public class AuthService {
 
         // HASH PASSWORD WITH ARGON2ID BEFORE STORING (Security Guide Requirement)
         User user = User.builder()
-                .name(request.getName() != null ? request.getName() : "Guest User")
+                .name(HtmlSanitizer.sanitize(request.getName() != null ? request.getName() : "Guest User"))
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword())) // Argon2id hashing
-                .phone(request.getPhone())
+                .phone(HtmlSanitizer.sanitize(request.getPhone()))
                 .role(userRole)
                 .status(User.UserStatus.ACTIVE)
                 .emailVerified(true) // Auto-verify after successful OTP
