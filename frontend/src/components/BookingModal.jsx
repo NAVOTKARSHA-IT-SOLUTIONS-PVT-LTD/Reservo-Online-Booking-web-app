@@ -48,19 +48,20 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
   const grandTotal = subtotal + taxes;
 
   const [bookingCode] = useState(() => `RES-${Math.floor(100000 + Math.random() * 900000)}`);
-
   const handleConfirm = async () => {
     setSubmitting(true);
     try {
       const bookingDetails = {
         id: bookingCode,
+        resortId: resort.id,
+        roomId: room ? room.id : (resort.roomTypes && resort.roomTypes[0] ? resort.roomTypes[0].id : null),
         resortName: resort.name,
         location: resort.location,
         resortImage: resort.heroImage || resort.image,
         checkin: "2026-09-12",
         checkout: "2026-09-15",
         guests: 2,
-        roomTitle: room ? room.title : resort.roomTypes[0].title,
+        roomTitle: room ? room.title : (resort.roomTypes && resort.roomTypes[0] ? resort.roomTypes[0].title : "Luxury Suite"),
         total: grandTotal,
         amount: `${currencySymbol}${(Math.round(grandTotal * exchangeRate)).toLocaleString()}`,
         code: bookingCode

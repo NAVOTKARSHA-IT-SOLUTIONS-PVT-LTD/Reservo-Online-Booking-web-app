@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import { ALL_RESORTS } from "../data/resorts";
+import { resortService } from "../services/resort.service";
 
 const FILTER_CHIPS = [
   { id: "ai", label: "✨ AI Recommended", icon: null },
@@ -170,6 +171,21 @@ function SearchResults() {
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [sortKey, setSortKey] = useState("recommended");
   const [activeTopChip, setActiveTopChip] = useState("ai");
+  const [resortsList, setResortsList] = useState(ALL_RESORTS);
+
+  useEffect(() => {
+    const loadResorts = async () => {
+      try {
+        const data = await resortService.getSearchResorts();
+        if (data && data.length > 0) {
+          setResortsList(data);
+        }
+      } catch (e) {
+        console.error("Failed to load search resorts:", e);
+      }
+    };
+    loadResorts();
+  }, []);
 
   let nights = 1;
   if (checkinStr && checkoutStr) {
@@ -216,7 +232,7 @@ function SearchResults() {
       prev.includes(am) ? prev.filter((a) => a !== am) : [...prev, am]
     );
 
-  const filtered = ALL_RESORTS.filter((r) => {
+  const filtered = resortsList.filter((r) => {
     const destKey = dest.split(",")[0].trim().toLowerCase();
     const destMatch = !dest || r.location.toLowerCase().includes(destKey);
     const priceMatch = r.price <= maxPrice;
