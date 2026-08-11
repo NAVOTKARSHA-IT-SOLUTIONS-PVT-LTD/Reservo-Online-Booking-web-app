@@ -79,6 +79,7 @@ public class EmailService {
                 log.info("Email successfully dispatched to {}", toEmail);
             } catch (Exception e) {
                 log.error("Failed to send email to {}: {}", toEmail, e.getMessage());
+                log.info("Fallback: Email logged to console due to delivery failure. Body:\n{}", htmlBody);
             }
         } else {
             log.warn("JavaMailSender is not configured. Email logged to console. Body:\n{}", htmlBody);

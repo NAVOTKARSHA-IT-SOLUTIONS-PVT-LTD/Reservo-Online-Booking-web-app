@@ -75,6 +75,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup", "/api/v1/auth/otp/**", "/api/v1/auth/password-reset/**").permitAll()
+                .requestMatchers("/api/v1/payments/webhook").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
@@ -86,7 +87,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/staff/**", "/api/v1/documents/**").hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/v1/offers/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/offers/**").hasRole("ADMIN")
-                .requestMatchers("/api/v1/bookings/**", "/api/v1/wishlist/**", "/api/v1/user/**", "/api/v1/reviews/**").authenticated()
+                .requestMatchers("/api/v1/bookings/**", "/api/v1/wishlist/**", "/api/v1/user/**", "/api/v1/reviews/**", "/api/v1/payments/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)

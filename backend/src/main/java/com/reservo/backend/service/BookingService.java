@@ -4,14 +4,17 @@ import com.reservo.backend.exception.ResourceNotFoundException;
 import com.reservo.backend.entity.*;
 import com.reservo.backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingService {
@@ -20,7 +23,9 @@ public class BookingService {
     private final UserRepository userRepository;
     private final ResortRepository resortRepository;
     private final RoomRepository roomRepository;
+    private final PaymentRepository paymentRepository;
     private final EmailService emailService;
+    private final StripeService stripeService;
 
     @Transactional
     public Booking createBooking(Long userId, Long resortId, Long roomId, LocalDate checkIn, LocalDate checkOut, BigDecimal amount) {
@@ -41,13 +46,78 @@ public class BookingService {
                 .checkInDate(checkIn)
                 .checkOutDate(checkOut)
                 .totalAmount(amount)
-                .status(Booking.BookingStatus.CONFIRMED)
+                .status(Booking.BookingStatus.PENDING) // Starts as PENDING for checkout session
                 .bookingSource(Booking.BookingSource.DIRECT)
                 .build();
 
-        booking = bookingRepository.save(booking);
+        return bookingRepository.save(booking);
+    }
 
-        emailService.sendBookingConfirmationEmail(user.getEmail(), user.getName(), code, resort.getName(), amount.toString());
+    @Transactional
+    public Booking confirmBooking(String bookingCode, String paymentIntentId, String paymentMethod) {
+        Booking booking = bookingRepository.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with code: " + bookingCode));
+
+        if (booking.getStatus() == Booking.BookingStatus.PENDING) {
+            booking.setStatus(Booking.BookingStatus.CONFIRMED);
+            booking = bookingRepository.save(booking);
+
+            // Log secure payment receipt in database
+            Payment payment = Payment.builder()
+                    .transactionId(paymentIntentId)
+                    .booking(booking)
+                    .amount(booking.getTotalAmount())
+                    .paymentMethod(paymentMethod != null ? paymentMethod : "STRIPE")
+                    .status(Payment.PaymentStatus.SUCCESS)
+                    .createdAt(Instant.now())
+                    .build();
+            paymentRepository.save(payment);
+
+            log.info("Booking {} successfully paid and confirmed with transaction ID: {}", bookingCode, paymentIntentId);
+
+            // Send confirmation email
+            User user = booking.getUser();
+            emailService.sendBookingConfirmationEmail(
+                    user.getEmail(),
+                    user.getName(),
+                    booking.getBookingCode(),
+                    booking.getResort().getName(),
+                    booking.getTotalAmount().toString()
+            );
+        }
+        return booking;
+    }
+
+    @Transactional
+    public Booking cancelAndRefundBooking(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with ID: " + bookingId));
+
+        if (booking.getStatus() == Booking.BookingStatus.CANCELLED) {
+            throw new IllegalStateException("Booking is already cancelled");
+        }
+
+        // Retrieve successful payment details
+        Payment payment = paymentRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("No successful payment record found for this booking"));
+
+        try {
+            // Trigger Stripe Refund API
+            stripeService.refundPayment(payment.getTransactionId(), payment.getAmount());
+            
+            // Mark payment as REFUNDED
+            payment.setStatus(Payment.PaymentStatus.REFUNDED);
+            paymentRepository.save(payment);
+
+            // Mark booking as CANCELLED
+            booking.setStatus(Booking.BookingStatus.CANCELLED);
+            booking = bookingRepository.save(booking);
+
+            log.info("Booking {} cancelled and payment refunded successfully.", booking.getBookingCode());
+        } catch (Exception e) {
+            log.error("Stripe refund failed for booking ID: {}, Error: {}", bookingId, e.getMessage());
+            throw new RuntimeException("Refund processing failed. Please try again or contact support: " + e.getMessage());
+        }
 
         return booking;
     }

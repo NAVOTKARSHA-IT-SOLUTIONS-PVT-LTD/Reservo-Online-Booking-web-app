@@ -78,6 +78,27 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
     }
   };
 
+  const handleStripeCheckout = async () => {
+    setSubmitting(true);
+    try {
+      const bookingDetails = {
+        resortId: resort.id,
+        roomId: room ? room.id : (resort.roomTypes && resort.roomTypes[0] ? resort.roomTypes[0].id : null),
+        checkin: "2026-09-12",
+        checkout: "2026-09-15",
+        total: grandTotal
+      };
+      const checkoutUrl = await bookingService.createCheckoutSession(bookingDetails);
+      toast("Redirecting to secure Stripe checkout...", "success");
+      window.location.href = checkoutUrl;
+    } catch (e) {
+      console.error("Payment redirect failure:", e);
+      toast(e.message || "Failed to start payment. Please try again.", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 font-sans">
       <motion.div 
@@ -258,10 +279,11 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
         {!showPayment && !isConfirmed && (
           <div className={`p-6 border-t ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
             <button
-              onClick={() => setShowPayment(true)}
-              className="w-full py-3.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg border-none transition cursor-pointer"
+              onClick={handleStripeCheckout}
+              disabled={submitting}
+              className="w-full py-3.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-stone-400 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg border-none transition cursor-pointer flex items-center justify-center gap-2"
             >
-              Proceed to Payment
+              {submitting ? "Initiating secure checkout..." : "Proceed to Payment"}
             </button>
           </div>
         )}

@@ -164,5 +164,34 @@ export const bookingService = {
         { id: "deluxe", title: "Presidential Villa", price: 15000 }
       ] : []
     };
+  },
+
+  async createCheckoutSession(bookingDetails) {
+    const user = secureStorage.getItem("reservo_user");
+    let uId = user ? user.id : 1;
+
+    let rId = bookingDetails.resortId;
+    if (typeof rId === "string") {
+      const mapped = resortStringToIdMap[rId];
+      if (mapped) rId = mapped;
+    }
+    if (!rId) rId = 1;
+
+    let roomId = bookingDetails.roomId;
+    if (typeof roomId === "string") {
+      roomId = parseInt(roomId.replace(/\D/g, ""), 10) || 1;
+    }
+    if (!roomId) roomId = 1;
+
+    const successUrl = `${window.location.origin}/payment/success`;
+    const cancelUrl = `${window.location.origin}/payment/cancel`;
+
+    const result = await apiClient.post(
+      `/api/v1/payments/checkout?userId=${uId}&resortId=${rId}&roomId=${roomId}&checkIn=${bookingDetails.checkin}&checkOut=${bookingDetails.checkout}&amount=${bookingDetails.total}&successUrl=${encodeURIComponent(successUrl)}&cancelUrl=${encodeURIComponent(cancelUrl)}`
+    );
+    if (result && result.success && result.data) {
+      return result.data;
+    }
+    throw new Error(result?.message || "Failed to generate checkout link");
   }
 };
