@@ -51,4 +51,23 @@ public class ResortService {
         resort.setStatus(Resort.ResortStatus.PENDING_APPROVAL);
         return resortRepository.save(resort);
     }
+
+    @org.springframework.transaction.annotation.Transactional
+    public Resort updateResort(Long id, Resort updatedDetails) {
+        Resort resort = getResortById(id);
+        resort.setName(updatedDetails.getName());
+        resort.setLocation(updatedDetails.getLocation());
+        resort.setDescription(updatedDetails.getDescription());
+        resort.setImageUrl(updatedDetails.getImageUrl());
+        resort.setPricePerNight(updatedDetails.getPricePerNight());
+        resort.setFeaturedTag(updatedDetails.getFeaturedTag());
+        resort.setDiscountPercentage(updatedDetails.getDiscountPercentage());
+        return resortRepository.save(resort);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteResort(Long id) {
+        Resort resort = getResortById(id);
+        resortRepository.delete(resort);
+    }
 }

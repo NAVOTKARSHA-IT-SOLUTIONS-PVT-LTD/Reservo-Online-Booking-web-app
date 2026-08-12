@@ -36,4 +36,16 @@ public class ResortController {
         Resort created = resortService.createResort(resort);
         return ResponseEntity.ok(ApiResponse.success(created, "Resort submitted for approval"));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Resort>> updateResort(@PathVariable Long id, @RequestBody Resort resort) {
+        Resort updated = resortService.updateResort(id, resort);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Resort updated successfully"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteResort(@PathVariable Long id) {
+        resortService.deleteResort(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Resort deleted successfully"));
+    }
 }

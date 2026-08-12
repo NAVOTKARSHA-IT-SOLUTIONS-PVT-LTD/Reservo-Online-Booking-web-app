@@ -8,6 +8,7 @@ import {
   Camera, Menu
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { roomService } from "../services/room.service";
 
 export default function ResortAdminPortal() {
   const navigate = useNavigate();
@@ -240,22 +241,81 @@ export default function ResortAdminPortal() {
     setAddResortForm({ name: "", location: "", pricePerNight: "", description: "" });
   };
 
-  const handleAddRoom = (e) => {
-    e.preventDefault();
-    const newRoomObj = {
-      id: Date.now(),
-      roomNumber: addRoomForm.roomNumber,
-      resortId: parseInt(addRoomForm.resortId, 10),
-      type: addRoomForm.type,
-      pricePerNight: parseFloat(addRoomForm.pricePerNight),
-      status: "Available",
-      cleaning: "Clean",
-      maintenance: "None"
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const data = await roomService.getRoomsByResort(1);
+        if (data && data.length > 0) {
+          const mappedRooms = data.map(r => ({
+            id: r.id,
+            roomNumber: r.roomNumber,
+            resortId: r.resortId || 1,
+            type: r.type,
+            pricePerNight: r.pricePerNight,
+            status: r.status === "AVAILABLE" ? "Available" : r.status === "OCCUPIED" ? "Occupied" : "Maintenance",
+            cleaning: r.cleaningStatus === "CLEAN" ? "Clean" : r.cleaningStatus === "CLEANING" ? "Cleaning" : "Dirty",
+            maintenance: r.maintenanceDetails || "None"
+          }));
+          setRooms(mappedRooms);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch rooms from backend, using local defaults:", err);
+      }
     };
-    setRooms([...rooms, newRoomObj]);
-    setShowAddRoomModal(false);
-    showToast(`Room #${addRoomForm.roomNumber} added to inventory.`);
-    setAddRoomForm({ roomNumber: "", type: "Deluxe", pricePerNight: "", resortId: "1" });
+    fetchRooms();
+  }, []);
+
+  const handleAddRoom = async (e) => {
+    e.preventDefault();
+    try {
+      const newRoom = await roomService.createRoom(parseInt(addRoomForm.resortId, 10), {
+        roomNumber: addRoomForm.roomNumber,
+        type: addRoomForm.type,
+        pricePerNight: parseFloat(addRoomForm.pricePerNight),
+        capacity: addRoomForm.type === "Suite" ? 4 : 2,
+        status: "AVAILABLE",
+        cleaningStatus: "CLEAN"
+      });
+      
+      const mapped = {
+        id: newRoom.id,
+        roomNumber: newRoom.roomNumber,
+        resortId: newRoom.resortId || 1,
+        type: newRoom.type,
+        pricePerNight: newRoom.pricePerNight,
+        status: "Available",
+        cleaning: "Clean",
+        maintenance: "None"
+      };
+      
+      setRooms(prev => [...prev, mapped]);
+      setShowAddRoomModal(false);
+      showToast(`Room #${addRoomForm.roomNumber} added to inventory.`);
+      setAddRoomForm({ roomNumber: "", type: "Deluxe", pricePerNight: "", resortId: "1" });
+    } catch (err) {
+      showToast("Failed to add room: " + err.message);
+    }
+  };
+
+  const handleDeleteRoom = async (roomId) => {
+    try {
+      await roomService.deleteRoom(roomId);
+      setRooms(prev => prev.filter(r => r.id !== roomId));
+      showToast("Room deleted successfully.");
+    } catch (err) {
+      showToast("Failed to delete room: " + err.message);
+    }
+  };
+
+  const handleToggleRoomStatus = async (room) => {
+    try {
+      const nextStatus = room.status === "Available" ? "OCCUPIED" : "AVAILABLE";
+      await roomService.updateRoomStatus(room.id, nextStatus, null, null);
+      setRooms(prev => prev.map(r => r.id === room.id ? { ...r, status: nextStatus === "AVAILABLE" ? "Available" : "Occupied" } : r));
+      showToast(`Room #${room.roomNumber} occupancy updated.`);
+    } catch (err) {
+      showToast("Failed to update status: " + err.message);
+    }
   };
 
   const handleAddOffer = (e) => {
@@ -685,14 +745,17 @@ export default function ResortAdminPortal() {
                           </span>
                         </td>
                         <td className="py-3.5 text-center">
-                          <button
-                            onClick={() => {
-                              setRooms(prev => prev.map(r => r.id === room.id ? { ...r, status: r.status === "Available" ? "Occupied" : "Available" } : r));
-                              showToast(`Room #${room.roomNumber} occupancy updated.`);
-                            }}
-                            className="py-1 px-3 border border-solid border-[var(--color-border-color)] text-[var(--color-text-dark)] rounded-lg text-[10px] font-bold cursor-pointer hover:bg-white/5 transition"
+                           <button
+                            onClick={() => handleToggleRoomStatus(room)}
+                            className="py-1 px-3 border border-solid border-[var(--color-border-color)] text-[var(--color-text-dark)] rounded-lg text-[10px] font-bold cursor-pointer hover:bg-white/5 transition inline-flex items-center"
                           >
                             Toggle State
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRoom(room.id)}
+                            className="py-1 px-3 ml-2 border border-solid border-red-500/20 text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-lg text-[10px] font-bold cursor-pointer transition inline-flex items-center"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" /> Delete
                           </button>
                         </td>
                       </tr>

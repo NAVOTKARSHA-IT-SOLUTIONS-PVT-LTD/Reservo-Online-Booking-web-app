@@ -46,4 +46,20 @@ public class RoomService {
         if (maintenance != null) room.setMaintenanceDetails(maintenance);
         return roomRepository.save(room);
     }
+
+    @Transactional
+    public Room updateRoom(Long id, Room updatedDetails) {
+        Room room = getRoomById(id);
+        room.setRoomNumber(updatedDetails.getRoomNumber());
+        room.setPricePerNight(updatedDetails.getPricePerNight());
+        room.setCapacity(updatedDetails.getCapacity());
+        room.setType(updatedDetails.getType());
+        return roomRepository.save(room);
+    }
+
+    @Transactional
+    public void deleteRoom(Long id) {
+        Room room = getRoomById(id);
+        roomRepository.delete(room);
+    }
 }

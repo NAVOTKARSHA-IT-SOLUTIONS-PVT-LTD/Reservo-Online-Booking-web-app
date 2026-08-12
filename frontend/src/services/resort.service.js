@@ -94,5 +94,21 @@ export const resortService = {
       perks: ["Free Cancellation", "Breakfast Included", "Transfer Services"],
       category: "beach"
     };
+  },
+
+  async updateResort(id, resortDetails) {
+    const result = await apiClient.put(`/api/v1/resorts/${id}`, resortDetails);
+    if (result && result.success) {
+      return result.data;
+    }
+    throw new Error(result?.message || "Failed to update resort details");
+  },
+
+  async deleteResort(id) {
+    const result = await apiClient.delete(`/api/v1/resorts/${id}`);
+    if (result && result.success) {
+      return true;
+    }
+    throw new Error(result?.message || "Failed to delete resort");
   }
 };
