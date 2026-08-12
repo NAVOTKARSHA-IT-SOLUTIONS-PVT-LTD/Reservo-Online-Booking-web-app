@@ -49,6 +49,16 @@ public class PaymentController {
                     amount
             );
 
+            // Check for placeholder key simulation fallback
+            if (stripeService.isPlaceholderKey()) {
+                log.warn("Stripe API key is a placeholder. Falling back to local mock payment simulation.");
+                // Confirm booking and trigger mock receipt log & confirmation email
+                bookingService.confirmBooking(booking.getBookingCode(), "ch_mock_" + System.currentTimeMillis(), "MOCK_UPI");
+                
+                String mockSuccessUrl = successUrl + "?bookingCode=" + booking.getBookingCode();
+                return ResponseEntity.ok(ApiResponse.success(mockSuccessUrl, "Mock payment link generated successfully"));
+            }
+
             // Create Stripe Checkout session
             Session session = stripeService.createCheckoutSession(booking, successUrl, cancelUrl);
             return ResponseEntity.ok(ApiResponse.success(session.getUrl(), "Checkout session generated successfully"));

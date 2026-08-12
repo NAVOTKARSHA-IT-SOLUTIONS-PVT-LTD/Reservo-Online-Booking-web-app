@@ -27,6 +27,10 @@ public class StripeService {
         log.info("Stripe SDK initialized successfully.");
     }
 
+    public boolean isPlaceholderKey() {
+        return apiKey == null || apiKey.trim().isEmpty() || apiKey.contains("SampleKey") || apiKey.equals("sk_test_51PxSampleKey");
+    }
+
     /**
      * Creates a Stripe Checkout Session for a pending Booking.
      * Supports both Credit/Debit Cards and UPI payments.
