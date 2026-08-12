@@ -8,6 +8,7 @@ import {
 import rivoSearching from "../assets/images/rivo_searching.png";
 import { ALL_RESORTS } from "../data/resorts";
 import { resortService } from "../services/resort.service";
+import { authService } from "../services/auth.service";
 
 const FILTER_CHIPS = [
   { id: "ai", label: "✨ AI Recommended", icon: null },
@@ -158,6 +159,7 @@ function ResortCard({ resort, searchParams, nights }) {
 function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const user = authService.getCurrentUser();
 
   const dest = searchParams.get("destination") || "";
   const checkinStr = searchParams.get("checkin") || "";
@@ -308,7 +310,7 @@ function SearchResults() {
         {/* Personalization Banner */}
         <div className="mb-8 fade-up">
           <h1 className="text-2xl font-extrabold text-text-dark flex items-center gap-2 mb-2">
-            👋 Welcome back, Tausif.
+            👋 Welcome back, {user?.name || "User"}.
           </h1>
           <p className="text-text-gray text-base">
             We found <strong className="text-text-dark">{sorted.length} stays</strong> in {dest || "your selected location"} that match your travel style.

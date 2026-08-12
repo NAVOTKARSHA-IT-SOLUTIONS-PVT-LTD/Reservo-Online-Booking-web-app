@@ -4,9 +4,11 @@ import {
   LayoutGrid, Calendar, Wallet, Award, ArrowRight, 
   MapPin, Sparkles, QrCode, ClipboardList, Clock 
 } from "lucide-react";
+import { authService } from "../services/auth.service";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const user = authService.getCurrentUser();
 
   return (
     <div className="min-h-screen bg-bg-light pt-28 pb-20 px-6 font-sans transition-colors duration-300">
@@ -15,7 +17,7 @@ export default function Dashboard() {
         {/* Header Greeting */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border-color pb-6">
           <div>
-            <h1 className="text-3xl font-serif font-extrabold text-text-dark">Welcome back, Tausif 👋</h1>
+            <h1 className="text-3xl font-serif font-extrabold text-text-dark">Welcome back, {user?.name || "User"} 👋</h1>
             <p className="text-sm text-text-gray mt-1">Manage your luxury stays, rewards points, and active travel passes here.</p>
           </div>
           <button 

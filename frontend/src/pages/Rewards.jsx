@@ -3,6 +3,7 @@ import { Gift, Award, TrendingUp, CreditCard, Tag, Heart, X, Sparkles, RefreshCw
 import { rewardService } from "../services/reward.service";
 import { Skeleton } from "../components/Skeleton";
 import ErrorScreen from "../components/ErrorScreen";
+import { authService } from "../services/auth.service";
 
 function RewardCard({ icon, title, description, badge, onLearnMore }) {
   return (
@@ -30,6 +31,7 @@ function RewardCard({ icon, title, description, badge, onLearnMore }) {
 }
 
 export default function Rewards() {
+  const user = authService.getCurrentUser();
   const [activeReward, setActiveReward] = useState(null);
   const [rewardStatus, setRewardStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -166,7 +168,7 @@ export default function Rewards() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-gold/20 blur-[80px] rounded-full pointer-events-none"></div>
           
           <div className="z-10 text-center md:text-left mb-8 md:mb-0">
-            <h2 className="text-2xl font-bold mb-2">Welcome back, Tausif!</h2>
+            <h2 className="text-2xl font-bold mb-2">Welcome back, {user?.name || "User"}!</h2>
             <p className="text-white/70 mb-4">You are currently a <strong className="text-gold">{rewardStatus.membershipLevel}</strong></p>
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[140px]">
