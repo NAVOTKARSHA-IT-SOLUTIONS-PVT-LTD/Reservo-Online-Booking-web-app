@@ -33,7 +33,7 @@ async function request(endpoint, options = {}) {
 
   const isAuthEndpoint = endpoint.includes("/api/v1/auth/");
 
-  if ((response.status === 401 || response.status === 403) && !isAuthEndpoint) {
+  if (response.status === 401 && !isAuthEndpoint) {
     secureStorage.removeItem(TOKEN_KEY);
     secureStorage.removeItem("reservo_user");
     if (!window.location.pathname.includes("/login")) {
