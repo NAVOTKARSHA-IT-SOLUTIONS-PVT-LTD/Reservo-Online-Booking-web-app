@@ -87,7 +87,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/staff/**", "/api/v1/documents/**").hasAnyRole("OWNER", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/v1/offers/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/offers/**").hasRole("ADMIN")
-                .requestMatchers("/api/v1/bookings/**", "/api/v1/wishlist/**", "/api/v1/user/**", "/api/v1/reviews/**", "/api/v1/payments/**").authenticated()
+                .requestMatchers("/api/v1/bookings/**", "/api/v1/wishlist/**", "/api/v1/user/**", "/api/v1/reviews/**", "/api/v1/payments/**", "/api/v1/rewards/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)

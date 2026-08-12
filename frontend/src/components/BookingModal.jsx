@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Sparkles, QrCode, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { bookingService } from '../services/booking.service';
+import { rewardService } from '../services/reward.service';
 import { useToast } from '../context/ToastContext';
 import StripeCardInput from './StripeCardInput';
 import rivoConfirmed from '../assets/images/rivo_confirmed.png';
@@ -18,6 +19,12 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
   // Currency Converter states
   const [currencySymbol, setCurrencySymbol] = useState("₹");
   const [exchangeRate, setExchangeRate] = useState(1);
+
+  // Loyalty Coupons states
+  const [couponCode, setCouponCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -45,7 +52,9 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
   const helicopterFee = addonHelicopter ? 8000 : 0;
   const subtotal = (basePrice * nights) + butlerFee + dinnerFee + helicopterFee;
   const taxes = Math.round(subtotal * 0.12);
-  const grandTotal = subtotal + taxes;
+  const totalBeforeDiscount = subtotal + taxes;
+  const discountAmount = Math.round(totalBeforeDiscount * (discountPercent / 100));
+  const grandTotal = totalBeforeDiscount - discountAmount;
 
   const [bookingCode] = useState(() => `RES-${Math.floor(100000 + Math.random() * 900000)}`);
   const handleConfirm = async () => {
@@ -78,6 +87,23 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
     }
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    try {
+      const discount = await rewardService.validateCoupon(couponCode.trim());
+      setDiscountPercent(discount);
+      setCouponApplied(true);
+      toast(`Coupon applied! ${discount}% discount applied to stays.`, "success");
+    } catch (e) {
+      toast(e.message || "Invalid coupon code.", "error");
+      setDiscountPercent(0);
+      setCouponApplied(false);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const handleStripeCheckout = async () => {
     setSubmitting(true);
     try {
@@ -86,7 +112,8 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
         roomId: room ? room.id : (resort.roomTypes && resort.roomTypes[0] ? resort.roomTypes[0].id : null),
         checkin: "2026-09-12",
         checkout: "2026-09-15",
-        total: grandTotal
+        total: grandTotal,
+        couponCode: couponApplied ? couponCode : undefined
       };
       const checkoutUrl = await bookingService.createCheckoutSession(bookingDetails);
       toast("Redirecting to secure Stripe checkout...", "success");
@@ -266,6 +293,39 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
                 {addonDinner && <div className="flex justify-between"><span>Beachfront Dinner</span><span>{currencySymbol}{(Math.round(3500 * exchangeRate)).toLocaleString()}</span></div>}
                 {addonHelicopter && <div className="flex justify-between"><span>Helicopter Shuttle</span><span>{currencySymbol}{(Math.round(8000 * exchangeRate)).toLocaleString()}</span></div>}
                 <div className="flex justify-between"><span>Resort Taxes (12%)</span><span>{currencySymbol}{(Math.round(taxes * exchangeRate)).toLocaleString()}</span></div>
+                
+                {/* Coupon Entry Block */}
+                <div className="pt-2 border-t border-dashed border-stone-200 dark:border-stone-700">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Redeemed Coupon Code" 
+                      value={couponCode} 
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      disabled={couponApplied || couponLoading}
+                      className={`flex-grow p-2 text-xs rounded-xl border bg-transparent font-medium uppercase tracking-wider outline-none ${
+                        isDarkMode 
+                          ? 'border-[#334155] focus:border-[#2563EB] text-[#F8FAFC]' 
+                          : 'border-[#E2E8F0] focus:border-[#2563EB] text-[#0F172A]'
+                      }`}
+                    />
+                    <button 
+                      onClick={handleApplyCoupon}
+                      disabled={couponApplied || !couponCode.trim() || couponLoading}
+                      className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-stone-400 text-white text-xs font-bold rounded-xl border-none cursor-pointer transition"
+                    >
+                      {couponLoading ? "Checking..." : couponApplied ? "Applied" : "Apply"}
+                    </button>
+                  </div>
+                </div>
+
+                {couponApplied && (
+                  <div className="flex justify-between text-[#10B981] font-bold">
+                    <span>Loyalty Discount ({discountPercent}%)</span>
+                    <span>-{currencySymbol}{(Math.round(discountAmount * exchangeRate)).toLocaleString()}</span>
+                  </div>
+                )}
+
                 <div className="border-t pt-2 flex justify-between text-base font-bold text-[#2563EB]">
                   <span>Total Amount</span>
                   <span>{currencySymbol}{(Math.round(grandTotal * exchangeRate)).toLocaleString()}</span>

@@ -186,8 +186,10 @@ export const bookingService = {
     const successUrl = `${window.location.origin}/payment/success`;
     const cancelUrl = `${window.location.origin}/payment/cancel`;
 
+    const couponQuery = bookingDetails.couponCode ? `&couponCode=${encodeURIComponent(bookingDetails.couponCode)}` : "";
+
     const result = await apiClient.post(
-      `/api/v1/payments/checkout?userId=${uId}&resortId=${rId}&roomId=${roomId}&checkIn=${bookingDetails.checkin}&checkOut=${bookingDetails.checkout}&amount=${bookingDetails.total}&successUrl=${encodeURIComponent(successUrl)}&cancelUrl=${encodeURIComponent(cancelUrl)}`
+      `/api/v1/payments/checkout?userId=${uId}&resortId=${rId}&roomId=${roomId}&checkIn=${bookingDetails.checkin}&checkOut=${bookingDetails.checkout}&amount=${bookingDetails.total}&successUrl=${encodeURIComponent(successUrl)}&cancelUrl=${encodeURIComponent(cancelUrl)}${couponQuery}`
     );
     if (result && result.success && result.data) {
       return result.data;

@@ -2,6 +2,8 @@ package com.reservo.backend.controller;
 
 import com.reservo.backend.dto.ApiResponse;
 import com.reservo.backend.entity.Booking;
+import com.reservo.backend.entity.Coupon;
+import com.reservo.backend.repository.CouponRepository;
 import com.reservo.backend.service.BookingService;
 import com.reservo.backend.service.StripeService;
 import com.stripe.model.Event;
@@ -27,6 +29,7 @@ public class PaymentController {
 
     private final BookingService bookingService;
     private final StripeService stripeService;
+    private final CouponRepository couponRepository;
 
     @Value("${app.stripe.webhook-secret}")
     private String endpointSecret;
@@ -39,14 +42,31 @@ public class PaymentController {
             @RequestParam String checkIn,
             @RequestParam String checkOut,
             @RequestParam BigDecimal amount,
+            @RequestParam(required = false) String couponCode,
             @RequestParam String successUrl,
             @RequestParam String cancelUrl) {
         try {
+            BigDecimal finalAmount = amount;
+
+            if (couponCode != null && !couponCode.trim().isEmpty()) {
+                Coupon coupon = couponRepository.findByCodeAndUserId(couponCode.trim(), userId)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid coupon code or not owned by you."));
+                if (coupon.getStatus() != Coupon.CouponStatus.ACTIVE) {
+                    throw new IllegalArgumentException("Coupon code has already been used or expired.");
+                }
+
+                // Apply discount (e.g. 10% off)
+                BigDecimal discountMultiplier = BigDecimal.valueOf(100 - coupon.getDiscountPercentage())
+                        .divide(BigDecimal.valueOf(100));
+                finalAmount = amount.multiply(discountMultiplier);
+                log.info("Applied coupon {} for discount. Final amount: {}", couponCode, finalAmount);
+            }
+
             // Create pending booking
             Booking booking = bookingService.createBooking(
                     userId, resortId, roomId,
                     LocalDate.parse(checkIn), LocalDate.parse(checkOut),
-                    amount
+                    finalAmount
             );
 
             // Check for placeholder key simulation fallback
@@ -55,12 +75,19 @@ public class PaymentController {
                 // Confirm booking and trigger mock receipt log & confirmation email
                 bookingService.confirmBooking(booking.getBookingCode(), "ch_mock_" + System.currentTimeMillis(), "MOCK_UPI");
                 
+                if (couponCode != null && !couponCode.trim().isEmpty()) {
+                    couponRepository.findByCode(couponCode.trim()).ifPresent(coupon -> {
+                        coupon.setStatus(Coupon.CouponStatus.USED);
+                        couponRepository.save(coupon);
+                    });
+                }
+
                 String mockSuccessUrl = successUrl + "?bookingCode=" + booking.getBookingCode();
                 return ResponseEntity.ok(ApiResponse.success(mockSuccessUrl, "Mock payment link generated successfully"));
             }
 
             // Create Stripe Checkout session
-            Session session = stripeService.createCheckoutSession(booking, successUrl, cancelUrl);
+            Session session = stripeService.createCheckoutSession(booking, successUrl, cancelUrl, couponCode);
             return ResponseEntity.ok(ApiResponse.success(session.getUrl(), "Checkout session generated successfully"));
         } catch (Exception e) {
             log.error("Failed to generate Stripe checkout session", e);
@@ -110,6 +137,17 @@ public class PaymentController {
 
                 try {
                     bookingService.confirmBooking(bookingCode, paymentIntentId, paymentMethod);
+                    
+                    // Consume Stripe Session Coupon if applied
+                    String couponCode = session.getMetadata().get("couponCode");
+                    if (couponCode != null && !couponCode.trim().isEmpty()) {
+                        couponRepository.findByCode(couponCode.trim()).ifPresent(coupon -> {
+                            coupon.setStatus(Coupon.CouponStatus.USED);
+                            couponRepository.save(coupon);
+                            log.info("Webhook successfully consumed coupon: {}", couponCode);
+                        });
+                    }
+
                     log.info("Webhook successfully confirmed booking: {}", bookingCode);
                 } catch (Exception e) {
                     log.error("Failed to confirm booking from Webhook", e);

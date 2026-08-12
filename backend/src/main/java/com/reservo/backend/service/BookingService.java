@@ -26,6 +26,7 @@ public class BookingService {
     private final PaymentRepository paymentRepository;
     private final EmailService emailService;
     private final StripeService stripeService;
+    private final LoyaltyService loyaltyService;
 
     @Transactional
     public Booking createBooking(Long userId, Long resortId, Long roomId, LocalDate checkIn, LocalDate checkOut, BigDecimal amount) {
@@ -73,6 +74,9 @@ public class BookingService {
                     .build();
             paymentRepository.save(payment);
 
+            // Award loyalty rewards points
+            loyaltyService.awardPoints(booking.getUser(), booking.getTotalAmount());
+
             log.info("Booking {} successfully paid and confirmed with transaction ID: {}", bookingCode, paymentIntentId);
 
             // Send confirmation email
@@ -112,6 +116,9 @@ public class BookingService {
             // Mark booking as CANCELLED
             booking.setStatus(Booking.BookingStatus.CANCELLED);
             booking = bookingRepository.save(booking);
+
+            // Revoke loyalty rewards points
+            loyaltyService.revokePoints(booking.getUser(), booking.getTotalAmount());
 
             log.info("Booking {} cancelled and payment refunded successfully.", booking.getBookingCode());
         } catch (Exception e) {

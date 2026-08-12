@@ -39,6 +39,14 @@ public class User {
 
     private String avatarUrl;
 
+    @Column(name = "reward_points", nullable = false)
+    @Builder.Default
+    private Integer rewardPoints = 24500;
+
+    @Column(name = "membership_level", nullable = false)
+    @Builder.Default
+    private String membershipLevel = "Gold Member";
+
     // Security Requirement: User Authentication fields
     @Column(name = "login_provider", length = 50)
     @Builder.Default

@@ -31,15 +31,11 @@ public class StripeService {
         return apiKey == null || apiKey.trim().isEmpty() || apiKey.contains("SampleKey") || apiKey.equals("sk_test_51PxSampleKey");
     }
 
-    /**
-     * Creates a Stripe Checkout Session for a pending Booking.
-     * Supports both Credit/Debit Cards and UPI payments.
-     */
-    public Session createCheckoutSession(Booking booking, String successUrl, String cancelUrl) throws Exception {
+    public Session createCheckoutSession(Booking booking, String successUrl, String cancelUrl, String couponCode) throws Exception {
         // Stripe expects unit amounts in cents/paise (multiply by 100)
         long unitAmount = booking.getTotalAmount().multiply(BigDecimal.valueOf(100)).longValue();
 
-        SessionCreateParams params = SessionCreateParams.builder()
+        SessionCreateParams.Builder builder = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(successUrl + "?bookingCode=" + booking.getBookingCode())
                 .setCancelUrl(cancelUrl)
@@ -55,10 +51,13 @@ public class StripeService {
                                         .build())
                                 .build())
                         .build())
-                .putMetadata("bookingCode", booking.getBookingCode())
-                .build();
+                .putMetadata("bookingCode", booking.getBookingCode());
 
-        return Session.create(params);
+        if (couponCode != null && !couponCode.trim().isEmpty()) {
+            builder.putMetadata("couponCode", couponCode.trim());
+        }
+
+        return Session.create(builder.build());
     }
 
     /**
