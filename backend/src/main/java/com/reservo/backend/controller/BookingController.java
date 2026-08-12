@@ -1,6 +1,8 @@
 package com.reservo.backend.controller;
 
+
 import com.reservo.backend.dto.ApiResponse;
+import com.reservo.backend.dto.BookingHistoryResponse;
 import com.reservo.backend.entity.Booking;
 import com.reservo.backend.service.BookingService;
 import lombok.RequiredArgsConstructor;
@@ -37,4 +39,16 @@ public class BookingController {
     public ResponseEntity<ApiResponse<List<Booking>>> getUserBookings(@RequestParam Long userId) {
         return ResponseEntity.ok(ApiResponse.success(bookingService.getUserBookings(userId)));
     }
+    @GetMapping("/history")
+public ResponseEntity<ApiResponse<List<BookingHistoryResponse>>> getBookingHistory(
+        @RequestParam Long userId
+) {
+
+    return ResponseEntity.ok(
+            ApiResponse.success(
+                    bookingService.getUserBookingHistory(userId),
+                    "Booking history retrieved successfully"
+            )
+    );
+}
 }
