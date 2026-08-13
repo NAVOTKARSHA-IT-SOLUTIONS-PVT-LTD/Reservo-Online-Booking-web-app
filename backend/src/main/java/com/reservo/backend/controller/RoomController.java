@@ -43,4 +43,16 @@ public class RoomController {
         Room updated = roomService.updateRoomStatus(id, status, cleaning, maintenance);
         return ResponseEntity.ok(ApiResponse.success(updated, "Room status updated successfully"));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Room>> updateRoom(@PathVariable Long id, @RequestBody Room room) {
+        Room updated = roomService.updateRoom(id, room);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Room updated successfully"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteRoom(@PathVariable Long id) {
+        roomService.deleteRoom(id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Room deleted successfully"));
+    }
 }

@@ -85,9 +85,30 @@ export const resortService = {
       reviewCount: item.reviewCount || 0,
       featuredTag: item.featuredTag,
       discount: item.discountPercentage || 0,
-      amenities: ["WiFi", "Pool", "Spa", "Gym", "Restaurant", "Beach Access"],
+      highlights: ["Private Beach Access", "Infinity Edge Pool", "Aura Ayurvedic Spa", "Personal AI Butler", "Private Helipad Access"],
+      amenities: [
+        { name: "Private Plunge Pool", icon: "Waves" },
+        { name: "Aura Luxury Spa", icon: "Sparkles" },
+        { name: "Oceanfront Dining", icon: "Utensils" }
+      ],
       perks: ["Free Cancellation", "Breakfast Included", "Transfer Services"],
       category: "beach"
     };
+  },
+
+  async updateResort(id, resortDetails) {
+    const result = await apiClient.put(`/api/v1/resorts/${id}`, resortDetails);
+    if (result && result.success) {
+      return result.data;
+    }
+    throw new Error(result?.message || "Failed to update resort details");
+  },
+
+  async deleteResort(id) {
+    const result = await apiClient.delete(`/api/v1/resorts/${id}`);
+    if (result && result.success) {
+      return true;
+    }
+    throw new Error(result?.message || "Failed to delete resort");
   }
 };

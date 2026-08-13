@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { X, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ALL_RESORTS } from "../data/resorts";
-import rivoMascot from "../assets/images/rivo_mascot.jpg";
+import rivoMascot from "../assets/images/rivo_mascot.png";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
+import rivoWaving from "../assets/images/rivo_waving.png";
 
 const QUICK_REPLIES = [
   { text: "🌴 Suggest beach resorts", key: "beach" },
@@ -116,6 +117,7 @@ function Mascot({ isDark, setIsDark }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeMode, setActiveMode] = useState("support");
   const [rivoAvatar, setRivoAvatar] = useState(rivoSupport);
+  const [isHovered, setIsHovered] = useState(false);
 
   const renderFormattedText = (text) => {
     if (!text) return "";
@@ -245,17 +247,35 @@ function Mascot({ isDark, setIsDark }) {
   return (
     <div className="fixed bottom-7.5 right-7.5 z-[2000]">
       
-      {/* Floating Mascot Trigger Badge */}
-      <button 
-        className={`w-14 h-14 rounded-full bg-bg-white border-1.5 border-border-color shadow-[0_10px_30px_rgba(0,0,0,0.15)] cursor-pointer flex items-center justify-center overflow-hidden relative transition-all duration-300 ease-out p-0 hover:scale-[1.08] hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(0,0,0,0.2)] ${
-          isOpen ? "scale-[1.08]" : ""
-        }`}
-        onClick={toggleChat}
-        aria-label="Toggle Rivo AI Companion"
-      >
-        <img src={rivoAvatar} alt="Rivo Mascot" className="w-full h-full object-cover" />
-        <span className="absolute -inset-1 border-2 border-gold rounded-full animate-pulse-rivo pointer-events-none"></span>
-      </button>
+      {/* Floating Mascot Trigger Badge with peeking out-of-bounds hover animation */}
+      <div className="relative w-18 h-18 group">
+        {/* Circle Background */}
+        <div 
+          className={`absolute inset-0 rounded-full bg-[#89cff0] border-1.5 border-border-color shadow-[0_10px_30px_rgba(0,0,0,0.15)] transition-all duration-300 ease-out group-hover:scale-[1.08] group-hover:shadow-[0_15px_35px_rgba(0,0,0,0.2)] ${
+            isOpen ? "scale-[1.08]" : ""
+          }`}
+        />
+        
+        {/* Mascot Image (Peeks and waves out of the circle on hover) */}
+        <div className="absolute inset-0 flex items-end justify-center pointer-events-none overflow-visible">
+          <img 
+            src={`${isHovered ? rivoWaving : rivoAvatar}?v=10`} 
+            alt="Rivo Mascot" 
+            className={`w-[110%] h-[110%] object-contain transition-all duration-300 ease-out origin-bottom ${
+              isHovered ? "scale-[1.3] -translate-y-2.5" : "scale-[1.05] translate-y-0.5"
+            }`} 
+          />
+        </div>
+
+        {/* Click/Hover Event capture layer */}
+        <button
+          className="absolute inset-0 rounded-full bg-transparent border-none cursor-pointer z-10 focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
+          onClick={toggleChat}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          aria-label="Toggle Rivo AI Companion"
+        />
+      </div>
 
       {/* Interactive Chat Popup Dialog */}
       {isOpen && (

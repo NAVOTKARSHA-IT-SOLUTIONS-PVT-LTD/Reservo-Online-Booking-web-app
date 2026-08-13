@@ -46,6 +46,25 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .emailVerified(true)
                     .build());
 
+            // Custom business partner accounts from user request
+            userRepository.save(User.builder()
+                    .name("Resort Partner Elite 1")
+                    .email("reservo2mail.in")
+                    .passwordHash(passwordEncoder.encode("123456"))
+                    .role(User.Role.ROLE_OWNER)
+                    .status(User.UserStatus.ACTIVE)
+                    .emailVerified(true)
+                    .build());
+
+            userRepository.save(User.builder()
+                    .name("Resort Partner Elite 2")
+                    .email("reservo2@mail.in")
+                    .passwordHash(passwordEncoder.encode("123456"))
+                    .role(User.Role.ROLE_OWNER)
+                    .status(User.UserStatus.ACTIVE)
+                    .emailVerified(true)
+                    .build());
+
             log.info("User accounts seeded successfully!");
         }
 
@@ -110,7 +129,40 @@ public class DatabaseSeeder implements CommandLineRunner {
                     .owner(owner)
                     .build());
 
-            log.info("Successfully seeded 4 luxury resorts!");
+            User customOwner1 = userRepository.findByEmail("reservo2mail.in").orElse(null);
+            User customOwner2 = userRepository.findByEmail("reservo2@mail.in").orElse(null);
+
+            if (customOwner1 != null) {
+                resortRepository.save(Resort.builder()
+                        .name("Reservo Elite Partner Haven")
+                        .location("Mumbai, India")
+                        .description("Premium urban resort featuring private rooftops, luxury suites, and curated dining experiences.")
+                        .imageUrl("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80")
+                        .pricePerNight(new BigDecimal("10999"))
+                        .rating(4.9)
+                        .reviewCount(120)
+                        .featuredTag("Elite Partner")
+                        .status(Resort.ResortStatus.APPROVED)
+                        .owner(customOwner1)
+                        .build());
+            }
+
+            if (customOwner2 != null) {
+                resortRepository.save(Resort.builder()
+                        .name("Reservo Signature Oasis")
+                        .location("Pune, India")
+                        .description("Scenic valley getaway featuring private infinity pools, organic farm dinners, and spa therapy.")
+                        .imageUrl("https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80")
+                        .pricePerNight(new BigDecimal("9499"))
+                        .rating(4.8)
+                        .reviewCount(95)
+                        .featuredTag("Free Airport Transfer")
+                        .status(Resort.ResortStatus.APPROVED)
+                        .owner(customOwner2)
+                        .build());
+            }
+
+            log.info("Successfully seeded luxury resorts!");
 
             // Seed rooms for the resorts
             if (roomRepository.count() == 0 && owner != null) {

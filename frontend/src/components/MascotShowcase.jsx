@@ -3,7 +3,7 @@ import { Sparkles, ArrowRight } from "lucide-react";
 import { useTranslation } from "../hooks/useTranslation";
 
 // Import all Rivo mascot images
-import rivoMascot from "../assets/images/rivo_mascot.jpg";
+import rivoMascot from "../assets/images/rivo_mascot.png";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
@@ -120,7 +120,7 @@ function MascotShowcase() {
               {/* Image Frame */}
               <div className="w-[150px] h-[150px] rounded-full overflow-hidden border-4 border-sky-200/50 dark:border-slate-700/80 mt-4 mb-6 shadow-lg bg-gradient-to-tr from-sky-100 to-sky-50/20 dark:from-slate-800 dark:to-sky-900/30">
                 <img 
-                  src={activeTab.image} 
+                  src={`${activeTab.image}?v=10`} 
                   alt={`Rivo ${activeTabId}`}
                   className="w-full h-full object-cover transition-transform duration-300"
                 />

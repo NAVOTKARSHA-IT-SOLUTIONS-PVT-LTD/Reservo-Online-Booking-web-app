@@ -4,7 +4,7 @@ import { authService } from "../services/auth.service";
 import { useNavigate } from "react-router-dom";
 import { X, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import rivoMascot from "../assets/images/rivo_mascot.jpg";
+import rivoMascot from "../assets/images/rivo_mascot.png";
 
 const WishlistContext = createContext();
 const WISHLIST_KEY = "reservo-wishlist";

@@ -9,24 +9,22 @@ import {
 import logoImage from "../assets/images/logo.png";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "../services/auth.service";
+import { useToast } from "../context/ToastContext";
 
 function Header({ isDark, onToggleTheme, wishlist = [] }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const toast = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
   const currencyMenuRef = useRef(null);
 
   const handleListPropertyClick = () => {
-    const isLoggedIn = authService.isAuthenticated();
-    if (!isLoggedIn) {
-      navigate("/register?role=resort_admin");
-    } else {
-      navigate("/partner");
-    }
+    setShowComingSoon(true);
   };
 
   useEffect(() => {
@@ -107,7 +105,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
   };
 
   const isHome = location.pathname === "/";
-  const navLinkClass = "inline-flex items-center justify-center h-8 relative text-[15px] font-semibold transition-colors duration-300 cursor-pointer border-none bg-transparent text-text-dark hover:text-primary after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:transition-transform after:duration-300";
+  const navLinkClass = "inline-flex items-center justify-center h-10 relative text-[15px] font-semibold transition-colors duration-300 cursor-pointer border-none bg-transparent text-text-dark hover:text-primary after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:transition-transform after:duration-300";
   const getNavLinkClass = (isActive) =>
     `${navLinkClass} ${isActive ? "text-primary after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100"}`;
 
@@ -121,16 +119,20 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
         }`}>
           
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 no-underline">
-            <img src={logoImage} alt="R" className="h-9 w-auto object-contain" />
-            <span className="text-[22px] font-extrabold tracking-[0.5px] bg-gradient-to-r from-text-dark via-primary to-[#2563eb] bg-clip-text text-transparent font-serif transition-colors duration-300">
+          <Link to="/" className="flex items-center gap-2.5 no-underline group select-none shrink-0">
+            <img 
+              src={logoImage} 
+              alt="Reservo Logo" 
+              className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
+            />
+            <span className="text-[22px] font-extrabold tracking-[0.5px] text-text-dark font-serif leading-none transition-colors duration-300 group-hover:text-primary">
               Reservo
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex flex-1 justify-center">
-            <ul className="flex gap-8 list-none m-0 p-0 items-center">
+          <nav className="hidden lg:flex flex-1 justify-center px-4">
+            <ul className="flex gap-7 list-none m-0 p-0 items-center justify-center">
               <li>
                 <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className={getNavLinkClass(isHome && activeSection === "home")}>
                   {t("home")}
@@ -175,7 +177,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 shrink-0">
             <button 
               onClick={onToggleTheme} 
               className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all"
@@ -296,7 +298,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               ] : [
                 { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || "User"})`, path: "/profile" }
               ]),
-              { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", action: handleListPropertyClick },
+              { type: "item", icon: <LayoutGrid size={18} />, label: "Host your property", action: handleListPropertyClick },
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
@@ -345,6 +347,35 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           })}
         </ul>
       </div>
+
+      <AnimatePresence>
+        {showComingSoon && (
+          <div className="fixed inset-0 z-[100000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] w-full max-w-md p-8 rounded-[32px] text-center shadow-2xl relative space-y-6"
+            >
+              <div className="w-16 h-16 bg-[#2F80ED]/10 text-primary rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <LayoutGrid className="w-8 h-8 animate-pulse text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-serif font-extrabold text-[var(--color-text-dark)]">Hosting Coming Soon!</h3>
+                <p className="text-xs text-[var(--color-text-gray)] leading-relaxed max-w-xs mx-auto">
+                  We are building a brand-new Airbnb-style property listing and hosting flow. Stay tuned to host your stay with Reservo!
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowComingSoon(false)}
+                className="w-full py-3 bg-primary hover:bg-primary-dark text-white rounded-2xl text-xs font-bold cursor-pointer border-none transition-all"
+              >
+                Got It
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

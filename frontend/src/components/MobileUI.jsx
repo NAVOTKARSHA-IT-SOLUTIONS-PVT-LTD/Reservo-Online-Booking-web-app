@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useWishlist } from "../context/WishlistContext";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu, X, Moon, Sun, Heart, Bell, MapPin, Calendar, Users,
   Search, ArrowRight, Waves, Mountain, Home, Droplets,
@@ -8,11 +9,12 @@ import {
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
   LayoutGrid, BookOpen, Settings, LogOut, Sliders
 } from "lucide-react";
-import rivoMascot from "../assets/images/rivo_mascot.jpg";
+import rivoMascot from "../assets/images/rivo_mascot.png";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
+import rivoWaving from "../assets/images/rivo_waving.png";
 import { ALL_RESORTS } from "../data/resorts";
 import { authService } from "../services/auth.service";
 import Footer from "./Footer";
@@ -152,6 +154,8 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   ]);
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const [isMascotHovered, setIsMascotHovered] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const scrollContainerRef = useRef(null);
@@ -409,14 +413,35 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           </div>
         )}
 
-        {/* Mascot Trigger Button */}
-        <button
-          className="w-12 h-12 rounded-full bg-[var(--color-bg-white)] border-2 border-gold shadow-[0_8px_25px_rgba(0,0,0,0.2)] flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:scale-110 p-0"
-          onClick={() => setIsMascotOpen(!isMascotOpen)}
-          aria-label="Chat with Rivo"
-        >
-          <img src={rivoAvatar} alt="Rivo" className="w-full h-full object-cover" />
-        </button>
+        {/* Mascot Trigger Button with peeking out-of-bounds hover animation */}
+        <div className="relative w-16 h-16 group">
+          {/* Circle Background */}
+          <div 
+            className={`absolute inset-0 rounded-full bg-[#89cff0] border-2 border-gold shadow-[0_8px_25px_rgba(0,0,0,0.2)] transition-all duration-300 ease-out group-hover:scale-[1.08] ${
+              isMascotOpen ? "scale-[1.08]" : ""
+            }`}
+          />
+          
+          {/* Mascot Image (Peeks and waves out of the circle on hover) */}
+          <div className="absolute inset-0 flex items-end justify-center pointer-events-none overflow-visible">
+            <img 
+              src={`${isMascotHovered ? rivoWaving : rivoAvatar}?v=10`} 
+              alt="Rivo" 
+              className={`w-[110%] h-[110%] object-contain transition-all duration-300 ease-out origin-bottom ${
+                isMascotHovered ? "scale-[1.3] -translate-y-2" : "scale-[1.05] translate-y-0.5"
+              }`} 
+            />
+          </div>
+
+          {/* Click/Hover Event capture layer */}
+          <button
+            className="absolute inset-0 rounded-full bg-transparent border-none cursor-pointer z-10 focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
+            onClick={() => setIsMascotOpen(!isMascotOpen)}
+            onMouseEnter={() => setIsMascotHovered(true)}
+            onMouseLeave={() => setIsMascotHovered(false)}
+            aria-label="Chat with Rivo"
+          />
+        </div>
       </div>
 
       {/* ── BOTTOM NAV ─────────────────────────────── */}
@@ -466,11 +491,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             const isLoggedIn = authService.isAuthenticated();
             const user = authService.getCurrentUser();
             const handleListPropertyClick = () => {
-              if (!isLoggedIn) {
-                navigate("/register?role=resort_admin");
-              } else {
-                navigate("/partner");
-              }
+              setShowComingSoon(true);
             };
             return [
               ...(!isLoggedIn ? [
@@ -479,7 +500,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               ] : [
                 { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || "User"})`, path: "/profile" }
               ]),
-              { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", action: handleListPropertyClick },
+              { type: "item", icon: <LayoutGrid size={18} />, label: "Host your property", action: handleListPropertyClick },
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
@@ -528,6 +549,35 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           })}
         </ul>
       </div>
+
+      <AnimatePresence>
+        {showComingSoon && (
+          <div className="fixed inset-0 z-[100000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] w-full max-w-md p-8 rounded-[32px] text-center shadow-2xl relative space-y-6"
+            >
+              <div className="w-16 h-16 bg-[#2F80ED]/10 text-primary rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <LayoutGrid className="w-8 h-8 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-serif font-extrabold text-[var(--color-text-dark)]">Hosting Coming Soon!</h3>
+                <p className="text-xs text-[var(--color-text-gray)] leading-relaxed max-w-xs mx-auto">
+                  We are building a brand-new Airbnb-style property listing and hosting flow. Stay tuned to host your stay with Reservo!
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowComingSoon(false)}
+                className="w-full py-3 bg-primary hover:bg-primary-dark text-white rounded-2xl text-xs font-bold cursor-pointer border-none transition-all"
+              >
+                Got It
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

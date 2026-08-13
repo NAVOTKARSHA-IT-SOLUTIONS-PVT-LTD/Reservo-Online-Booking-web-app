@@ -36,6 +36,8 @@ const Register = React.lazy(() => import("./pages/Register"));
 const ReservoAdminPortal = React.lazy(() => import("./pages/ReservoAdminPortal"));
 const ResortAdminPortal = React.lazy(() => import("./pages/ResortAdminPortal"));
 const PartnerOnboarding = React.lazy(() => import("./pages/PartnerOnboarding"));
+const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
+const PaymentCancel = React.lazy(() => import("./pages/PaymentCancel"));
 
 // Lazy-loaded dummy pages
 const Careers = React.lazy(() => import("./pages/DummyPages").then(m => ({ default: m.Careers })));
@@ -387,6 +389,8 @@ function App() {
             <Route path="/wishlist" element={<Wishlist onBook={(resort) => setBookingResort(resort)} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />
             <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

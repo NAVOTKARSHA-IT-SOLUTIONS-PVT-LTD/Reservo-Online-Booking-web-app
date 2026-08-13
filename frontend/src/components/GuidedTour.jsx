@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, Sparkles } from 'lucide-react';
-import rivoMascot from '../assets/images/rivo_mascot.jpg';
+import rivoMascot from '../assets/images/rivo_mascot.png';
 
 const TOUR_STEPS = [
   {
