@@ -9,11 +9,12 @@ import {
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
   LayoutGrid, BookOpen, Settings, LogOut, Sliders
 } from "lucide-react";
-import rivoMascot from "../assets/images/rivo_mascot.jpg";
+import rivoMascot from "../assets/images/rivo_mascot.png";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
+import rivoWaving from "../assets/images/rivo_waving.png";
 import { ALL_RESORTS } from "../data/resorts";
 import { authService } from "../services/auth.service";
 import Footer from "./Footer";
@@ -154,6 +155,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
+  const [isMascotHovered, setIsMascotHovered] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const scrollContainerRef = useRef(null);
@@ -411,14 +413,35 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           </div>
         )}
 
-        {/* Mascot Trigger Button */}
-        <button
-          className="w-12 h-12 rounded-full bg-[var(--color-bg-white)] border-2 border-gold shadow-[0_8px_25px_rgba(0,0,0,0.2)] flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:scale-110 p-0"
-          onClick={() => setIsMascotOpen(!isMascotOpen)}
-          aria-label="Chat with Rivo"
-        >
-          <img src={rivoAvatar} alt="Rivo" className="w-full h-full object-cover" />
-        </button>
+        {/* Mascot Trigger Button with peeking out-of-bounds hover animation */}
+        <div className="relative w-16 h-16 group">
+          {/* Circle Background */}
+          <div 
+            className={`absolute inset-0 rounded-full bg-[#89cff0] border-2 border-gold shadow-[0_8px_25px_rgba(0,0,0,0.2)] transition-all duration-300 ease-out group-hover:scale-[1.08] ${
+              isMascotOpen ? "scale-[1.08]" : ""
+            }`}
+          />
+          
+          {/* Mascot Image (Peeks and waves out of the circle on hover) */}
+          <div className="absolute inset-0 flex items-end justify-center pointer-events-none overflow-visible">
+            <img 
+              src={`${isMascotHovered ? rivoWaving : rivoAvatar}?v=10`} 
+              alt="Rivo" 
+              className={`w-[110%] h-[110%] object-contain transition-all duration-300 ease-out origin-bottom ${
+                isMascotHovered ? "scale-[1.3] -translate-y-2" : "scale-[1.05] translate-y-0.5"
+              }`} 
+            />
+          </div>
+
+          {/* Click/Hover Event capture layer */}
+          <button
+            className="absolute inset-0 rounded-full bg-transparent border-none cursor-pointer z-10 focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
+            onClick={() => setIsMascotOpen(!isMascotOpen)}
+            onMouseEnter={() => setIsMascotHovered(true)}
+            onMouseLeave={() => setIsMascotHovered(false)}
+            aria-label="Chat with Rivo"
+          />
+        </div>
       </div>
 
       {/* ── BOTTOM NAV ─────────────────────────────── */}

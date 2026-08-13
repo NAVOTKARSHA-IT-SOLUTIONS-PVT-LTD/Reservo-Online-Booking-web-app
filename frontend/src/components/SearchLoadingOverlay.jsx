@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import rivoMascot from "../assets/images/rivo_mascot.jpg";
+import rivoMascot from "../assets/images/rivo_mascot.png";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
@@ -83,7 +83,7 @@ function SearchLoadingOverlay({ destination, onComplete }) {
           <div className="absolute -inset-5 border-2 border-gold/30 rounded-full animate-ping" style={{ animationDuration: "2s" }} />
           <div className="absolute -inset-9 border border-gold/15 rounded-full animate-ping" style={{ animationDuration: "2.5s", animationDelay: "0.5s" }} />
           <img
-            src={activeImage}
+            src={`${activeImage}?v=10`}
             alt="Rivo Mascot"
             className="w-24 h-24 rounded-full object-cover border-2 border-gold shadow-[0_0_30px_rgba(197,160,89,0.4)]"
             style={{ animation: "bounceRivo 2s infinite" }}
