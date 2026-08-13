@@ -105,7 +105,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
   };
 
   const isHome = location.pathname === "/";
-  const navLinkClass = "inline-flex items-center justify-center h-8 relative text-[15px] font-semibold transition-colors duration-300 cursor-pointer border-none bg-transparent text-text-dark hover:text-primary after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:transition-transform after:duration-300";
+  const navLinkClass = "inline-flex items-center justify-center h-10 relative text-[15px] font-semibold transition-colors duration-300 cursor-pointer border-none bg-transparent text-text-dark hover:text-primary after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:transition-transform after:duration-300";
   const getNavLinkClass = (isActive) =>
     `${navLinkClass} ${isActive ? "text-primary after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100"}`;
 
@@ -119,16 +119,20 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
         }`}>
           
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 no-underline">
-            <img src={logoImage} alt="R" className="h-9 w-auto object-contain" />
-            <span className="text-[22px] font-extrabold tracking-[0.5px] bg-gradient-to-r from-text-dark via-primary to-[#2563eb] bg-clip-text text-transparent font-serif transition-colors duration-300">
+          <Link to="/" className="flex items-center gap-2.5 no-underline group select-none shrink-0">
+            <img 
+              src={logoImage} 
+              alt="Reservo Logo" 
+              className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
+            />
+            <span className="text-[22px] font-extrabold tracking-[0.5px] text-text-dark font-serif leading-none transition-colors duration-300 group-hover:text-primary">
               Reservo
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex flex-1 justify-center">
-            <ul className="flex gap-8 list-none m-0 p-0 items-center">
+          <nav className="hidden lg:flex flex-1 justify-center px-4">
+            <ul className="flex gap-7 list-none m-0 p-0 items-center justify-center">
               <li>
                 <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className={getNavLinkClass(isHome && activeSection === "home")}>
                   {t("home")}
@@ -173,7 +177,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 shrink-0">
             <button 
               onClick={onToggleTheme} 
               className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all"

@@ -16,13 +16,24 @@ import {
   ChevronDown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import heroImage from "../assets/images/hero.png";
+import hero1 from "../assets/images/hero1.jpg";
+import hero2 from "../assets/images/hero2.jpg";
+import hero3 from "../assets/images/hero3.jpg";
+import hero4 from "../assets/images/hero4.jpg";
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
+
+const HERO_SLIDES = [
+  hero1,
+  hero2,
+  hero3,
+  hero4
+];
 
 function Hero() {
   const navigate = useNavigate();
   const [isSearching, setIsSearching] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,6 +41,14 @@ function Hero() {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Automatic Hero Background Slideshow timer (5 seconds)
+  useEffect(() => {
+    const slideTimer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(slideTimer);
   }, []);
   
   // Search state
@@ -56,22 +75,18 @@ function Hero() {
   return (
     <section className="relative w-full min-h-[600px] md:min-h-[700px] md:h-screen flex flex-col items-center justify-center pt-16 md:pt-24 pb-12 md:pb-16 overflow-hidden">
       
-      {/* Background Video */}
+      {/* Background Image Slideshow */}
       <div className="absolute inset-0 z-0 overflow-hidden" style={{ transform: `translateY(${scrollY * 0.3}px) scale(${1 + scrollY * 0.0002})` }}>
-        <video 
-          autoPlay 
-          loop 
-          muted 
-          playsInline 
-          poster={heroImage}
-          className="w-full h-full object-cover filter brightness-[0.75]"
-        >
-          <source 
-            src="https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c0b3d87db1c360be1c43ab87a070eb35&profile_id=139&oauth2_token_id=57447761" 
-            type="video/mp4" 
+        {HERO_SLIDES.map((slideImg, index) => (
+          <img
+            key={index}
+            src={slideImg}
+            alt={`Hero Resort ${index + 1}`}
+            className={`absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.75] transition-opacity duration-1000 ease-in-out ${
+              index === currentSlide ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
           />
-          Your browser does not support the video tag.
-        </video>
+        ))}
         {/* Adjusted overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/25 to-transparent"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/55"></div>
