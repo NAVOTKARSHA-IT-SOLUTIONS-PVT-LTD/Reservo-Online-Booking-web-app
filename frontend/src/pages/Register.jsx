@@ -47,7 +47,8 @@ export default function Register() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("role") === "resort_admin") {
+    const r = params.get("role");
+    if (r === "resort_admin" || r === "host") {
       setRoleMode("business");
     }
   }, []);
@@ -282,31 +283,7 @@ export default function Register() {
               </p>
             </div>
 
-            {/* Role Mode Toggle Tabs */}
-            <div className="grid grid-cols-2 gap-2 bg-bg-light p-1 rounded-2xl border border-border-color">
-              <button
-                type="button"
-                onClick={() => setRoleMode("traveller")}
-                className={`py-1.5 text-[10.5px] font-bold rounded-xl border-none cursor-pointer transition ${
-                  roleMode === "traveller"
-                    ? "bg-bg-white text-primary shadow-sm"
-                    : "bg-transparent text-text-gray hover:text-text-dark"
-                }`}
-              >
-                🎒 Traveller
-              </button>
-              <button
-                type="button"
-                onClick={() => setRoleMode("business")}
-                className={`py-1.5 text-[10.5px] font-bold rounded-xl border-none cursor-pointer transition ${
-                  roleMode === "business"
-                    ? "bg-bg-white text-primary shadow-sm"
-                    : "bg-transparent text-text-gray hover:text-text-dark"
-                }`}
-              >
-                🏨 Business Partner
-              </button>
-            </div>
+
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
 
@@ -557,31 +534,7 @@ export default function Register() {
               </button>
             </div>
 
-            {/* Business Partner CTA */}
-            <div className="border-t border-border-color pt-3 mt-1.5 space-y-2 w-full shrink-0">
-              <div className="text-[8px] text-[var(--color-text-gray)] font-extrabold uppercase tracking-wider text-center">
-                Reservo Business Partner Onboarding
-              </div>
-              <button
-                type="button"
-                onClick={() => setRoleMode(roleMode === "business" ? "traveller" : "business")}
-                style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
-                className="w-full py-2.5 text-white rounded-2xl flex items-center justify-between px-5 cursor-pointer shadow-md transition-all duration-300 group border-none"
-              >
-                <div className="flex items-center gap-3 text-left">
-                  <span className="text-lg">🏨</span>
-                  <div>
-                    <h5 className="text-[10px] font-bold text-white uppercase tracking-wide">
-                      {roleMode === "business" ? "Switch to Traveller Registration" : "Register Your Property"}
-                    </h5>
-                    <p className="text-[8.5px] text-white/70 font-semibold mt-0.5">
-                      {roleMode === "business" ? "Go back to personal account" : "Become a Reservo Business Partner"}
-                    </p>
-                  </div>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-white group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
+
 
           </div>
 
