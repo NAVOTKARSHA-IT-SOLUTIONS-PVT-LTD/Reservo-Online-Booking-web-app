@@ -3,7 +3,7 @@ import { Sparkles, ArrowRight } from "lucide-react";
 import { useTranslation } from "../hooks/useTranslation";
 
 // Import all Rivo mascot images
-import rivoMascot from "../assets/images/rivo_mascot.png";
+import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";

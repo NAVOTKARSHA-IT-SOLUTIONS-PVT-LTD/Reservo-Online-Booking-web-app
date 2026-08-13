@@ -10,7 +10,7 @@ import {
   Sparkles, User 
 } from "lucide-react";
 import { authService } from "../services/auth.service";
-import rivoMascot from "../assets/images/rivo_mascot.png";
+import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import logoImage from "../assets/images/logo.png";
 
 // Define registration validation schema with Zod

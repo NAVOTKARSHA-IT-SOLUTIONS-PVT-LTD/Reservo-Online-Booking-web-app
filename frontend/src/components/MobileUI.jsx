@@ -9,7 +9,7 @@ import {
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
   LayoutGrid, BookOpen, Settings, LogOut, Sliders
 } from "lucide-react";
-import rivoMascot from "../assets/images/rivo_mascot.png";
+import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";

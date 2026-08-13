@@ -12,7 +12,7 @@ import { RESORTS } from "../data/resortsData";
 import { apiClient } from "../services/apiClient";
 
 // Rivo Mascots
-import rivoMascot from "../assets/images/rivo_mascot.png";
+import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";

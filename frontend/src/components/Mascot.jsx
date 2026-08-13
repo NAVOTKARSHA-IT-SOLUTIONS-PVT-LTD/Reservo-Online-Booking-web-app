@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { X, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ALL_RESORTS } from "../data/resorts";
-import rivoMascot from "../assets/images/rivo_mascot.png";
+import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
