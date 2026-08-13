@@ -1,6 +1,7 @@
 import React from "react";
 import aboutImage from "../assets/images/about.jpg";
 import { useSEO } from "../hooks/useSEO";
+import { Target, Compass, Heart } from "lucide-react";
 
 function About() {
   useSEO({
@@ -87,8 +88,8 @@ function About() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8.75 mt-15">
             
             <div className="bg-bg-white border border-[#E7DFD4] rounded-2xl px-[30px] py-10 text-center shadow-[0_15px_35px_rgba(0,0,0,0.08)] transition-all duration-[350ms] ease-out hover:-translate-y-2.5 hover:shadow-[0_25px_50px_rgba(0,0,0,0.12)]">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary text-white flex justify-center items-center text-[34px]">
-                🎯
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary to-[#1A342F] text-gold flex justify-center items-center shadow-lg border border-gold/30">
+                <Target className="w-9 h-9 stroke-[2]" />
               </div>
               <h3 className="text-3xl font-bold text-primary mb-[18px]">Our Mission</h3>
               <p className="text-text-gray leading-relaxed">
@@ -98,8 +99,8 @@ function About() {
             </div>
 
             <div className="bg-bg-white border border-[#E7DFD4] rounded-2xl px-[30px] py-10 text-center shadow-[0_15px_35px_rgba(0,0,0,0.08)] transition-all duration-[350ms] ease-out hover:-translate-y-2.5 hover:shadow-[0_25px_50px_rgba(0,0,0,0.12)]">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary text-white flex justify-center items-center text-[34px]">
-                👁
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary to-[#1A342F] text-gold flex justify-center items-center shadow-lg border border-gold/30">
+                <Compass className="w-9 h-9 stroke-[2]" />
               </div>
               <h3 className="text-3xl font-bold text-primary mb-[18px]">Our Vision</h3>
               <p className="text-text-gray leading-relaxed">
@@ -109,8 +110,8 @@ function About() {
             </div>
 
             <div className="bg-bg-white border border-[#E7DFD4] rounded-2xl px-[30px] py-10 text-center shadow-[0_15px_35px_rgba(0,0,0,0.08)] transition-all duration-[350ms] ease-out hover:-translate-y-2.5 hover:shadow-[0_25px_50px_rgba(0,0,0,0.12)]">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary text-white flex justify-center items-center text-[34px]">
-                ❤️
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary to-[#1A342F] text-gold flex justify-center items-center shadow-lg border border-gold/30">
+                <Heart className="w-9 h-9 stroke-[2]" />
               </div>
               <h3 className="text-3xl font-bold text-primary mb-[18px]">Our Values</h3>
               <p className="text-text-gray leading-relaxed">
