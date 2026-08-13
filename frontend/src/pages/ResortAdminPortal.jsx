@@ -5,7 +5,7 @@ import {
   Search, Plus, Filter, Trash2, Edit3, ArrowLeft, 
   FileText, Sparkles, AlertCircle, CheckCircle, BarChart3, 
   Upload, Check, X, ShieldCheck, PieChart, Layers, HelpCircle, UserCheck,
-  Camera, Menu
+  Camera, Menu, Home
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { roomService } from "../services/room.service";
@@ -416,6 +416,7 @@ export default function ResortAdminPortal() {
 
         <nav className="p-4 flex-1 space-y-0.5">
           {[
+            { id: "home", label: "Back to Home", icon: Home },
             { id: "dashboard", label: "Dashboard", icon: Activity },
             { id: "resorts", label: "Resorts", icon: Building },
             { id: "posts", label: "Resort Feed", icon: Camera },
@@ -436,8 +437,12 @@ export default function ResortAdminPortal() {
               <button
                 key={item.id}
                 onClick={() => {
-                  setActiveTab(item.id);
-                  setIsSidebarOpen(false);
+                  if (item.id === "home") {
+                    navigate("/");
+                  } else {
+                    setActiveTab(item.id);
+                    setIsSidebarOpen(false);
+                  }
                 }}
                 className={`w-full py-2 px-3.5 rounded-xl text-left text-[11.5px] font-bold transition flex items-center gap-3 cursor-pointer border-none bg-transparent ${activeTab === item.id ? "bg-primary text-white" : "text-[var(--color-text-gray)] hover:bg-white/5 hover:text-[var(--color-text-dark)]"}`}
               >
@@ -457,11 +462,11 @@ export default function ResortAdminPortal() {
             <span>Customer View</span>
           </button>
           <button 
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/")}
             className="w-full py-2.5 px-4 rounded-xl text-left text-xs font-bold text-red-500 hover:bg-red-500/10 transition flex items-center gap-3 cursor-pointer bg-transparent border-none"
           >
             <LogOut className="w-4 h-4" />
-            <span>Log Out</span>
+            <span>Exit to Home</span>
           </button>
         </div>
       </aside>

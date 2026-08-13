@@ -500,7 +500,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               ] : [
                 { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || "User"})`, path: "/profile" }
               ]),
-              { type: "item", icon: <LayoutGrid size={18} />, label: "Host your property", action: handleListPropertyClick },
+              { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", action: handleListPropertyClick },
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },

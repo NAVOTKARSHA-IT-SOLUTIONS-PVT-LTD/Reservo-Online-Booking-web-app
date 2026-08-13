@@ -69,12 +69,12 @@ export default function Login() {
       setTimeout(() => {
         setToastMsg("");
         if (finalRole === "ROLE_ADMIN") {
-          navigate("/admin/reservo");
+          navigate("/admin/reservo", { replace: true });
         } else if (finalRole === "ROLE_OWNER") {
           // Redirect resort managers straight to their administrative Extranet PMS!
-          navigate("/admin/resort");
+          navigate("/admin/resort", { replace: true });
         } else {
-          navigate("/dashboard");
+          navigate("/dashboard", { replace: true });
         }
       }, 1500);
     } catch (err) {

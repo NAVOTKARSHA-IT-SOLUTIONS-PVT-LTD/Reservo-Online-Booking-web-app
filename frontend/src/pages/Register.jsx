@@ -150,7 +150,7 @@ export default function Register() {
       setToastMsg("Account created successfully. Redirecting...");
       setTimeout(() => {
         setToastMsg("");
-        navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard");
+        navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });
       }, 1200);
     } catch (err) {
       setToastMsg(err.message || "Failed to create account. Please try again.");
@@ -290,30 +290,6 @@ export default function Register() {
               {/* Business Partner Mode Fields */}
               {roleMode === "business" && (
                 <div className="space-y-3 border-b border-border-color pb-3 animate-in fade-in duration-200 text-left">
-                  <div className="space-y-1 flex flex-col relative">
-                    <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Business Company Name *</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={businessName}
-                      onChange={(e) => setBusinessName(e.target.value)}
-                      placeholder="e.g. Royal Palms Hospitality Group"
-                      className="w-full px-4 py-2 bg-bg-light border border-border-color text-text-dark rounded-xl text-[11.5px] font-semibold outline-none focus:border-primary transition"
-                    />
-                  </div>
-
-                  <div className="space-y-1 flex flex-col relative">
-                    <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Resort / Hotel Name *</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={resortName}
-                      onChange={(e) => setResortName(e.target.value)}
-                      placeholder="e.g. Ocean Bliss Resort"
-                      className="w-full px-4 py-2 bg-bg-light border border-border-color text-text-dark rounded-xl text-[11.5px] font-semibold outline-none focus:border-primary transition"
-                    />
-                  </div>
-
                   <div className="space-y-1 flex flex-col relative">
                     <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider">Contact Phone *</label>
                     <input 

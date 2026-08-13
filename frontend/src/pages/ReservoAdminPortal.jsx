@@ -7,7 +7,7 @@ import {
   Upload, Check, X, ShieldCheck, PieChart, Layers, HelpCircle, 
   UserCheck, Heart, MapPin, ToggleLeft, ToggleRight, Database, 
   Wifi, Sliders, RefreshCw, Command, Smile, Frown, ShieldAlert,
-  Menu
+  Menu, Home
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../services/apiClient";
@@ -279,6 +279,7 @@ export default function ReservoAdminPortal() {
 
         <nav className="p-4 flex-1 space-y-0.5">
           {[
+            { id: "home", label: "Back to Home", icon: Home },
             { id: "dashboard", label: "Dashboard Hub", icon: Activity },
             { id: "users", label: "Users Management", icon: Users },
             { id: "resorts", label: "Resort Directory", icon: Building },
@@ -298,8 +299,12 @@ export default function ReservoAdminPortal() {
               <button
                 key={item.id}
                 onClick={() => {
-                  setActiveTab(item.id);
-                  setIsSidebarOpen(false);
+                  if (item.id === "home") {
+                    navigate("/");
+                  } else {
+                    setActiveTab(item.id);
+                    setIsSidebarOpen(false);
+                  }
                 }}
                 className={`w-full py-2 px-3.5 rounded-xl text-left text-[11.5px] font-bold transition flex items-center gap-3 cursor-pointer border-none bg-transparent ${activeTab === item.id ? "bg-primary text-white" : "text-[var(--color-text-gray)] hover:bg-white/5 hover:text-[var(--color-text-dark)]"}`}
               >
@@ -312,11 +317,11 @@ export default function ReservoAdminPortal() {
 
         <div className="p-4 border-t border-[var(--color-border-color)]">
           <button 
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/")}
             className="w-full py-2.5 px-4 rounded-xl text-left text-xs font-bold text-red-500 hover:bg-red-500/10 transition flex items-center gap-3 cursor-pointer bg-transparent border-none"
           >
             <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
+            <span>Exit to Home</span>
           </button>
         </div>
       </aside>
