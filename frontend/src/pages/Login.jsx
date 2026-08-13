@@ -271,10 +271,10 @@ export default function Login() {
           <div className="max-w-[360px] w-full my-auto py-2 space-y-4">
             <div className="space-y-0.5">
               <h1 className="text-2xl lg:text-3xl font-serif font-extrabold text-text-dark">
-                {roleMode === "business" ? "Business Portal Sign In" : "Welcome Back"}
+                {roleMode === "business" ? "Host Portal Sign In" : "Welcome Back"}
               </h1>
               <p className="text-[11.5px] text-text-gray font-semibold">
-                {roleMode === "business" ? "Access your Reservo partner account extranet" : "Sign in to continue your journey"}
+                {roleMode === "business" ? "Access your Reservo host account extranet" : "Sign in to continue your journey"}
               </p>
             </div>
 
@@ -300,7 +300,7 @@ export default function Login() {
                     : "bg-transparent text-text-gray hover:text-text-dark"
                 }`}
               >
-                🏨 Business Partner
+                🏨 Host
               </button>
             </div>
 

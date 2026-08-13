@@ -116,7 +116,12 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-*:focus-visible {
+*:focus-visible:not(input):not(textarea):not(select) {
   outline: 3px solid var(--color-primary) !important;
   outline-offset: 2px !important;
+}
+
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: none !important;
+  border-color: var(--color-primary) !important;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useWishlist } from "../context/WishlistContext";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu, X, Moon, Sun, Heart, Bell, MapPin, Calendar, Users,
   Search, ArrowRight, Waves, Mountain, Home, Droplets,
@@ -152,6 +153,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   ]);
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const scrollContainerRef = useRef(null);
@@ -466,11 +468,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             const isLoggedIn = authService.isAuthenticated();
             const user = authService.getCurrentUser();
             const handleListPropertyClick = () => {
-              if (!isLoggedIn) {
-                navigate("/register?role=resort_admin");
-              } else {
-                navigate("/partner");
-              }
+              setShowComingSoon(true);
             };
             return [
               ...(!isLoggedIn ? [
@@ -479,7 +477,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               ] : [
                 { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || "User"})`, path: "/profile" }
               ]),
-              { type: "item", icon: <LayoutGrid size={18} />, label: "List Your Property", action: handleListPropertyClick },
+              { type: "item", icon: <LayoutGrid size={18} />, label: "Host your property", action: handleListPropertyClick },
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
@@ -528,6 +526,35 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           })}
         </ul>
       </div>
+
+      <AnimatePresence>
+        {showComingSoon && (
+          <div className="fixed inset-0 z-[100000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] w-full max-w-md p-8 rounded-[32px] text-center shadow-2xl relative space-y-6"
+            >
+              <div className="w-16 h-16 bg-[#2F80ED]/10 text-primary rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <LayoutGrid className="w-8 h-8 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-serif font-extrabold text-[var(--color-text-dark)]">Hosting Coming Soon!</h3>
+                <p className="text-xs text-[var(--color-text-gray)] leading-relaxed max-w-xs mx-auto">
+                  We are building a brand-new Airbnb-style property listing and hosting flow. Stay tuned to host your stay with Reservo!
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowComingSoon(false)}
+                className="w-full py-3 bg-primary hover:bg-primary-dark text-white rounded-2xl text-xs font-bold cursor-pointer border-none transition-all"
+              >
+                Got It
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
