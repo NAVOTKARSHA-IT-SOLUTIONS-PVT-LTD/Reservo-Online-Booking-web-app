@@ -782,13 +782,13 @@ export default function AIPlanner() {
         {/* Dynamic chat feed */}
         {activeTab === "chat" ? (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#fcfdfe] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-bg-light/60 transition-colors duration-300 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-2 max-w-[85%] ${
                   msg.sender === "user" ? "self-end flex-row-reverse ml-auto" : "self-start"
                 }`}>
                   {msg.sender === "rivo" && (
-                    <div className="w-7 h-7 rounded-full overflow-hidden border border-slate-200 bg-white shrink-0 shadow-sm mt-0.5">
+                    <div className="w-7 h-7 rounded-full overflow-hidden border border-border-color bg-bg-white shrink-0 shadow-sm mt-0.5">
                       <img src={msg.avatar} alt="Rivo" className="w-full h-full object-cover" />
                     </div>
                   )}
@@ -1053,10 +1053,10 @@ export default function AIPlanner() {
           <div className="md:col-span-4 border-l border-border-color pl-4">
             <span className="text-[9px] font-bold text-text-gray uppercase tracking-widest block mb-2">QUICK ADJUST</span>
             <div className="grid grid-cols-2 gap-1.5">
-              <button onClick={() => triggerAdjustment("luxury")} className="bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/60 rounded-lg py-1.5 text-[9px] font-bold transition cursor-pointer">👑 More Luxury</button>
-              <button onClick={() => triggerAdjustment("budget")} className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/60 rounded-lg py-1.5 text-[9px] font-bold transition cursor-pointer">💰 Save Money</button>
-              <button onClick={() => triggerAdjustment("adventure")} className="bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/60 rounded-lg py-1.5 text-[9px] font-bold transition cursor-pointer">🏂 Adventure</button>
-              <button onClick={() => triggerAdjustment("romantic")} className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/60 rounded-lg py-1.5 text-[9px] font-bold transition cursor-pointer">💖 Romantic</button>
+              <button onClick={() => triggerAdjustment("luxury")} className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 rounded-lg py-1.5 text-[9px] font-bold transition cursor-pointer">👑 More Luxury</button>
+              <button onClick={() => triggerAdjustment("budget")} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-lg py-1.5 text-[9px] font-bold transition cursor-pointer">💰 Save Money</button>
+              <button onClick={() => triggerAdjustment("adventure")} className="bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 border border-sky-500/20 rounded-lg py-1.5 text-[9px] font-bold transition cursor-pointer">🏂 Adventure</button>
+              <button onClick={() => triggerAdjustment("romantic")} className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-lg py-1.5 text-[9px] font-bold transition cursor-pointer">💖 Romantic</button>
             </div>
           </div>
 

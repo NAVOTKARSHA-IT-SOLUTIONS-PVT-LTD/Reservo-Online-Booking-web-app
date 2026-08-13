@@ -98,7 +98,7 @@ function Contact() {
       </section>
 
       {/* Contact */}
-      <section className="py-20 md:py-[100px] bg-[#FCFAF7]">
+      <section className="py-20 md:py-[100px] bg-bg-light transition-colors duration-300">
         <div className="w-[90%] max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12.5 lg:gap-[70px] items-start">
 
           {/* Left */}
@@ -116,7 +116,7 @@ function Contact() {
 
             <div className="flex flex-col gap-4">
               {/* Office Card */}
-              <div className="group flex items-center gap-5 bg-bg-white border border-[#E7DFD4] rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(20,35,32,0.12)] hover:border-gold/40 text-left relative overflow-hidden">
+              <div className="group flex items-center gap-5 bg-bg-white border border-border-color rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(20,35,32,0.12)] hover:border-gold/40 text-left relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gold/5 rounded-full blur-2xl pointer-events-none group-hover:bg-gold/15 transition-colors"></div>
                 <div className="w-[62px] h-[62px] bg-gradient-to-br from-primary via-[#1A342F] to-[#0E1E1B] text-gold rounded-2xl flex justify-center items-center shrink-0 shadow-md border border-gold/30 group-hover:scale-105 transition-transform duration-300">
                   <MapPin className="w-7 h-7 text-gold stroke-[2]" />
@@ -133,7 +133,7 @@ function Contact() {
               </div>
 
               {/* Phone Card */}
-              <div className="group flex items-center gap-5 bg-bg-white border border-[#E7DFD4] rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(20,35,32,0.12)] hover:border-gold/40 text-left relative overflow-hidden">
+              <div className="group flex items-center gap-5 bg-bg-white border border-border-color rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(20,35,32,0.12)] hover:border-gold/40 text-left relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none group-hover:bg-primary/10 transition-colors"></div>
                 <div className="w-[62px] h-[62px] bg-gradient-to-br from-primary via-[#1A342F] to-[#0E1E1B] text-gold rounded-2xl flex justify-center items-center shrink-0 shadow-md border border-gold/30 group-hover:scale-105 transition-transform duration-300">
                   <PhoneCall className="w-6 h-6 text-gold stroke-[2]" />
@@ -150,7 +150,7 @@ function Contact() {
               </div>
 
               {/* Email Card */}
-              <div className="group flex items-center gap-5 bg-bg-white border border-[#E7DFD4] rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(20,35,32,0.12)] hover:border-gold/40 text-left relative overflow-hidden">
+              <div className="group flex items-center gap-5 bg-bg-white border border-border-color rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(20,35,32,0.12)] hover:border-gold/40 text-left relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gold/5 rounded-full blur-2xl pointer-events-none group-hover:bg-gold/15 transition-colors"></div>
                 <div className="w-[62px] h-[62px] bg-gradient-to-br from-primary via-[#1A342F] to-[#0E1E1B] text-gold rounded-2xl flex justify-center items-center shrink-0 shadow-md border border-gold/30 group-hover:scale-105 transition-transform duration-300">
                   <Mail className="w-6 h-6 text-gold stroke-[2]" />
@@ -169,11 +169,11 @@ function Contact() {
           </div>
 
           {/* Right */}
-          <div className="bg-bg-white border border-[#E7DFD4] rounded-[22px] p-6.25 md:p-10 shadow-[0_18px_40px_rgba(0,0,0,0.08)] text-left min-h-[480px] flex flex-col justify-center">
+          <div className="bg-bg-white border border-border-color rounded-[22px] p-6.25 md:p-10 shadow-[0_18px_40px_rgba(0,0,0,0.08)] text-left min-h-[480px] flex flex-col justify-center transition-colors duration-300">
             
             {isSubmitted ? (
               <div className="text-center py-6 animate-in fade-in duration-500">
-                <div className="w-[120px] h-[120px] mx-auto rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden mb-6 shadow-md">
+                <div className="w-[120px] h-[120px] mx-auto rounded-full bg-bg-light border border-border-color flex items-center justify-center overflow-hidden mb-6 shadow-md">
                   <img src={rivoSupport} alt="Rivo Mascot" className="w-full h-full object-cover" />
                 </div>
                 <h3 className="text-2xl font-extrabold text-primary mb-3">Message Delivered!</h3>
@@ -186,7 +186,7 @@ function Contact() {
                 <div className="mt-8">
                   <button 
                     onClick={() => setIsSubmitted(false)}
-                    className="bg-transparent border border-border-color text-text-dark font-bold px-6 py-2.5 rounded-full hover:bg-slate-50 cursor-pointer text-xs transition-colors"
+                    className="bg-transparent border border-border-color text-text-dark font-bold px-6 py-2.5 rounded-full hover:bg-bg-light cursor-pointer text-xs transition-colors"
                   >
                     Send Another Message
                   </button>
@@ -205,7 +205,7 @@ function Contact() {
                       placeholder="Full Name"
                       value={formData.name}
                       onChange={handleChange}
-                      className={`w-full px-[18px] py-4 border ${errors.name ? "border-red-500 bg-red-50/10" : "border-[#D8D1C8] bg-[#FAF8F5]"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white`}
+                      className={`w-full px-[18px] py-4 border ${errors.name ? "border-red-500 bg-red-50/10" : "border-border-color bg-bg-light text-text-dark"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white`}
                     />
                     {errors.name && <span className="text-red-500 text-xs font-bold ml-1 mt-0.5">{errors.name}</span>}
                   </div>
@@ -217,7 +217,7 @@ function Contact() {
                       placeholder="Email Address"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full px-[18px] py-4 border ${errors.email ? "border-red-500 bg-red-50/10" : "border-[#D8D1C8] bg-[#FAF8F5]"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white`}
+                      className={`w-full px-[18px] py-4 border ${errors.email ? "border-red-500 bg-red-50/10" : "border-border-color bg-bg-light text-text-dark"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white`}
                     />
                     {errors.email && <span className="text-red-500 text-xs font-bold ml-1 mt-0.5">{errors.email}</span>}
                   </div>
@@ -229,7 +229,7 @@ function Contact() {
                       placeholder="Subject"
                       value={formData.subject}
                       onChange={handleChange}
-                      className={`w-full px-[18px] py-4 border ${errors.subject ? "border-red-500 bg-red-50/10" : "border-[#D8D1C8] bg-[#FAF8F5]"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white`}
+                      className={`w-full px-[18px] py-4 border ${errors.subject ? "border-red-500 bg-red-50/10" : "border-border-color bg-bg-light text-text-dark"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white`}
                     />
                     {errors.subject && <span className="text-red-500 text-xs font-bold ml-1 mt-0.5">{errors.subject}</span>}
                   </div>
@@ -241,7 +241,7 @@ function Contact() {
                       placeholder="Tell us how we can help..."
                       value={formData.message}
                       onChange={handleChange}
-                      className={`w-full px-[18px] py-4 border ${errors.message ? "border-red-500 bg-red-50/10" : "border-[#D8D1C8] bg-[#FAF8F5]"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white resize-none`}
+                      className={`w-full px-[18px] py-4 border ${errors.message ? "border-red-500 bg-red-50/10" : "border-border-color bg-bg-light text-text-dark"} rounded-xl outline-none text-base transition-all duration-300 focus:border-gold focus:bg-bg-white resize-none`}
                     ></textarea>
                     {errors.message && <span className="text-red-500 text-xs font-bold ml-1 mt-0.5">{errors.message}</span>}
                   </div>
@@ -249,7 +249,7 @@ function Contact() {
                   <button 
                     type="submit" 
                     disabled={isSubmitting}
-                    className="bg-primary text-white border-none py-4 rounded-full text-[17px] font-semibold cursor-pointer transition-all duration-[350ms] hover:bg-[#162B27] hover:-translate-y-0.75 flex items-center justify-center gap-2"
+                    className="bg-primary text-white border-none py-4 rounded-full text-[17px] font-semibold cursor-pointer transition-all duration-[350ms] hover:bg-primary-dark hover:-translate-y-0.75 flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <>
@@ -269,7 +269,7 @@ function Contact() {
       </section>
 
       {/* Map */}
-      <section className="py-20 md:py-[100px] bg-[#F8F5F0]">
+      <section className="py-20 md:py-[100px] bg-bg-light transition-colors duration-300">
         <div className="w-[90%] max-w-[1300px] mx-auto">
           <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-3">
             Visit Us
