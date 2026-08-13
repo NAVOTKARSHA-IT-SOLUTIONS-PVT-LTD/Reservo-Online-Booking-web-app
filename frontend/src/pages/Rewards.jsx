@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Gift, Award, TrendingUp, CreditCard, Tag, Heart, X, Sparkles, RefreshCw } from "lucide-react";
 import { rewardService } from "../services/reward.service";
 import { Skeleton } from "../components/Skeleton";
@@ -32,6 +33,7 @@ function RewardCard({ icon, title, description, badge, onLearnMore }) {
 
 export default function Rewards() {
   const user = authService.getCurrentUser();
+  const navigate = useNavigate();
   const [activeReward, setActiveReward] = useState(null);
   const [rewardStatus, setRewardStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,11 @@ export default function Rewards() {
   };
 
   useEffect(() => {
-    fetchStatus();
+    if (user) {
+      fetchStatus();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const showGlobalToast = (msg) => {
@@ -163,45 +169,65 @@ export default function Rewards() {
         </div>
 
         {/* User Status (Mock Service Integrated) */}
-        <div className="bg-primary border border-border-color rounded-[32px] p-8 md:p-12 text-white mb-16 flex flex-col md:flex-row items-center justify-between shadow-[0_20px_50px_rgba(15,23,42,0.15)] relative overflow-hidden">
-          {/* Background glow */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gold/20 blur-[80px] rounded-full pointer-events-none"></div>
-          
-          <div className="z-10 text-center md:text-left mb-8 md:mb-0">
-            <h2 className="text-2xl font-bold mb-2">Welcome back, {user?.name || "User"}!</h2>
-            <p className="text-white/70 mb-4">You are currently a <strong className="text-gold">{rewardStatus.membershipLevel}</strong></p>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[140px]">
-                <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Total Points</div>
-                <div className="text-3xl font-extrabold font-number text-gold">{rewardStatus.points.toLocaleString()}</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[140px]">
-                <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Available Coupons</div>
-                <div className="text-3xl font-extrabold font-number">{rewardStatus.couponsCount}</div>
-              </div>
+        {!user ? (
+          <div className="bg-primary border border-border-color rounded-[32px] p-8 md:p-12 text-white mb-16 flex flex-col md:flex-row items-center justify-between shadow-[0_20px_50px_rgba(15,23,42,0.15)] relative overflow-hidden">
+            {/* Background glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gold/20 blur-[80px] rounded-full pointer-events-none"></div>
+            
+            <div className="z-10 text-center md:text-left mb-6 md:mb-0 max-w-[500px]">
+              <h2 className="text-2xl font-bold mb-2">Track Your Loyalty Rewards</h2>
+              <p className="text-white/70">Sign in to view your points balance, available coupons, and unlock exclusive travel benefits.</p>
+            </div>
+            <div className="z-10 shrink-0">
+              <button 
+                onClick={() => navigate("/login")}
+                className="font-bold py-3.5 px-8 rounded-xl border-none bg-gold text-white cursor-pointer hover:bg-gold-dark hover:scale-105 transition-all shadow-[0_10px_20px_rgba(212,166,79,0.3)]"
+              >
+                Sign In / Register
+              </button>
             </div>
           </div>
-          <div className="z-10">
-            <button 
-              onClick={handleRedeem}
-              disabled={redeeming || rewardStatus.points < 5000}
-              className={`font-bold py-3.5 px-8 rounded-xl border-none transition-all shadow-[0_10px_20px_rgba(212,166,79,0.3)] flex items-center gap-2 ${
-                redeeming || rewardStatus.points < 5000 
-                  ? "bg-slate-500/50 text-white/50 cursor-not-allowed shadow-none" 
-                  : "bg-gold text-white cursor-pointer hover:bg-gold-dark hover:scale-105"
-              }`}
-            >
-              {redeeming ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" /> Redeeming...
-                </>
-              ) : (
-                "Redeem 5,000 pts"
-              )}
-            </button>
-            <span className="block text-center text-[10px] text-white/60 mt-2 font-medium">5,000 points = 1 Coupon pass</span>
+        ) : (
+          <div className="bg-primary border border-border-color rounded-[32px] p-8 md:p-12 text-white mb-16 flex flex-col md:flex-row items-center justify-between shadow-[0_20px_50px_rgba(15,23,42,0.15)] relative overflow-hidden">
+            {/* Background glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gold/20 blur-[80px] rounded-full pointer-events-none"></div>
+            
+            <div className="z-10 text-center md:text-left mb-8 md:mb-0">
+              <h2 className="text-2xl font-bold mb-2">Welcome back, {user?.name || "User"}!</h2>
+              <p className="text-white/70 mb-4">You are currently a <strong className="text-gold">{rewardStatus.membershipLevel}</strong></p>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[140px]">
+                  <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Total Points</div>
+                  <div className="text-3xl font-extrabold font-number text-gold">{rewardStatus.points.toLocaleString()}</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[140px]">
+                  <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Available Coupons</div>
+                  <div className="text-3xl font-extrabold font-number">{rewardStatus.couponsCount}</div>
+                </div>
+              </div>
+            </div>
+            <div className="z-10">
+              <button 
+                onClick={handleRedeem}
+                disabled={redeeming || rewardStatus.points < 5000}
+                className={`font-bold py-3.5 px-8 rounded-xl border-none transition-all shadow-[0_10px_20px_rgba(212,166,79,0.3)] flex items-center gap-2 ${
+                  redeeming || rewardStatus.points < 5000 
+                    ? "bg-slate-500/50 text-white/50 cursor-not-allowed shadow-none" 
+                    : "bg-gold text-white cursor-pointer hover:bg-gold-dark hover:scale-105"
+                }`}
+              >
+                {redeeming ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" /> Redeeming...
+                  </>
+                ) : (
+                  "Redeem 5,000 pts"
+                )}
+              </button>
+              <span className="block text-center text-[10px] text-white/60 mt-2 font-medium">5,000 points = 1 Coupon pass</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Rewards Grid */}
         <div className="mb-12">
