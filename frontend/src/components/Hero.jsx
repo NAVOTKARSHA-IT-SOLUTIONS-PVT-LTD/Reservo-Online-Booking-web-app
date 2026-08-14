@@ -16,24 +16,21 @@ import {
   ChevronDown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import heroVideo from "../assets/images/hero-video.mp4";
 import hero1 from "../assets/images/hero1.jpg";
 import hero2 from "../assets/images/hero2.jpg";
 import hero3 from "../assets/images/hero3.jpg";
 import hero4 from "../assets/images/hero4.jpg";
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 
-const HERO_SLIDES = [
-  hero1,
-  hero2,
-  hero3,
-  hero4
-];
+
+
 
 function Hero() {
   const navigate = useNavigate();
   const [isSearching, setIsSearching] = useState(false);
   const [scrollY, setScrollY] = useState(0);
-  const [currentSlide, setCurrentSlide] = useState(0);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,13 +40,7 @@ function Hero() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Automatic Hero Background Slideshow timer (5 seconds)
-  useEffect(() => {
-    const slideTimer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5000);
-    return () => clearInterval(slideTimer);
-  }, []);
+  
   
   // Search state
   const [location, setLocation] = useState("Bali, Indonesia");
@@ -73,24 +64,41 @@ function Hero() {
   };
 
   return (
+    
     <section className="relative w-full min-h-[600px] md:min-h-[700px] md:h-screen flex flex-col items-center justify-center pt-16 md:pt-24 pb-12 md:pb-16 overflow-hidden">
       
-      {/* Background Image Slideshow */}
-      <div className="absolute inset-0 z-0 overflow-hidden" style={{ transform: `translateY(${scrollY * 0.3}px) scale(${1 + scrollY * 0.0002})` }}>
-        {HERO_SLIDES.map((slideImg, index) => (
-          <img
-            key={index}
-            src={slideImg}
-            alt={`Hero Resort ${index + 1}`}
-            className={`absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.75] transition-opacity duration-1000 ease-in-out ${
-              index === currentSlide ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
-          />
-        ))}
-        {/* Adjusted overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/25 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/55"></div>
-      </div>
+      
+      {/* Background Video hero-video */}
+<div
+  className="absolute inset-0 z-10 overflow-hidden"
+  style={{
+    transform: `translateY(${scrollY * 0.3}px) scale(${1 + scrollY * 0.0002})`
+  }}
+>
+ 
+  {/* Premium Cinematic Background Video */}
+<video
+  className="hero-video absolute inset-0 w-full h-full object-cover"
+  autoPlay
+  muted
+  loop
+  playsInline
+  poster={hero1}
+>
+  <source src={heroVideo} type="video/mp4" />
+</video>
+{/* Premium Cinematic Overlay */}
+    {/* <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-black/20 z-[1]" /> */}
+
+    {/* Bottom Cinematic Fade */}
+    {/* <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/60 to-transparent z-[2]" /> */}
+
+
+  {/* Dark overlay for text readability */}
+  <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/25 to-transparent"></div>
+
+  <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/55"></div>
+</div>
 
       <div className="relative z-10 w-full max-w-[1300px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-12 mt-4 md:mt-10">
         

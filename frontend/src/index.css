@@ -1,8 +1,6 @@
 @import "tailwindcss";
 
-/* ==========================================
-   TAILWIND V4 PURE THEME DEFINITIONS
-   ========================================== */
+
 @theme {
   --color-primary: #0D47A1;
   --color-primary-dark: #083A85;
@@ -11,19 +9,17 @@
   --color-accent-teal: #8FD3FF;
   --color-success: #22C55E;
   --color-reservo-blue: #2563eb;
-  
+
   --color-bg-light: #FAFCFF;
   --color-bg-white: #ffffff;
-  
+
   --color-text-dark: #0A2342;
   --color-text-gray: #4A5D73;
   --color-border-color: #E7EEF8;
   --shadow-custom: 0 12px 36px rgba(10, 35, 66, 0.06);
 }
 
-/* ==========================================
-   DARK THEME TAILWIND TOKEN OVERRIDES
-   ========================================== */
+
 body.dark-theme {
   --color-primary: #4DA3FF;
   --color-primary-dark: #1B6EDC;
@@ -37,9 +33,7 @@ body.dark-theme {
   --shadow-custom: 0 15px 35px rgba(0, 0, 0, 0.4);
 }
 
-/* ==========================================
-   PURE TAILWIND UTILITY EXTENSIONS
-   ========================================== */
+
 @utility hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
