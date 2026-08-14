@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Compass, Calendar, Clock, MapPin, Award, ArrowRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Compass, Calendar, Clock, MapPin, Award, ArrowRight, Anchor, ShieldCheck, Sparkles, Star, Mountain, Shield } from "lucide-react";
 import rivoSearching from "../assets/images/rivo_searching.png";
 
 const EXPERIENCES = [
@@ -8,7 +8,7 @@ const EXPERIENCES = [
     title: "Private Lagoon Sunset Yacht Sailing",
     location: "Maldives",
     duration: "4 Hours",
-    price: 450,
+    price: 36000,
     rating: "4.9 (120 reviews)",
     image: "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=800&q=80",
     description: "Sail into the deep coral lagoons of the Maldives. Includes a private chef sunset lobster dinner, personalized music selections, and champagne toast on deck.",
@@ -19,7 +19,7 @@ const EXPERIENCES = [
     title: "Guided Volcanic Peak Heli-Tour",
     location: "Bali, Indonesia",
     duration: "1.5 Hours",
-    price: 620,
+    price: 49000,
     rating: "5.0 (88 reviews)",
     image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80",
     description: "Fly over dense jungle canyons and active volcanic ridges with professional guides. High-resolution drone footage of your flight is captured and provided.",
@@ -30,7 +30,7 @@ const EXPERIENCES = [
     title: "Cliffside Private Serenade Dinner",
     location: "Santorini, Greece",
     duration: "3 Hours",
-    price: 380,
+    price: 29500,
     rating: "4.9 (150 reviews)",
     image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
     description: "Enjoy intimate candlelit dining on private caldera edges with a dedicated personal butler. Includes live violin accompaniment and custom flower walkways.",
@@ -41,7 +41,7 @@ const EXPERIENCES = [
     title: "Guided Rainforest Tea Walk & Picnic",
     location: "Coorg, India",
     duration: "5 Hours",
-    price: 120,
+    price: 9500,
     rating: "4.8 (95 reviews)",
     image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
     description: "Hike along wild rainforest paths and organic tea fields with naturalists. Concludes with an premium local organic picnic next to private canyon waterfalls.",
@@ -49,8 +49,29 @@ const EXPERIENCES = [
   }
 ];
 
-function Experiences() {
+function Experiences({ currencySymbol = "₹", exchangeRate = 1 }) {
   const [selectedLocation, setSelectedLocation] = useState("All");
+  const [symbol, setSymbol] = useState(currencySymbol);
+  const [rate, setRate] = useState(exchangeRate);
+
+  useEffect(() => {
+    const updateCurrency = () => {
+      const cur = localStorage.getItem("reservo-currency") || "en_inr";
+      if (cur === "en_usd") {
+        setSymbol("$");
+        setRate(0.012);
+      } else if (cur === "es_eur") {
+        setSymbol("€");
+        setRate(0.011);
+      } else {
+        setSymbol("₹");
+        setRate(1);
+      }
+    };
+    updateCurrency();
+    window.addEventListener("storage", updateCurrency);
+    return () => window.removeEventListener("storage", updateCurrency);
+  }, [currencySymbol, exchangeRate]);
 
   const showGlobalToast = (msg) => {
     const toast = document.getElementById("toast");
@@ -95,14 +116,73 @@ function Experiences() {
     : EXPERIENCES.filter(exp => exp.location.includes(selectedLocation));
 
   return (
-    <div className="pt-20 bg-bg-light min-h-screen fade-up">
-      {/* Hero Header */}
-      <section className="relative h-[380px] bg-[url('https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center flex items-center text-center text-white">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#121e1b]/40 to-[#121e1b]/80 z-10"></div>
-        <div className="relative z-20 w-[90%] max-w-[1300px] mx-auto">
-          <span className="text-xs font-bold uppercase tracking-widest text-gold mb-3 block">Experiences Beyond Stays</span>
-          <h1 className="text-[38px] md:text-5xl font-bold mb-3.75 text-white">Curated Luxury Adventures</h1>
-          <p className="text-base max-w-[600px] mx-auto opacity-90 leading-relaxed">Unforgettable tailor-made journeys hosted by certified local naturalists & luxury partners.</p>
+    <div className="pt-0 bg-bg-light min-h-screen fade-up">
+      {/* Hero Header - Full bleed under floating navbar */}
+      <section className="relative min-h-[580px] md:min-h-[660px] pt-36 md:pt-40 pb-20 px-5 flex items-center justify-center text-center text-white overflow-hidden">
+        {/* Vibrant High-Def Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-[center_28%] transition-transform duration-1000 scale-105"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=2400&q=85')`
+          }}
+        />
+        
+        {/* Sophisticated Dual Gradient Overlay for optimal text readability & image warmth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/35 to-bg-light z-10 transition-colors duration-300"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-bg-light via-transparent to-transparent z-10"></div>
+
+        <div className="relative z-20 w-[90%] max-w-[1300px] mx-auto flex flex-col items-center">
+          
+          {/* Top Pill Badge */}
+          <div className="inline-flex items-center gap-2 bg-gold/20 text-gold border border-gold/40 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-[2px] mb-5 backdrop-blur-md shadow-lg">
+            <Sparkles className="w-3.5 h-3.5" /> RESERVO EXCLUSIVE • CURATED ADVENTURES
+          </div>
+
+          {/* Main Title */}
+          <h1 className="text-[42px] sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 text-white font-serif leading-[1.1] drop-shadow-xl max-w-[950px]">
+            Unforgettable Experiences, <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-gold">Beyond Just Stays</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-base sm:text-lg md:text-xl max-w-[740px] mx-auto text-white/95 leading-relaxed font-medium drop-shadow mb-8">
+            Handpicked private yacht charters, volcanic heli-tours, cliffside private dinners & guided wilderness treks hosted by certified naturalists.
+          </p>
+
+          {/* Floating Feature Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm">
+              <Anchor className="w-3.5 h-3.5 text-gold" /> Private Yacht Sailing
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm">
+              <Mountain className="w-3.5 h-3.5 text-gold" /> Heli Peaks & Canyons
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-gold" /> Michelin Chef Dining
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm">
+              <ShieldCheck className="w-3.5 h-3.5 text-gold" /> Certified Guides
+            </div>
+          </div>
+
+          {/* Stats Bar Pill */}
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 bg-black/40 backdrop-blur-md border border-white/15 px-6 py-3 rounded-2xl text-xs font-bold text-white/90 shadow-2xl">
+            <div className="flex items-center gap-1.5">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              <span>4.9 / 5.0 Exceptional Rating</span>
+            </div>
+            <div className="hidden sm:block w-px h-4 bg-white/20"></div>
+            <div className="flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-emerald-400" />
+              <span>100% Verified Partners</span>
+            </div>
+            <div className="hidden sm:block w-px h-4 bg-white/20"></div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-gold" />
+              <span>24/7 VIP Concierge Support</span>
+            </div>
+          </div>
+
         </div>
       </section>
 
