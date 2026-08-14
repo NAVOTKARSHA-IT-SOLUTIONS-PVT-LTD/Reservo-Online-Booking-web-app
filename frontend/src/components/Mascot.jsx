@@ -8,6 +8,8 @@ import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
 import rivoWaving from "../assets/images/rivo_waving.png";
+import mascotWebm from "../assets/images/mascot_cropped.webm";
+import mascotMp4 from "../assets/images/mascot_cropped.mp4";
 
 const QUICK_REPLIES = [
   { text: "🌴 Suggest beach resorts", key: "beach" },
@@ -118,6 +120,45 @@ function Mascot({ isDark, setIsDark }) {
   const [activeMode, setActiveMode] = useState("support");
   const [rivoAvatar, setRivoAvatar] = useState(rivoSupport);
   const [isHovered, setIsHovered] = useState(false);
+
+  const [animState, setAnimState] = useState("idle");
+  const [showBubble, setShowBubble] = useState(false);
+  const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleReducedMotion = () => {
+      setIsReducedMotion(mediaQuery.matches);
+    };
+    handleReducedMotion();
+    mediaQuery.addEventListener("change", handleReducedMotion);
+    return () => mediaQuery.removeEventListener("change", handleReducedMotion);
+  }, []);
+
+  const handleTimeUpdate = (e) => {
+    if (isReducedMotion || isOpen) return;
+    const time = e.target.currentTime;
+    if (time >= 1.4 && time <= 2.7) {
+      setShowBubble(true);
+    } else {
+      setShowBubble(false);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (!isReducedMotion && videoRef.current) {
+      const time = videoRef.current.currentTime;
+      if (time < 1.4 || time > 2.7) {
+        videoRef.current.currentTime = 1.4;
+      }
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
 
   const renderFormattedText = (text) => {
     if (!text) return "";
@@ -248,31 +289,61 @@ function Mascot({ isDark, setIsDark }) {
     <div className="fixed bottom-7.5 right-7.5 z-[2000]">
       
       {/* Floating Mascot Trigger Badge with peeking out-of-bounds hover animation */}
-      <div className="relative w-18 h-18 group">
+      <div className="relative w-18 h-18 group select-none">
+        {/* Hi! Speech Bubble */}
+        {!isReducedMotion && (
+          <div 
+            className={`absolute -top-7 -left-9 bg-bg-white border border-border-color text-text-dark text-[10.5px] font-extrabold px-3 py-1.2 rounded-2xl rounded-br-sm shadow-md pointer-events-none flex items-center gap-1 select-none z-50 transition-all duration-300 origin-bottom-right ${
+              showBubble ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-75 translate-y-2"
+            }`}
+          >
+            Hi! 👋
+          </div>
+        )}
+
         {/* Circle Background */}
         <div 
-          className={`absolute inset-0 rounded-full bg-[#89cff0] border-1.5 border-border-color shadow-[0_10px_30px_rgba(0,0,0,0.15)] transition-all duration-300 ease-out group-hover:scale-[1.08] group-hover:shadow-[0_15px_35px_rgba(0,0,0,0.2)] ${
-            isOpen ? "scale-[1.08]" : ""
+          className={`absolute inset-0 rounded-full bg-[#89cff0] border-1.5 border-border-color shadow-[0_10px_30px_rgba(0,0,0,0.15)] transition-all duration-500 ease-out group-hover:scale-[1.08] group-hover:shadow-[0_15px_35px_rgba(13,110,253,0.35)] ${
+            isOpen ? "scale-[1.08] shadow-[0_15px_35px_rgba(13,110,253,0.35)]" : ""
           }`}
+          style={{
+            transition: "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), shadow 0.5s ease"
+          }}
         />
         
-        {/* Mascot Image (Peeks and waves out of the circle on hover) */}
-        <div className="absolute inset-0 flex items-end justify-center pointer-events-none overflow-visible">
-          <img 
-            src={`${isHovered ? rivoWaving : rivoAvatar}?v=10`} 
-            alt="Rivo Mascot" 
-            className={`w-[110%] h-[110%] object-contain transition-all duration-300 ease-out origin-bottom ${
-              isHovered ? "scale-[1.3] -translate-y-2.5" : "scale-[1.05] translate-y-0.5"
-            }`} 
-          />
+        {/* Mascot Video Animation (Plays the cropped loop, clipped to circle) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden rounded-full">
+          {isReducedMotion ? (
+            <img 
+              src={`${rivoAvatar}?v=10`} 
+              alt="Rivo Mascot Static" 
+              className="w-full h-full object-cover select-none filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.18)]"
+            />
+          ) : (
+            <video 
+              ref={videoRef}
+              autoPlay 
+              loop 
+              muted 
+              playsInline 
+              onTimeUpdate={handleTimeUpdate}
+              className="w-[104%] h-[104%] object-cover select-none filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.18)]"
+              style={{
+                clipPath: "circle(48.2% at 50% 50%)"
+              }}
+            >
+              <source src={mascotWebm} type="video/webm" />
+              <source src={mascotMp4} type="video/mp4" />
+            </video>
+          )}
         </div>
 
         {/* Click/Hover Event capture layer */}
         <button
           className="absolute inset-0 rounded-full bg-transparent border-none cursor-pointer z-10 focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
           onClick={toggleChat}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           aria-label="Toggle Rivo AI Companion"
         />
       </div>
@@ -296,7 +367,7 @@ function Mascot({ isDark, setIsDark }) {
           </div>
 
           {/* Companion Mode Selector Bar */}
-          <div className="bg-slate-50 border-b border-border-color px-4 py-2 flex gap-2 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-none">
+          <div className="bg-bg-light border-b border-border-color px-4 py-2 flex gap-2 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-none">
             {COMPANION_MODES.map(m => (
               <button
                 key={m.id}
@@ -304,7 +375,7 @@ function Mascot({ isDark, setIsDark }) {
                 className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all border cursor-pointer ${
                   activeMode === m.id
                     ? 'bg-[#2563EB] text-white border-[#2563EB] scale-105'
-                    : 'bg-white text-slate-600 border-slate-200'
+                    : 'bg-bg-white text-text-gray border-border-color'
                 }`}
               >
                 {m.emoji} {m.label}

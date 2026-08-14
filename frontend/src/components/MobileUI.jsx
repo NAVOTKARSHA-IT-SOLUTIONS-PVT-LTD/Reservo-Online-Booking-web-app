@@ -15,6 +15,8 @@ import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
 import rivoWaving from "../assets/images/rivo_waving.png";
+import mascotWebm from "../assets/images/mascot_cropped.webm";
+import mascotMp4 from "../assets/images/mascot_cropped.mp4";
 import { ALL_RESORTS } from "../data/resorts";
 import { authService } from "../services/auth.service";
 import Footer from "./Footer";
@@ -146,6 +148,44 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   const [activeCategory, setActiveCategory] = useState("beach");
   const { wishlist, toggleWishlist } = useWishlist();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [animState, setAnimState] = useState("idle");
+  const [showBubble, setShowBubble] = useState(false);
+  const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleReducedMotion = () => {
+      setIsReducedMotion(mediaQuery.matches);
+    };
+    handleReducedMotion();
+    mediaQuery.addEventListener("change", handleReducedMotion);
+    return () => mediaQuery.removeEventListener("change", handleReducedMotion);
+  }, []);
+
+  const handleTimeUpdate = (e) => {
+    if (isReducedMotion || isMascotOpen) return;
+    const time = e.target.currentTime;
+    if (time >= 1.4 && time <= 2.7) {
+      setShowBubble(true);
+    } else {
+      setShowBubble(false);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    setIsMascotHovered(true);
+    if (!isReducedMotion && videoRef.current) {
+      const time = videoRef.current.currentTime;
+      if (time < 1.4 || time > 2.7) {
+        videoRef.current.currentTime = 1.4;
+      }
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsMascotHovered(false);
+  };
   const [isMascotOpen, setIsMascotOpen] = useState(false);
   const [activeMode, setActiveMode] = useState("support");
   const [rivoAvatar, setRivoAvatar] = useState(rivoSupport);
@@ -414,31 +454,61 @@ function MobileUI({ isDark, onToggleTheme, children }) {
         )}
 
         {/* Mascot Trigger Button with peeking out-of-bounds hover animation */}
-        <div className="relative w-16 h-16 group">
+        <div className="relative w-16 h-16 group select-none">
+          {/* Hi! Speech Bubble */}
+          {!isReducedMotion && (
+            <div 
+              className={`absolute -top-7 -left-7 bg-bg-white border border-border-color text-text-dark text-[9.5px] font-extrabold px-2.5 py-1 rounded-2xl rounded-br-sm shadow-md pointer-events-none flex items-center gap-1 select-none z-50 transition-all duration-300 origin-bottom-right ${
+                showBubble ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-75 translate-y-2"
+              }`}
+            >
+              Hi! 👋
+            </div>
+          )}
+
           {/* Circle Background */}
           <div 
-            className={`absolute inset-0 rounded-full bg-[#89cff0] border-2 border-gold shadow-[0_8px_25px_rgba(0,0,0,0.2)] transition-all duration-300 ease-out group-hover:scale-[1.08] ${
-              isMascotOpen ? "scale-[1.08]" : ""
+            className={`absolute inset-0 rounded-full bg-[#89cff0] border-2 border-gold shadow-[0_8px_25px_rgba(0,0,0,0.2)] transition-all duration-500 ease-out group-hover:scale-[1.08] group-hover:shadow-[0_12px_25px_rgba(13,110,253,0.35)] ${
+              isMascotOpen ? "scale-[1.08] shadow-[0_12px_25px_rgba(13,110,253,0.35)]" : ""
             }`}
+            style={{
+              transition: "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), shadow 0.5s ease"
+            }}
           />
           
-          {/* Mascot Image (Peeks and waves out of the circle on hover) */}
-          <div className="absolute inset-0 flex items-end justify-center pointer-events-none overflow-visible">
-            <img 
-              src={`${isMascotHovered ? rivoWaving : rivoAvatar}?v=10`} 
-              alt="Rivo" 
-              className={`w-[110%] h-[110%] object-contain transition-all duration-300 ease-out origin-bottom ${
-                isMascotHovered ? "scale-[1.3] -translate-y-2" : "scale-[1.05] translate-y-0.5"
-              }`} 
-            />
+          {/* Mascot Video Animation (Plays the cropped loop, clipped to circle) */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden rounded-full">
+            {isReducedMotion ? (
+              <img 
+                src={`${rivoAvatar}?v=10`} 
+                alt="Rivo Mascot Static" 
+                className="w-full h-full object-cover select-none filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.18)]"
+              />
+            ) : (
+              <video 
+                ref={videoRef}
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                onTimeUpdate={handleTimeUpdate}
+                className="w-[104%] h-[104%] object-cover select-none filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.18)]"
+                style={{
+                  clipPath: "circle(48.2% at 50% 50%)"
+                }}
+              >
+                <source src={mascotWebm} type="video/webm" />
+                <source src={mascotMp4} type="video/mp4" />
+              </video>
+            )}
           </div>
 
           {/* Click/Hover Event capture layer */}
           <button
             className="absolute inset-0 rounded-full bg-transparent border-none cursor-pointer z-10 focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
             onClick={() => setIsMascotOpen(!isMascotOpen)}
-            onMouseEnter={() => setIsMascotHovered(true)}
-            onMouseLeave={() => setIsMascotHovered(false)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             aria-label="Chat with Rivo"
           />
         </div>
