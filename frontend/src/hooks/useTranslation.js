@@ -67,7 +67,25 @@ const TRANSLATIONS = {
     reviews_desc: "Thousands of travelers trust Reservo for unforgettable luxury vacations.",
     review_1: "Reservo made our honeymoon unforgettable. The booking process was seamless, and the resort was even more beautiful than the pictures.",
     review_2: "The luxury stay, exceptional hospitality, and smooth booking experience exceeded all our expectations. Highly recommended!",
-    review_3: "One of the finest resort booking platforms. Premium resorts, transparent pricing, and outstanding customer support."
+    review_3: "One of the finest resort booking platforms. Premium resorts, transparent pricing, and outstanding customer support.",
+
+    // Experiences Page
+    exp_hero_tag: "RESERVO EXCLUSIVE • CURATED ADVENTURES",
+    exp_hero_title1: "Unforgettable Experiences,",
+    exp_hero_title2: "Beyond Just Stays",
+    exp_hero_desc: "Handpicked private yacht charters, volcanic heli-tours, cliffside private dinners & guided wilderness treks hosted by certified naturalists.",
+    exp_yacht: "Private Yacht Sailing",
+    exp_heli: "Heli Peaks & Canyons",
+    exp_chef: "Michelin Chef Dining",
+    exp_guides: "Certified Guides",
+    exp_rating: "4.9 / 5.0 Exceptional Rating",
+    exp_verified: "100% Verified Partners",
+    exp_vip: "24/7 VIP Concierge Support",
+    exp_whats_included: "What's Included:",
+    exp_reserve_slot: "Reserve Slot",
+    exp_per_person: "/ person",
+    exp_no_found: "No Luxury Experiences Found",
+    exp_try_filter: "Try selecting a different destination filter from the menu."
   },
   hi: {
     home: "मुख्य पृष्ठ",
@@ -135,7 +153,25 @@ const TRANSLATIONS = {
     reviews_desc: "हजारों यात्री अविस्मरणीय लक्ज़री छुट्टियों के लिए रिजर्वो पर भरोसा करते हैं।",
     review_1: "रिजर्वो ने हमारे हनीमून को अविस्मरणीय बना दिया। बुकिंग प्रक्रिया बहुत आसान थी, और रिसॉर्ट तस्वीरों से भी अधिक सुंदर था।",
     review_2: "शानदार प्रवास, असाधारण आतिथ्य और आसान बुकिंग अनुभव हमारी सभी अपेक्षाओं से बढ़कर था। अत्यधिक अनुशंसित!",
-    review_3: "सबसे बेहतरीन रिसॉर्ट बुकिंग प्लेटफॉर्म में से एक। प्रीमियम रिसॉर्ट्स, पारदर्शी मूल्य निर्धारण और उत्कृष्ट ग्राहक सहायता।"
+    review_3: "सबसे बेहतरीन रिसॉर्ट बुकिंग प्लेटफॉर्म में से एक। प्रीमियम रिसॉर्ट्स, पारदर्शी मूल्य निर्धारण और उत्कृष्ट ग्राहक सहायता।",
+
+    // Experiences Page
+    exp_hero_tag: "रिजर्वो एक्सक्लूसिव • क्यूरेटेड एडवेंचर्स",
+    exp_hero_title1: "अविस्मरणीय अनुभव,",
+    exp_hero_title2: "केवल ठहरने से परे",
+    exp_hero_desc: "सत्यापित प्रकृतिवादियों द्वारा होस्ट किए गए चुनिंदा निजी यॉट नौकायन, ज्वालामुखीय हेली-दौरे, चट्टानी निजी रात्रिभोज और निर्देशित ट्रेक।",
+    exp_yacht: "निजी यॉट नौकायन",
+    exp_heli: "हेली शिखर और घाटियाँ",
+    exp_chef: "मिशेलिन शेफ डाइनिंग",
+    exp_guides: "प्रमाणित गाइड",
+    exp_rating: "4.9 / 5.0 असाधारण रेटिंग",
+    exp_verified: "100% सत्यापित भागीदार",
+    exp_vip: "24/7 वीआईपी सहायता",
+    exp_whats_included: "क्या शामिल है:",
+    exp_reserve_slot: "स्लॉट आरक्षित करें",
+    exp_per_person: "/ व्यक्ति",
+    exp_no_found: "कोई लक्ज़री अनुभव नहीं मिला",
+    exp_try_filter: "मेनू से एक अलग गंतव्य फ़िल्टर चुनने का प्रयास करें।"
   }
 };
 

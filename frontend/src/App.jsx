@@ -99,7 +99,7 @@ function Home({ wishlist, toggleWishlist, currencySymbol, exchangeRate }) {
 }
 
 // Wrapper for Resort Details page
-function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate }) {
+function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate, onBook }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -151,6 +151,7 @@ function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate }) {
       onBack={() => navigate("/")}
       currencySymbol={currencySymbol}
       exchangeRate={exchangeRate}
+      onBook={onBook}
     />
   );
 }
@@ -382,7 +383,7 @@ function App() {
             <Route path="/search" element={renderResortListing()} />
             <Route path="/search-results" element={renderResortListing()} />
             <Route path="/resorts" element={renderResortListing()} />
-            <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />} />
+            <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} onBook={(resort) => setBookingResort(resort)} />} />
             <Route path="/experiences" element={<Experiences />} />
             <Route path="/wishlist" element={<Wishlist onBook={(resort) => setBookingResort(resort)} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />
@@ -565,7 +566,7 @@ function App() {
               </button>
               <button 
                 onClick={() => setCookieConsent(true)}
-                className="px-4 py-2 border border-border-color text-text-dark rounded-xl text-xs font-bold cursor-pointer bg-transparent hover:bg-slate-100"
+                className="px-4 py-2 border border-border-color text-text-dark rounded-xl text-xs font-bold cursor-pointer bg-bg-light hover:bg-border-color transition-colors duration-300"
               >
                 Decline
               </button>
