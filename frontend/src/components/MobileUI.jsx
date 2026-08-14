@@ -15,8 +15,7 @@ import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
 import rivoWaving from "../assets/images/rivo_waving.png";
-import mascotWebm from "../assets/images/mascot_cropped.webm";
-import mascotMp4 from "../assets/images/mascot_cropped.mp4";
+import mascotWebp from "../assets/images/mascot_transparent.webp";
 import { ALL_RESORTS } from "../data/resorts";
 import { authService } from "../services/auth.service";
 import Footer from "./Footer";
@@ -148,10 +147,8 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   const [activeCategory, setActiveCategory] = useState("beach");
   const { wishlist, toggleWishlist } = useWishlist();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [animState, setAnimState] = useState("idle");
   const [showBubble, setShowBubble] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
-  const videoRef = useRef(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -163,28 +160,38 @@ function MobileUI({ isDark, onToggleTheme, children }) {
     return () => mediaQuery.removeEventListener("change", handleReducedMotion);
   }, []);
 
-  const handleTimeUpdate = (e) => {
-    if (isReducedMotion || isMascotOpen) return;
-    const time = e.target.currentTime;
-    if (time >= 1.4 && time <= 2.7) {
-      setShowBubble(true);
-    } else {
+  useEffect(() => {
+    if (isReducedMotion || isMascotOpen) {
       setShowBubble(false);
+      return;
     }
-  };
+
+    const startTime = Date.now();
+    const checkTiming = () => {
+      if (isMascotHovered) {
+        setShowBubble(true);
+        return;
+      }
+      const elapsed = (Date.now() - startTime) % 10000;
+      if (elapsed >= 1400 && elapsed <= 2700) {
+        setShowBubble(true);
+      } else {
+        setShowBubble(false);
+      }
+    };
+
+    const timerId = setInterval(checkTiming, 100);
+    return () => clearInterval(timerId);
+  }, [isReducedMotion, isMascotOpen, isMascotHovered]);
 
   const handleMouseEnter = () => {
     setIsMascotHovered(true);
-    if (!isReducedMotion && videoRef.current) {
-      const time = videoRef.current.currentTime;
-      if (time < 1.4 || time > 2.7) {
-        videoRef.current.currentTime = 1.4;
-      }
-    }
+    setShowBubble(true);
   };
 
   const handleMouseLeave = () => {
     setIsMascotHovered(false);
+    setShowBubble(false);
   };
   const [isMascotOpen, setIsMascotOpen] = useState(false);
   const [activeMode, setActiveMode] = useState("support");
@@ -466,40 +473,26 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             </div>
           )}
 
-          {/* Circle Background */}
+          {/* Mascot WebP Animation (Plays the transparent loop, no circular container) */}
           <div 
-            className={`absolute inset-0 rounded-full bg-[#89cff0] border-2 border-gold shadow-[0_8px_25px_rgba(0,0,0,0.2)] transition-all duration-500 ease-out group-hover:scale-[1.08] group-hover:shadow-[0_12px_25px_rgba(13,110,253,0.35)] ${
-              isMascotOpen ? "scale-[1.08] shadow-[0_12px_25px_rgba(13,110,253,0.35)]" : ""
-            }`}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-visible transition-all duration-500"
             style={{
-              transition: "transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), shadow 0.5s ease"
+              transform: isMascotHovered ? "scale(1.08) translateY(-4px)" : "scale(1) translateY(0)",
+              filter: isMascotHovered ? "drop-shadow(0 10px 20px rgba(0,0,0,0.15))" : "drop-shadow(0 4px 6px rgba(0,0,0,0.1))"
             }}
-          />
-          
-          {/* Mascot Video Animation (Plays the cropped loop, clipped to circle) */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden rounded-full">
+          >
             {isReducedMotion ? (
               <img 
                 src={`${rivoAvatar}?v=10`} 
                 alt="Rivo Mascot Static" 
-                className="w-full h-full object-cover select-none filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.18)]"
+                className="w-full h-full object-contain select-none"
               />
             ) : (
-              <video 
-                ref={videoRef}
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
-                onTimeUpdate={handleTimeUpdate}
-                className="w-[104%] h-[104%] object-cover select-none filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.18)]"
-                style={{
-                  clipPath: "circle(48.2% at 50% 50%)"
-                }}
-              >
-                <source src={mascotWebm} type="video/webm" />
-                <source src={mascotMp4} type="video/mp4" />
-              </video>
+              <img 
+                src={mascotWebp} 
+                alt="Rivo Mascot Animation" 
+                className="w-full h-full object-contain select-none"
+              />
             )}
           </div>
 
