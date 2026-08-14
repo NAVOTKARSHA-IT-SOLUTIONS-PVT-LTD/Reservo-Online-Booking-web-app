@@ -154,3 +154,22 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   outline: none !important;
   border-color: var(--color-primary) !important;
 }
+
+/* Prevent browser autofill from brightening inputs in dark mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-bg-light) inset !important;
+  -webkit-text-fill-color: var(--color-text-dark) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+body.dark-theme input:-webkit-autofill,
+body.dark-theme input:-webkit-autofill:hover,
+body.dark-theme input:-webkit-autofill:focus,
+body.dark-theme input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0A1120 inset !important;
+  -webkit-text-fill-color: #F1F6FF !important;
+  transition: background-color 5000s ease-in-out 0s;
+}

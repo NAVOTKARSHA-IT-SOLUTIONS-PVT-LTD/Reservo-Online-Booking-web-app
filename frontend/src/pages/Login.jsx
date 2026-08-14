@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -22,6 +22,7 @@ import { authService } from "../services/auth.service";
 import { oauth2Service } from "../services/oauth2.service";
 import logoImage from "../assets/images/logo.png";
 import hero1 from "../assets/images/hero1.jpg";
+import rivoMascot from "../assets/images/rivo_mascot.jpg";
 
 // Define validation schema with Zod
 const loginSchema = z.object({
@@ -196,16 +197,17 @@ export default function Login() {
             <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/70 z-10" />
           </div>
 
-          {/* Logo & Tagline */}
-          <div className="relative z-20 flex items-center gap-2.5">
-            <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm">
-              <img src={logoImage} alt="Logo" className="w-9 h-9 object-contain" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold tracking-[0.5px] font-serif leading-none">Reservo</h2>
-              <span className="text-[7px] text-white/60 tracking-[2px] font-bold uppercase mt-1 block">Connect • Book • Relax • Revisit</span>
-            </div>
-          </div>
+          {/* Logo & Brand Name */}
+          <Link to="/" className="relative z-20 flex items-center gap-2.5 no-underline group select-none shrink-0">
+            <img 
+              src={logoImage} 
+              alt="Reservo Logo" 
+              className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
+            />
+            <span className="text-[22px] font-extrabold tracking-[0.5px] text-white font-serif leading-none transition-colors duration-300">
+              Reservo
+            </span>
+          </Link>
 
           {/* Hero text descriptor */}
           <div className="relative z-20 space-y-3 max-w-[380px] hidden lg:block">
@@ -220,8 +222,8 @@ export default function Login() {
           <div className="relative z-20 space-y-5 hidden lg:block">
             {/* Rivo Overlay */}
             <div className="bg-[#0e1624]/80 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm border border-white/10">
-                <img src={logoImage} alt="Logo" className="w-9 h-9 object-contain" />
+              <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-sm border-2 border-white/20">
+                <img src={rivoMascot} alt="Rivo Mascot" className="w-full h-full object-cover" />
               </div>
               <div>
                 <h4 className="text-[12px] font-bold text-white">Hi, I'm RIVO 👋</h4>
@@ -298,7 +300,7 @@ export default function Login() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
               {/* Email Address with Floating Label Effect */}
               <div className="space-y-1 flex flex-col relative">
-                <label htmlFor="emailInput" className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider block w-full text-left">Email Address</label>
+                <label htmlFor="emailInput" className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider block w-full text-left ml-1">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-gray" />
                   <input 
@@ -327,7 +329,7 @@ export default function Login() {
 
               {/* Password */}
               <div className="space-y-1 flex flex-col relative">
-                <label htmlFor="passwordInput" className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider block w-full text-left">Password</label>
+                <label htmlFor="passwordInput" className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider block w-full text-left ml-1">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-gray" />
                   <input 
@@ -390,13 +392,13 @@ export default function Login() {
                         setResetOtpVerified(false);
                       }}
                       placeholder="Email address"
-                      className="min-w-0 flex-1 rounded-lg border border-border-color bg-bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
+                      className="min-w-0 flex-1 rounded-lg border border-border-color bg-bg-light text-text-dark px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
                     />
                     <button
                       type="button"
                       onClick={requestPasswordReset}
                       disabled={isResetting}
-                      className="rounded-lg border-none bg-primary px-3 py-1.5 text-[9px] font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                      className="rounded-lg border-none bg-primary px-3 py-1.5 text-[9px] font-bold text-white disabled:cursor-not-allowed disabled:bg-border-color disabled:text-text-gray disabled:opacity-60"
                     >
                       {isResetting ? "Sending..." : resetOtpSent ? "Resend" : "Send code"}
                     </button>
@@ -413,13 +415,13 @@ export default function Login() {
                         setResetOtpVerified(false);
                       }}
                       placeholder="6-digit OTP"
-                      className="min-w-0 flex-1 rounded-lg border border-border-color bg-bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
+                      className="min-w-0 flex-1 rounded-lg border border-border-color bg-bg-light text-text-dark px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
                     />
                     <button
                       type="button"
                       onClick={verifyResetOtp}
                       disabled={isResetting || resetOtp.length !== 6}
-                      className="rounded-lg border border-primary bg-bg-white px-3 py-1.5 text-[9px] font-bold text-primary disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+                      className="rounded-lg border border-primary bg-bg-light px-3 py-1.5 text-[9px] font-bold text-primary disabled:cursor-not-allowed disabled:border-border-color disabled:text-text-gray disabled:opacity-60"
                     >
                       {resetOtpVerified ? "Verified" : "Verify"}
                     </button>
@@ -431,20 +433,20 @@ export default function Login() {
                         value={newPassword}
                         onChange={(event) => setNewPassword(event.target.value)}
                         placeholder="New password (6+ characters)"
-                        className="w-full rounded-lg border border-border-color bg-bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
+                        className="w-full rounded-lg border border-border-color bg-bg-light text-text-dark px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
                       />
                       <input
                         type="password"
                         value={confirmNewPassword}
                         onChange={(event) => setConfirmNewPassword(event.target.value)}
                         placeholder="Confirm new password"
-                        className="w-full rounded-lg border border-border-color bg-bg-white px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
+                        className="w-full rounded-lg border border-border-color bg-bg-light text-text-dark px-3 py-2 text-[11px] font-semibold outline-none focus:border-primary"
                       />
                       <button
                         type="button"
                         onClick={confirmPasswordReset}
                         disabled={isResetting}
-                        className="w-full rounded-lg border-none bg-primary px-3 py-2 text-[10px] font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                        className="w-full rounded-lg border-none bg-primary px-3 py-2 text-[10px] font-bold text-white disabled:cursor-not-allowed disabled:bg-border-color disabled:text-text-gray disabled:opacity-60"
                       >
                         {isResetting ? "Resetting..." : "Set New Password"}
                       </button>
@@ -458,10 +460,10 @@ export default function Login() {
               <button 
                 type="submit"
                 disabled={isSubmitting || !isValid}
-                className={`w-full py-2.5 text-white font-extrabold text-[11px] uppercase tracking-wider rounded-xl shadow cursor-pointer border-none flex items-center justify-center gap-1.5 transition-all duration-300 ${
+                className={`w-full py-2.5 font-extrabold text-[11px] uppercase tracking-wider rounded-xl shadow cursor-pointer border-none flex items-center justify-center gap-1.5 transition-all duration-300 ${
                   isSubmitting || !isValid 
-                    ? "bg-slate-300 cursor-not-allowed text-slate-500 shadow-none" 
-                    : "bg-primary hover:bg-primary-dark"
+                    ? "bg-border-color text-text-gray opacity-60 cursor-not-allowed shadow-none" 
+                    : "bg-primary hover:bg-primary-dark text-white"
                 }`}
               >
                 {isSubmitting ? "Authenticating..." : <>Sign In <ArrowRight className="w-3.5 h-3.5" /></>}
