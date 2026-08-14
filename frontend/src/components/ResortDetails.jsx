@@ -6,7 +6,7 @@ import ResortNavigationMap from "./ResortNavigationMap";
 
 import { useTranslation } from "../hooks/useTranslation";
 
-export default function ResortDetails({ resort, urlId, isDarkMode, onBack, currencySymbol = "₹", exchangeRate = 1 }) {
+export default function ResortDetails({ resort, urlId, isDarkMode, onBack, currencySymbol = "₹", exchangeRate = 1, onBook }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { wishlist, toggleWishlist } = useWishlist();
@@ -60,8 +60,11 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const formattedPrice = convertedPriceVal.toLocaleString();
 
   const handleCheckAvailability = () => {
-    // Navigate to listing page and trigger booking modal
-    navigate("/resorts", { state: { checkAvailabilityFor: resort.id } });
+    if (onBook) {
+      onBook(resort);
+    } else {
+      navigate("/resorts", { state: { checkAvailabilityFor: resort.id } });
+    }
   };
 
   const handleExploreMore = () => {
@@ -99,11 +102,19 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
               <div className="flex items-center gap-3">
                 <button 
                   onClick={toggleFavorite}
-                  className="w-10 h-10 rounded-full bg-white/95 text-stone-400 flex items-center justify-center shadow-md hover:text-red-500 transition cursor-pointer border-none"
+                  className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-md hover:bg-black/60 transition cursor-pointer"
+                  aria-label="Wishlist Resort"
                 >
                   <Heart size={18} className={isFavorited ? "fill-red-500 text-red-500" : ""} />
                 </button>
-                <button className="flex items-center gap-1.5 px-4 py-2 bg-white/95 text-text-dark rounded-full text-xs font-bold shadow-md hover:bg-white transition cursor-pointer border-none">
+                <button 
+                  onClick={() => {
+                    if (navigator.clipboard) {
+                      navigator.clipboard.writeText(window.location.href);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/20 text-white rounded-full text-xs font-bold shadow-md hover:bg-black/60 transition cursor-pointer"
+                >
                   <Share size={14} /> Share
                 </button>
               </div>

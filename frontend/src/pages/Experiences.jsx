@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Compass, Calendar, Clock, MapPin, Award, ArrowRight, Anchor, ShieldCheck, Sparkles, Star, Mountain, Shield } from "lucide-react";
+import { useTranslation } from "../hooks/useTranslation";
 import rivoSearching from "../assets/images/rivo_searching.png";
 
 const EXPERIENCES = [
@@ -50,6 +51,7 @@ const EXPERIENCES = [
 ];
 
 function Experiences({ currencySymbol = "₹", exchangeRate = 1 }) {
+  const { t, lang } = useTranslation();
   const [selectedLocation, setSelectedLocation] = useState("All");
   const [symbol, setSymbol] = useState(currencySymbol);
   const [rate, setRate] = useState(exchangeRate);
@@ -135,33 +137,33 @@ function Experiences({ currencySymbol = "₹", exchangeRate = 1 }) {
           
           {/* Top Pill Badge */}
           <div className="inline-flex items-center gap-2 bg-gold/20 text-gold border border-gold/40 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-[2px] mb-5 backdrop-blur-md shadow-lg">
-            <Sparkles className="w-3.5 h-3.5" /> RESERVO EXCLUSIVE • CURATED ADVENTURES
+            <Sparkles className="w-3.5 h-3.5" /> {t("exp_hero_tag")}
           </div>
 
           {/* Main Title */}
           <h1 className="text-[42px] sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 text-white font-serif leading-[1.1] drop-shadow-xl max-w-[950px]">
-            Unforgettable Experiences, <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-gold">Beyond Just Stays</span>
+            {t("exp_hero_title1")} <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-gold">{t("exp_hero_title2")}</span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg md:text-xl max-w-[740px] mx-auto text-white/95 leading-relaxed font-medium drop-shadow mb-8">
-            Handpicked private yacht charters, volcanic heli-tours, cliffside private dinners & guided wilderness treks hosted by certified naturalists.
+            {t("exp_hero_desc")}
           </p>
 
           {/* Floating Feature Badges */}
           <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm">
-              <Anchor className="w-3.5 h-3.5 text-gold" /> Private Yacht Sailing
+              <Anchor className="w-3.5 h-3.5 text-gold" /> {t("exp_yacht")}
             </div>
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm">
-              <Mountain className="w-3.5 h-3.5 text-gold" /> Heli Peaks & Canyons
+              <Mountain className="w-3.5 h-3.5 text-gold" /> {t("exp_heli")}
             </div>
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-gold" /> Michelin Chef Dining
+              <Sparkles className="w-3.5 h-3.5 text-gold" /> {t("exp_chef")}
             </div>
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold text-white shadow-sm">
-              <ShieldCheck className="w-3.5 h-3.5 text-gold" /> Certified Guides
+              <ShieldCheck className="w-3.5 h-3.5 text-gold" /> {t("exp_guides")}
             </div>
           </div>
 
@@ -169,17 +171,17 @@ function Experiences({ currencySymbol = "₹", exchangeRate = 1 }) {
           <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 bg-black/40 backdrop-blur-md border border-white/15 px-6 py-3 rounded-2xl text-xs font-bold text-white/90 shadow-2xl">
             <div className="flex items-center gap-1.5">
               <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-              <span>4.9 / 5.0 Exceptional Rating</span>
+              <span>{t("exp_rating")}</span>
             </div>
             <div className="hidden sm:block w-px h-4 bg-white/20"></div>
             <div className="flex items-center gap-1.5">
               <Shield className="w-4 h-4 text-emerald-400" />
-              <span>100% Verified Partners</span>
+              <span>{t("exp_verified")}</span>
             </div>
             <div className="hidden sm:block w-px h-4 bg-white/20"></div>
             <div className="flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-gold" />
-              <span>24/7 VIP Concierge Support</span>
+              <span>{t("exp_vip")}</span>
             </div>
           </div>
 
@@ -230,7 +232,7 @@ function Experiences({ currencySymbol = "₹", exchangeRate = 1 }) {
                     <p className="text-[14.5px] text-text-gray leading-relaxed mb-6.25">{exp.description}</p>
 
                     <div className="mb-7.5">
-                      <h4 className="text-xs uppercase tracking-wider text-text-dark mb-2.5 font-bold">What's Included:</h4>
+                      <h4 className="text-xs uppercase tracking-wider text-text-dark mb-2.5 font-bold">{t("exp_whats_included")}</h4>
                       <ul className="list-none grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {exp.highlights.map((hl, i) => (
                           <li key={i} className="text-xs text-text-gray flex items-center gap-1.5 font-medium"><ArrowRight size={10} className="text-gold" /> {hl}</li>
@@ -240,15 +242,17 @@ function Experiences({ currencySymbol = "₹", exchangeRate = 1 }) {
 
                     <div className="flex justify-between items-center border-t border-border-color pt-5 mt-auto">
                       <div className="flex flex-col">
-                        <span className="text-2xl font-bold text-text-dark">${exp.price}</span>
-                        <span className="text-[11px] text-text-gray">/ person</span>
+                        <span className="text-2xl font-bold text-text-dark">
+                          {symbol}{(Math.round(exp.price * rate)).toLocaleString(lang === "hi" ? "hi-IN" : "en-IN")}
+                        </span>
+                        <span className="text-[11px] text-text-gray">{t("exp_per_person")}</span>
                       </div>
 
                       <button 
                         className="bg-primary text-bg-white border-none px-7 py-3 rounded-lg text-sm font-semibold cursor-pointer flex items-center transition-all duration-300 hover:bg-gold hover:text-white hover:-translate-y-0.5"
                         onClick={() => bookExperience(exp.title)}
                       >
-                        Reserve Slot <Calendar size={14} style={{ marginLeft: 6 }} />
+                        {t("exp_reserve_slot")} <Calendar size={14} style={{ marginLeft: 6 }} />
                       </button>
                     </div>
                   </div>
@@ -264,9 +268,9 @@ function Experiences({ currencySymbol = "₹", exchangeRate = 1 }) {
                   />
                   <div className="absolute bottom-0 right-1.25 w-9 h-9 bg-gold text-white rounded-full flex items-center justify-center text-lg font-extrabold border-3 border-bg-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">?</div>
                 </div>
-                <h3 className="text-2xl font-bold text-text-dark mb-2">No Luxury Experiences Found</h3>
+                <h3 className="text-2xl font-bold text-text-dark mb-2">{t("exp_no_found")}</h3>
                 <p className="text-[14.5px] text-text-gray max-w-[400px] mx-auto text-center leading-relaxed">
-                  Try selecting a different destination filter from the menu.
+                  {t("exp_try_filter")}
                 </p>
               </div>
             )}

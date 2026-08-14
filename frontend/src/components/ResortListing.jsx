@@ -192,7 +192,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
       <div className="space-y-2.5 pt-2 border-t border-stone-200 dark:border-stone-700">
         <div className="flex justify-between items-center text-xs">
           <label htmlFor="filter-price" className="font-bold uppercase tracking-wider text-stone-400">Max Budget / Night</label>
-          <span className="font-bold text-[#2563EB] text-sm">₹{maxPrice.toLocaleString()}</span>
+          <span className="font-bold text-[#2563EB] text-sm">{currencySymbol}{(Math.round(maxPrice * exchangeRate)).toLocaleString()}</span>
         </div>
         <input
           id="filter-price"
@@ -205,9 +205,9 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
           className="w-full accent-[#2563EB] cursor-pointer"
         />
         <div className="flex justify-between text-[10px] text-stone-400 font-medium">
-          <span>₹5,000</span>
-          <span>₹20,000</span>
-          <span>₹40,000+</span>
+          <span>{currencySymbol}{(Math.round(5000 * exchangeRate)).toLocaleString()}</span>
+          <span>{currencySymbol}{(Math.round(20000 * exchangeRate)).toLocaleString()}</span>
+          <span>{currencySymbol}{(Math.round(40000 * exchangeRate)).toLocaleString()}+</span>
         </div>
       </div>
 
