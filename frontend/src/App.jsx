@@ -445,7 +445,7 @@ function App() {
         <div className="flex flex-col flex-1 bg-bg-light transition-colors duration-300">
           <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} />
 
-          <main id="main-content" className={`flex-1 flex flex-col ${location.pathname === "/" ? "" : location.pathname === "/ai-planner" ? "pt-20" : "pt-28"}`}>
+          <main id="main-content" className={`flex-1 flex flex-col ${location.pathname === "/" || location.pathname === "/experiences" ? "" : location.pathname === "/ai-planner" ? "pt-20" : "pt-28"}`}>
             {renderAppRoutes()}
           </main>
 
