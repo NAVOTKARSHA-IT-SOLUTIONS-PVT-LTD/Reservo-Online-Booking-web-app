@@ -110,6 +110,35 @@ body.dark-theme {
   animation: bounce-rivo 4s ease-in-out infinite;
 }
 
+@keyframes float-rivo {
+  0%, 100% {
+    transform: translateY(0.5px) scale(1.05);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.07);
+  }
+}
+
+@keyframes wave-rivo {
+  0%, 100% {
+    transform: rotate(0deg) scale(1.22) translateY(-4px);
+  }
+  25% {
+    transform: rotate(-3deg) scale(1.22) translateY(-4px);
+  }
+  75% {
+    transform: rotate(3deg) scale(1.22) translateY(-4px);
+  }
+}
+
+@utility animate-float-rivo {
+  animation: float-rivo 3s ease-in-out infinite;
+}
+
+@utility animate-wave-rivo {
+  animation: wave-rivo 0.75s ease-in-out infinite;
+}
+
 body {
   background-color: var(--color-bg-light);
   color: var(--color-text-dark);
