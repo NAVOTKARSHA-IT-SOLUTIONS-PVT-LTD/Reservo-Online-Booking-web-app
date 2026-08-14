@@ -186,186 +186,393 @@ function Footer() {
 
   // Large Footer for Landing/Home page
   return (
-    <footer className="bg-bg-white pt-16 font-sans border-t border-border-color transition-colors duration-300" id="footer">
-      <div className="w-full max-w-[1280px] mx-auto px-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-6 mb-12">
-          
-          {/* Left Column: Brand & Social */}
-          <div className="lg:col-span-3">
-            <Link to="/" className="flex items-center gap-2 no-underline mb-6">
-              <img src={logoImage} alt="R" className="h-10 w-auto object-contain" />
-              <span className="text-[24px] font-extrabold tracking-[0.5px] text-text-dark font-serif transition-colors duration-300">
-                Reservo
-              </span>
-            </Link>
-            
-            <p className="text-text-gray text-[14px] leading-relaxed mb-8 max-w-[280px] transition-colors duration-300">
-              Discover India's finest luxury resorts, boutique stays, and unforgettable travel experiences. Your perfect vacation starts with Reservo.
-            </p>
+  <footer
+    className="bg-bg-white pt-16 font-sans border-t border-border-color transition-colors duration-300"
+    id="footer"
+  >
+    <div className="w-full max-w-[1280px] mx-auto px-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-6 mb-12">
 
-            <div className="flex gap-3">
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Facebook Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
-                <FacebookIcon className="w-4 h-4" />
-              </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Instagram Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
-                <InstagramIcon className="w-4 h-4" />
-              </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo X Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
-                <XIcon className="w-4 h-4" />
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo LinkedIn Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
-                <LinkedInIcon className="w-4 h-4" />
-              </a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo YouTube Page" className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent">
-                <YoutubeIcon className="w-4 h-4" />
-              </a>
-            </div>
+        {/* Left Column: Brand & Social */}
+        <div className="lg:col-span-3">
+          <Link to="/" className="flex items-center gap-2 no-underline mb-6">
+            <img
+              src={logoImage}
+              alt="R"
+              className="h-10 w-auto object-contain"
+            />
+
+            <span className="text-[24px] font-extrabold tracking-[0.5px] text-text-dark font-serif transition-colors duration-300">
+              Reservo
+            </span>
+          </Link>
+
+          <p className="text-text-gray text-[14px] leading-relaxed mb-8 max-w-[280px] transition-colors duration-300">
+            Discover India's finest luxury resorts, boutique stays, and
+            unforgettable travel experiences. Your perfect vacation starts
+            with Reservo.
+          </p>
+
+          <div className="flex gap-3">
+            <a
+              href="https://facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit Reservo Facebook Page"
+              className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+            >
+              <FacebookIcon className="w-4 h-4" />
+            </a>
+
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit Reservo Instagram Page"
+              className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+            >
+              <InstagramIcon className="w-4 h-4" />
+            </a>
+
+            <a
+              href="https://twitter.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit Reservo X Page"
+              className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+            >
+              <XIcon className="w-4 h-4" />
+            </a>
+
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit Reservo LinkedIn Page"
+              className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+            >
+              <LinkedInIcon className="w-4 h-4" />
+            </a>
+
+            <a
+              href="https://youtube.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit Reservo YouTube Page"
+              className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+            >
+              <YoutubeIcon className="w-4 h-4" />
+            </a>
           </div>
+        </div>
 
-          {/* Links Columns */}
-          <div className="lg:col-span-2 lg:col-start-4">
-            <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
-              Quick Links
-              <span className="w-8 h-0.5 bg-[#2563EB]"></span>
-            </h4>
-            <ul className="flex flex-col gap-4 text-[14px] text-text-gray font-medium p-0 list-none transition-colors duration-300">
-              <li><Link to="/" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Home</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/search" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Destinations</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/search" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Stays</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/about" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>About Us</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-            </ul>
-          </div>
+        {/* Quick Links */}
+        <div className="lg:col-span-2 lg:col-start-4">
+          <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
+            Quick Links
+            <span className="w-8 h-0.5 bg-[#2563EB]"></span>
+          </h4>
 
-          <div className="lg:col-span-2">
-            <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
-              Our Services
-              <span className="w-8 h-0.5 bg-[#2563EB]"></span>
-            </h4>
-            <ul className="flex flex-col gap-4 text-[14px] text-text-gray font-medium p-0 list-none transition-colors duration-300">
-              <li><Link to="/search" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Luxury Stays</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/search" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Spa & Wellness</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/search" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Private Villas</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/search" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Wedding Events</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/search" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Travel Packages</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-            </ul>
-          </div>
-
-          <div className="lg:col-span-2">
-            <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
-              Company Info
-              <span className="w-8 h-0.5 bg-[#2563EB]"></span>
-            </h4>
-            <ul className="flex flex-col gap-4 text-[14px] text-text-gray font-medium p-0 list-none transition-colors duration-300">
-              <li><Link to="/careers" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Careers</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/terms" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Terms of Service</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/help" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Help Center</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-              <li><Link to="/support" className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"><span>Support</span> <span className="text-text-gray/50 text-xs font-bold">&gt;</span></Link></li>
-            </ul>
-          </div>
-
-          {/* Right Column: Newsletter */}
-          <div className="lg:col-span-3">
-            <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
-              Newsletter
-              <span className="w-8 h-0.5 bg-[#2563EB]"></span>
-            </h4>
-            <p className="text-text-gray text-[13px] leading-relaxed mb-6 transition-colors duration-300">
-              Subscribe to get exclusive offers, travel inspiration & more.
-            </p>
-            <form className="flex flex-col gap-3 relative z-10" onSubmit={(e) => e.preventDefault()}>
-              <div className="relative w-full">
-                <MailIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-gray" />
-                <input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  className="w-full border border-border-color rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:border-primary transition-colors bg-bg-light text-text-dark" 
-                />
-              </div>
-              <button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary-dark text-white rounded-xl py-3.5 text-sm font-bold flex items-center justify-center gap-2 border-none cursor-pointer transition-colors shadow-md"
+          <ul className="flex flex-col gap-4 text-[14px] text-text-gray font-medium p-0 list-none transition-colors duration-300">
+            <li>
+              <Link
+                to="/"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
               >
-                Subscribe <SendIcon className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
+                <span>Home</span>
+                
+              </Link>
+            </li>
 
+            <li>
+              <Link
+                to="/search"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Destinations</span>
+                
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/search"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Stays</span>
+                
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/about"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>About Us</span>
+                
+              </Link>
+            </li>
+          </ul>
         </div>
 
-        {/* Horizontal Contact Bar */}
-        <div className="bg-bg-light border border-border-color rounded-3xl p-4 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-sm mb-12 transition-colors duration-300">
-          {/* Contact Us Badge */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-sm">
-              <PhoneIcon className="w-5 h-5 fill-white text-white" />
+        {/* Our Services */}
+        <div className="lg:col-span-2">
+          <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
+            Our Services
+            <span className="w-8 h-0.5 bg-[#2563EB]"></span>
+          </h4>
+
+          <ul className="flex flex-col gap-4 text-[14px] text-text-gray font-medium p-0 list-none transition-colors duration-300">
+            <li>
+              <Link
+                to="/search"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Luxury Stays</span>
+                
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/search"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Spa & Wellness</span>
+                
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/search"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Private Villas</span>
+                
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/search"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Wedding Events</span>
+                
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/search"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Travel Packages</span>
+                
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Company Info */}
+        <div className="lg:col-span-2">
+          <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
+            Company Info
+            <span className="w-8 h-0.5 bg-[#2563EB]"></span>
+          </h4>
+
+          <ul className="flex flex-col gap-4 text-[14px] text-text-gray font-medium p-0 list-none transition-colors duration-300">
+            <li>
+              <Link
+                to="/careers"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Careers</span>
+                
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/terms"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Terms of Service</span>
+                
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/help"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Help Center</span>
+                
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                to="/support"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Support</span>
+                
+              </Link>
+            </li>
+
+            {/* NEW: Privacy Policy */}
+            <li>
+              <Link
+                to="/privacy-policy"
+                className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+              >
+                <span>Privacy Policy</span>
+                
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Newsletter */}
+        <div className="lg:col-span-3">
+          <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
+            Newsletter
+            <span className="w-8 h-0.5 bg-[#2563EB]"></span>
+          </h4>
+
+          <p className="text-text-gray text-[13px] leading-relaxed mb-6 transition-colors duration-300">
+            Subscribe to get exclusive offers, travel inspiration & more.
+          </p>
+
+          <form
+            className="flex flex-col gap-3 relative z-10"
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <div className="relative w-full">
+              <MailIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-gray" />
+
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="w-full border border-border-color rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:border-primary transition-colors bg-bg-light text-text-dark"
+              />
             </div>
-            <span className="text-sm font-extrabold text-text-dark transition-colors duration-300">Contact Us</span>
+
+            <button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary-dark text-white rounded-xl py-3.5 text-sm font-bold flex items-center justify-center gap-2 border-none cursor-pointer transition-colors shadow-md"
+            >
+              Subscribe
+              <SendIcon className="w-4 h-4" />
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Horizontal Contact Bar */}
+      <div className="bg-bg-light border border-border-color rounded-3xl p-4 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-sm mb-12 transition-colors duration-300">
+
+        {/* Contact Us Badge */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-sm">
+            <PhoneIcon className="w-5 h-5 fill-white text-white" />
           </div>
 
-          {/* Divider for desktop */}
-          <div className="hidden lg:block w-px h-6 bg-border-color"></div>
+          <span className="text-sm font-extrabold text-text-dark transition-colors duration-300">
+            Contact Us
+          </span>
+        </div>
 
-          {/* Contact Items */}
-          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-6 lg:gap-12 text-xs text-text-gray font-semibold transition-colors duration-300">
-            <div className="flex items-center gap-2">
-              <MapPinIcon className="w-4 h-4 text-primary" />
-              <span>Pune, Maharashtra, India</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <PhoneIcon className="w-4 h-4 text-primary" />
-              <span>+91 98765 *****</span>
-            </div>
+        {/* Divider */}
+        <div className="hidden lg:block w-px h-6 bg-border-color"></div>
 
-            <div className="flex items-center gap-2">
-              <MailIcon className="w-4 h-4 text-primary" />
-              <span>contact@reservo.com</span>
-            </div>
+        {/* Contact Items */}
+        <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-6 lg:gap-12 text-xs text-text-gray font-semibold transition-colors duration-300">
 
-            <div className="flex items-center gap-2">
-              <ClockIcon className="w-4 h-4 text-primary" />
-              <span>Mon - Sat : 9 AM - 7 PM</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <MapPinIcon className="w-4 h-4 text-primary" />
+            <span>Pune, Maharashtra, India</span>
           </div>
+
+          <div className="flex items-center gap-2">
+            <PhoneIcon className="w-4 h-4 text-primary" />
+            <span>+91 98765 *****</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <MailIcon className="w-4 h-4 text-primary" />
+            <span>contact@reservo.com</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <ClockIcon className="w-4 h-4 text-primary" />
+            <span>Mon - Sat : 9 AM - 7 PM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Bottom Bar */}
+    <div className="bg-[#0B1530] text-slate-300 py-6 w-full transition-colors duration-300">
+      <div className="w-full max-w-[1280px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-6 text-xs font-semibold">
+
+        <div className="flex items-center gap-6">
+          <span className="flex items-center gap-2">
+            <ShieldIcon className="w-4 h-4 text-[#2563EB]" />
+            100% Secure Booking
+          </span>
+
+          <span className="w-px h-4 bg-slate-800"></span>
+
+          <span className="flex items-center gap-2">
+            <HeadphoneIcon className="w-4 h-4 text-[#2563EB]" />
+            24/7 Customer Support
+          </span>
+        </div>
+
+        <div className="text-slate-400">
+          &copy; 2026{" "}
+          <span className="font-extrabold text-white">Reservo</span>.
+          All Rights Reserved.
+        </div>
+
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            <span className="font-black italic text-sm tracking-tighter text-white">
+              VISA
+            </span>
+
+            {/* Mastercard circles */}
+            <div className="flex items-center -space-x-1.5">
+              <div className="w-4.5 h-4.5 rounded-full bg-[#EB001B] opacity-90"></div>
+              <div className="w-4.5 h-4.5 rounded-full bg-[#F79E1B] opacity-90"></div>
+            </div>
+
+            <span className="font-bold italic text-[10px] border border-slate-700 px-1.5 py-0.5 rounded-sm text-slate-400">
+              AMEX
+            </span>
+
+            <span className="font-bold italic text-xs text-white">
+              UPI
+            </span>
+          </div>
+
+          <span className="w-px h-4 bg-slate-800"></span>
+
+          <span className="flex items-center gap-1.5">
+            <LockIcon className="w-3.5 h-3.5 text-[#2563EB]" />
+            Encrypted & Secure
+          </span>
         </div>
 
       </div>
-
-      {/* Bottom Bar */}
-      <div className="bg-[#0B1530] text-slate-300 py-6 w-full transition-colors duration-300">
-        <div className="w-full max-w-[1280px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-6 text-xs font-semibold">
-          
-          <div className="flex items-center gap-6">
-            <span className="flex items-center gap-2"><ShieldIcon className="w-4 h-4 text-[#2563EB]" /> 100% Secure Booking</span>
-            <span className="w-px h-4 bg-slate-800"></span>
-            <span className="flex items-center gap-2"><HeadphoneIcon className="w-4 h-4 text-[#2563EB]" /> 24/7 Customer Support</span>
-          </div>
-
-          <div className="text-slate-400">
-            &copy; 2026 <span className="font-extrabold text-white">Reservo</span>. All Rights Reserved.
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-4">
-              <span className="font-black italic text-sm tracking-tighter text-white">VISA</span>
-              
-              {/* Mastercard circles */}
-              <div className="flex items-center -space-x-1.5">
-                <div className="w-4.5 h-4.5 rounded-full bg-[#EB001B] opacity-90"></div>
-                <div className="w-4.5 h-4.5 rounded-full bg-[#F79E1B] opacity-90"></div>
-              </div>
-
-              <span className="font-bold italic text-[10px] border border-slate-700 px-1.5 py-0.5 rounded-sm text-slate-400">AMEX</span>
-              <span className="font-bold italic text-xs text-white">UPI</span>
-            </div>
-            <span className="w-px h-4 bg-slate-800"></span>
-            <span className="flex items-center gap-1.5"><LockIcon className="w-3.5 h-3.5 text-[#2563EB]" /> Encrypted & Secure</span>
-          </div>
-
-        </div>
-      </div>
-    </footer>
-  );
+    </div>
+  </footer>
+);
 }
 
 export default Footer;
