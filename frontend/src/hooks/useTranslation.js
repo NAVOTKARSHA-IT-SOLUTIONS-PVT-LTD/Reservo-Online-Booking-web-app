@@ -39,7 +39,35 @@ const TRANSLATIONS = {
     discover_stays: "Discover curated retreats tailored for luxury escapes.",
     m1_greeting: "Hi! I'm Rivo, your personal travel concierge. Tell me what kind of vibe you're looking for, and I'll find the perfect stay.",
     connecting_sip: "Initializing secure SIP VoIP channel...",
-    telephony_greeting: "\"Hello! I am Rivo, your Reservo Telephony concierge. How can I assist you with your luxury booking today?\""
+    telephony_greeting: "\"Hello! I am Rivo, your Reservo Telephony concierge. How can I assist you with your luxury booking today?\"",
+    
+    // Why Choose Us
+    why_choose_reservo: "Why Choose Reservo",
+    next_era_part1: "The Next Era of ",
+    next_era_part2: "Luxury Stays",
+    why_us_desc: "Reservo pairs cutting-edge technology with elite hospitality standards to redefine your holiday experience.",
+    feature_01_title: "AI Recommendations",
+    feature_01_desc: "Our intelligent algorithm maps your mood, calendar, and past stay histories to deliver tailored recommendations.",
+    feature_02_title: "Hand-Verified Stays",
+    feature_02_desc: "Every resort, villa, and boutique hotel goes through a thorough 150+ point safety, luxury, and auditing process.",
+    feature_03_title: "Secure Payments",
+    feature_03_desc: "Sleek checkout powered by Stripe, accepting premium credit cards, digital wallets, and installment schedules.",
+    feature_04_title: "24/7 Concierge Support",
+    feature_04_desc: "Our dedicated digital and human concierge support teams are available around the clock to handle bookings.",
+    stat_0_label: "Happy Travelers",
+    stat_1_label: "Luxury Properties",
+    stat_2_label: "Average Rating",
+    stat_3_label: "Secure & Safe",
+    
+    // Testimonials
+    guest_reviews: "Guest Reviews",
+    guests_say_part1: "What Our ",
+    guests_say_part2: "Guests",
+    guests_say_part3: " Say",
+    reviews_desc: "Thousands of travelers trust Reservo for unforgettable luxury vacations.",
+    review_1: "Reservo made our honeymoon unforgettable. The booking process was seamless, and the resort was even more beautiful than the pictures.",
+    review_2: "The luxury stay, exceptional hospitality, and smooth booking experience exceeded all our expectations. Highly recommended!",
+    review_3: "One of the finest resort booking platforms. Premium resorts, transparent pricing, and outstanding customer support."
   },
   hi: {
     home: "मुख्य पृष्ठ",
@@ -79,7 +107,35 @@ const TRANSLATIONS = {
     discover_stays: "लक्ज़री गेटअवे के लिए क्यूरेटेड रिट्रीट खोजें।",
     m1_greeting: "नमस्ते! मैं रिवो हूँ, आपका व्यक्तिगत यात्रा सहायक। मुझे बताएं कि आप किस तरह का माहौल तलाश रहे हैं, और मैं आपके लिए सही ठहराव ढूंढ लूंगा।",
     connecting_sip: "सुरक्षित एसआईपी वीओआईपी चैनल प्रारंभ किया जा रहा है...",
-    telephony_greeting: "\"नमस्ते! मैं रिवो हूँ, आपका रिजर्वो टेलीफोनी कंसीयज। आज मैं आपकी लक्ज़री बुकिंग में कैसे मदद कर सकता हूँ?\""
+    telephony_greeting: "\"नमस्ते! मैं रिवो हूँ, आपका रिजर्वो टेलीफोनी कंसीयज। आज मैं आपकी लक्ज़री बुकिंग में कैसे मदद कर सकता हूँ?\"",
+    
+    // Why Choose Us
+    why_choose_reservo: "रिजर्वो क्यों चुनें",
+    next_era_part1: "लक्ज़री स्टेज़ का ",
+    next_era_part2: "नया युग",
+    why_us_desc: "रिजर्वो आपकी छुट्टियों के अनुभव को फिर से परिभाषित करने के लिए आधुनिक तकनीक को उत्कृष्ट आतिथ्य मानकों के साथ जोड़ता है।",
+    feature_01_title: "एआई सिफारिशें",
+    feature_01_desc: "हमारा इंटेलिजेंट एल्गोरिदम आपके मूड, कैलेंडर और पुराने इतिहास के आधार पर व्यक्तिगत सिफारिशें प्रदान करता है।",
+    feature_02_title: "सत्यापित ठहरने के स्थान",
+    feature_02_desc: "प्रत्येक रिसॉर्ट, विला और बुटीक होटल 150+ सुरक्षा, विलासिता और ऑडिटिंग प्रक्रियाओं से गुजरता है।",
+    feature_03_title: "सुरक्षित भुगतान",
+    feature_03_desc: "स्ट्राइप द्वारा संचालित आसान चेकआउट, जो प्रीमियम क्रेडिट कार्ड, डिजिटल वॉलेट और किस्तों को स्वीकार करता है।",
+    feature_04_title: "24/7 कंसीयज सहायता",
+    feature_04_desc: "हमारी समर्पित डिजिटल और मानव कंसीयज सहायता टीम बुकिंग संभालने के लिए चौबीसों घंटे उपलब्ध है।",
+    stat_0_label: "खुशहाल यात्री",
+    stat_1_label: "शानदार संपत्तियां",
+    stat_2_label: "औसत रेटिंग",
+    stat_3_label: "सुरक्षित और विश्वसनीय",
+    
+    // Testimonials
+    guest_reviews: "अतिथि समीक्षाएं",
+    guests_say_part1: "हमारे ",
+    guests_say_part2: "मेहमानों",
+    guests_say_part3: " का क्या कहना है",
+    reviews_desc: "हजारों यात्री अविस्मरणीय लक्ज़री छुट्टियों के लिए रिजर्वो पर भरोसा करते हैं।",
+    review_1: "रिजर्वो ने हमारे हनीमून को अविस्मरणीय बना दिया। बुकिंग प्रक्रिया बहुत आसान थी, और रिसॉर्ट तस्वीरों से भी अधिक सुंदर था।",
+    review_2: "शानदार प्रवास, असाधारण आतिथ्य और आसान बुकिंग अनुभव हमारी सभी अपेक्षाओं से बढ़कर था। अत्यधिक अनुशंसित!",
+    review_3: "सबसे बेहतरीन रिसॉर्ट बुकिंग प्लेटफॉर्म में से एक। प्रीमियम रिसॉर्ट्स, पारदर्शी मूल्य निर्धारण और उत्कृष्ट ग्राहक सहायता।"
   }
 };
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Sparkles, ShieldCheck, CreditCard, HeadphonesIcon, Users, Globe, Award, Shield, ArrowRight, X } from "lucide-react";
+import { useTranslation } from "../hooks/useTranslation";
 
 const FEATURES = [
   {
@@ -56,6 +57,7 @@ const STATS = [
 ];
 
 function WhyChooseUs() {
+  const { t } = useTranslation();
   const [activeFeature, setActiveFeature] = useState(null);
 
   return (
@@ -65,12 +67,12 @@ function WhyChooseUs() {
         {/* Top Badge */}
         <div className="flex items-center justify-center gap-2 bg-bg-light text-primary px-4 py-1.5 rounded-full mb-4 border border-border-color transition-colors duration-300">
           <ShieldCheck size={14} />
-          <span className="text-[11px] font-bold uppercase tracking-[1px]">WHY CHOOSE RESERVO</span>
+          <span className="text-[11px] font-bold uppercase tracking-[1px]">{t("why_choose_reservo")}</span>
         </div>
 
         {/* Header */}
         <h2 className="text-[32px] sm:text-[38px] md:text-[44px] font-extrabold text-text-dark leading-[1.1] text-center mb-3 font-serif transition-colors duration-300">
-          The Next Era of <span className="text-primary">Luxury Stays</span>
+          {t("next_era_part1")}<span className="text-primary">{t("next_era_part2")}</span>
         </h2>
         <div className="flex items-center justify-center gap-4 mb-4">
           <div className="h-px w-8 bg-gradient-to-r from-transparent to-yellow-500"></div>
@@ -79,7 +81,7 @@ function WhyChooseUs() {
         </div>
 
         <p className="text-text-gray text-[14px] leading-relaxed mb-6 max-w-[560px] text-center transition-colors duration-300">
-          Reservo pairs cutting-edge technology with elite hospitality standards to redefine your holiday experience.
+          {t("why_us_desc")}
         </p>
 
         {/* Feature Cards Grid */}
@@ -92,9 +94,9 @@ function WhyChooseUs() {
               <div className="w-12 h-12 rounded-full bg-bg-light flex items-center justify-center text-primary mb-3.5 transition-colors duration-300">
                 {feature.icon}
               </div>
-              <h3 className="text-[16px] font-bold text-text-dark mb-2 leading-snug transition-colors duration-300">{feature.title}</h3>
+              <h3 className="text-[16px] font-bold text-text-dark mb-2 leading-snug transition-colors duration-300">{t("feature_" + feature.id + "_title")}</h3>
               <div className="w-8 h-0.5 bg-gradient-to-r from-blue-200 to-blue-500 rounded-full mb-3"></div>
-              <p className="text-text-gray text-[13px] leading-relaxed mb-4 flex-1 transition-colors duration-300">{feature.description}</p>
+              <p className="text-text-gray text-[13px] leading-relaxed mb-4 flex-1 transition-colors duration-300">{t("feature_" + feature.id + "_desc")}</p>
               
               <button 
                 onClick={() => setActiveFeature(feature)}
@@ -116,7 +118,7 @@ function WhyChooseUs() {
                 </div>
                 <div>
                   <h4 className="text-[18px] font-extrabold text-text-dark leading-none mb-1 transition-colors duration-300">{stat.value}</h4>
-                  <p className="text-[12px] font-medium text-text-gray m-0 transition-colors duration-300">{stat.label}</p>
+                  <p className="text-[12px] font-medium text-text-gray m-0 transition-colors duration-300">{t("stat_" + index + "_label")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 ml-1">
@@ -143,8 +145,8 @@ function WhyChooseUs() {
               {activeFeature.icon}
             </div>
             <span className="text-[10px] bg-gold/15 text-gold font-bold px-3 py-1 rounded-full uppercase tracking-wider">Feature Detail</span>
-            <h3 className="text-2xl font-extrabold text-text-dark mt-4 mb-3">{activeFeature.title}</h3>
-            <p className="text-text-gray text-sm leading-relaxed mb-6">{activeFeature.description}</p>
+            <h3 className="text-2xl font-extrabold text-text-dark mt-4 mb-3">{t("feature_" + activeFeature.id + "_title")}</h3>
+            <p className="text-text-gray text-sm leading-relaxed mb-6">{t("feature_" + activeFeature.id + "_desc")}</p>
             <div className="p-4 bg-bg-light border border-border-color rounded-2xl">
               <h4 className="text-xs uppercase tracking-wider text-text-dark font-bold mb-2">Concierge Highlight:</h4>
               <p className="text-xs text-text-gray m-0 leading-relaxed">

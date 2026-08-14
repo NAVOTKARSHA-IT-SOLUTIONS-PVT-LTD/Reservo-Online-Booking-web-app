@@ -1,5 +1,6 @@
 import React from "react";
 import { Quote, Star, ChevronLeft, ChevronRight, Users, Globe, Award, Shield } from "lucide-react";
+import { useTranslation } from "../hooks/useTranslation";
 
 const TESTIMONIALS = [
   {
@@ -29,6 +30,7 @@ const TESTIMONIALS = [
 ];
 
 function Testimonials() {
+  const { t } = useTranslation();
   return (
     <section className="py-12 bg-bg-light relative overflow-hidden transition-colors duration-300" id="testimonials">
       {/* Decorative Dots */}
@@ -43,16 +45,16 @@ function Testimonials() {
         {/* Header */}
         <div className="flex items-center justify-center gap-4 mb-3">
           <div className="h-px w-8 bg-gradient-to-r from-transparent to-yellow-500"></div>
-          <span className="text-[11px] font-bold uppercase tracking-[2px] text-yellow-600">GUEST REVIEWS</span>
+          <span className="text-[11px] font-bold uppercase tracking-[2px] text-yellow-600">{t("guest_reviews")}</span>
           <div className="h-px w-8 bg-gradient-to-l from-transparent to-yellow-500"></div>
         </div>
 
         <h2 className="text-[32px] sm:text-[38px] md:text-[44px] font-extrabold text-text-dark leading-[1.1] text-center mb-3 font-serif transition-colors duration-300">
-          What Our <span className="text-primary">Guests</span> Say
+          {t("guests_say_part1")}<span className="text-primary">{t("guests_say_part2")}</span>{t("guests_say_part3")}
         </h2>
         
         <p className="text-text-gray text-[14px] leading-relaxed mb-8 max-w-[560px] text-center transition-colors duration-300">
-          Thousands of travelers trust <span className="text-primary font-semibold">Reservo</span> for unforgettable luxury vacations.
+          {t("reviews_desc")}
         </p>
 
         {/* Reviews Grid */}
@@ -69,7 +71,7 @@ function Testimonials() {
               </div>
 
               <p className="text-[13.5px] leading-relaxed text-text-gray mb-4 flex-1 transition-colors duration-300">
-                "{item.review}"
+                "{t("review_" + item.id)}"
               </p>
               
               <div className="w-full h-px bg-border-color mb-4 transition-colors duration-300"></div>
