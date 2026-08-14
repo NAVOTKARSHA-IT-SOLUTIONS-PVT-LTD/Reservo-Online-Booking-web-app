@@ -6,11 +6,11 @@ import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Mail, Lock, Eye, EyeOff, ArrowRight, Globe, 
-  ChevronDown, Gift, ShieldCheck, Star, HeadphonesIcon, 
+  ChevronDown, ShieldCheck, Star, HeadphonesIcon, 
   Sparkles, User 
 } from "lucide-react";
 import { authService } from "../services/auth.service";
-import rivoMascot from "../assets/images/rivo_mascot.jpg";
+import { oauth2Service } from "../services/oauth2.service";
 import logoImage from "../assets/images/logo.png";
 import hero1 from "../assets/images/hero1.jpg";
 
@@ -488,7 +488,7 @@ export default function Register() {
             <div className="grid grid-cols-3 gap-2 w-full">
               <button 
                 type="button"
-                onClick={() => setToastMsg("Sign in with Google coming soon!")}
+                onClick={() => oauth2Service.initiateOAuth2Login("google").catch(err => setToastMsg(err.message))}
                 className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
                 title="Continue with Google"
               >
@@ -501,7 +501,7 @@ export default function Register() {
               </button>
               <button 
                 type="button"
-                onClick={() => setToastMsg("Sign in with Apple coming soon!")}
+                onClick={() => oauth2Service.initiateOAuth2Login("apple").catch(err => setToastMsg(err.message))}
                 className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
                 title="Continue with Apple"
               >
@@ -511,7 +511,7 @@ export default function Register() {
               </button>
               <button 
                 type="button"
-                onClick={() => setToastMsg("Sign in with Microsoft coming soon!")}
+                onClick={() => oauth2Service.initiateOAuth2Login("microsoft").catch(err => setToastMsg(err.message))}
                 className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
                 title="Continue with Microsoft"
               >

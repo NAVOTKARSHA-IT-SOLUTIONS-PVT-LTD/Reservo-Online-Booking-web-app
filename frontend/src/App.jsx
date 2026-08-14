@@ -38,6 +38,7 @@ const ResortAdminPortal = React.lazy(() => import("./pages/ResortAdminPortal"));
 const PartnerOnboarding = React.lazy(() => import("./pages/PartnerOnboarding"));
 const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = React.lazy(() => import("./pages/PaymentCancel"));
+const OAuth2RedirectHandler = React.lazy(() => import("./pages/OAuth2RedirectHandler"));
 
 // Lazy-loaded dummy pages
 const Careers = React.lazy(() => import("./pages/DummyPages").then(m => ({ default: m.Careers })));
@@ -388,6 +389,7 @@ function App() {
             <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
+            <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

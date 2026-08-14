@@ -52,6 +52,9 @@ public class User {
     @Builder.Default
     private String loginProvider = "LOCAL"; // LOCAL, GOOGLE, FACEBOOK, etc.
 
+    @Column(name = "provider_user_id", length = 255)
+    private String providerUserId; // OAuth2 provider user ID
+
     @Column(name = "email_verified", nullable = false)
     @Builder.Default
     private boolean emailVerified = false;

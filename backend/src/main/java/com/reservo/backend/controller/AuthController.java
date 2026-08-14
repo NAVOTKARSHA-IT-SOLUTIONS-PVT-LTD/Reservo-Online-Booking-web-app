@@ -44,7 +44,8 @@ public class AuthController {
 
     @PostMapping("/password-reset/request")
     public ResponseEntity<ApiResponse<String>> requestPasswordReset(@RequestParam String email) {
-        return ResponseEntity.ok(ApiResponse.success(authService.sendPasswordResetOtp(email)));
+        String data = authService.sendPasswordResetOtp(email);
+        return ResponseEntity.ok(ApiResponse.success(data, "If an account exists, a reset code has been sent."));
     }
 
     @PostMapping("/password-reset/confirm")
