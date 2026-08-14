@@ -32,9 +32,6 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
       if (cur === "en_usd") {
         setCurrencySymbol("$");
         setExchangeRate(0.012);
-      } else if (cur === "es_eur") {
-        setCurrencySymbol("€");
-        setExchangeRate(0.011);
       } else {
         setCurrencySymbol("₹");
         setExchangeRate(1);

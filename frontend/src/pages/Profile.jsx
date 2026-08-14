@@ -315,10 +315,10 @@ function Profile() {
                     <label htmlFor="languageSelect" className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1">
                       <Globe size={12} /> Language / Currency
                     </label>
-                    <select id="languageSelect" defaultValue="en_usd" className="p-3 px-4 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:border-gold focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]">
-                      <option value="en_usd">English (USD)</option>
+                    <select id="languageSelect" defaultValue="en_inr" className="p-3 px-4 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:border-gold focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]">
                       <option value="en_inr">English (INR)</option>
-                      <option value="es_eur">Español (EUR)</option>
+                      <option value="en_usd">English (USD)</option>
+                      <option value="hi_inr">हिन्दी (INR)</option>
                     </select>
                   </div>
                 </div>

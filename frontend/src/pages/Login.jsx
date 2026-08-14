@@ -257,7 +257,7 @@ export default function Login() {
 
             {showLangMenu && (
               <div className="absolute right-0 top-9 bg-bg-white border border-border-color rounded-xl shadow-lg p-1 w-26 z-50 text-[10px] font-semibold text-text-dark animate-fade-in">
-                {["English", "Hindi", "Spanish"].map(lang => (
+                {["English", "Hindi"].map(lang => (
                   <button 
                     key={lang}
                     onClick={() => {

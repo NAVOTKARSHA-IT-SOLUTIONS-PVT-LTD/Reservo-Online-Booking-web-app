@@ -150,22 +150,22 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               </li>
               <li>
                 <button className={getNavLinkClass(isHome && activeSection === "why")} onClick={() => scrollToSection("why")}>
-                  Why Us
+                  {t("why_us")}
                 </button>
               </li>
               <li>
                 <Link to="/experiences" className={getNavLinkClass(location.pathname === "/experiences")}>
-                  Experiences
+                  {t("experiences")}
                 </Link>
               </li>
               <li>
                 <Link to="/rewards" className={getNavLinkClass(location.pathname === "/rewards")}>
-                  Rewards
+                  {t("rewards")}
                 </Link>
               </li>
               <li>
                 <button className={getNavLinkClass(isHome && activeSection === "reviews")} onClick={() => scrollToSection("testimonials")}>
-                  Reviews
+                  {t("reviews")}
                 </button>
               </li>
               <li>
@@ -201,9 +201,9 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                 <span className="flex items-center gap-1.5">
                   {(() => {
                     const lang = localStorage.getItem("reservo-language") || "en";
-                    const langLabel = lang === "hi" ? "हिन्दी" : lang === "es" ? "Español" : lang === "fr" ? "Français" : "English";
+                    const langLabel = lang === "hi" ? "हिन्दी" : "English";
                     const curr = localStorage.getItem("reservo-currency") || "en_inr";
-                    const currLabel = curr === "en_usd" ? "USD" : curr === "es_eur" ? "EUR" : "INR";
+                    const currLabel = curr === "en_usd" ? "USD" : "INR";
                     return `${langLabel} • ${currLabel}`;
                   })()}
                 </span> 
@@ -224,9 +224,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                       <div className="flex flex-col gap-0.5">
                         {[
                           { code: "en", label: "🇺🇸 English" },
-                          { code: "hi", label: "🇮🇳 हिन्दी (Hindi)" },
-                          { code: "es", label: "🇪🇸 Español (Spanish)" },
-                          { code: "fr", label: "🇫🇷 Français (French)" }
+                          { code: "hi", label: "🇮🇳 हिन्दी (Hindi)" }
                         ].map((item) => (
                           <button 
                             key={item.code}
@@ -250,8 +248,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                       <div className="flex flex-col gap-0.5">
                         {[
                           { code: "en_inr", label: "🇮🇳 INR (₹)" },
-                          { code: "en_usd", label: "🇺🇸 USD ($)" },
-                          { code: "es_eur", label: "🇪🇺 EUR (€)" }
+                          { code: "en_usd", label: "🇺🇸 USD ($)" }
                         ].map((item) => (
                           <button 
                             key={item.code}
