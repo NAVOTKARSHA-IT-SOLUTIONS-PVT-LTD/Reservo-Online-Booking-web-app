@@ -473,47 +473,8 @@ function Footer() {
         </div>
       </div>
 
-      {/* Horizontal Contact Bar */}
-      <div className="bg-bg-light border border-border-color rounded-3xl p-4 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-sm mb-12 transition-colors duration-300">
-
-        {/* Contact Us Badge */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-sm">
-            <PhoneIcon className="w-5 h-5 fill-white text-white" />
-          </div>
-
-          <span className="text-sm font-extrabold text-text-dark transition-colors duration-300">
-            Contact Us
-          </span>
-        </div>
-
-        {/* Divider */}
-        <div className="hidden lg:block w-px h-6 bg-border-color"></div>
-
-        {/* Contact Items */}
-        <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-6 lg:gap-12 text-xs text-text-gray font-semibold transition-colors duration-300">
-
-          <div className="flex items-center gap-2">
-            <MapPinIcon className="w-4 h-4 text-primary" />
-            <span>Pune, Maharashtra, India</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <PhoneIcon className="w-4 h-4 text-primary" />
-            <span>+91 98765 *****</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <MailIcon className="w-4 h-4 text-primary" />
-            <span>contact@reservo.com</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ClockIcon className="w-4 h-4 text-primary" />
-            <span>Mon - Sat : 9 AM - 7 PM</span>
-          </div>
-        </div>
-      </div>
+     
+      
     </div>
 
     {/* Bottom Bar */}

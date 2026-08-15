@@ -112,10 +112,10 @@ function Hero() {
           </div>
 
           {/* Title */}
-          <h1 className="font-extrabold text-[36px] sm:text-[56px] lg:text-[70px] leading-[1.05] mb-6 font-serif tracking-tight drop-shadow-xl">
-            Book Smart.<br />
-            Stay <span className="italic text-[#2F80ED] font-serif">Better.</span>
-          </h1>
+          <h1 className="font-extrabold text-[36px] sm:text-[56px] lg:text-[70px] leading-[1.05] mb-6 font-serif tracking-tight drop-shadow-xl text-white">
+  Book Smart.<br />
+  Stay <span className="italic text-white font-serif">Better.</span>
+</h1>
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-4 mb-8 md:mb-12">
