@@ -23,7 +23,6 @@ const About = React.lazy(() => import("./pages/About"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Rewards = React.lazy(() => import("./pages/Rewards"));
-const Experiences = React.lazy(() => import("./pages/Experiences"));
 const Profile = React.lazy(() => import("./pages/Profile"));
 const Wishlist = React.lazy(() => import("./pages/Wishlist"));
 const AIPlanner = React.lazy(() => import("./pages/AIPlanner"));
@@ -384,7 +383,6 @@ function App() {
             <Route path="/search-results" element={renderResortListing()} />
             <Route path="/resorts" element={renderResortListing()} />
             <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} onBook={(resort) => setBookingResort(resort)} />} />
-            <Route path="/experiences" element={<Experiences />} />
             <Route path="/wishlist" element={<Wishlist onBook={(resort) => setBookingResort(resort)} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />
             <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />
@@ -448,7 +446,7 @@ function App() {
         <div className="flex flex-col flex-1 bg-bg-light transition-colors duration-300">
           <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} />
 
-          <main id="main-content" className={`flex-1 flex flex-col ${location.pathname === "/" || location.pathname === "/experiences" ? "" : location.pathname === "/ai-planner" ? "pt-20" : "pt-28"}`}>
+          <main id="main-content" className={`flex-1 flex flex-col ${location.pathname === "/" ? "" : location.pathname === "/ai-planner" ? "pt-20" : "pt-28"}`}>
             {renderAppRoutes()}
           </main>
 

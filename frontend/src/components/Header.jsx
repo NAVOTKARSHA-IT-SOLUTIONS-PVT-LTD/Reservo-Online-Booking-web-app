@@ -154,11 +154,6 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                 </button>
               </li>
               <li>
-                <Link to="/experiences" className={getNavLinkClass(location.pathname === "/experiences")}>
-                  {t("experiences")}
-                </Link>
-              </li>
-              <li>
                 <Link to="/rewards" className={getNavLinkClass(location.pathname === "/rewards")}>
                   {t("rewards")}
                 </Link>

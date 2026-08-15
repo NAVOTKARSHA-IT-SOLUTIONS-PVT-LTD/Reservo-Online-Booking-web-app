@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import contactImage from "../assets/images/contact.jpg";
 import rivoSupport from "../assets/images/rivo_support.png";
-import { MapPin, PhoneCall, Mail, Sparkles, Clock, ShieldCheck } from "lucide-react";
+import { MapPin, Mail, Sparkles, Clock, ShieldCheck } from "lucide-react";
 
 function Contact() {
   const [formData, setFormData] = useState({
@@ -116,10 +116,9 @@ function Contact() {
 
             <div className="flex flex-col gap-4">
               {/* Office Card */}
-              <div className="group flex items-center gap-5 bg-bg-white border border-border-color rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(20,35,32,0.12)] hover:border-gold/40 text-left relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gold/5 rounded-full blur-2xl pointer-events-none group-hover:bg-gold/15 transition-colors"></div>
-                <div className="w-[62px] h-[62px] bg-gradient-to-br from-primary via-[#1A342F] to-[#0E1E1B] text-gold rounded-2xl flex justify-center items-center shrink-0 shadow-md border border-gold/30 group-hover:scale-105 transition-transform duration-300">
-                  <MapPin className="w-7 h-7 text-gold stroke-[2]" />
+              <div className="group flex items-center gap-5 bg-bg-white border border-border-color rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-custom hover:border-primary/30 text-left relative overflow-hidden">
+                <div className="w-[56px] h-[56px] bg-bg-light border border-border-color rounded-2xl flex justify-center items-center shrink-0 shadow-sm group-hover:scale-105 group-hover:border-primary/40 transition-all duration-300">
+                  <MapPin className="w-6 h-6 text-primary stroke-[2.25] transition-colors duration-300" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2 mb-1">
@@ -132,33 +131,15 @@ function Contact() {
                 </div>
               </div>
 
-              {/* Phone Card */}
-              <div className="group flex items-center gap-5 bg-bg-white border border-border-color rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(20,35,32,0.12)] hover:border-gold/40 text-left relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none group-hover:bg-primary/10 transition-colors"></div>
-                <div className="w-[62px] h-[62px] bg-gradient-to-br from-primary via-[#1A342F] to-[#0E1E1B] text-gold rounded-2xl flex justify-center items-center shrink-0 shadow-md border border-gold/30 group-hover:scale-105 transition-transform duration-300">
-                  <PhoneCall className="w-6 h-6 text-gold stroke-[2]" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className="text-primary text-xl font-bold font-serif tracking-tight m-0">24/7 Helpline</h4>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Available
-                    </span>
-                  </div>
-                  <p className="m-0 text-text-gray font-medium text-base">+91 98765 43210</p>
-                </div>
-              </div>
-
               {/* Email Card */}
-              <div className="group flex items-center gap-5 bg-bg-white border border-border-color rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(20,35,32,0.12)] hover:border-gold/40 text-left relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gold/5 rounded-full blur-2xl pointer-events-none group-hover:bg-gold/15 transition-colors"></div>
-                <div className="w-[62px] h-[62px] bg-gradient-to-br from-primary via-[#1A342F] to-[#0E1E1B] text-gold rounded-2xl flex justify-center items-center shrink-0 shadow-md border border-gold/30 group-hover:scale-105 transition-transform duration-300">
-                  <Mail className="w-6 h-6 text-gold stroke-[2]" />
+              <div className="group flex items-center gap-5 bg-bg-white border border-border-color rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-custom hover:border-primary/30 text-left relative overflow-hidden">
+                <div className="w-[56px] h-[56px] bg-bg-light border border-border-color rounded-2xl flex justify-center items-center shrink-0 shadow-sm group-hover:scale-105 group-hover:border-primary/40 transition-all duration-300">
+                  <Mail className="w-6 h-6 text-primary stroke-[2.25] transition-colors duration-300" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <h4 className="text-primary text-xl font-bold font-serif tracking-tight m-0">Digital Concierge</h4>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full">
                       &lt; 2hr Response
                     </span>
                   </div>
