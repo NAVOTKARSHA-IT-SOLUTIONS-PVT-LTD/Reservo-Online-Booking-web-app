@@ -29,6 +29,24 @@ export const resortService = {
     }
   },
 
+  async searchResorts(location) {
+    try {
+      const result = await apiClient.get(`/api/v1/resorts/search?location=${encodeURIComponent(location)}`);
+      if (result && result.success && result.data && result.data.length > 0) {
+        return result.data.map(item => this.mapBackendResort(item));
+      }
+      throw new Error("No resorts found");
+    } catch (e) {
+      console.warn("Fallback to static search filtering for location:", location, e);
+      const q = location.toLowerCase().trim();
+      return RESORTS.filter(r => 
+        (r.name || '').toLowerCase().includes(q) ||
+        (r.location || '').toLowerCase().includes(q) ||
+        (r.region || '').toLowerCase().includes(q)
+      );
+    }
+  },
+
   async getResortById(id) {
     try {
       const result = await apiClient.get(`/api/v1/resorts/${id}`);

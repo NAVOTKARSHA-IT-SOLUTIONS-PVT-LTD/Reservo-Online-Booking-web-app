@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
-import { Star, Heart, MapPin, Sparkles, ChevronRight, SlidersHorizontal, ArrowUpDown, RotateCcw, Check, X, ArrowLeft } from 'lucide-react';
+import { Star, Heart, MapPin, Sparkles, ChevronRight, SlidersHorizontal, ArrowUpDown, RotateCcw, Check, X, ArrowLeft, Search, Calendar, Users } from 'lucide-react';
 import { CATEGORIES } from '../data/resortsData';
 import { resortService } from '../services/resort.service';
 import { ResortCardSkeleton } from './Skeleton';
@@ -8,9 +9,20 @@ import EmptyState from './EmptyState';
 import ErrorScreen from './ErrorScreen';
 
 export default function ResortListing({ onSelectResort, activeCategory: propActiveCategory = 'all', setActiveCategory: propSetActiveCategory, isDarkMode, onAskRivo }) {
+  const routerLocation = useLocation();
+  const navigate = useNavigate();
+  const searchState = routerLocation.state || {};
+
   const [internalCategory, setInternalCategory] = useState(propActiveCategory);
   const activeCategory = propSetActiveCategory ? propActiveCategory : internalCategory;
   const setActiveCategory = propSetActiveCategory || setInternalCategory;
+
+  // Search query from Hero search bar
+  const [searchQuery, setSearchQuery] = useState(searchState.location || '');
+  const [searchCheckIn, setSearchCheckIn] = useState(searchState.checkIn || '');
+  const [searchCheckOut, setSearchCheckOut] = useState(searchState.checkOut || '');
+  const [searchGuests, setSearchGuests] = useState(searchState.guests || '');
+  const isSearchActive = searchQuery.trim().length > 0;
 
   // Resorts data states
   const [resorts, setResorts] = useState([]);
@@ -54,7 +66,12 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     setLoading(true);
     setError(null);
     try {
-      const data = await resortService.getAllResorts();
+      let data;
+      if (searchQuery.trim()) {
+        data = await resortService.searchResorts(searchQuery);
+      } else {
+        data = await resortService.getAllResorts();
+      }
       setResorts(data);
     } catch (err) {
       setError(err.message || "Failed to load luxury stays.");
@@ -65,7 +82,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
 
   useEffect(() => {
     fetchResorts();
-  }, []);
+  }, [searchQuery]);
 
   const toggleFavorite = (resort, e) => {
     e.stopPropagation();
@@ -91,6 +108,15 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     setSelectedPerks([]);
     setActiveCategory('all');
     setSortBy('recommended');
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchCheckIn('');
+    setSearchCheckOut('');
+    setSearchGuests('');
+    // Clear router state so refresh doesn't re-apply
+    navigate(routerLocation.pathname, { replace: true, state: {} });
   };
 
   useEffect(() => {
@@ -135,8 +161,24 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     return () => window.removeEventListener("rivo-mode", handleRivoMode);
   }, []);
 
+  // Search text matching logic
+  const matchesSearch = (resort) => {
+    if (!isSearchActive) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const searchTerms = q.split(/[,\s]+/).filter(Boolean);
+    return searchTerms.some(term =>
+      (resort.name || '').toLowerCase().includes(term) ||
+      (resort.location || '').toLowerCase().includes(term) ||
+      (resort.region || '').toLowerCase().includes(term) ||
+      (resort.description || '').toLowerCase().includes(term) ||
+      (resort.category || '').toLowerCase().includes(term) ||
+      (resort.categoryLabel || '').toLowerCase().includes(term)
+    );
+  };
+
   // Filter Logic
   const filteredResorts = resorts.filter(resort => {
+    const matchesSearchQuery = matchesSearch(resort);
     const matchesCategory = activeCategory === 'all' || resort.category === activeCategory;
     const matchesPrice = resort.price <= maxPrice;
     const matchesRating = resort.rating >= minRating;
@@ -146,7 +188,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
       resort.amenities.some(item => item.name.toLowerCase().includes(a.toLowerCase()))
     );
 
-    return matchesCategory && matchesPrice && matchesRating && matchesAmenities;
+    return matchesSearchQuery && matchesCategory && matchesPrice && matchesRating && matchesAmenities;
   });
 
   // Sort Logic
@@ -364,6 +406,80 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
 
       {/* REGULAR RESORT LISTING VIEW (Hidden on Mobile when Mobile Filter View is active) */}
       <div className={isFilterOpen ? 'hidden lg:block space-y-12' : 'space-y-12'}>
+
+        {/* Search Results Banner (shown when arriving from Hero search) */}
+        {isSearchActive && (
+          <div className={`rounded-2xl border p-4 sm:p-6 space-y-3 animate-fade-in ${
+            isDarkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-[#DBEAFE]'
+          }`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  isDarkMode ? 'bg-[#2563EB]/20' : 'bg-[#2563EB]/10'
+                }`}>
+                  <Search className="w-5 h-5 text-[#2563EB]" />
+                </div>
+                <div>
+                  <h2 className={`text-lg font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
+                    Search results for "{searchQuery}"
+                  </h2>
+                  <div className={`flex flex-wrap items-center gap-3 mt-1 text-xs ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#64748B]'}`}>
+                    {searchCheckIn && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" /> {searchCheckIn} → {searchCheckOut}
+                      </span>
+                    )}
+                    {searchGuests && (
+                      <span className="flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5" /> {searchGuests}
+                      </span>
+                    )}
+                    <span className="font-semibold text-[#2563EB]">
+                      {sortedResorts.length} {sortedResorts.length === 1 ? 'stay' : 'stays'} found
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={clearSearch}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                  isDarkMode
+                    ? 'bg-[#334155] text-[#CBD5E1] hover:bg-[#475569]'
+                    : 'bg-white text-[#475569] hover:bg-[#F1F5F9] border border-[#E2E8F0]'
+                }`}
+              >
+                <X className="w-3.5 h-3.5" /> Clear Search
+              </button>
+            </div>
+
+            {/* Inline search edit bar */}
+            <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2 rounded-xl border ${
+              isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-white border-[#E2E8F0]'
+            }`}>
+              <div className="flex items-center gap-2 flex-1 px-3">
+                <MapPin className="w-4 h-4 text-[#2563EB] shrink-0" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search destination, region, resort..."
+                  className={`w-full text-sm font-medium bg-transparent outline-none ${
+                    isDarkMode ? 'text-white placeholder:text-[#64748B]' : 'text-[#0F172A] placeholder:text-[#94A3B8]'
+                  }`}
+                />
+              </div>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-3 py-2 text-xs text-[#64748B] hover:text-[#0F172A] transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Category Filter Tabs Bar */}
         <section className="space-y-6">
           <div className={`flex items-center justify-between overflow-x-auto pb-3 space-x-2 border-b ${
@@ -392,13 +508,16 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2">
             <div>
               <div className={`text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-[#93C5FD]' : 'text-[#2563EB]'}`}>
-                POPULAR DESTINATIONS
+                {isSearchActive ? 'SEARCH RESULTS' : 'POPULAR DESTINATIONS'}
               </div>
               <h1 className={`text-3xl sm:text-4xl font-bold mt-1 ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
-                Trending Vacation Stays
+                {isSearchActive ? `Stays in ${searchQuery}` : 'Trending Vacation Stays'}
               </h1>
               <p className={`text-xs sm:text-sm max-w-xl mt-1 ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-                Discover verified luxury retreats, overwater villas, and boutique resorts around the world.
+                {isSearchActive
+                  ? `Showing ${sortedResorts.length} verified luxury stays matching your search.`
+                  : 'Discover verified luxury retreats, overwater villas, and boutique resorts around the world.'
+                }
               </p>
             </div>
 
