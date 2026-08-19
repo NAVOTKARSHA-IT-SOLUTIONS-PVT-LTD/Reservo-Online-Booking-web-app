@@ -268,59 +268,6 @@ function Hero() {
 
         </div>
 
-        {/* Right Content - AI Planner Glass Card */}
-        <div className="hidden lg:block w-[350px]" style={{ transform: `translateY(${-scrollY * 0.14}px)`, opacity: Math.max(0, 1 - scrollY / 650) }}>
-          <div className="bg-bg-white/70 backdrop-blur-2xl border border-border-color/60 rounded-[32px] p-6 shadow-[0_30px_60px_rgba(0,0,0,0.15)] transition-colors duration-300">
-            
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles size={18} className="text-primary" />
-              <h2 className="text-[18px] font-extrabold text-text-dark transition-colors duration-300">AI Trip Planner</h2>
-            </div>
-            <p className="text-[12px] text-text-gray font-medium mb-6 transition-colors duration-300">We'll plan your perfect trip tailored for you</p>
-
-            <div className="flex flex-col gap-5 mb-6">
-              
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 shrink-0 border border-yellow-500/20">
-                  <Sun size={18} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[14px] font-bold text-text-dark transition-colors duration-300">Best Time to Visit</span>
-                  <span className="text-[12px] text-text-gray transition-colors duration-300">Apr - Jun • 28°C - 32°C</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 shrink-0 border border-green-500/20">
-                  <MapPin size={18} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[14px] font-bold text-text-dark transition-colors duration-300">Trending Destination</span>
-                  <span className="text-[12px] text-text-gray transition-colors duration-300">Bali, Indonesia</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/20">
-                  <IndianRupee size={18} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[14px] font-bold text-text-dark transition-colors duration-300">Average Price</span>
-                  <span className="text-[12px] text-text-gray transition-colors duration-300">₹12,999 / Night</span>
-                </div>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => navigate("/ai-planner")}
-              className="w-full bg-bg-white border border-border-color text-primary py-3.5 rounded-2xl font-bold text-[14px] flex items-center justify-center gap-2 hover:border-primary hover:text-primary-dark transition-all duration-300 shadow-sm cursor-pointer"
-            >
-              <Wand2 size={16} /> Plan My Trip
-            </button>
-
-          </div>
-        </div>
-
       </div>
 
 
