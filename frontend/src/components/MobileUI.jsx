@@ -7,7 +7,7 @@ import {
   Search, ArrowRight, Waves, Mountain, Home, Droplets,
   Sparkles, Star, ChevronRight, User, Send,
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
-  LayoutGrid, BookOpen, Settings, LogOut, Sliders
+  LayoutGrid, BookOpen, Settings, LogOut, Sliders, Building2
 } from "lucide-react";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
@@ -553,9 +553,6 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           {(() => {
             const isLoggedIn = authService.isAuthenticated();
             const user = authService.getCurrentUser();
-            const handleListPropertyClick = () => {
-              setShowComingSoon(true);
-            };
             return [
               ...(!isLoggedIn ? [
                 { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
@@ -563,7 +560,8 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               ] : [
                 { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || "User"})`, path: "/profile" }
               ]),
-              { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", action: handleListPropertyClick },
+              { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" },
+              { type: "item", icon: <Building2 size={18} />, label: "Host Administration", path: "/host/dashboard" },
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
@@ -612,35 +610,6 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           })}
         </ul>
       </div>
-
-      <AnimatePresence>
-        {showComingSoon && (
-          <div className="fixed inset-0 z-[100000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] w-full max-w-md p-8 rounded-[32px] text-center shadow-2xl relative space-y-6"
-            >
-              <div className="w-16 h-16 bg-[#2F80ED]/10 text-primary rounded-full flex items-center justify-center mx-auto shadow-inner">
-                <LayoutGrid className="w-8 h-8 text-primary" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-serif font-extrabold text-[var(--color-text-dark)]">Hosting Coming Soon!</h3>
-                <p className="text-xs text-[var(--color-text-gray)] leading-relaxed max-w-xs mx-auto">
-                  We are building a brand-new Airbnb-style property listing and hosting flow. Stay tuned to host your stay with Reservo!
-                </p>
-              </div>
-              <button 
-                onClick={() => setShowComingSoon(false)}
-                className="w-full py-3 bg-primary hover:bg-primary-dark text-white rounded-2xl text-xs font-bold cursor-pointer border-none transition-all"
-              >
-                Got It
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
     </div>
   );

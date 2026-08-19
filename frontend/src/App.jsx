@@ -32,12 +32,12 @@ const Notifications = React.lazy(() => import("./pages/Notifications"));
 const Settings = React.lazy(() => import("./pages/Settings"));
 const Login = React.lazy(() => import("./pages/Login"));
 const Register = React.lazy(() => import("./pages/Register"));
-const ReservoAdminPortal = React.lazy(() => import("./pages/ReservoAdminPortal"));
-const ResortAdminPortal = React.lazy(() => import("./pages/ResortAdminPortal"));
 const PartnerOnboarding = React.lazy(() => import("./pages/PartnerOnboarding"));
 const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = React.lazy(() => import("./pages/PaymentCancel"));
 const OAuth2RedirectHandler = React.lazy(() => import("./pages/OAuth2RedirectHandler"));
+const BecomeAHost = React.lazy(() => import("./pages/BecomeAHost"));
+const HostAdminPortal = React.lazy(() => import("./pages/HostAdminPortal"));
 
 // Lazy-loaded dummy pages
 const Careers = React.lazy(() => import("./pages/DummyPages").then(m => ({ default: m.Careers })));
@@ -377,6 +377,17 @@ function App() {
             <Route path="/wishlist" element={<Wishlist onBook={(resort) => setBookingResort(resort)} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />
             <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />
+            <Route path="/become-a-host" element={<BecomeAHost />} />
+            <Route path="/host/onboarding" element={<BecomeAHost />} />
+            <Route path="/host/dashboard" element={<HostAdminPortal />} />
+            <Route path="/host/admin" element={<HostAdminPortal />} />
+            <Route path="/host" element={<HostAdminPortal />} />
+            <Route path="/host/*" element={<HostAdminPortal />} />
+            <Route path="/admin" element={<HostAdminPortal />} />
+            <Route path="/admin/dashboard" element={<HostAdminPortal />} />
+            <Route path="/admin/reservo" element={<HostAdminPortal />} />
+            <Route path="/admin/resort" element={<HostAdminPortal />} />
+            <Route path="/admin/*" element={<HostAdminPortal />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
             <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
@@ -416,14 +427,12 @@ function App() {
         <Preloader onComplete={handlePreloaderComplete} />
       )}
 
-      {location.pathname === "/login" || location.pathname === "/register" || location.pathname.startsWith("/admin") ? (
+      {location.pathname === "/login" || location.pathname === "/register" ? (
         <main id="main-content" className="flex-1 min-h-screen overflow-hidden">
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/admin/reservo" element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]}><ReservoAdminPortal /></ProtectedRoute>} />
-              <Route path="/admin/resort" element={<ProtectedRoute allowedRoles={["ROLE_OWNER", "ROLE_ADMIN"]}><ResortAdminPortal /></ProtectedRoute>} />
             </Routes>
           </Suspense>
         </main>
