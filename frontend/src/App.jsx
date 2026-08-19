@@ -226,8 +226,6 @@ function App() {
   const [cookieConsent, setCookieConsent] = useState(() => {
     return localStorage.getItem("reservo-cookie-consent") === "true";
   });
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackText, setFeedbackText] = useState("");
 
   useEffect(() => {
     const handleResize = () => {
@@ -301,13 +299,6 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [navigate]);
 
-  const handleFeedbackSubmit = (e) => {
-    e.preventDefault();
-    if (feedbackText.trim() === "") return;
-    toast("Thank you for your valuable feedback! Rivo has logged it.", "success");
-    setFeedbackText("");
-    setShowFeedback(false);
-  };
 
   const handleAcceptCookies = () => {
     localStorage.setItem("reservo-cookie-consent", "true");
@@ -500,43 +491,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Floating Feedback Widget */}
-      {!isMobile && (
-        <div className="fixed bottom-8 left-8 z-40">
-          <button 
-            onClick={() => setShowFeedback(!showFeedback)}
-            className="bg-[#121e1b] text-white py-2 px-4 rounded-full shadow-lg border border-[#334155] text-xs font-semibold cursor-pointer hover:border-gold transition-colors duration-300"
-          >
-            Feedback
-          </button>
-          
-          <AnimatePresence>
-            {showFeedback && (
-              <motion.form 
-                onSubmit={handleFeedbackSubmit}
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute bottom-10 left-0 bg-bg-white border border-border-color p-4 rounded-2xl shadow-xl w-64 space-y-3"
-              >
-                <h4 className="text-xs font-bold text-text-dark">Send Feedback to Rivo</h4>
-                <textarea 
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="Tell us what you think..."
-                  className="w-full p-2 border border-border-color rounded-lg text-xs outline-none bg-bg-light text-text-dark h-20 resize-none font-semibold"
-                />
-                <button 
-                  type="submit"
-                  className="w-full py-1.5 bg-primary text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 cursor-pointer border-none shadow"
-                >
-                  <Send size={10} /> Submit Feedback
-                </button>
-              </motion.form>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
 
       {/* Cookie Consent Banner */}
       <AnimatePresence>
