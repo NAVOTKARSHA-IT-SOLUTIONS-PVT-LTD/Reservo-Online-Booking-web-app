@@ -30,8 +30,8 @@ public class ResortService {
                 .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + id));
     }
 
-    public List<Resort> searchByLocation(String location) {
-        return resortRepository.findByLocationContainingIgnoreCase(location);
+    public List<Resort> searchByLocation(String query) {
+        return resortRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(query, query);
     }
 
     public Resort createResort(Resort resort) {
