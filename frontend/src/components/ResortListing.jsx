@@ -17,12 +17,19 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
   const activeCategory = propSetActiveCategory ? propActiveCategory : internalCategory;
   const setActiveCategory = propSetActiveCategory || setInternalCategory;
 
-  // Search query from Hero search bar
   const [searchQuery, setSearchQuery] = useState(searchState.location || '');
+  const [searchInput, setSearchInput] = useState(searchState.location || '');
   const [searchCheckIn, setSearchCheckIn] = useState(searchState.checkIn || '');
   const [searchCheckOut, setSearchCheckOut] = useState(searchState.checkOut || '');
   const [searchGuests, setSearchGuests] = useState(searchState.guests || '');
   const isSearchActive = searchQuery.trim().length > 0;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Resorts data states
   const [resorts, setResorts] = useState([]);
@@ -116,6 +123,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
 
   const clearSearch = () => {
     setSearchQuery('');
+    setSearchInput('');
     setSearchCheckIn('');
     setSearchCheckOut('');
     setSearchGuests('');
@@ -464,17 +472,17 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                 <MapPin className="w-4 h-4 text-[#2563EB] shrink-0" />
                 <input
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Search destination, region, resort..."
                   className={`w-full text-sm font-medium bg-transparent outline-none ${
                     isDarkMode ? 'text-white placeholder:text-[#64748B]' : 'text-[#0F172A] placeholder:text-[#94A3B8]'
                   }`}
                 />
               </div>
-              {searchQuery && (
+              {searchInput && (
                 <button
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => { setSearchInput(''); setSearchQuery(''); }}
                   className="px-3 py-2 text-xs text-[#64748B] hover:text-[#0F172A] transition"
                 >
                   <X className="w-4 h-4" />
