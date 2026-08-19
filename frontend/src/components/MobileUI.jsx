@@ -149,6 +149,19 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showBubble, setShowBubble] = useState(false);
   const [isReducedMotion, setIsReducedMotion] = useState(false);
+  const [isMascotOpen, setIsMascotOpen] = useState(false);
+  const [activeMode, setActiveMode] = useState("support");
+  const [rivoAvatar, setRivoAvatar] = useState(rivoSupport);
+  const [messages, setMessages] = useState([
+    { id: 1, sender: "rivo", text: "Hi! I'm Rivo 🤖 Your AI travel buddy. Where would you like to travel today?" }
+  ]);
+  const [inputVal, setInputVal] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const [isMascotHovered, setIsMascotHovered] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const scrollContainerRef = useRef(null);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -193,19 +206,6 @@ function MobileUI({ isDark, onToggleTheme, children }) {
     setIsMascotHovered(false);
     setShowBubble(false);
   };
-  const [isMascotOpen, setIsMascotOpen] = useState(false);
-  const [activeMode, setActiveMode] = useState("support");
-  const [rivoAvatar, setRivoAvatar] = useState(rivoSupport);
-  const [messages, setMessages] = useState([
-    { id: 1, sender: "rivo", text: "Hi! I'm Rivo 🤖 Your AI travel buddy. Where would you like to travel today?" }
-  ]);
-  const [inputVal, setInputVal] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [showComingSoon, setShowComingSoon] = useState(false);
-  const [isMascotHovered, setIsMascotHovered] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const scrollContainerRef = useRef(null);
 
   // Sync activeTab with current URL path
   useEffect(() => {
