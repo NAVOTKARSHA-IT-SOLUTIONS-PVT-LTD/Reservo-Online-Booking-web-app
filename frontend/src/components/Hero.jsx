@@ -19,14 +19,19 @@ import {
   X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import heroVideo from "../assets/images/hero-video.mp4";
+
 import hero1 from "../assets/images/hero1.jpg";
 import hero2 from "../assets/images/hero2.jpg";
 import hero3 from "../assets/images/hero3.jpg";
 import hero4 from "../assets/images/hero4.jpg";
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
+import heroVideo1 from "../assets/images/hero-video1.mp4";
+import heroVideo2 from "../assets/images/hero-Video2.mp4";
 
-
+const HERO_VIDEOS = [
+  heroVideo1,
+  heroVideo2,
+];
 
 
 // Indian destinations grouped by category
@@ -69,6 +74,8 @@ function Hero() {
   const navigate = useNavigate();
   const [isSearching, setIsSearching] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [currentVideo, setCurrentVideo] = useState(0);
+  
 
 
   // Dropdown visibility states
@@ -146,6 +153,10 @@ function Hero() {
     )
   })).filter(g => g.places.length > 0);
 
+
+
+  const [showDestinations, setShowDestinations] = useState(false);
+
   const handleSearch = (e) => {
     e.preventDefault();
     setIsSearching(true);
@@ -176,14 +187,22 @@ function Hero() {
  
   {/* Premium Cinematic Background Video */}
 <video
+  key={HERO_VIDEOS[currentVideo]}
   className="hero-video absolute inset-0 w-full h-full object-cover"
   autoPlay
   muted
-  loop
   playsInline
   poster={hero1}
+  onEnded={() => {
+    setCurrentVideo(
+      (prev) => (prev + 1) % HERO_VIDEOS.length
+    );
+  }}
 >
-  <source src={heroVideo} type="video/mp4" />
+  <source
+    src={HERO_VIDEOS[currentVideo]}
+    type="video/mp4"
+  />
 </video>
 {/* Premium Cinematic Overlay */}
     {/* <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-black/20 z-[1]" /> */}

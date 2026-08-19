@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Routes, Route, useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, WifiOff, CheckCircle2, ArrowUp, Send, Heart, Sun, Moon, Globe, ChevronDown, Menu, Check } from "lucide-react";
-
+import FeedbackPopup from "./components/FeedbackPopup";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Mascot from "./components/Mascot";
@@ -226,6 +226,10 @@ function App() {
   const [cookieConsent, setCookieConsent] = useState(() => {
     return localStorage.getItem("reservo-cookie-consent") === "true";
   });
+<<<<<<< HEAD
+=======
+  
+>>>>>>> 5e9acb3 (video compressed , popup feedback , side feedback removed)
 
   useEffect(() => {
     const handleResize = () => {
@@ -500,6 +504,11 @@ function App() {
         )}
       </AnimatePresence>
 
+<<<<<<< HEAD
+=======
+      
+      
+>>>>>>> 5e9acb3 (video compressed , popup feedback , side feedback removed)
 
       {/* Cookie Consent Banner */}
       <AnimatePresence>
@@ -535,8 +544,9 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
-
+      <FeedbackPopup />
     </div>
+    
   );
 }
 
