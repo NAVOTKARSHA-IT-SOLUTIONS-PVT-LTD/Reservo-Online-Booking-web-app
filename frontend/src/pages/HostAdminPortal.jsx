@@ -9,12 +9,38 @@ import {
   Mail, MailCheck, Bell, Key, Copy, ExternalLink, CheckCheck, Eye, Smartphone
 } from "lucide-react";
 import { hostService } from "../services/host.service";
+import { authService } from "../services/auth.service";
 import { useToast } from "../context/ToastContext";
 
 export default function HostAdminPortal() {
   const toast = useToast();
+  const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
+
+  useEffect(() => {
+    const handleAuth = () => {
+      setCurrentUser(authService.getCurrentUser());
+    };
+    if (authService.refreshCurrentUser) {
+      authService.refreshCurrentUser().then((user) => {
+        if (user) setCurrentUser(user);
+      }).catch(() => {});
+    }
+    window.addEventListener("storage", handleAuth);
+    return () => window.removeEventListener("storage", handleAuth);
+  }, []);
 
   const [hostData, setHostData] = useState(() => hostService.getData());
+
+  const formatName = (name) => {
+    if (!name) return "Srushti Salunke";
+    return name
+      .trim()
+      .split(/\s+/)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  const hostName = formatName(currentUser?.name || hostData.profile?.name || "Srushti Salunke");
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // Filter States
@@ -164,13 +190,13 @@ export default function HostAdminPortal() {
         <div className="flex items-center gap-4">
           <img 
             src={hostData.profile?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"} 
-            alt={hostData.profile?.name || "Srushti Salunke"} 
+            alt={hostName} 
             className="w-12 h-12 rounded-full object-cover border-2 border-primary/50 shadow-xs"
           />
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-extrabold font-serif text-[var(--color-text-dark)]">
-                {hostData.profile?.name || "Srushti Salunke"}
+              <h2 className="text-base font-extrabold font-sans text-[var(--color-text-dark)] tracking-tight">
+                {hostName}
               </h2>
               <span className="text-[10px] font-extrabold bg-amber-400/20 text-amber-600 dark:text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Award size={12} /> Superhost (4.96 ★)
@@ -412,7 +438,7 @@ export default function HostAdminPortal() {
                       Aug 21, 2026
                     </span>
                   </div>
-                  <div className="text-3xl font-black font-serif">
+                  <div className="text-3xl font-extrabold font-sans tabular-nums tracking-tight">
                     ₹105,600
                   </div>
                   <div className="text-xs text-blue-200">
@@ -523,7 +549,7 @@ export default function HostAdminPortal() {
                         <div>
                           <span className="text-[10px] uppercase font-bold text-[var(--color-text-gray)] block">Nightly Price</span>
                           <div className="flex items-center gap-1">
-                            <span className="text-sm font-black text-primary font-serif">₹</span>
+                            <span className="text-sm font-extrabold text-primary font-sans">₹</span>
                             <input 
                               type="number" 
                               step="500"
@@ -532,7 +558,7 @@ export default function HostAdminPortal() {
                                 hostService.updateListingPrice(prop.id, e.target.value);
                                 setHostData(hostService.getData());
                               }}
-                              className="w-24 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-lg p-1 text-xs font-bold text-[var(--color-text-dark)] font-serif"
+                              className="w-24 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-lg p-1 text-xs font-bold text-[var(--color-text-dark)] font-sans tabular-nums"
                             />
                           </div>
                         </div>
@@ -654,7 +680,7 @@ export default function HostAdminPortal() {
                       </div>
 
                       <div className="text-right">
-                        <div className="text-lg font-black font-serif text-primary">
+                        <div className="text-lg font-extrabold font-sans tabular-nums text-primary">
                           ₹{res.payoutAmount.toLocaleString("en-IN")}
                         </div>
                         <div className="text-[11px] font-semibold text-emerald-600">
@@ -929,7 +955,7 @@ export default function HostAdminPortal() {
 
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <div className="text-sm font-black font-serif text-primary">
+                            <div className="text-sm font-extrabold font-sans tabular-nums text-primary">
                               ₹{res.totalPaid.toLocaleString("en-IN")}
                             </div>
                             <div className="text-[11px] font-semibold text-emerald-600 flex items-center justify-end gap-1">
@@ -1200,26 +1226,32 @@ export default function HostAdminPortal() {
 
             {/* Financial Breakdown Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-6 rounded-3xl space-y-2 shadow-xs">
+              <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-6 rounded-3xl shadow-xs flex flex-col justify-between min-h-[148px]">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)]">Gross Bookings Volume</span>
-                <div className="text-3xl font-black font-serif text-[var(--color-text-dark)]">
-                  ₹512,800
+                <div className="flex items-baseline gap-1.5 my-2 h-8">
+                  <span className="text-3xl font-extrabold text-[var(--color-text-dark)] tabular-nums leading-none tracking-tight">
+                    ₹512,800
+                  </span>
                 </div>
                 <div className="text-xs text-[var(--color-text-gray)]">Across 4 luxury stays</div>
               </div>
 
-              <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-6 rounded-3xl space-y-2 shadow-xs">
+              <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-6 rounded-3xl shadow-xs flex flex-col justify-between min-h-[148px]">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Net Host Earnings</span>
-                <div className="text-3xl font-black font-serif text-emerald-600">
-                  ₹{totalRevenue.toLocaleString("en-IN")}
+                <div className="flex items-baseline gap-1.5 my-2 h-8">
+                  <span className="text-3xl font-extrabold text-emerald-600 tabular-nums leading-none tracking-tight">
+                    ₹{totalRevenue.toLocaleString("en-IN")}
+                  </span>
                 </div>
                 <div className="text-xs text-emerald-600 font-semibold">97% Retained (3% Reservo Platform Fee)</div>
               </div>
 
-              <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-6 rounded-3xl space-y-2 shadow-xs">
+              <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-6 rounded-3xl shadow-xs flex flex-col justify-between min-h-[148px]">
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Projected Next Month</span>
-                <div className="text-3xl font-black font-serif text-blue-600">
-                  ₹{hostData.financials?.projectedNextMonth?.toLocaleString("en-IN") || "215,000"}
+                <div className="flex items-baseline gap-1.5 my-2 h-8">
+                  <span className="text-3xl font-extrabold text-blue-600 tabular-nums leading-none tracking-tight">
+                    ₹{hostData.financials?.projectedNextMonth?.toLocaleString("en-IN") || "215,000"}
+                  </span>
                 </div>
                 <div className="text-xs text-[var(--color-text-gray)]">Based on confirmed forward bookings</div>
               </div>
@@ -1251,7 +1283,7 @@ export default function HostAdminPortal() {
                     </div>
 
                     <div className="text-right">
-                      <div className="text-sm font-black font-serif text-primary">
+                      <div className="text-sm font-extrabold font-sans tabular-nums text-primary">
                         ₹{pay.amount.toLocaleString("en-IN")}
                       </div>
                     </div>
@@ -1369,7 +1401,7 @@ export default function HostAdminPortal() {
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-black font-serif text-amber-500 flex items-center gap-1 justify-end">
+                <div className="text-2xl font-extrabold font-sans tabular-nums text-amber-500 flex items-center gap-1 justify-end">
                   <Star size={20} className="fill-amber-500" /> {hostData.profile?.rating || 4.96}
                 </div>
                 <div className="text-[11px] text-[var(--color-text-gray)]">100% 5-Star Reviews this Quarter</div>
@@ -1532,11 +1564,11 @@ export default function HostAdminPortal() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--color-text-gray)]">Gross Total Paid by Guest:</span>
-                  <span className="font-bold text-[var(--color-text-dark)]">₹{selectedResModal.totalPaid.toLocaleString("en-IN")}</span>
+                  <span className="font-extrabold text-[var(--color-text-dark)] tabular-nums">₹{selectedResModal.totalPaid.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between border-t border-[var(--color-border-color)] pt-2 text-sm font-bold text-primary">
                   <span>Host Net Payout:</span>
-                  <span>₹{selectedResModal.payoutAmount.toLocaleString("en-IN")}</span>
+                  <span className="tabular-nums">₹{selectedResModal.payoutAmount.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
@@ -1797,14 +1829,14 @@ export default function HostAdminPortal() {
                           {/* Custom Host Note if provided */}
                           {notifCustomNote && (
                             <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
-                              <span className="text-[10px] font-bold uppercase text-emerald-700 block">Personal Note from Your Host Srushti:</span>
+                              <span className="text-[10px] font-bold uppercase text-emerald-700 block">Personal Note from Your Host {hostName.split(" ")[0] || "Host"}:</span>
                               <p className="italic">"{notifCustomNote}"</p>
                             </div>
                           )}
 
                           {/* Host Signature */}
                           <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-500 flex justify-between items-center">
-                            <span>Host: <strong>Srushti Salunke</strong> (Superhost)</span>
+                            <span>Host: <strong>{hostName}</strong> (Superhost)</span>
                             <span className="text-emerald-700 font-semibold flex items-center gap-1">
                               <CheckCircle2 size={12} /> Reservo Escrow Protected
                             </span>

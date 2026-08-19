@@ -30,39 +30,47 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-bg-white border border-border-color rounded-2xl p-5 shadow-sm space-y-2">
+          <div className="bg-bg-white border border-border-color rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[130px]">
             <div className="flex justify-between items-center text-text-gray">
               <span className="text-[10px] font-bold uppercase tracking-wider">Next Stay</span>
               <Calendar className="w-4 h-4 text-primary" />
             </div>
-            <h3 className="text-base font-bold text-text-dark truncate">Goa Coastline</h3>
+            <div className="flex items-baseline gap-1 my-1 h-7">
+              <h3 className="text-base font-bold text-text-dark truncate">Goa Coastline</h3>
+            </div>
             <p className="text-[11px] text-text-gray font-semibold">Starts in 10 Days</p>
           </div>
 
-          <div className="bg-bg-white border border-border-color rounded-2xl p-5 shadow-sm space-y-2">
+          <div className="bg-bg-white border border-border-color rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[130px]">
             <div className="flex justify-between items-center text-text-gray">
               <span className="text-[10px] font-bold uppercase tracking-wider">Member Tier</span>
               <Award className="w-4 h-4 text-amber-500" />
             </div>
-            <h3 className="text-base font-bold text-text-dark">Elite Diamond</h3>
+            <div className="flex items-baseline gap-1 my-1 h-7">
+              <h3 className="text-base font-bold text-text-dark">Elite Diamond</h3>
+            </div>
             <p className="text-[11px] text-text-gray font-semibold">Diamond Member Status</p>
           </div>
 
-          <div className="bg-bg-white border border-border-color rounded-2xl p-5 shadow-sm space-y-2">
+          <div className="bg-bg-white border border-border-color rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[130px]">
             <div className="flex justify-between items-center text-text-gray">
               <span className="text-[10px] font-bold uppercase tracking-wider">Reward Points</span>
               <Wallet className="w-4 h-4 text-emerald-500" />
             </div>
-            <h3 className="text-base font-bold text-text-dark">24,500 pts</h3>
+            <div className="flex items-baseline gap-1 my-1 h-7">
+              <h3 className="text-base font-bold text-text-dark">24,500 pts</h3>
+            </div>
             <p className="text-[11px] text-text-gray font-semibold">₹2,450 Value Equivalents</p>
           </div>
 
-          <div className="bg-bg-white border border-border-color rounded-2xl p-5 shadow-sm space-y-2">
+          <div className="bg-bg-white border border-border-color rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[130px]">
             <div className="flex justify-between items-center text-text-gray">
               <span className="text-[10px] font-bold uppercase tracking-wider">Total Bookings</span>
               <ClipboardList className="w-4 h-4 text-indigo-500" />
             </div>
-            <h3 className="text-base font-bold text-text-dark">3 Completed</h3>
+            <div className="flex items-baseline gap-1 my-1 h-7">
+              <h3 className="text-base font-bold text-text-dark">3 Completed</h3>
+            </div>
             <p className="text-[11px] text-text-gray font-semibold">Across 2 Destinations</p>
           </div>
         </div>
