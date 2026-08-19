@@ -429,7 +429,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
                   <img src={rivoAvatar} alt="Rivo" className="w-6 h-6 rounded-full object-cover border border-[var(--color-border-color)] shrink-0" />
                   <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] px-3 py-2 rounded-[14px] flex gap-1 items-center">
                     <span className="text-[11px] font-bold text-[var(--color-text-gray)]">👋 Ask:</span>
-                    <span className="text-[11px] font-bold text-[var(--color-text-dark)] truncate max-w-[140px]">{activeTab.suggestionLabel}</span>
+                    <span className="text-[11px] font-bold text-[var(--color-text-dark)] truncate max-w-[140px]">Rivo...</span>
                   </div>
                 </div>
               )}
@@ -437,7 +437,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             {/* Quick Replies */}
             {messages.length === 1 && !isTyping && (
               <div className="bg-[var(--color-bg-light)] px-4 py-2 flex flex-col gap-1.5 border-t border-[var(--color-border-color)] shrink-0">
-                {activeTab.suggestions.map((r) => (
+                {QUICK_REPLIES.map((r) => (
                   <button key={r.key} className="bg-[var(--color-bg-white)] text-[var(--color-text-dark)] border border-[var(--color-border-color)] px-3 py-1.5 rounded-xl text-[11.5px] text-left cursor-pointer transition-colors hover:bg-[var(--color-bg-light)] hover:text-gold" onClick={() => handleSend(r.text)}>
                     {r.text}
                   </button>
