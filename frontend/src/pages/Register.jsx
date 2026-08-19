@@ -7,10 +7,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Mail, Lock, Eye, EyeOff, ArrowRight, Globe, 
   ChevronDown, ShieldCheck, Star, HeadphonesIcon, 
-  Sparkles, User 
+  Sparkles, User, Smartphone
 } from "lucide-react";
 import { authService } from "../services/auth.service";
 import { oauth2Service } from "../services/oauth2.service";
+import PhoneAuth from "../components/PhoneAuth";
 import logoImage from "../assets/images/logo.png";
 import hero1 from "../assets/images/hero1.jpg";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
@@ -36,6 +37,7 @@ export default function Register() {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [language, setLanguage] = useState("English");
   const [toastMsg, setToastMsg] = useState("");
+  const [authMethod, setAuthMethod] = useState("email"); // 'email' or 'phone'
 
   const [roleMode, setRoleMode] = useState("traveller");
   const [businessName, setBusinessName] = useState("");
@@ -156,6 +158,29 @@ export default function Register() {
       }, 1200);
     } catch (err) {
       setToastMsg(err.message || "Failed to create account. Please try again.");
+      setTimeout(() => setToastMsg(""), 3000);
+    }
+  };
+
+  const handlePhoneAuthSuccess = async (phoneAuthData) => {
+    try {
+      const role = roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER";
+      const name = getValues("name") || "User";
+      
+      const result = await authService.registerWithPhone(
+        name,
+        phoneAuthData.phoneNumber,
+        phoneAuthData.firebaseIdToken,
+        role
+      );
+      
+      setToastMsg("Account created successfully! Redirecting...");
+      setTimeout(() => {
+        setToastMsg("");
+        navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });
+      }, 1200);
+    } catch (err) {
+      setToastMsg(err.message || "Phone registration failed. Please try again.");
       setTimeout(() => setToastMsg(""), 3000);
     }
   };
@@ -290,26 +315,53 @@ export default function Register() {
               </p>
             </div>
 
+            {/* Auth Method Toggle */}
+            <div className="flex bg-bg-light rounded-xl p-1 border border-border-color">
+              <button
+                type="button"
+                onClick={() => setAuthMethod("email")}
+                className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                  authMethod === "email"
+                    ? "bg-white text-primary shadow-sm"
+                    : "text-text-gray hover:text-text-dark"
+                }`}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                Email
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMethod("phone")}
+                className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                  authMethod === "phone"
+                    ? "bg-white text-primary shadow-sm"
+                    : "text-text-gray hover:text-text-dark"
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                Phone
+              </button>
+            </div>
 
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-
-              {/* Business Partner Mode Fields */}
-              {roleMode === "business" && (
-                <div className="space-y-3 border-b border-border-color pb-3 animate-in fade-in duration-200 text-left">
-                  <div className="space-y-1 flex flex-col relative">
-                    <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider block w-full text-left ml-1">Contact Phone *</label>
-                    <input 
-                      type="tel" 
-                      required
-                      value={ownerPhone}
-                      onChange={(e) => setOwnerPhone(e.target.value)}
-                      placeholder="e.g. +91 98765 43210"
-                      className="w-full px-4 py-2 bg-bg-light border border-border-color text-text-dark rounded-xl text-[11.5px] font-semibold outline-none focus:border-primary transition"
-                    />
+            {/* Email Registration Form */}
+            {authMethod === "email" && (
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+                {/* Business Partner Mode Fields */}
+                {roleMode === "business" && (
+                  <div className="space-y-3 border-b border-border-color pb-3 animate-in fade-in duration-200 text-left">
+                    <div className="space-y-1 flex flex-col relative">
+                      <label className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider block w-full text-left ml-1">Contact Phone *</label>
+                      <input 
+                        type="tel" 
+                        required
+                        value={ownerPhone}
+                        onChange={(e) => setOwnerPhone(e.target.value)}
+                        placeholder="e.g. +91 98765 43210"
+                        className="w-full px-4 py-2 bg-bg-light border border-border-color text-text-dark rounded-xl text-[11.5px] font-semibold outline-none focus:border-primary transition"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               
               {/* Full Name with Character Counter */}
               <div className="space-y-1 flex flex-col relative">
@@ -478,14 +530,64 @@ export default function Register() {
               >
                 {isSubmitting ? "Creating Account..." : <>Sign Up <ArrowRight className="w-3.5 h-3.5" /></>}
               </button>
-            </form>            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-border-color"></div>
-              <span className="flex-shrink mx-3 text-[9px] text-text-gray font-bold uppercase tracking-wider">or continue with</span>
-              <div className="flex-grow border-t border-border-color"></div>
-            </div>
+            </form>
+            )}
 
-            {/* Social Connects */}
-            <div className="grid grid-cols-2 gap-2 w-full">
+            {/* Phone Registration Form */}
+            {authMethod === "phone" && (
+              <div className="space-y-3">
+                {/* Full Name - required for phone registration */}
+                <div className="space-y-1 flex flex-col relative">
+                  <div className="flex justify-between items-center w-full">
+                    <label htmlFor="phoneNameInput" className="text-[9.5px] font-bold text-text-gray uppercase tracking-wider block text-left ml-1">Full Name</label>
+                    <span className="text-[9px] text-text-gray font-semibold">{nameVal.length}/40</span>
+                  </div>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-gray" />
+                    <input 
+                      id="phoneNameInput"
+                      type="text" 
+                      placeholder="Enter your full name"
+                      {...register("name")}
+                      className={`w-full pl-10 pr-4 py-2.5 bg-bg-light border ${
+                        errors.name ? "border-red-500 focus:border-red-500 focus:shadow-[0_0_0_2px_rgba(239,68,68,0.1)]" : "border-border-color focus:border-primary focus:shadow-[0_0_0_2px_rgba(13,71,161,0.1)]"
+                      } text-text-dark rounded-xl text-[11.5px] font-semibold outline-none transition-all duration-300`}
+                    />
+                  </div>
+                  <AnimatePresence>
+                    {errors.name && (
+                      <motion.p 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="text-[10.5px] text-red-500 font-bold mt-1 ml-1"
+                      >
+                        {errors.name.message}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Phone Auth Component */}
+                <PhoneAuth 
+                  mode="register"
+                  onAuthSuccess={handlePhoneAuthSuccess}
+                  role={roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER"}
+                  name={nameVal}
+                />
+              </div>
+            )}
+
+            {/* Social Connects - always available as alternative */}
+            {authMethod === "email" && (
+              <>
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-border-color"></div>
+                  <span className="flex-shrink mx-3 text-[9px] text-text-gray font-bold uppercase tracking-wider">or continue with</span>
+                  <div className="flex-grow border-t border-border-color"></div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 w-full">
               <button 
                 type="button"
                 onClick={() => oauth2Service.initiateOAuth2Login("google").catch(err => setToastMsg(err.message))}
@@ -501,15 +603,27 @@ export default function Register() {
               </button>
               <button 
                 type="button"
-                onClick={() => oauth2Service.initiateOAuth2Login("apple").catch(err => setToastMsg(err.message))}
+                onClick={() => oauth2Service.initiateOAuth2Login("facebook").catch(err => setToastMsg(err.message))}
                 className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
-                title="Continue with Apple"
+                title="Continue with Facebook"
               >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" className="text-text-dark" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-.96.04-2.13.64-2.82 1.45-.6.69-1.12 1.84-.98 2.94.1.08.2.12.3.12.87 0 1.95-.57 2.51-1.45z"/>
+                <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+              </button>
+              <button 
+                type="button"
+                onClick={() => oauth2Service.initiateOAuth2Login("twitter").catch(err => setToastMsg(err.message))}
+                className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
+                title="Continue with X (Twitter)"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#000000" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
               </button>
             </div>
+              </>
+            )}
 
             {/* Bottom link toggle */}
             <div className="text-center text-[11px] font-semibold text-text-gray py-0.5">

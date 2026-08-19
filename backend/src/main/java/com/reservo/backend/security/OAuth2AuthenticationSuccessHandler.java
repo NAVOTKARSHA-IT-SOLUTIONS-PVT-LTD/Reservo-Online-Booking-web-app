@@ -46,16 +46,32 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             email = oAuth2User.getAttribute("mail");
         }
 
-        // Apple only sends email on the first login. 
-        // If it's missing, use a fallback based on their unique subject ID.
-        if (email == null && "APPLE".equals(provider)) {
-            String sub = oAuth2User.getAttribute("sub");
-            if (sub != null) {
-                email = "apple_" + sub + "@apple-login.local";
+        // Twitter does not return an email by default. Construct a placeholder.
+        if (email == null && "TWITTER".equals(provider)) {
+            // Twitter v2 API returns payload inside 'data'
+            Object dataObj = oAuth2User.getAttribute("data");
+            if (dataObj instanceof java.util.Map) {
+                java.util.Map<?, ?> dataMap = (java.util.Map<?, ?>) dataObj;
+                String username = (String) dataMap.get("username");
+                String twitterId = (String) dataMap.get("id");
+                if (username != null) {
+                    email = "twitter_" + username + "@twitter.local";
+                } else if (twitterId != null) {
+                    email = "twitter_" + twitterId + "@twitter.local";
+                }
+            } else {
+                // Fallback if data attribute is not a map
+                email = "twitter_user_" + UUID.randomUUID().toString().substring(0, 8) + "@twitter.local";
             }
         }
 
         String name = oAuth2User.getAttribute("name");
+        if (name == null && "TWITTER".equals(provider)) {
+            Object dataObj = oAuth2User.getAttribute("data");
+            if (dataObj instanceof java.util.Map) {
+                name = (String) ((java.util.Map<?, ?>) dataObj).get("name");
+            }
+        }
         
         if (email == null) {
             log.error("OAuth2 user does not have an email address");

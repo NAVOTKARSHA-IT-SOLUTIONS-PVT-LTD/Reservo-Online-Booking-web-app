@@ -13,6 +13,7 @@
     "@hookform/resolvers": "^5.7.1",
     "@tailwindcss/vite": "^4.3.3",
     "aos": "^2.3.4",
+    "firebase": "^12.17.1",
     "framer-motion": "^13.0.0",
     "lucide-react": "^1.27.0",
     "react": "^19.2.7",

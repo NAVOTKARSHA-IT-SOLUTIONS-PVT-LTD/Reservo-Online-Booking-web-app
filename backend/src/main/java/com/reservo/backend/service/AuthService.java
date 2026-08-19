@@ -5,6 +5,8 @@ import com.reservo.backend.dto.AuthRequestDTO;
 import com.reservo.backend.dto.AuthResponseDTO;
 import com.reservo.backend.dto.OtpVerificationDTO;
 import com.reservo.backend.dto.ResetPasswordDTO;
+import com.reservo.backend.dto.PhoneAuthRequestDTO;
+import com.reservo.backend.dto.PhoneAuthRegisterDTO;
 import com.reservo.backend.exception.BadRequestException;
 import com.reservo.backend.exception.DuplicateResourceException;
 import com.reservo.backend.exception.UnauthorizedException;
@@ -38,6 +40,7 @@ public class AuthService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final FirebaseService firebaseService;
 
     private final Map<String, OtpRecord> otpStore = new ConcurrentHashMap<>();
     private final Map<String, Integer> otpAttempts = new ConcurrentHashMap<>();
@@ -216,5 +219,147 @@ public class AuthService {
         private OtpRecord markVerified() {
             return new OtpRecord(code, expiresAt, true);
         }
+    }
+
+    // Phone Authentication Methods
+
+    @Transactional
+    public AuthResponseDTO loginWithPhone(PhoneAuthRequestDTO request) {
+        // Check if Firebase is available
+        if (!firebaseService.isFirebaseAvailable()) {
+            throw new UnauthorizedException("Firebase is not configured. Please set up Firebase to use phone authentication.");
+        }
+
+        // Verify Firebase token
+        String phoneNumber = firebaseService.getPhoneNumberFromToken(request.getFirebaseIdToken());
+        if (phoneNumber == null) {
+            throw new UnauthorizedException("Invalid Firebase token or phone number not verified");
+        }
+
+        // Normalize phone numbers for comparison
+        String normalizedRequestPhone = normalizePhoneNumber(request.getPhoneNumber());
+        String normalizedFirebasePhone = normalizePhoneNumber(phoneNumber);
+
+        if (!normalizedRequestPhone.equals(normalizedFirebasePhone)) {
+            throw new UnauthorizedException("Phone number mismatch between request and Firebase token");
+        }
+
+        // Find user by phone number
+        User user = userRepository.findByPhone(normalizedRequestPhone)
+                .orElseThrow(() -> new UnauthorizedException("No account found with this phone number"));
+
+        if (user.getStatus() != User.UserStatus.ACTIVE) {
+            throw new UnauthorizedException("Account is not active");
+        }
+
+        // Update last login time
+        user.setLastLoginAt(Instant.now());
+        userRepository.save(user);
+
+        // Generate JWT token
+        String token = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
+
+        return AuthResponseDTO.builder()
+                .token(token)
+                .type("Bearer")
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .role(user.getRole().name())
+                .build();
+    }
+
+    @Transactional
+    public AuthResponseDTO registerWithPhone(PhoneAuthRegisterDTO request) {
+        // Check if Firebase is available
+        if (!firebaseService.isFirebaseAvailable()) {
+            throw new UnauthorizedException("Firebase is not configured. Please set up Firebase to use phone authentication.");
+        }
+
+        // Verify Firebase token
+        String phoneNumber = firebaseService.getPhoneNumberFromToken(request.getFirebaseIdToken());
+        if (phoneNumber == null) {
+            throw new UnauthorizedException("Invalid Firebase token or phone number not verified");
+        }
+
+        // Normalize phone numbers for comparison
+        String normalizedRequestPhone = normalizePhoneNumber(request.getPhoneNumber());
+        String normalizedFirebasePhone = normalizePhoneNumber(phoneNumber);
+
+        if (!normalizedRequestPhone.equals(normalizedFirebasePhone)) {
+            throw new UnauthorizedException("Phone number mismatch between request and Firebase token");
+        }
+
+        // Check if user already exists with this phone number
+        if (userRepository.existsByPhone(normalizedRequestPhone)) {
+            throw new DuplicateResourceException("Phone number '" + normalizedRequestPhone + "' is already registered");
+        }
+
+        // Determine role
+        User.Role userRole = User.Role.ROLE_CUSTOMER;
+        if (request.getRole() != null && request.getRole().equalsIgnoreCase("ROLE_OWNER")) {
+            userRole = User.Role.ROLE_OWNER;
+        }
+
+        // Generate a temporary email based on phone number (since phone auth users might not have email)
+        String phoneDigits = normalizedRequestPhone.replaceAll("[^0-9]", "");
+        String tempEmail = "user_" + phoneDigits + "@phone.reservo.temp";
+
+        // Create new user
+        User user = User.builder()
+                .name(HtmlSanitizer.sanitize(request.getName()))
+                .email(tempEmail) // Temporary email, can be updated later
+                .phone(normalizedRequestPhone)
+                .role(userRole)
+                .status(User.UserStatus.ACTIVE)
+                .phoneVerified(true) // Phone is verified via Firebase
+                .emailVerified(false) // Email not verified yet
+                .build();
+
+        user = userRepository.save(user);
+
+        // Generate JWT token
+        String token = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
+
+        return AuthResponseDTO.builder()
+                .token(token)
+                .type("Bearer")
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .role(user.getRole().name())
+                .build();
+    }
+
+    private String normalizePhoneNumber(String phone) {
+        if (phone == null) return null;
+        
+        // Remove all non-digit characters and spaces
+        String cleaned = phone.replaceAll("[^0-9]", "");
+        
+        // Handle Indian phone numbers (10 digits starting with various prefixes)
+        if (cleaned.length() == 10) {
+            // Assume India country code if 10 digits
+            return "+91" + cleaned;
+        }
+        
+        // If number starts with 0 and has 11 digits (like 09876543210), remove leading 0 and add +91
+        if (cleaned.length() == 11 && cleaned.startsWith("0")) {
+            return "+91" + cleaned.substring(1);
+        }
+        
+        // If already has country code format
+        if (cleaned.length() == 12 && cleaned.startsWith("91")) {
+            return "+" + cleaned;
+        }
+        
+        // For other international numbers, add + if missing
+        if (!cleaned.startsWith("+") && cleaned.length() > 10) {
+            return "+" + cleaned;
+        }
+        
+        return "+" + cleaned;
     }
 }

@@ -23,6 +23,8 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 
+import com.reservo.backend.security.OAuth2AuthenticationSuccessHandler;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -68,13 +70,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
-                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup", "/api/v1/auth/otp/**", "/api/v1/auth/password-reset/**").permitAll()
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/signup", "/api/v1/auth/otp/**", "/api/v1/auth/password-reset/**", "/api/v1/auth/login/phone", "/api/v1/auth/signup/phone").permitAll()
+                .requestMatchers("/oauth2/**", "/login/oauth2/code/**").permitAll()
                 .requestMatchers("/api/v1/payments/webhook").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
@@ -93,6 +96,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/offers/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/bookings/**", "/api/v1/wishlist/**", "/api/v1/user/**", "/api/v1/reviews/**", "/api/v1/payments/**", "/api/v1/rewards/**").authenticated()
                 .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(oAuth2AuthenticationSuccessHandler)
             )
             .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(exceptions -> exceptions

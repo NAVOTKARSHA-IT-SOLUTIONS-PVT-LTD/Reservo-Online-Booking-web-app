@@ -5,6 +5,8 @@ import com.reservo.backend.dto.AuthRequestDTO;
 import com.reservo.backend.dto.AuthResponseDTO;
 import com.reservo.backend.dto.OtpVerificationDTO;
 import com.reservo.backend.dto.ResetPasswordDTO;
+import com.reservo.backend.dto.PhoneAuthRequestDTO;
+import com.reservo.backend.dto.PhoneAuthRegisterDTO;
 import com.reservo.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -64,5 +66,19 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponseDTO>> getCurrentUser() {
         AuthResponseDTO response = authService.getCurrentUserDetails();
         return ResponseEntity.ok(ApiResponse.success(response, "User details retrieved successfully"));
+    }
+
+    // Phone Authentication Endpoints
+
+    @PostMapping("/login/phone")
+    public ResponseEntity<ApiResponse<AuthResponseDTO>> loginWithPhone(@Valid @RequestBody PhoneAuthRequestDTO request) {
+        AuthResponseDTO response = authService.loginWithPhone(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "User logged in successfully with phone"));
+    }
+
+    @PostMapping("/signup/phone")
+    public ResponseEntity<ApiResponse<AuthResponseDTO>> signupWithPhone(@Valid @RequestBody PhoneAuthRegisterDTO request) {
+        AuthResponseDTO response = authService.registerWithPhone(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "User registered successfully with phone"));
     }
 }

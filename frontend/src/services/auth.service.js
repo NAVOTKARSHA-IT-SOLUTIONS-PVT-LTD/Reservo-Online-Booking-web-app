@@ -130,5 +130,47 @@ export const authService = {
 
   getAuthToken() {
     return secureStorage.getItem(TOKEN_KEY);
+  },
+
+  // Phone Authentication Methods
+  async loginWithPhone(phoneNumber, firebaseIdToken, role = "ROLE_CUSTOMER") {
+    try {
+      const result = await apiClient.post("/api/v1/auth/login/phone", {
+        phoneNumber,
+        firebaseIdToken,
+        role
+      });
+      if (result.success && result.data) {
+        secureStorage.setItem(TOKEN_KEY, result.data.token);
+        secureStorage.setItem(USER_KEY, result.data);
+        return result.data;
+      } else {
+        throw new Error(result.message || "Phone authentication failed");
+      }
+    } catch (error) {
+      console.error("Phone login error:", error);
+      throw error;
+    }
+  },
+
+  async registerWithPhone(name, phoneNumber, firebaseIdToken, role = "ROLE_CUSTOMER") {
+    try {
+      const result = await apiClient.post("/api/v1/auth/signup/phone", {
+        name,
+        phoneNumber,
+        firebaseIdToken,
+        role
+      });
+      if (result.success && result.data) {
+        secureStorage.setItem(TOKEN_KEY, result.data.token);
+        secureStorage.setItem(USER_KEY, result.data);
+        return result.data;
+      } else {
+        throw new Error(result.message || "Phone registration failed");
+      }
+    } catch (error) {
+      console.error("Phone registration error:", error);
+      throw error;
+    }
   }
 };
