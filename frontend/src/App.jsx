@@ -226,11 +226,6 @@ function App() {
   const [cookieConsent, setCookieConsent] = useState(() => {
     return localStorage.getItem("reservo-cookie-consent") === "true";
   });
-<<<<<<< HEAD
-=======
-  
->>>>>>> 5e9acb3 (video compressed , popup feedback , side feedback removed)
-
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -504,11 +499,6 @@ function App() {
         )}
       </AnimatePresence>
 
-<<<<<<< HEAD
-=======
-      
-      
->>>>>>> 5e9acb3 (video compressed , popup feedback , side feedback removed)
 
       {/* Cookie Consent Banner */}
       <AnimatePresence>
