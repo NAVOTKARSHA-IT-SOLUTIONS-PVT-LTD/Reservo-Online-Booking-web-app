@@ -556,12 +556,13 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             return [
               ...(!isLoggedIn ? [
                 { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
-                { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" }
+                { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" },
+                { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" }
               ] : [
-                { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || "User"})`, path: "/profile" }
+                { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || "User"})`, path: "/profile" },
+                { type: "item", icon: <Building2 size={18} />, label: "Host Administration", path: "/host/dashboard" },
+                { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" }
               ]),
-              { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" },
-              { type: "item", icon: <Building2 size={18} />, label: "Host Administration", path: "/host/dashboard" },
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },

@@ -9,6 +9,8 @@ import {
   Waves, Mountain, Compass
 } from "lucide-react";
 import { hostService } from "../services/host.service";
+import { authService } from "../services/auth.service";
+import { secureStorage } from "../services/secureStorage";
 import { useToast } from "../context/ToastContext";
 
 const DESTINATIONS = [
@@ -161,6 +163,13 @@ export default function BecomeAHost() {
         description: formData.description || `Exquisite luxury ${formData.category.toLowerCase()} designed for unforgettable stays.`
       };
       hostService.addListing(newListing);
+
+      const currentUser = authService.getCurrentUser();
+      if (currentUser && currentUser.role !== "ROLE_ADMIN") {
+        currentUser.role = "ROLE_HOST";
+        secureStorage.setItem("reservo_user", currentUser);
+      }
+
       toast("Congratulations! Your listing has been published to your Host Administration.", "success");
       navigate("/host/dashboard");
     } catch (err) {

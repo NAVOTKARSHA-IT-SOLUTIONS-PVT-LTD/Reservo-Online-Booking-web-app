@@ -90,14 +90,6 @@ function Hero() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Automatic Hero Background Slideshow timer (5 seconds)
-  useEffect(() => {
-    const slideTimer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5000);
-    return () => clearInterval(slideTimer);
-  }, []);
-
   // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {

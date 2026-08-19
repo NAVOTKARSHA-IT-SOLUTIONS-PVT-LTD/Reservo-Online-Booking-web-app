@@ -379,15 +379,15 @@ function App() {
             <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />
             <Route path="/become-a-host" element={<BecomeAHost />} />
             <Route path="/host/onboarding" element={<BecomeAHost />} />
-            <Route path="/host/dashboard" element={<HostAdminPortal />} />
-            <Route path="/host/admin" element={<HostAdminPortal />} />
-            <Route path="/host" element={<HostAdminPortal />} />
-            <Route path="/host/*" element={<HostAdminPortal />} />
-            <Route path="/admin" element={<HostAdminPortal />} />
-            <Route path="/admin/dashboard" element={<HostAdminPortal />} />
-            <Route path="/admin/reservo" element={<HostAdminPortal />} />
-            <Route path="/admin/resort" element={<HostAdminPortal />} />
-            <Route path="/admin/*" element={<HostAdminPortal />} />
+            <Route path="/host/dashboard" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/host/admin" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/host" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/host/*" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin/dashboard" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin/reservo" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin/resort" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin/*" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
             <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
