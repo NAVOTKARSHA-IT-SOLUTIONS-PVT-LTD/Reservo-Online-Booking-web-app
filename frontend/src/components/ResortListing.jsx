@@ -74,7 +74,11 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
       }
       setResorts(data);
     } catch (err) {
-      setError(err.message || "Failed to load luxury stays.");
+      if (err.message === "No resorts found" || err.message === "No resorts available from backend") {
+        setResorts([]);
+      } else {
+        setError(err.message || "Failed to load luxury stays.");
+      }
     } finally {
       setLoading(false);
     }
@@ -652,11 +656,14 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                 </div>
               ) : (
                 <EmptyState 
-                  title="No resorts match your criteria"
-                  description="Try resetting your filters, selecting a different search query, or shifting your price sliders."
-                  ctaText="Reset All Filters"
-                  onCtaClick={resetAllFilters}
-                  icon={SlidersHorizontal}
+                  title={isSearchActive ? `No stays found in "${searchQuery}"` : "No resorts match your criteria"}
+                  description={isSearchActive 
+                    ? "Rivo couldn't find any luxury stays matching this location. Try searching for Goa, Kerala, Udaipur, Maldives, or Jaisalmer."
+                    : "Try resetting your filters, selecting a different search query, or shifting your price sliders."
+                  }
+                  ctaText={isSearchActive ? "Clear Search" : "Reset All Filters"}
+                  onCtaClick={isSearchActive ? clearSearch : resetAllFilters}
+                  icon={isSearchActive ? Search : SlidersHorizontal}
                 />
               )}
             </div>

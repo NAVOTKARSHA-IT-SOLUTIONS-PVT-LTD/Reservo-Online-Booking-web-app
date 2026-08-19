@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Sparkles, QrCode, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { bookingService } from '../services/booking.service';
 import { rewardService } from '../services/reward.service';
+import { authService } from '../services/auth.service';
 import { useToast } from '../context/ToastContext';
 import StripeCardInput from './StripeCardInput';
 import rivoConfirmed from '../assets/images/rivo_confirmed.png';
 
 export default function BookingModal({ resort, room, isDarkMode, onClose, onAskRivo }) {
   const toast = useToast();
+  const navigate = useNavigate();
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [addonButler, setAddonButler] = useState(true);
@@ -102,6 +105,12 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
   };
 
   const handleStripeCheckout = async () => {
+    if (!authService.isAuthenticated()) {
+      toast("Please log in to proceed with your reservation.", "error");
+      navigate("/login");
+      onClose();
+      return;
+    }
     setSubmitting(true);
     try {
       const bookingDetails = {

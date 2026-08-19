@@ -28,6 +28,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
+    private String frontendUrl;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
@@ -75,7 +78,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         
         if (email == null) {
             log.error("OAuth2 user does not have an email address");
-            response.sendRedirect("http://localhost:5173/login?error=oauth_email_missing");
+            response.sendRedirect(frontendUrl + "/login?error=oauth_email_missing");
             return;
         }
 
@@ -111,7 +114,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String token = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
 
         // Redirect to frontend with token
-        String targetUrl = "http://localhost:5173/oauth2/redirect?token=" + token;
+        String targetUrl = frontendUrl + "/oauth2/redirect?token=" + token;
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

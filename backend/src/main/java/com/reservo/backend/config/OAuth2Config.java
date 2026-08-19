@@ -17,6 +17,9 @@ public class OAuth2Config {
 
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url}")
+    private String frontendUrl;
+
     @Bean
     @org.springframework.core.annotation.Order(1)
     public SecurityFilterChain oauth2SecurityFilterChain(HttpSecurity http) throws Exception {
@@ -26,7 +29,7 @@ public class OAuth2Config {
                 .successHandler(oAuth2AuthenticationSuccessHandler)
                 .failureHandler((request, response, exception) -> {
                     // Redirect to frontend with error
-                    response.sendRedirect("http://localhost:5173/login?error=oauth2_failed");
+                    response.sendRedirect(frontendUrl + "/login?error=oauth2_failed");
                 })
             )
             .oauth2Client(org.springframework.security.config.Customizer.withDefaults());

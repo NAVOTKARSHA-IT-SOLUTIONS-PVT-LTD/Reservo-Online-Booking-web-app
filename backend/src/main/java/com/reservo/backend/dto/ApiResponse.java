@@ -29,7 +29,7 @@ public class ApiResponse<T> {
     }
 
     public static <T> ApiResponse<T> success(T data) {
-        return success(data, "Password changed successfully");
+        return success(data, "Success");
     }
 
     public static <T> ApiResponse<T> error(String message, Object errors) {
