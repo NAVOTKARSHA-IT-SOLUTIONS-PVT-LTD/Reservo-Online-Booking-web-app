@@ -8,6 +8,7 @@ async function request(endpoint, options = {}) {
   
   const headers = {
     "Content-Type": "application/json",
+    "bypass-tunnel-reminder": "true",
     ...options.headers,
   };
 
