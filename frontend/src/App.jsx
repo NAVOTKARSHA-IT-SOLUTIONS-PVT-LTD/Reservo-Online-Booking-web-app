@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Suspense } from "react";
-import { Routes, Route, useLocation, useNavigate, useParams, Link } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, WifiOff, CheckCircle2, ArrowUp, Send, Heart, Sun, Moon, Globe, ChevronDown, Menu, Check } from "lucide-react";
 import FeedbackPopup from "./components/FeedbackPopup";
@@ -35,7 +35,6 @@ const Register = React.lazy(() => import("./pages/Register"));
 const PartnerOnboarding = React.lazy(() => import("./pages/PartnerOnboarding"));
 const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = React.lazy(() => import("./pages/PaymentCancel"));
-const OAuth2RedirectHandler = React.lazy(() => import("./pages/OAuth2RedirectHandler"));
 const BecomeAHost = React.lazy(() => import("./pages/BecomeAHost"));
 const HostAdminPortal = React.lazy(() => import("./pages/HostAdminPortal"));
 
@@ -389,7 +388,6 @@ function App() {
             <Route path="/admin/*" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
-            <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

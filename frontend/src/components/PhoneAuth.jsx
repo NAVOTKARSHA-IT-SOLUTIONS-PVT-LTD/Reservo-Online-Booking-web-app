@@ -82,16 +82,23 @@ const PhoneAuth = ({ mode = "login", onAuthSuccess, role = "ROLE_CUSTOMER", name
   };
 
   const handleSendOtp = async () => {
+    console.log("=== Send OTP clicked ===");
+    console.log("Phone number:", phoneNumber);
+    console.log("Firebase configured:", firebasePhoneService.isInitialized());
+    
     // Check if Firebase is initialized
     if (!firebasePhoneService.isInitialized()) {
+      console.log("Firebase not configured!");
       setToastMsg("Firebase is not configured. Please set up Firebase configuration first.");
       return;
     }
 
     const cleanedPhone = phoneNumber.replace(/\D/g, '');
+    console.log("Cleaned phone:", cleanedPhone);
     
     // Validate phone number length (Indian numbers: 10 digits + 91 country code = 12 digits)
     if (cleanedPhone.length < 10) {
+      console.log("Phone number too short");
       setToastMsg("Please enter a valid phone number (10 digits for India)");
       return;
     }
@@ -107,15 +114,20 @@ const PhoneAuth = ({ mode = "login", onAuthSuccess, role = "ROLE_CUSTOMER", name
 
     try {
       setIsSendingOtp(true);
+      console.log("Calling Firebase sendOtp...");
       const result = await firebasePhoneService.sendOtp(phoneNumber, 'recaptcha-container');
+      console.log("Firebase result:", result);
       
       if (result.success) {
         setOtpSent(true);
         setToastMsg("OTP sent successfully to your phone");
+        console.log("OTP sent successfully");
       } else {
         setToastMsg(result.message);
+        console.log("OTP send failed:", result.message);
       }
     } catch (error) {
+      console.error("Send OTP error:", error);
       setToastMsg("Failed to send OTP. Please try again.");
     } finally {
       setIsSendingOtp(false);
@@ -212,33 +224,20 @@ const PhoneAuth = ({ mode = "login", onAuthSuccess, role = "ROLE_CUSTOMER", name
         </div>
       </div>
 
-      {/* OTP Input and Actions */}
-      {otpSent && !firebaseResult && (
-        <div className="space-y-2 rounded-xl border border-border-color bg-bg-light p-3 animate-fade-in">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[9.5px] font-bold uppercase tracking-wider text-text-gray ml-1">
-              Enter OTP
-            </span>
-            <button
-              type="button"
-              onClick={handleResendOtp}
-              disabled={isSendingOtp}
-              className="flex items-center gap-1 rounded-lg border-none bg-primary px-3 py-1.5 text-[9px] font-bold text-white disabled:cursor-not-allowed disabled:bg-border-color disabled:text-text-gray disabled:opacity-60"
-            >
-              {isSendingOtp ? (
-                <>
-                  <RefreshCw className="w-3 h-3 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-3 h-3" />
-                  Resend
-                </>
-              )}
-            </button>
-          </div>
-          
+      {/* Phone verification - matches Email form style */}
+      <div className="space-y-2 rounded-xl border border-border-color bg-bg-light p-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[9.5px] font-bold uppercase tracking-wider text-text-gray ml-1">Phone verification</span>
+          <button
+            type="button"
+            onClick={otpSent ? handleResendOtp : handleSendOtp}
+            disabled={!isFirebaseConfigured || isSendingOtp || phoneNumber.replace(/\D/g, "").length < 10}
+            className="rounded-lg border-none bg-primary px-3 py-1.5 text-[9px] font-bold text-white disabled:cursor-not-allowed disabled:bg-border-color disabled:text-text-gray disabled:opacity-60"
+          >
+            {isSendingOtp ? "Sending..." : otpSent ? "Resend OTP" : "Send OTP"}
+          </button>
+        </div>
+        {otpSent && !firebaseResult && (
           <div className="flex gap-2">
             <input
               type="text"
@@ -253,34 +252,13 @@ const PhoneAuth = ({ mode = "login", onAuthSuccess, role = "ROLE_CUSTOMER", name
               type="button"
               onClick={handleVerifyOtp}
               disabled={isVerifyingOtp || otpCode.length !== 6}
-              className="rounded-lg border-none bg-primary px-3 py-1.5 text-[9px] font-bold text-white disabled:cursor-not-allowed disabled:bg-border-color disabled:text-text-gray disabled:opacity-60"
+              className="rounded-lg border-primary bg-bg-light px-3 py-1.5 text-[9px] font-bold text-primary disabled:cursor-not-allowed disabled:border-border-color disabled:text-text-gray disabled:opacity-60"
             >
-              {isVerifyingOtp ? "Verifying..." : "Verify"}
+              {isVerifyingOtp ? "Checking..." : "Verify"}
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Send OTP Button */}
-      {!otpSent && (
-        <button
-          type="button"
-          onClick={handleSendOtp}
-          disabled={!isFirebaseConfigured || isSendingOtp || phoneNumber.replace(/\D/g, "").length < 10}
-          className="w-full py-2.5 font-extrabold text-[11px] uppercase tracking-wider rounded-xl border-none flex items-center justify-center gap-1.5 transition-all duration-300 bg-primary hover:bg-primary-dark text-white disabled:bg-border-color disabled:text-text-gray disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {isSendingOtp ? (
-            <>
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              Sending OTP...
-            </>
-          ) : (
-            <>
-              Send OTP <ArrowRight className="w-3.5 h-3.5" />
-            </>
-          )}
-        </button>
-      )}
+        )}
+      </div>
 
       {/* Success State */}
       {firebaseResult && (

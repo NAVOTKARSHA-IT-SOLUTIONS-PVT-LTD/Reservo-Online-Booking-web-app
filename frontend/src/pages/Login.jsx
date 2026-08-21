@@ -20,7 +20,6 @@ import {
   Smartphone
 } from "lucide-react";
 import { authService } from "../services/auth.service";
-import { oauth2Service } from "../services/oauth2.service";
 import PhoneAuth from "../components/PhoneAuth";
 import logoImage from "../assets/images/logo.png";
 import hero1 from "../assets/images/hero1.jpg";
@@ -52,6 +51,7 @@ export default function Login() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const [authMethod, setAuthMethod] = useState("email"); // 'email' or 'phone'
+
 
   const [roleMode, setRoleMode] = useState("traveller");
 
@@ -120,6 +120,76 @@ export default function Login() {
       }, 1500);
     } catch (err) {
       setToastMsg(err.message || "Phone authentication failed. Please try again.");
+      setTimeout(() => setToastMsg(""), 3000);
+    }
+  };
+
+  const handleSocialAuth = async (provider) => {
+    try {
+      const role = roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER";
+      let result;
+      
+      switch (provider) {
+        case 'google':
+          result = await authService.signInWithGoogle(role);
+          break;
+        case 'facebook':
+          result = await authService.signInWithFacebook(role);
+          break;
+        case 'twitter':
+          result = await authService.signInWithTwitter(role);
+          break;
+        default:
+          throw new Error('Invalid provider');
+      }
+      
+      // Check for account conflict - just sign in with existing provider
+      if (result.accountConflict) {
+        try {
+          setToastMsg(`Account exists with ${result.existingProvider}. Signing in with that provider...`);
+          // Sign in with the existing provider only (don't link)
+          await authService.signInForLinking(result.existingProvider);
+          setToastMsg(`Signed in successfully! Redirecting...`);
+          setTimeout(() => {
+            setToastMsg("");
+            const user = authService.getCurrentUser();
+            const finalRole = user?.role || (roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER");
+            if (finalRole === "ROLE_ADMIN") {
+              navigate("/admin/reservo", { replace: true });
+            } else if (finalRole === "ROLE_OWNER") {
+              navigate("/admin/resort", { replace: true });
+            } else {
+              navigate("/dashboard", { replace: true });
+            }
+          }, 1500);
+        } catch (error) {
+          console.error("Auto-sign-in error:", error);
+          console.error("Error code:", error.code);
+          console.error("Error message:", error.message);
+          setToastMsg(error.message || "Failed to sign in. Please try again.");
+          setTimeout(() => setToastMsg(""), 5000);
+        }
+        return;
+      }
+      
+      const finalRole = result.role || role; // Use returned role or fallback to requested role
+      console.log("Social auth result:", result);
+      console.log("Final role for redirect:", finalRole);
+      
+      setToastMsg(`Signed in with ${provider.charAt(0).toUpperCase() + provider.slice(1)}! Redirecting...`);
+      setTimeout(() => {
+        setToastMsg("");
+        if (finalRole === "ROLE_ADMIN") {
+          navigate("/admin/reservo", { replace: true });
+        } else if (finalRole === "ROLE_OWNER") {
+          navigate("/admin/resort", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
+      }, 1500);
+    } catch (err) {
+      console.error("Social auth error:", err);
+      setToastMsg(err.message || `${provider.charAt(0).toUpperCase() + provider.slice(1)} authentication failed. Please try again.`);
       setTimeout(() => setToastMsg(""), 3000);
     }
   };
@@ -550,7 +620,7 @@ export default function Login() {
                 <div className="grid grid-cols-3 gap-2 w-full">
               <button 
                 type="button"
-                onClick={() => oauth2Service.initiateOAuth2Login("google").catch(err => setToastMsg(err.message))}
+                onClick={() => handleSocialAuth('google')}
                 className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
                 title="Continue with Google"
               >
@@ -563,7 +633,7 @@ export default function Login() {
               </button>
               <button 
                 type="button"
-                onClick={() => oauth2Service.initiateOAuth2Login("facebook").catch(err => setToastMsg(err.message))}
+                onClick={() => handleSocialAuth('facebook')}
                 className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
                 title="Continue with Facebook"
               >
@@ -573,7 +643,7 @@ export default function Login() {
               </button>
               <button 
                 type="button"
-                onClick={() => oauth2Service.initiateOAuth2Login("twitter").catch(err => setToastMsg(err.message))}
+                onClick={() => handleSocialAuth('twitter')}
                 className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
                 title="Continue with X (Twitter)"
               >

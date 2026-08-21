@@ -310,7 +310,7 @@ function SearchResults() {
         {/* Personalization Banner */}
         <div className="mb-8 fade-up">
           <h1 className="text-2xl font-extrabold text-text-dark flex items-center gap-2 mb-2">
-            👋 Welcome back, {user?.name || "User"}.
+            👋 Welcome back, {user?.name || user?.displayName || user?.email?.split('@')[0] || "User"}.
           </h1>
           <p className="text-text-gray text-base">
             We found <strong className="text-text-dark">{sorted.length} stays</strong> in {dest || "your selected location"} that match your travel style.
