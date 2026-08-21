@@ -28,8 +28,32 @@ public class ResortController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<Resort>>> searchByLocation(@RequestParam String location) {
-        return ResponseEntity.ok(ApiResponse.success(resortService.searchByLocation(location)));
+    public ResponseEntity<ApiResponse<List<Resort>>> searchResorts(
+        @RequestParam String search) {
+
+    return ResponseEntity.ok(
+            ApiResponse.success(
+                    resortService.searchResorts(search)
+            )
+        );
+    }
+    @GetMapping("/filter")
+    public ResponseEntity<ApiResponse<List<Resort>>> filterResorts(
+        @RequestParam(required = false) String location,
+        @RequestParam(required = false) BigDecimal minPrice,
+        @RequestParam(required = false) BigDecimal maxPrice,
+        @RequestParam(required = false) Double minRating) {
+
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                    resortService.filterResorts(
+                            location,
+                            minPrice,
+                            maxPrice,
+                            minRating
+                    )
+            )
+    );
     }
 
     @PostMapping

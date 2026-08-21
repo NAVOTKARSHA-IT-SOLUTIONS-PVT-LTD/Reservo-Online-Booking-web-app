@@ -30,8 +30,11 @@ public class ResortService {
                 .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + id));
     }
 
-    public List<Resort> searchByLocation(String query) {
-        return resortRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(query, query);
+    public List<Resort> searchResorts(String search) {
+        return resortRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
+                search,
+                search
+        );
     }
 
     public Resort createResort(Resort resort) {
@@ -52,5 +55,20 @@ public class ResortService {
 
         resort.setStatus(Resort.ResortStatus.PENDING_APPROVAL);
         return resortRepository.save(resort);
+    }
+    public List<Resort> filterResorts(
+        String location,
+        BigDecimal minPrice,
+        BigDecimal maxPrice,
+        Double minRating) {
+
+        return resortRepository.findAll(
+            ResortSpecification.filterResorts(
+                    location,
+                    minPrice,
+                    maxPrice,
+                    minRating
+            )
+    );
     }
 }
