@@ -31,9 +31,12 @@ public class ResortService {
     }
 
     public List<Resort> searchResorts(String search) {
+        if (search == null || search.trim().isEmpty()) {
+            return getAllApprovedResorts();
+        }
         return resortRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
-                search,
-                search
+                search.trim(),
+                search.trim()
         );
     }
 

@@ -29,12 +29,16 @@ public class ResortController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<Resort>>> searchResorts(
-        @RequestParam String search) {
-
-    return ResponseEntity.ok(
-            ApiResponse.success(
-                    resortService.searchResorts(search)
-            )
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "location", required = false) String location,
+            @RequestParam(value = "query", required = false) String query) {
+        String searchTerm = (search != null && !search.isBlank()) ? search
+                : (location != null && !location.isBlank()) ? location
+                : (query != null && !query.isBlank()) ? query : "";
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        resortService.searchResorts(searchTerm)
+                )
         );
     }
     @GetMapping("/filter")

@@ -19,8 +19,8 @@ export const resortService = {
     throw new Error("No resorts available from backend");
   },
 
-  async searchResorts(location) {
-    const result = await apiClient.get(`/api/v1/resorts/search?location=${encodeURIComponent(location)}`);
+  async searchResorts(query) {
+    const result = await apiClient.get(`/api/v1/resorts/search?search=${encodeURIComponent(query || "")}`);
     if (result && result.success && result.data && result.data.length > 0) {
       return result.data.map(item => this.mapBackendResort(item));
     }
