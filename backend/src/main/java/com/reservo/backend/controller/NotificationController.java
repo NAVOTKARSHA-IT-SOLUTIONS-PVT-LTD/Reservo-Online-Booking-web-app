@@ -22,7 +22,8 @@ public class NotificationController {
      * GET /api/v1/notifications?userId=1
      */
     @GetMapping
-    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getNotifications(
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>>
+    getNotifications(
             @RequestParam Long userId
     ) {
 
@@ -38,12 +39,13 @@ public class NotificationController {
     }
 
     /**
-     * Get unread notifications.
+     * Get unread notifications for a user.
      *
      * GET /api/v1/notifications/unread?userId=1
      */
     @GetMapping("/unread")
-    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getUnreadNotifications(
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>>
+    getUnreadNotifications(
             @RequestParam Long userId
     ) {
 
@@ -54,6 +56,66 @@ public class NotificationController {
                 ApiResponse.success(
                         notifications,
                         "Unread notifications retrieved successfully"
+                )
+        );
+    }
+
+    /**
+     * Mark a single notification as read.
+     *
+     * PATCH /api/v1/notifications/{id}/read
+     */
+    @PatchMapping("/{id}/read")
+    public ResponseEntity<ApiResponse<Void>> markAsRead(
+            @PathVariable Long id
+    ) {
+
+        notificationService.markAsRead(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "Notification marked as read"
+                )
+        );
+    }
+
+    /**
+     * Mark all notifications of a user as read.
+     *
+     * PATCH /api/v1/notifications/read-all?userId=1
+     */
+    @PatchMapping("/read-all")
+    public ResponseEntity<ApiResponse<Void>> markAllAsRead(
+            @RequestParam Long userId
+    ) {
+
+        notificationService.markAllAsRead(userId);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "All notifications marked as read"
+                )
+        );
+    }
+
+    /**
+     * Delete a notification.
+     *
+     * DELETE /api/v1/notifications/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteNotification(
+            @PathVariable Long id
+    ) {
+
+        notificationService.deleteNotification(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "Notification deleted successfully"
                 )
         );
     }

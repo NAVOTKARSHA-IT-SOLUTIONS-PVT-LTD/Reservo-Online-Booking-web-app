@@ -53,12 +53,21 @@ public class BookingService {
             BigDecimal amount
     ) {
 
+        // --------------------------------------------------------
+        // 1. FIND USER
+        // --------------------------------------------------------
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "User not found with ID: " + userId
                         )
                 );
+
+
+        // --------------------------------------------------------
+        // 2. FIND RESORT
+        // --------------------------------------------------------
 
         Resort resort = resortRepository.findById(resortId)
                 .orElseThrow(() ->
@@ -67,6 +76,11 @@ public class BookingService {
                         )
                 );
 
+
+        // --------------------------------------------------------
+        // 3. FIND ROOM
+        // --------------------------------------------------------
+
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
@@ -74,12 +88,64 @@ public class BookingService {
                         )
                 );
 
+
+        // --------------------------------------------------------
+        // 4. VALIDATE DATES
+        // --------------------------------------------------------
+
+        if (checkIn == null || checkOut == null) {
+            throw new IllegalArgumentException(
+                    "Check-in and check-out dates are required"
+            );
+        }
+
+        if (!checkOut.isAfter(checkIn)) {
+            throw new IllegalArgumentException(
+                    "Check-out date must be after check-in date"
+            );
+        }
+
+
+        // --------------------------------------------------------
+        // 5. VALIDATE AMOUNT
+        // --------------------------------------------------------
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "Booking amount must be greater than zero"
+            );
+        }
+
+
+        // --------------------------------------------------------
+        // 6. CHECK ROOM AVAILABILITY
+        // --------------------------------------------------------
+
+        if (room.getStatus() != Room.RoomStatus.AVAILABLE) {
+
+            throw new IllegalStateException(
+                    "Room " + room.getRoomNumber()
+                            + " is currently not available"
+            );
+        }
+
+
+        // --------------------------------------------------------
+        // 7. GENERATE BOOKING CODE
+        // --------------------------------------------------------
+
         String code =
                 "RS"
                         + UUID.randomUUID()
                         .toString()
+                        .replace("-", "")
                         .substring(0, 8)
                         .toUpperCase();
+
+
+        // --------------------------------------------------------
+        // 8. CREATE BOOKING
+        // --------------------------------------------------------
 
         Booking booking = Booking.builder()
                 .bookingCode(code)
@@ -89,11 +155,101 @@ public class BookingService {
                 .checkInDate(checkIn)
                 .checkOutDate(checkOut)
                 .totalAmount(amount)
-                .status(Booking.BookingStatus.PENDING)
+
+                /*
+                 * This endpoint is being used as a direct booking
+                 * confirmation endpoint in your current project.
+                 */
+                .status(Booking.BookingStatus.CONFIRMED)
+
                 .bookingSource(Booking.BookingSource.DIRECT)
                 .build();
 
-        return bookingRepository.save(booking);
+
+        booking = bookingRepository.save(booking);
+
+
+        log.info(
+                "Booking {} created successfully for user {}",
+                booking.getBookingCode(),
+                user.getId()
+        );
+
+
+        // --------------------------------------------------------
+        // 9. CREATE BOOKING NOTIFICATION
+        // --------------------------------------------------------
+
+        String notificationMessage =
+                "Your booking "
+                        + booking.getBookingCode()
+                        + " at "
+                        + resort.getName()
+                        + " has been confirmed successfully.";
+
+
+        try {
+
+            notificationService.createNotification(
+                    user,
+                    booking,
+                    Notification.NotificationType.BOOKING_CONFIRMED,
+                    Notification.NotificationChannel.EMAIL,
+                    user.getEmail(),
+                    notificationMessage
+            );
+
+            log.info(
+                    "Booking confirmation notification created for booking {}",
+                    booking.getBookingCode()
+            );
+
+        } catch (Exception e) {
+
+            /*
+             * Notification failure should not cancel the booking.
+             */
+            log.error(
+                    "Failed to create notification for booking {}: {}",
+                    booking.getBookingCode(),
+                    e.getMessage()
+            );
+        }
+
+
+        // --------------------------------------------------------
+        // 10. SEND BOOKING EMAIL
+        // --------------------------------------------------------
+
+        try {
+
+            emailService.sendBookingConfirmationEmail(
+                    user.getEmail(),
+                    user.getName(),
+                    booking.getBookingCode(),
+                    resort.getName(),
+                    booking.getTotalAmount().toString()
+            );
+
+            log.info(
+                    "Booking confirmation email sent to {}",
+                    user.getEmail()
+            );
+
+        } catch (Exception e) {
+
+            /*
+             * Email failure should not cancel the booking.
+             */
+            log.error(
+                    "Failed to send booking confirmation email to {}: {}",
+                    user.getEmail(),
+                    e.getMessage()
+            );
+        }
+
+
+        return booking;
     }
 
 
@@ -117,10 +273,15 @@ public class BookingService {
                                 )
                         );
 
-        // Prevent duplicate confirmation
+
+        // --------------------------------------------------------
+        // PREVENT DUPLICATE CONFIRMATION
+        // --------------------------------------------------------
+
         if (booking.getStatus() != Booking.BookingStatus.PENDING) {
             return booking;
         }
+
 
         // --------------------------------------------------------
         // 1. CONFIRM BOOKING
@@ -211,6 +372,7 @@ public class BookingService {
                         + " at "
                         + booking.getResort().getName()
                         + " has been confirmed successfully.";
+
 
         notificationService.createNotification(
                 user,
@@ -533,3 +695,4 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 }
+

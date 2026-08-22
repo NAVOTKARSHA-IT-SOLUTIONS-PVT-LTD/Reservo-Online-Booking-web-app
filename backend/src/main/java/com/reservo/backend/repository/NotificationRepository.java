@@ -10,10 +10,16 @@ import java.util.List;
 public interface NotificationRepository
         extends JpaRepository<Notification, Long> {
 
+    /**
+     * Get all notifications for a user.
+     * Newest notifications appear first.
+     */
     List<Notification> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    List<Notification> findByUserIdAndStatusOrderByCreatedAtDesc(
-            Long userId,
-            Notification.NotificationStatus status
+    /**
+     * Get unread notifications for a user.
+     */
+    List<Notification> findByUserIdAndReadFalseOrderByCreatedAtDesc(
+            Long userId
     );
 }

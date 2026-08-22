@@ -30,6 +30,11 @@ public class NotificationResponse {
 
     private Notification.NotificationStatus status;
 
+    /**
+     * True when the user has opened/read the notification.
+     */
+    private boolean read;
+
     private Instant sentAt;
 
     private Instant createdAt;

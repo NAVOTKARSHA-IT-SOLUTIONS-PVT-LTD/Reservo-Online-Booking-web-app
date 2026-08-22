@@ -39,10 +39,26 @@ public class Notification {
     @Column(columnDefinition = "TEXT")
     private String message;
 
+    /**
+     * Delivery status of the notification.
+     *
+     * PENDING = notification is waiting to be sent
+     * SENT    = notification was successfully sent
+     * FAILED  = notification sending failed
+     */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
     private NotificationStatus status = NotificationStatus.SENT;
+
+    /**
+     * Whether the user has read the notification.
+     *
+     * This is separate from notification delivery status.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean read = false;
 
     private Instant sentAt;
 
