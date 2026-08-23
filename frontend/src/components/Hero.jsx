@@ -124,6 +124,7 @@ function Hero() {
   const [guestCount, setGuestCount] = useState(2);
   const [childCount, setChildCount] = useState(0);
   const [roomCount, setRoomCount] = useState(1);
+  const [guestsSelected, setGuestsSelected] = useState(false);
 
   // Derived display strings
   const formatDate = (dateStr) => {
@@ -140,7 +141,9 @@ function Hero() {
 
   const checkIn = formatDate(checkInDate) || "Select Date";
   const checkOut = formatDate(checkOutDate) || "Select Date";
-  const guests = `${guestCount} Adult${guestCount !== 1 ? "s" : ""}${childCount > 0 ? `, ${childCount} Child${childCount !== 1 ? "ren" : ""}` : ""}, ${roomCount} Room${roomCount !== 1 ? "s" : ""}`;
+  const guests = guestsSelected
+    ? `${guestCount} Adult${guestCount !== 1 ? "s" : ""}${childCount > 0 ? `, ${childCount} Child${childCount !== 1 ? "ren" : ""}` : ""}, ${roomCount} Room${roomCount !== 1 ? "s" : ""}`
+    : "Select Guests & Rooms";
 
   // Min date for check-in (today)
   const today = new Date().toISOString().split("T")[0];
@@ -171,7 +174,8 @@ function Hero() {
 
   const handleSearchComplete = () => {
     setIsSearching(false);
-    navigate("/search", { state: { location, checkIn, checkOut, guests } });
+    const finalGuests = guestsSelected ? guests : "2 Adults, 1 Room";
+    navigate("/search", { state: { location, checkIn, checkOut, guests: finalGuests } });
   };
 
   const scrollToExplore = () => {
@@ -462,7 +466,7 @@ function Hero() {
           {/* Guests & Rooms - Stepper Dropdown */}
           <div className="flex-1 relative w-full" ref={guestsRef}>
             <div 
-              onClick={() => { setShowGuestsDropdown(!showGuestsDropdown); setShowLocationDropdown(false); }}
+              onClick={() => { setShowGuestsDropdown(!showGuestsDropdown); setShowLocationDropdown(false); setGuestsSelected(true); }}
               className="flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group"
             >
               <Users size={20} className={`transition-colors ${showGuestsDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
