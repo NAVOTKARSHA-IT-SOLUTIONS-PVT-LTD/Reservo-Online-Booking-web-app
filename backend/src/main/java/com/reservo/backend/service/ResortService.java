@@ -34,10 +34,7 @@ public class ResortService {
         if (search == null || search.trim().isEmpty()) {
             return getAllApprovedResorts();
         }
-        return resortRepository.findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
-                search.trim(),
-                search.trim()
-        );
+        return resortRepository.findAll(ResortSpecification.searchResorts(search));
     }
 
     public Resort createResort(Resort resort) {

@@ -68,4 +68,41 @@ public class ResortSpecification {
             );
         };
     }
+
+    public static Specification<Resort> searchResorts(String search) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(
+                    criteriaBuilder.equal(
+                            root.get("status"),
+                            Resort.ResortStatus.APPROVED
+                    )
+            );
+
+            if (search != null && !search.isBlank()) {
+                String[] terms = search.trim().split("[,\\s]+");
+                List<Predicate> termPredicates = new ArrayList<>();
+                for (String term : terms) {
+                    if (!term.isBlank()) {
+                        String pattern = "%" + term.toLowerCase() + "%";
+                        termPredicates.add(
+                                criteriaBuilder.or(
+                                        criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), pattern),
+                                        criteriaBuilder.like(criteriaBuilder.lower(root.get("location")), pattern),
+                                        criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), pattern)
+                                )
+                        );
+                    }
+                }
+                if (!termPredicates.isEmpty()) {
+                    predicates.add(criteriaBuilder.or(termPredicates.toArray(new Predicate[0])));
+                }
+            }
+
+            return criteriaBuilder.and(
+                    predicates.toArray(new Predicate[0])
+            );
+        };
+    }
 }

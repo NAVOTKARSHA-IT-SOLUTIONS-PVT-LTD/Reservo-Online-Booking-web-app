@@ -27,6 +27,7 @@ import hero4 from "../assets/images/hero4.jpg";
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 import heroVideo1 from "../assets/images/hero-video1.mp4";
 import heroVideo2 from "../assets/images/hero-Video2.mp4";
+import CustomCalendar from "./CustomCalendar";
 
 const HERO_VIDEOS = [
   heroVideo1,
@@ -81,6 +82,7 @@ function Hero() {
   // Dropdown visibility states
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
+  const [showCalendarDropdown, setShowCalendarDropdown] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
 
   // Refs for outside-click detection
@@ -88,6 +90,7 @@ function Hero() {
   const checkInRef = useRef(null);
   const checkOutRef = useRef(null);
   const guestsRef = useRef(null);
+  const calendarRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -106,6 +109,9 @@ function Hero() {
       if (guestsRef.current && !guestsRef.current.contains(e.target)) {
         setShowGuestsDropdown(false);
       }
+      if (calendarRef.current && !calendarRef.current.contains(e.target)) {
+        setShowCalendarDropdown(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -116,6 +122,7 @@ function Hero() {
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
   const [guestCount, setGuestCount] = useState(2);
+  const [childCount, setChildCount] = useState(0);
   const [roomCount, setRoomCount] = useState(1);
 
   // Derived display strings
@@ -133,7 +140,7 @@ function Hero() {
 
   const checkIn = formatDate(checkInDate) || "Select Date";
   const checkOut = formatDate(checkOutDate) || "Select Date";
-  const guests = `${guestCount} Guest${guestCount > 1 ? "s" : ""}, ${roomCount} Room${roomCount > 1 ? "s" : ""}`;
+  const guests = `${guestCount} Adult${guestCount !== 1 ? "s" : ""}${childCount > 0 ? `, ${childCount} Child${childCount !== 1 ? "ren" : ""}` : ""}, ${roomCount} Room${roomCount !== 1 ? "s" : ""}`;
 
   // Min date for check-in (today)
   const today = new Date().toISOString().split("T")[0];
@@ -400,63 +407,56 @@ function Hero() {
             )}
           </div>
 
-          {/* Check In - Date Picker */}
-          <div className="flex-1 relative w-full" ref={checkInRef}>
-            <div className="flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group relative">
-              <Calendar size={20} className="text-gray-400 group-hover:text-primary transition-colors pointer-events-none" />
-              <div className="flex flex-col w-full text-left pointer-events-none">
+          {/* Dates Container - Check In & Check Out */}
+          <div className="flex-1 flex flex-col md:flex-row w-full divide-y md:divide-y-0 md:divide-x divide-border-color relative" ref={calendarRef}>
+            
+            {/* Check In */}
+            <div 
+              onClick={() => { setShowCalendarDropdown(true); setShowLocationDropdown(false); setShowGuestsDropdown(false); }}
+              className="flex-1 flex items-center gap-3 px-6 py-2 md:py-0 cursor-pointer group"
+            >
+              <Calendar size={20} className={`transition-colors ${showCalendarDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
+              <div className="flex flex-col w-full text-left">
                 <label className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Check In</label>
                 <span className={`text-[15px] font-bold transition-colors duration-300 ${checkInDate ? 'text-text-dark' : 'text-gray-400'}`}>
                   {checkIn}
                 </span>
                 <span className="text-[12px] text-gray-400">{getDayName(checkInDate)}</span>
               </div>
-              <input
-                type="date"
-                min={today}
-                value={checkInDate}
-                onChange={(e) => {
-                  setCheckInDate(e.target.value);
-                  if (!checkOutDate || e.target.value >= checkOutDate) {
-                    const next = new Date(e.target.value + "T00:00:00");
-                    next.setDate(next.getDate() + 1);
-                    setCheckOutDate(next.toISOString().split("T")[0]);
-                  }
-                }}
-                onClick={(e) => {
-                  if (typeof e.target.showPicker === 'function') {
-                    try { e.target.showPicker(); } catch (err) {}
-                  }
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
             </div>
-          </div>
 
-          {/* Check Out - Date Picker */}
-          <div className="flex-1 relative w-full" ref={checkOutRef}>
-            <div className="flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group relative">
-              <Calendar size={20} className="text-gray-400 group-hover:text-primary transition-colors pointer-events-none" />
-              <div className="flex flex-col w-full text-left pointer-events-none">
+            {/* Check Out */}
+            <div 
+              onClick={() => { setShowCalendarDropdown(true); setShowLocationDropdown(false); setShowGuestsDropdown(false); }}
+              className="flex-1 flex items-center gap-3 px-6 py-2 md:py-0 cursor-pointer group"
+            >
+              <Calendar size={20} className={`transition-colors ${showCalendarDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
+              <div className="flex flex-col w-full text-left">
                 <label className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Check Out</label>
                 <span className={`text-[15px] font-bold transition-colors duration-300 ${checkOutDate ? 'text-text-dark' : 'text-gray-400'}`}>
                   {checkOut}
                 </span>
                 <span className="text-[12px] text-gray-400">{getDayName(checkOutDate)}</span>
               </div>
-              <input
-                type="date"
-                min={checkInDate || today}
-                value={checkOutDate}
-                onChange={(e) => setCheckOutDate(e.target.value)}
-                onClick={(e) => {
-                  if (typeof e.target.showPicker === 'function') {
-                    try { e.target.showPicker(); } catch (err) {}
-                  }
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
             </div>
+
+            {/* Custom Calendar Dropdown */}
+            {showCalendarDropdown && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-[320px] mb-3 bg-bg-white rounded-2xl shadow-[0_-20px_60px_rgba(0,0,0,0.15)] border border-border-color overflow-hidden z-50 animate-fade-in p-2">
+                <CustomCalendar
+                  checkInDate={checkInDate}
+                  checkOutDate={checkOutDate}
+                  onDateChange={(ci, co) => {
+                    setCheckInDate(ci);
+                    setCheckOutDate(co);
+                    if (ci && co) {
+                      setTimeout(() => setShowCalendarDropdown(false), 300);
+                    }
+                  }}
+                  isDarkMode={document.body.classList.contains("dark-theme")}
+                />
+              </div>
+            )}
           </div>
 
           {/* Guests & Rooms - Stepper Dropdown */}
@@ -478,11 +478,11 @@ function Hero() {
             {/* Guests Dropdown (Positions above search bar) */}
             {showGuestsDropdown && (
               <div className="absolute bottom-full right-0 md:right-0 md:left-auto w-full md:w-[280px] mb-3 bg-bg-white rounded-2xl shadow-[0_-20px_60px_rgba(0,0,0,0.15)] border border-border-color overflow-hidden z-50 animate-fade-in p-5 space-y-5">
-                {/* Guests Stepper */}
+                {/* Adults Stepper */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[14px] font-bold text-text-dark transition-colors duration-300">Guests</p>
-                    <p className="text-[12px] text-gray-400">Adults & children</p>
+                    <p className="text-[14px] font-bold text-text-dark transition-colors duration-300">Adults</p>
+                    <p className="text-[12px] text-gray-400">Ages 13 or above</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
@@ -501,6 +501,37 @@ function Hero() {
                         guestCount >= 12 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-border-color text-text-dark hover:border-primary hover:text-primary'
                       }`}
                       disabled={guestCount >= 12}
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border-t border-border-color"></div>
+
+                {/* Children Stepper */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[14px] font-bold text-text-dark transition-colors duration-300">Children</p>
+                    <p className="text-[12px] text-gray-400">Ages 2–12</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setChildCount(Math.max(0, childCount - 1)); }}
+                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
+                        childCount <= 0 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-border-color text-text-dark hover:border-primary hover:text-primary'
+                      }`}
+                      disabled={childCount <= 0}
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="text-[16px] font-bold text-text-dark w-6 text-center transition-colors duration-300">{childCount}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setChildCount(Math.min(6, childCount + 1)); }}
+                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
+                        childCount >= 6 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-border-color text-text-dark hover:border-primary hover:text-primary'
+                      }`}
+                      disabled={childCount >= 6}
                     >
                       <Plus size={14} />
                     </button>
