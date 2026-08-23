@@ -315,7 +315,7 @@ function Hero() {
               <MapPin size={20} className={`transition-colors ${showLocationDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
               <div className="flex flex-col w-full text-left">
                 <label className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Where to?</label>
-                <span className={`text-[15px] font-bold transition-colors duration-300 ${location ? 'text-text-dark' : 'text-gray-400'}`}>
+                <span className="text-[15px] font-bold text-text-dark transition-colors duration-300">
                   {location || "Select Destination"}
                 </span>
                 <span className="text-[12px] text-gray-400">All Destinations <ChevronDown size={12} className={`inline transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} /></span>
@@ -422,7 +422,7 @@ function Hero() {
               <Calendar size={20} className={`transition-colors ${showCalendarDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
               <div className="flex flex-col w-full text-left">
                 <label className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Check In</label>
-                <span className={`text-[15px] font-bold transition-colors duration-300 ${checkInDate ? 'text-text-dark' : 'text-gray-400'}`}>
+                <span className="text-[15px] font-bold text-text-dark transition-colors duration-300">
                   {checkIn}
                 </span>
                 <span className="text-[12px] text-gray-400">{getDayName(checkInDate)}</span>
@@ -437,7 +437,7 @@ function Hero() {
               <Calendar size={20} className={`transition-colors ${showCalendarDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
               <div className="flex flex-col w-full text-left">
                 <label className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Check Out</label>
-                <span className={`text-[15px] font-bold transition-colors duration-300 ${checkOutDate ? 'text-text-dark' : 'text-gray-400'}`}>
+                <span className="text-[15px] font-bold text-text-dark transition-colors duration-300">
                   {checkOut}
                 </span>
                 <span className="text-[12px] text-gray-400">{getDayName(checkOutDate)}</span>

@@ -139,9 +139,26 @@ public class LoyaltyService {
     }
 
     public Integer validateCoupon(String email, String code) {
+        String cleanCode = code.trim().toUpperCase();
+        
+        // Support general/demo coupons for guests and logged-in users alike
+        if (cleanCode.equals("WELCOME10") || cleanCode.equals("SAVE10") || cleanCode.equals("DEMO") || cleanCode.equals("RIVO10") || cleanCode.equals("RIVO-10")) {
+            return 10;
+        }
+        if (cleanCode.equals("WELCOME15") || cleanCode.equals("SAVE15") || cleanCode.equals("RIVO15") || cleanCode.equals("RIVO-15")) {
+            return 15;
+        }
+        if (cleanCode.equals("WELCOME20") || cleanCode.equals("SAVE20") || cleanCode.equals("RIVO20") || cleanCode.equals("RIVO-20")) {
+            return 20;
+        }
+
+        if (email == null) {
+            throw new IllegalArgumentException("Invalid coupon code. Please log in to validate user-specific coupons.");
+        }
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        Coupon coupon = couponRepository.findByCodeAndUserId(code.trim(), user.getId())
+        Coupon coupon = couponRepository.findByCodeAndUserId(cleanCode, user.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid coupon code or not owned by you."));
         if (coupon.getStatus() != Coupon.CouponStatus.ACTIVE) {
             throw new IllegalArgumentException("Coupon is already used or expired.");

@@ -82,7 +82,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/v1/resorts/**", "/api/v1/offers/**", "/api/v1/rooms/**", "/api/v1/reviews/**", "/api/v1/availability/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/resorts/**", "/api/v1/offers/**", "/api/v1/rooms/**", "/api/v1/reviews/**", "/api/v1/availability/**", "/api/v1/rewards/validate").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/ai/chat", "/api/v1/ai/itinerary").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/resorts").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/resorts/**", "/api/v1/rooms/**").hasAnyRole("OWNER", "ADMIN")

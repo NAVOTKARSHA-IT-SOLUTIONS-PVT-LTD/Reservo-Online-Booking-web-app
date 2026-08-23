@@ -36,7 +36,7 @@ public class LoyaltyController {
     @GetMapping("/validate")
     public ResponseEntity<ApiResponse<Integer>> validateCoupon(@RequestParam String code) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
+        String email = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) ? auth.getName() : null;
         Integer discount = loyaltyService.validateCoupon(email, code);
         return ResponseEntity.ok(ApiResponse.success(discount, "Coupon code is valid"));
     }
