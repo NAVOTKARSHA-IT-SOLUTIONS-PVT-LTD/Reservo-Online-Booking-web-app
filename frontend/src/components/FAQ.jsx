@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Sparkles, X, Plus } from "lucide-react";
 
 const faqData = [
   {
@@ -34,17 +35,11 @@ const faqData = [
 ];
 
 function FAQ() {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const toggleFAQ = (index) => {
-    setActiveIndex(activeIndex === index ? null : index);
-  };
+  const [selectedFaq, setSelectedFaq] = useState(null);
 
   return (
     <section className="py-12 bg-bg-light transition-colors duration-300">
-
       <div className="w-[90%] max-w-[1300px] mx-auto">
-
         <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-2">
           Help Center
         </span>
@@ -58,48 +53,79 @@ function FAQ() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-3.5 max-w-[1000px] mx-auto mt-6">
-
           {faqData.map((item, index) => {
-            const isActive = activeIndex === index;
             return (
               <div
-                className={`bg-bg-white border border-border-color rounded-xl overflow-hidden shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.02)] h-fit ${
-                  isActive ? "border-l-4 border-l-gold shadow-md" : ""
-                }`}
                 key={index}
+                onClick={() => setSelectedFaq(item)}
+                className="bg-bg-white border border-border-color rounded-xl overflow-hidden shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md cursor-pointer flex justify-between items-center px-5 py-4 gap-3 group"
               >
+                <h3 className="text-[14px] font-bold text-text-dark m-0 leading-snug group-hover:text-primary transition-colors">
+                  {item.question}
+                </h3>
 
-                <div
-                  className="flex justify-between items-center px-5 py-4 cursor-pointer transition-colors duration-300 hover:bg-bg-light gap-3"
-                  onClick={() => toggleFAQ(index)}
-                >
-
-                  <h3 className="text-[14px] font-bold text-text-dark m-0 leading-snug">{item.question}</h3>
-
-                  <span className={`shrink-0 w-7 h-7 rounded-full flex justify-center items-center text-md font-bold transition-all duration-300 ease-out ${
-                    isActive 
-                      ? "bg-gold text-white rotate-180" 
-                      : "bg-bg-light border border-border-color text-text-gray"
-                  }`}>
-                    {isActive ? "−" : "+"}
-                  </span>
-
-                </div>
-
-                {isActive && (
-                  <div className="px-5 pb-4 bg-bg-white animate-in fade-in slide-in-from-top-2 duration-300">
-                    <p className="text-text-gray text-[12.5px] leading-relaxed m-0">{item.answer}</p>
-                  </div>
-                )}
-
+                <span className="shrink-0 w-8 h-8 rounded-full flex justify-center items-center bg-bg-light border border-border-color text-text-gray group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all duration-300">
+                  <Plus size={16} />
+                </span>
               </div>
             );
           })}
-
         </div>
-
       </div>
 
+      {/* FAQ Answer Modal Popup (Matches Image 2) */}
+      {selectedFaq && (
+        <div
+          className="fixed inset-0 bg-black/65 backdrop-blur-md z-[9999] flex items-center justify-center p-4"
+          onClick={() => setSelectedFaq(null)}
+        >
+          <div
+            className="bg-bg-white border border-border-color rounded-[32px] p-6 sm:p-8 max-w-lg w-full relative shadow-2xl text-left space-y-4 animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedFaq(null)}
+              className="absolute top-5 right-5 text-text-gray hover:text-text-dark bg-bg-light border border-border-color p-2 rounded-full cursor-pointer transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Top Icon Badge */}
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-2">
+              <Sparkles size={22} />
+            </div>
+
+            {/* Category Pill */}
+            <div>
+              <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-[10px] font-extrabold uppercase tracking-widest rounded-full">
+                FAQ Detail
+              </span>
+            </div>
+
+            {/* Question Title */}
+            <h3 className="text-xl sm:text-2xl font-black text-text-dark font-serif leading-snug">
+              {selectedFaq.question}
+            </h3>
+
+            {/* Answer Content */}
+            <p className="text-[14px] text-text-gray font-medium leading-relaxed">
+              {selectedFaq.answer}
+            </p>
+
+            {/* Concierge Highlight Container */}
+            <div className="bg-bg-light border border-border-color rounded-2xl p-4 space-y-2 mt-4">
+              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-primary flex items-center gap-1.5 m-0">
+                <Sparkles size={12} /> CONCIERGE HIGHLIGHT:
+              </h4>
+              <p className="text-[12px] text-text-gray leading-relaxed font-semibold m-0">
+                Rivo AI is fully optimized to sync with this feature. You can ask Rivo inside the chatbot at the bottom right to learn more about how we personalize recommendation profiles, verify luxury stays, manage checkout, or order concierge services.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
