@@ -27,11 +27,14 @@ import hero4 from "../assets/images/hero4.jpg";
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 import heroVideo1 from "../assets/images/hero-video1.mp4";
 import heroVideo2 from "../assets/images/hero-Video2.mp4";
+import heroVideo3 from "../assets/images/hero-video3.mp4";
 import CustomCalendar from "./CustomCalendar";
 
 const HERO_VIDEOS = [
   heroVideo1,
   heroVideo2,
+  heroVideo3,
+  
 ];
 
 
