@@ -402,7 +402,7 @@ export default function Login() {
                 onClick={() => setAuthMethod("email")}
                 className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 ${
                   authMethod === "email"
-                    ? "bg-white text-primary shadow-sm"
+                    ? "bg-bg-white text-primary border border-border-color shadow-sm"
                     : "text-text-gray hover:text-text-dark"
                 }`}
               >
@@ -414,7 +414,7 @@ export default function Login() {
                 onClick={() => setAuthMethod("phone")}
                 className={`flex-1 py-2 rounded-lg text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 ${
                   authMethod === "phone"
-                    ? "bg-white text-primary shadow-sm"
+                    ? "bg-bg-white text-primary border border-border-color shadow-sm"
                     : "text-text-gray hover:text-text-dark"
                 }`}
               >
@@ -647,8 +647,8 @@ export default function Login() {
                 className="py-1.5 bg-bg-white border border-border-color hover:bg-bg-light rounded-xl flex items-center justify-center cursor-pointer transition-all duration-300"
                 title="Continue with X (Twitter)"
               >
-                <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-                  <path fill="#000000" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                <svg viewBox="0 0 24 24" width="16" height="16" className="text-text-dark fill-current" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
               </button>
             </div>

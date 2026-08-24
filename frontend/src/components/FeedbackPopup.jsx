@@ -75,11 +75,13 @@ function FeedbackPopup() {
           overflow-hidden
           rounded-[24px]
           border
-          border-white/40
-          bg-white/95
+          border-border-color
+          bg-bg-white
           backdrop-blur-xl
           p-6
-          shadow-[0_20px_60px_rgba(0,0,0,0.20)]
+          shadow-[0_20px_60px_rgba(0,0,0,0.25)]
+          transition-colors
+          duration-300
         "
       >
 
@@ -92,48 +94,49 @@ function FeedbackPopup() {
             h-32
             w-32
             rounded-full
-            bg-blue-400/20
+            bg-primary/20
             blur-2xl
           "
         />
 
         
         {/* Close Button */}
-<button
-  type="button"
-  aria-label="Close feedback"
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsVisible(false);
-  }}
-  className="
-    absolute
-    right-4
-    top-4
-    z-50
-    flex
-    h-9
-    w-9
-    items-center
-    justify-center
-    rounded-full
-    bg-white/80
-    text-gray-600
-    shadow-sm
-    transition-all
-    duration-300
-    hover:bg-white
-    hover:text-gray-900
-    hover:scale-110
-    cursor-pointer
-  "
->
-  <X size={18} strokeWidth={2} />
-</button>
+        <button
+          type="button"
+          aria-label="Close feedback"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsVisible(false);
+          }}
+          className="
+            absolute
+            right-4
+            top-4
+            z-50
+            flex
+            h-9
+            w-9
+            items-center
+            justify-center
+            rounded-full
+            bg-bg-light
+            border
+            border-border-color
+            text-text-gray
+            shadow-sm
+            transition-all
+            duration-300
+            hover:text-text-dark
+            hover:scale-110
+            cursor-pointer
+          "
+        >
+          <X size={18} strokeWidth={2} />
+        </button>
 
         {/* Header */}
-        <div className="relative mb-5">
+        <div className="relative mb-5 text-left">
           <div className="mb-3 flex items-center gap-2">
             <div
               className="
@@ -143,8 +146,8 @@ function FeedbackPopup() {
                 items-center
                 justify-center
                 rounded-full
-                bg-blue-50
-                text-blue-600
+                bg-primary/10
+                text-primary
               "
             >
               <Sparkles size={18} />
@@ -156,7 +159,7 @@ function FeedbackPopup() {
                 font-bold
                 uppercase
                 tracking-[0.15em]
-                text-blue-600
+                text-primary
               "
             >
               Quick Feedback
@@ -169,24 +172,24 @@ function FeedbackPopup() {
               text-[22px]
               font-bold
               leading-tight
-              text-[#0A2342]
+              text-text-dark
             "
           >
             Enjoying Reservo?
           </h3>
 
-          <p className="mt-1 text-[13px] leading-relaxed text-gray-500">
+          <p className="mt-1 text-[13px] leading-relaxed text-text-gray font-medium">
             We'd love to know how your experience has been so far.
           </p>
         </div>
 
         {/* Rating */}
-        <div className="relative">
-          <p className="mb-3 text-[13px] font-semibold text-[#0A2342]">
+        <div className="relative text-left">
+          <p className="mb-3 text-[13px] font-bold text-text-dark">
             How would you rate your experience?
           </p>
 
-          <div className="flex justify-between rounded-2xl bg-gray-50 p-3">
+          <div className="flex justify-between rounded-2xl bg-bg-light border border-border-color p-3">
             {[
               { emoji: "😞", label: "Poor" },
               { emoji: "😕", label: "Okay" },
@@ -196,6 +199,7 @@ function FeedbackPopup() {
             ].map((item, index) => (
               <button
                 key={item.label}
+                type="button"
                 onClick={() => handleRating(index)}
                 title={item.label}
                 className={`
@@ -206,12 +210,14 @@ function FeedbackPopup() {
                   justify-center
                   rounded-xl
                   text-[22px]
+                  cursor-pointer
+                  border-none
                   transition-all
                   duration-300
                   ${
                     selectedRating === index
-                      ? "scale-110 bg-white shadow-md"
-                      : "hover:scale-110 hover:bg-white hover:shadow-sm"
+                      ? "scale-110 bg-bg-white border border-border-color shadow-md"
+                      : "hover:scale-110 hover:bg-bg-white hover:shadow-sm"
                   }
                 `}
               >
@@ -223,7 +229,7 @@ function FeedbackPopup() {
 
         {/* Message appears after rating */}
         {showMessage && (
-          <div className="mt-4 animate-fade-in">
+          <div className="mt-4 animate-fade-in text-left">
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -234,20 +240,22 @@ function FeedbackPopup() {
                 resize-none
                 rounded-xl
                 border
-                border-gray-200
-                bg-gray-50
+                border-border-color
+                bg-bg-light
                 px-4
                 py-3
-                text-sm
-                text-gray-800
+                text-xs
+                font-semibold
+                text-text-dark
                 outline-none
                 transition
-                focus:border-blue-400
-                focus:bg-white
+                focus:border-primary
+                focus:bg-bg-white
               "
             />
 
             <button
+              type="button"
               onClick={handleSubmit}
               className="
                 mt-3
@@ -257,22 +265,23 @@ function FeedbackPopup() {
                 justify-center
                 gap-2
                 rounded-xl
-                bg-[#2563EB]
+                bg-primary
                 py-3
-                text-sm
-                font-semibold
+                text-xs
+                font-bold
                 text-white
+                border-none
+                cursor-pointer
                 shadow-lg
-                shadow-blue-500/20
+                shadow-primary/20
                 transition-all
                 duration-300
-                hover:-translate-y-0.5
-                hover:bg-[#1D4ED8]
+                hover:bg-primary-dark
                 active:scale-[0.98]
               "
             >
               Send Feedback
-              <Send size={16} />
+              <Send size={14} />
             </button>
           </div>
         )}

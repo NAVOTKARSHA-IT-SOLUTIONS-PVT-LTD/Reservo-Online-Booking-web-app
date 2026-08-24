@@ -187,3 +187,41 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   animation: feedbackPopup 0.7s cubic-bezier(0.16, 1, 0.3, 1)
     forwards;
 }
+
+/* Autofill browser input styling overrides for light and dark themes */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--color-text-dark) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--color-bg-light) inset !important;
+  box-shadow: 0 0 0px 1000px var(--color-bg-light) inset !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+  caret-color: var(--color-text-dark) !important;
+}
+
+body.dark-theme input:-webkit-autofill,
+body.dark-theme input:-webkit-autofill:hover, 
+body.dark-theme input:-webkit-autofill:focus, 
+body.dark-theme input:-webkit-autofill:active,
+body.dark-theme textarea:-webkit-autofill,
+body.dark-theme textarea:-webkit-autofill:hover,
+body.dark-theme textarea:-webkit-autofill:focus,
+body.dark-theme textarea:-webkit-autofill:active,
+body.dark-theme select:-webkit-autofill,
+body.dark-theme select:-webkit-autofill:hover,
+body.dark-theme select:-webkit-autofill:focus,
+body.dark-theme select:-webkit-autofill:active {
+  -webkit-text-fill-color: #F1F6FF !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0A1120 inset !important;
+  box-shadow: 0 0 0px 1000px #0A1120 inset !important;
+  caret-color: #F1F6FF !important;
+}
