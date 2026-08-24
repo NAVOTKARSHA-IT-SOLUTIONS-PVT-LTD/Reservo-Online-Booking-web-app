@@ -33,13 +33,6 @@ function Testimonials() {
   const { t } = useTranslation();
   return (
     <section className="py-12 bg-bg-light relative overflow-hidden transition-colors duration-300" id="testimonials">
-      {/* Decorative Dots */}
-      <div className="absolute top-12 left-12 w-24 h-24 bg-[radial-gradient(#e5e7eb_2px,transparent_2px)] [background-size:12px_12px] opacity-60"></div>
-      <div className="absolute bottom-32 right-12 w-24 h-24 bg-[radial-gradient(#e5e7eb_2px,transparent_2px)] [background-size:12px_12px] opacity-60"></div>
-      
-      {/* Decorative Palm Silhouette */}
-      <div className="absolute top-0 right-0 w-64 h-64 opacity-5 pointer-events-none bg-[url('https://cdn-icons-png.flaticon.com/512/3663/3663189.png')] bg-no-repeat bg-right-top bg-contain"></div>
-
       <div className="w-full max-w-[1280px] mx-auto px-5 relative z-10 flex flex-col items-center">
         
         {/* Header */}
