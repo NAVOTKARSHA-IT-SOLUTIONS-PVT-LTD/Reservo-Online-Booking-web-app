@@ -336,6 +336,9 @@ export default function BecomeAHost() {
       }
 
       hostService.addListing(newListing);
+      localStorage.setItem("reservo_user_has_published", "true");
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("reservo-host-data-updated"));
 
       let currentUser = authService.getCurrentUser();
       if (!currentUser) {

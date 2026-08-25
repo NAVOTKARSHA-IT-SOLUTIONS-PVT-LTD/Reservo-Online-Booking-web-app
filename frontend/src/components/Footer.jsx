@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { X, Send, MessageSquare, CheckCircle2 } from "lucide-react";
 import logoImage from "../assets/images/logo.png";
+import { hostService } from "../services/host.service";
 
 // Inline SVG components for brand and utility icons
 const GlobeIcon = ({ className = "w-4 h-4" }) => (
@@ -115,6 +116,20 @@ function Footer() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  const [hasPublished, setHasPublished] = useState(() => hostService.hasPublishedListing());
+
+  useEffect(() => {
+    const handleHostCheck = () => {
+      setHasPublished(hostService.hasPublishedListing());
+    };
+    window.addEventListener("storage", handleHostCheck);
+    window.addEventListener("reservo-host-data-updated", handleHostCheck);
+    return () => {
+      window.removeEventListener("storage", handleHostCheck);
+      window.removeEventListener("reservo-host-data-updated", handleHostCheck);
+    };
+  }, []);
 
   const renderFeedbackModal = () => {
     if (!showFeedbackModal) return null;
@@ -391,6 +406,15 @@ function Footer() {
                     className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
                   >
                     <span>About Us</span>
+                  </Link>
+                </li>
+
+                <li>
+                  <Link
+                    to={hasPublished ? "/host/dashboard" : "/become-a-host"}
+                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                  >
+                    <span>{hasPublished ? "Host Administration" : "Become a Host"}</span>
                   </Link>
                 </li>
 

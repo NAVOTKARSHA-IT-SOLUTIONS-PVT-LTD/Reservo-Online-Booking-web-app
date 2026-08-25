@@ -9,6 +9,7 @@ import {
 import logoImage from "../assets/images/logo.png";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "../services/auth.service";
+import { hostService } from "../services/host.service";
 import { useToast } from "../context/ToastContext";
 
 function Header({ isDark, onToggleTheme, wishlist = [] }) {
@@ -26,6 +27,20 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
     navigate("/become-a-host");
     setIsMenuOpen(false);
   };
+
+  const [hasPublished, setHasPublished] = useState(() => hostService.hasPublishedListing());
+
+  useEffect(() => {
+    const handleHostCheck = () => {
+      setHasPublished(hostService.hasPublishedListing());
+    };
+    window.addEventListener("storage", handleHostCheck);
+    window.addEventListener("reservo-host-data-updated", handleHostCheck);
+    return () => {
+      window.removeEventListener("storage", handleHostCheck);
+      window.removeEventListener("reservo-host-data-updated", handleHostCheck);
+    };
+  }, []);
 
   useEffect(() => {
     const clickOutside = (e) => {
@@ -289,11 +304,10 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                 { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" }
               ] : [
                 { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || user?.displayName || user?.email?.split('@')[0] || "User"})`, path: "/profile" },
-                ...(user?.role === "ROLE_ADMIN" || user?.role === "ROLE_OWNER" ? [
+                ...(hasPublished ? [
                   { type: "item", icon: <Building2 size={18} />, label: "Host Administration", path: "/host/dashboard" }
-                ] : [
-                  { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" }
-                ])
+                ] : []),
+                { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" }
               ]),
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
