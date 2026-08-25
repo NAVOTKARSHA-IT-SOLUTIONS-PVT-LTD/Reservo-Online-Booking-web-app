@@ -1,30 +1,98 @@
 import { apiClient } from "./apiClient";
 import { RESORTS } from "../data/resortsData";
 import { ALL_RESORTS } from "../data/resorts";
+import { hostService } from "./host.service";
 
 export const resortService = {
   async getAllResorts() {
-    const result = await apiClient.get("/api/v1/resorts");
-    if (result && result.success && result.data && result.data.length > 0) {
-      return result.data.map(item => this.mapBackendResort(item));
+    let resortsList = [];
+    try {
+      const result = await apiClient.get("/api/v1/resorts");
+      if (result && result.success && result.data && result.data.length > 0) {
+        resortsList = result.data.map(item => this.mapBackendResort(item));
+      }
+    } catch (e) {
+      console.warn("Backend resorts endpoint not reachable, using static resorts", e);
     }
-    throw new Error("No resorts available from backend");
+
+    if (!resortsList.length) {
+      resortsList = Array.isArray(ALL_RESORTS) ? [...ALL_RESORTS] : [];
+    }
+
+    // Merge user-published listings from hostService so new listings immediately show on the Resort Listing page
+    try {
+      const hostListings = hostService.getListings() || [];
+      const userListingsMapped = hostListings.map(listing => this.mapHostListingToResort(listing));
+      
+      const existingIds = new Set(resortsList.map(r => String(r.id)));
+      userListingsMapped.forEach(ul => {
+        if (!existingIds.has(String(ul.id))) {
+          resortsList.unshift(ul); // Put user published listing right at top!
+        }
+      });
+    } catch (err) {
+      console.warn("Error merging user host listings into resort list", err);
+    }
+
+    return resortsList;
   },
 
   async getSearchResorts() {
-    const result = await apiClient.get("/api/v1/resorts");
-    if (result && result.success && result.data && result.data.length > 0) {
-      return result.data.map(item => this.mapBackendResort(item));
-    }
-    throw new Error("No resorts available from backend");
+    return this.getAllResorts();
   },
 
   async searchResorts(query) {
-    const result = await apiClient.get(`/api/v1/resorts/search?search=${encodeURIComponent(query || "")}`);
-    if (result && result.success && result.data && result.data.length > 0) {
-      return result.data.map(item => this.mapBackendResort(item));
-    }
-    throw new Error("No resorts found");
+    const all = await this.getAllResorts();
+    if (!query || !query.trim()) return all;
+
+    const q = query.toLowerCase().trim();
+    return all.filter(r => 
+      (r.name && r.name.toLowerCase().includes(q)) ||
+      (r.location && r.location.toLowerCase().includes(q)) ||
+      (r.description && r.description.toLowerCase().includes(q)) ||
+      (r.categoryLabel && r.categoryLabel.toLowerCase().includes(q)) ||
+      (r.badge && r.badge.toLowerCase().includes(q))
+    );
+  },
+
+  mapHostListingToResort(listing) {
+    const rawCity = listing.location?.city || (typeof listing.location === 'string' ? listing.location.split(',')[0] : "Goa");
+    const city = rawCity ? rawCity.trim() : "Goa";
+    const cover = listing.coverImage || listing.images?.[0] || "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80";
+    const rawPrice = Number(listing.pricePerNight || listing.price) || 24500;
+    
+    // Standardize category key for filter matching
+    let catKey = (listing.category || "villa").toLowerCase();
+    if (catKey.includes("villa")) catKey = "villa";
+    else if (catKey.includes("beach")) catKey = "beach";
+    else if (catKey.includes("mountain") || catKey.includes("hill")) catKey = "mountain";
+    else if (catKey.includes("island")) catKey = "island";
+    else if (catKey.includes("chalet")) catKey = "chalet";
+
+    return {
+      id: listing.id || `published-${Date.now()}`,
+      name: listing.title || listing.name || `Luxury ${listing.category || "Villa"} in ${city}`,
+      location: city,
+      city: city,
+      description: listing.description || "Exquisite luxury retreat designed for unforgettable staycations.",
+      image: cover,
+      heroImage: cover,
+      price: rawPrice,
+      pricePerNight: rawPrice,
+      rating: 5.0,
+      reviewCount: listing.reviewsCount || 0,
+      reviewsCount: listing.reviewsCount || 0,
+      badge: listing.category || "Luxury Stay",
+      featuredTag: listing.category || "Luxury Stay",
+      currency: "₹",
+      highlights: (listing.amenities && listing.amenities.length > 0)
+        ? listing.amenities.slice(0, 4) 
+        : ["Private Infinity Pool", "High-Speed WiFi", "Climate Control"],
+      amenities: (listing.amenities || []).map(a => typeof a === "string" ? { name: a, icon: "Sparkles" } : a),
+      perks: ["Free Cancellation", "Breakfast Included", "Transfer Services"],
+      category: catKey,
+      categoryLabel: listing.category || "Luxury Villa"
+    };
   },
 
   async getResortById(id) {
@@ -208,7 +276,7 @@ export const resortService = {
   },
 
   async createResort(resortData) {
-    const result = await apiClient.post("/api/v1/resorts", resortData);
+    const result = await apiClient.post("/api/v1/resorts", resortData, { suppressAuthRedirect: true });
     if (result && result.success) {
       return result.data;
     }

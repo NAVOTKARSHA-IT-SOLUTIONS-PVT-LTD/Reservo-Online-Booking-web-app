@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -6,22 +6,23 @@ import {
   ArrowRight, ArrowLeft, Check, Camera, 
   Users, Bed, Bath, Plus, Minus, ChevronDown, Award, Zap, HeartHandshake, 
   ShieldCheck, Coffee, Wifi, Tv, Wind, 
-  Waves, Mountain, Compass
+  Waves, Mountain, Compass, Upload, Video, Globe, FileImage, X,
+  Star, Heart, ChevronRight
 } from "lucide-react";
 import { hostService } from "../services/host.service";
 import { authService } from "../services/auth.service";
 import { resortService } from "../services/resort.service";
 import { secureStorage } from "../services/secureStorage";
 import { useToast } from "../context/ToastContext";
+import { useWishlist } from "../context/WishlistContext";
 
 const DESTINATIONS = [
   { name: "Goa (North & South)", multiplier: 1.35, baseRate: 22000 },
   { name: "Manali & Himachal", multiplier: 1.15, baseRate: 16500 },
   { name: "Udaipur & Rajasthan", multiplier: 1.45, baseRate: 28000 },
-  { name: "Kerala Backwaters", multiplier: 1.25, baseRate: 18500 },
-  { name: "Coorg & Nilgiris", multiplier: 1.1, baseRate: 15000 },
-  { name: "Bali & Southeast Asia", multiplier: 1.4, baseRate: 25000 },
-  { name: "Maldives & Andaman", multiplier: 1.8, baseRate: 38000 }
+  { name: "Kerala Backwaters", multiplier: 1.25, baseRate: 19500 },
+  { name: "Coorg & Chikmagalur", multiplier: 1.10, baseRate: 15000 },
+  { name: "Maldives (Overwater)", multiplier: 2.10, baseRate: 45000 }
 ];
 
 const PROPERTY_CATEGORIES = [
@@ -51,6 +52,151 @@ const AMENITY_OPTIONS = [
 export default function BecomeAHost() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { wishlist = [], toggleWishlist } = useWishlist() || {};
+
+  const photoInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const videoInputRef = useRef(null);
+  const webcamVideoRef = useRef(null);
+
+  // Live Camera & Google Drive State
+  const [cameraModalOpen, setCameraModalOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [driveModalOpen, setDriveModalOpen] = useState(false);
+  const [driveMediaType, setDriveMediaType] = useState("photo"); // 'photo' or 'video'
+  const [driveUrlInput, setDriveUrlInput] = useState("");
+
+  const startCamera = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        cameraInputRef.current?.click();
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      setCameraStream(stream);
+      setCameraModalOpen(true);
+      setTimeout(() => {
+        if (webcamVideoRef.current) {
+          webcamVideoRef.current.srcObject = stream;
+        }
+      }, 200);
+    } catch (err) {
+      console.warn("Camera permission or access failed, using native file fallback", err);
+      toast("Launching camera capture...", "info");
+      cameraInputRef.current?.click();
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setCameraModalOpen(false);
+  };
+
+  const captureCameraPhoto = () => {
+    if (!webcamVideoRef.current) return;
+    const video = webcamVideoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+    if (formData.images.length >= 10) {
+      toast("Maximum 10 photos allowed.", "warning");
+      stopCamera();
+      return;
+    }
+
+    setFormData(prev => {
+      const updatedImages = [...prev.images, dataUrl];
+      return {
+        ...prev,
+        images: updatedImages,
+        coverImage: prev.coverImage || updatedImages[0] || ""
+      };
+    });
+    toast("Photo captured successfully!", "success");
+    stopCamera();
+  };
+
+  const handlePhotoFileUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    if (formData.images.length + files.length > 10) {
+      toast("Maximum 10 photos allowed. Some files were skipped.", "warning");
+    }
+
+    const newUrls = files.slice(0, 10 - formData.images.length).map(file => URL.createObjectURL(file));
+    setFormData(prev => {
+      const updatedImages = [...prev.images, ...newUrls];
+      return {
+        ...prev,
+        images: updatedImages,
+        coverImage: prev.coverImage || updatedImages[0] || ""
+      };
+    });
+    toast(`${newUrls.length} photo(s) added successfully!`, "success");
+    if (e.target) e.target.value = "";
+  };
+
+  const handleVideoFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const currentVideos = formData.videos || [];
+    if (currentVideos.length >= 2) {
+      toast("Maximum 2 videos allowed.", "warning");
+      return;
+    }
+
+    const videoUrl = URL.createObjectURL(file);
+    setFormData(prev => ({
+      ...prev,
+      videos: [...currentVideos, videoUrl]
+    }));
+    toast("Video tour uploaded successfully!", "success");
+    if (e.target) e.target.value = "";
+  };
+
+  const handleAddDriveUrl = (e) => {
+    e.preventDefault();
+    if (!driveUrlInput.trim()) return;
+
+    let finalUrl = driveUrlInput.trim();
+    if (driveMediaType === "photo") {
+      if (formData.images.length >= 10) {
+        toast("Maximum 10 photos allowed.", "warning");
+        return;
+      }
+      setFormData(prev => {
+        const updatedImages = [...prev.images, finalUrl];
+        return {
+          ...prev,
+          images: updatedImages,
+          coverImage: prev.coverImage || updatedImages[0] || ""
+        };
+      });
+      toast("Photo URL imported successfully!", "success");
+    } else {
+      const currentVideos = formData.videos || [];
+      if (currentVideos.length >= 2) {
+        toast("Maximum 2 videos allowed.", "warning");
+        return;
+      }
+      setFormData(prev => ({ ...prev, videos: [...currentVideos, finalUrl] }));
+      toast("Video URL imported successfully!", "success");
+    }
+
+    setDriveUrlInput("");
+    setDriveModalOpen(false);
+  };
 
   const [mode, setMode] = useState("landing"); // 'landing' or 'wizard'
   const [currentStep, setCurrentStep] = useState(1);
@@ -86,21 +232,16 @@ export default function BecomeAHost() {
     instantBook: true,
     specs: {
       guests: 6,
+      rooms: 4,
       bedrooms: 3,
       beds: 3,
       bathrooms: 3,
       sqft: 2500
     },
     amenities: ["Private Infinity Pool", "High-Speed WiFi (300Mbps+)", "Central Climate Control"],
-    coverImage: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
-    images: [
-      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80"
-    ],
-    videos: [
-      "https://assets.mixkit.co/videos/preview/mixkit-luxury-resort-swimming-pool-42244-large.mp4"
-    ],
+    coverImage: "",
+    images: [],
+    videos: [],
     description: "",
     cleaningFee: 2000,
     weekendSurgePercent: 15,
@@ -108,14 +249,17 @@ export default function BecomeAHost() {
     cancellationPolicy: "Flexible",
     minNights: 2,
     maxNights: 30,
-    // KYC
+    // KYC & Payouts
     hostName: "",
     hostEmail: "",
     hostPhone: "",
     payoutType: "bank",
-    bankAccount: "",
+    bankAccountHolderName: "",
+    bankAccountNumber: "",
+    ifscCode: "",
     upiId: "",
-    govIdNumber: ""
+    govIdNumber: "",
+    gstinNumber: ""
   });
 
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -160,20 +304,27 @@ export default function BecomeAHost() {
 
   const handlePublishListing = async () => {
     try {
-      const finalTitle = formData.title || `Bespoke ${formData.category} in ${formData.location.city}`;
+      const finalTitle = formData.title || `Luxury ${formData.category || "Villa"} in ${formData.location.city || "Goa"}`;
+      const cover = formData.coverImage || formData.images?.[0] || "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80";
+
       const newListing = {
+        id: `published-prop-${Date.now()}`,
         ...formData,
         title: finalTitle,
-        description: formData.description || `Exquisite luxury ${formData.category.toLowerCase()} designed for unforgettable stays.`
+        coverImage: cover,
+        images: formData.images.length ? formData.images : [cover],
+        description: formData.description || `Exquisite luxury ${formData.category ? formData.category.toLowerCase() : "villa"} designed for unforgettable stays.`,
+        status: "Active",
+        createdAt: new Date().toISOString().split("T")[0]
       };
 
       const resortData = {
         name: finalTitle,
-        location: `${formData.location.city}, ${formData.location.state}, ${formData.location.country}`,
-        description: formData.description || `Exquisite luxury ${formData.category.toLowerCase()} designed for unforgettable stays.`,
-        imageUrl: formData.coverImage || "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
-        pricePerNight: formData.pricePerNight,
-        status: "PENDING_APPROVAL",
+        location: `${formData.location.city || "Goa"}, ${formData.location.state || "India"}, India`,
+        description: formData.description || `Exquisite luxury ${formData.category ? formData.category.toLowerCase() : "villa"} designed for unforgettable stays.`,
+        imageUrl: cover,
+        pricePerNight: formData.pricePerNight || 24500,
+        status: "ACTIVE",
         rating: 5.0,
         reviewCount: 0
       };
@@ -186,14 +337,26 @@ export default function BecomeAHost() {
 
       hostService.addListing(newListing);
 
-      const currentUser = authService.getCurrentUser();
-      if (currentUser && currentUser.role !== "ROLE_ADMIN") {
+      let currentUser = authService.getCurrentUser();
+      if (!currentUser) {
+        currentUser = {
+          id: `host-${Date.now()}`,
+          name: formData.hostName || "Host User",
+          email: formData.hostEmail || "host@reservo.com",
+          role: "ROLE_HOST"
+        };
+      } else if (currentUser.role !== "ROLE_ADMIN") {
         currentUser.role = "ROLE_HOST";
-        secureStorage.setItem("reservo_user", currentUser);
+      }
+      secureStorage.setItem("reservo_user", currentUser);
+      if (!secureStorage.getItem("reservo_auth_token")) {
+        secureStorage.setItem("reservo_auth_token", "demo_host_token_" + Date.now());
       }
 
-      toast("Congratulations! Your listing has been submitted for Admin approval.", "success");
-      navigate("/host/dashboard");
+      toast("🎉 Congratulations! Your listing has been published live to the Resort Listings.", "success");
+      setTimeout(() => {
+        navigate("/resorts");
+      }, 600);
     } catch (err) {
       toast("Failed to publish listing: " + err.message, "error");
     }
@@ -272,7 +435,7 @@ export default function BecomeAHost() {
                 onClick={() => { setMode("wizard"); setCurrentStep(1); }} 
                 className="text-xs font-bold bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer border-none flex items-center gap-1.5"
               >
-                <Plus size={14} /> + Create New Listing
+                <Plus size={14} /> Create New Listing
               </button>
             )}
           </div>
@@ -411,7 +574,7 @@ export default function BecomeAHost() {
               <div className="lg:col-span-5 bg-gradient-to-br from-blue-600 to-indigo-800 text-white rounded-[28px] p-8 shadow-2xl space-y-6 flex flex-col justify-between">
                 <div className="space-y-1">
                   <span className="text-xs font-bold uppercase tracking-widest text-blue-200">Estimated Host Earnings</span>
-                  <div className="text-4xl md:text-5xl font-black font-serif tracking-tight">
+                  <div className="text-4xl md:text-5xl font-extrabold font-sans tabular-nums tracking-tight flex items-center">
                     ₹{estimatedMonthlyEarnings.toLocaleString("en-IN")}
                   </div>
                   <div className="text-xs text-blue-200 font-semibold">
@@ -420,15 +583,15 @@ export default function BecomeAHost() {
                 </div>
 
                 <div className="border-t border-white/20 pt-4 space-y-2.5 text-xs text-blue-100">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span>Estimated Nightly Rate:</span>
-                    <span className="font-bold text-white">₹{estimatedNightlyRate.toLocaleString("en-IN")} / night</span>
+                    <span className="font-bold text-white font-sans tabular-nums">₹{estimatedNightlyRate.toLocaleString("en-IN")} / night</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span>Projected Annual Income:</span>
-                    <span className="font-bold text-amber-300">₹{estimatedAnnualEarnings.toLocaleString("en-IN")} / year</span>
+                    <span className="font-bold text-amber-300 font-sans tabular-nums">₹{estimatedAnnualEarnings.toLocaleString("en-IN")} / year</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span>Reservo Service Fee:</span>
                     <span className="font-bold text-emerald-300">Flat 3% (Lowest in Industry)</span>
                   </div>
@@ -681,41 +844,45 @@ export default function BecomeAHost() {
 
                 <div className="space-y-4">
                   {[
-                    { label: "Maximum Guests", key: "guests", min: 1, max: 24, icon: Users },
-                    { label: "Bedrooms", key: "bedrooms", min: 1, max: 12, icon: Bed },
-                    { label: "Beds", key: "beds", min: 1, max: 20, icon: Bed },
-                    { label: "Bathrooms", key: "bathrooms", min: 1, max: 12, icon: Bath }
+                    { label: "Maximum Guests", key: "guests", min: 1, icon: Users },
+                    { label: "Rooms", key: "rooms", min: 1, icon: Building2 },
+                    { label: "Bedrooms", key: "bedrooms", min: 1, icon: Bed },
+                    { label: "Beds", key: "beds", min: 1, icon: Bed },
+                    { label: "Bathrooms", key: "bathrooms", min: 1, icon: Bath }
                   ].map((item) => {
                     const Icon = item.icon;
+                    const currentValue = formData.specs[item.key] ?? 1;
                     return (
-                      <div key={item.key} className="flex items-center justify-between p-4 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-2xl">
+                      <div key={item.key} className="flex items-center justify-between p-4 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-2xl transition-colors duration-300">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)] flex items-center justify-center text-primary">
+                          <div className="w-9 h-9 rounded-xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)] flex items-center justify-center text-primary transition-colors duration-300">
                             <Icon size={16} />
                           </div>
-                          <span className="text-xs font-bold text-[var(--color-text-dark)]">{item.label}</span>
+                          <span className="text-xs font-bold text-[var(--color-text-dark)] transition-colors duration-300">{item.label}</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
                             onClick={() => setFormData(prev => ({
                               ...prev,
-                              specs: { ...prev.specs, [item.key]: Math.max(item.min, prev.specs[item.key] - 1) }
+                              specs: { ...prev.specs, [item.key]: Math.max(item.min, (prev.specs[item.key] ?? 1) - 1) }
                             }))}
-                            className="w-8 h-8 rounded-full border border-[var(--color-border-color)] bg-[var(--color-bg-white)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer"
+                            className="w-8 h-8 rounded-full border border-[var(--color-border-color)] bg-[var(--color-bg-white)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer transition-colors duration-300 shadow-xs"
+                            title={`Decrease ${item.label}`}
                           >
                             <Minus size={13} />
                           </button>
-                          <span className="text-xs font-extrabold text-[var(--color-text-dark)] w-6 text-center">
-                            {formData.specs[item.key]}
+                          <span className="text-xs font-extrabold text-[var(--color-text-dark)] w-8 text-center font-sans tabular-nums transition-colors duration-300">
+                            {currentValue}
                           </span>
                           <button
                             type="button"
                             onClick={() => setFormData(prev => ({
                               ...prev,
-                              specs: { ...prev.specs, [item.key]: Math.min(item.max, prev.specs[item.key] + 1) }
+                              specs: { ...prev.specs, [item.key]: (prev.specs[item.key] ?? 0) + 1 }
                             }))}
-                            className="w-8 h-8 rounded-full border border-[var(--color-border-color)] bg-[var(--color-bg-white)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer"
+                            className="w-8 h-8 rounded-full border border-[var(--color-border-color)] bg-[var(--color-bg-white)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer transition-colors duration-300 shadow-xs"
+                            title={`Increase ${item.label}`}
                           >
                             <Plus size={13} />
                           </button>
@@ -725,15 +892,35 @@ export default function BecomeAHost() {
                   })}
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5 transition-colors duration-300">
                       Approximate Area (Sq. Ft.)
                     </label>
-                    <input 
-                      type="number"
-                      value={formData.specs.sqft}
-                      onChange={(e) => setFormData(prev => ({ ...prev, specs: { ...prev.specs, sqft: Number(e.target.value) } }))}
-                      className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
-                    />
+                    <div className="relative flex items-center">
+                      <input 
+                        type="number"
+                        value={formData.specs.sqft}
+                        onChange={(e) => setFormData(prev => ({ ...prev, specs: { ...prev.specs, sqft: Math.max(0, Number(e.target.value)) } }))}
+                        className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 pr-24 rounded-2xl text-xs font-medium outline-none focus:border-primary font-sans tabular-nums transition-colors duration-300"
+                      />
+                      <div className="absolute right-2.5 flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, specs: { ...prev.specs, sqft: Math.max(0, (prev.specs.sqft || 0) - 100) } }))}
+                          className="w-7 h-7 rounded-xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer text-xs font-bold transition-all shadow-xs"
+                          title="Decrease Area by 100"
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, specs: { ...prev.specs, sqft: (prev.specs.sqft || 0) + 100 } }))}
+                          className="w-7 h-7 rounded-xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer text-xs font-bold transition-all shadow-xs"
+                          title="Increase Area by 100"
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -781,6 +968,31 @@ export default function BecomeAHost() {
             {/* Step 5: Photos & Gallery */}
             {currentStep === 5 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                {/* Hidden File Inputs */}
+                <input 
+                  type="file" 
+                  ref={photoInputRef} 
+                  accept="image/*" 
+                  multiple 
+                  className="hidden" 
+                  onChange={handlePhotoFileUpload} 
+                />
+                <input 
+                  type="file" 
+                  ref={cameraInputRef} 
+                  accept="image/*" 
+                  capture="environment" 
+                  className="hidden" 
+                  onChange={handlePhotoFileUpload} 
+                />
+                <input 
+                  type="file" 
+                  ref={videoInputRef} 
+                  accept="video/*" 
+                  className="hidden" 
+                  onChange={handleVideoFileUpload} 
+                />
+
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 5 • Photography</span>
                   <h2 className="text-2xl font-extrabold font-serif text-[var(--color-text-dark)] mt-1">
@@ -791,30 +1003,64 @@ export default function BecomeAHost() {
                   </p>
                 </div>
 
-                {/* Upload Photos box */}
-                <div className="border-2 border-dashed border-[var(--color-border-color)] hover:border-primary rounded-3xl p-6 text-center space-y-3 bg-[var(--color-bg-light)]">
-                  <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-                    <Camera size={20} />
+                {/* Upload Photos Box Dropzone */}
+                <div 
+                  className="border-2 border-dashed border-[var(--color-border-color)] hover:border-primary rounded-3xl p-6 text-center space-y-4 bg-[var(--color-bg-light)] transition-colors"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files?.length) {
+                      handlePhotoFileUpload({ target: { files: e.dataTransfer.files } });
+                    }
+                  }}
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                    <Camera size={22} />
                   </div>
                   <div className="space-y-1">
-                    <div className="text-xs font-bold text-[var(--color-text-dark)]">Drag and drop high-res photos here ({formData.images.length}/10)</div>
-                    <div className="text-[11px] text-[var(--color-text-gray)]">Supports JPG, PNG, WEBP up to 25MB each</div>
+                    <div className="text-xs font-extrabold text-[var(--color-text-dark)]">
+                      Drag and drop high-res photos here ({formData.images.length}/10)
+                    </div>
+                    <div className="text-[11px] text-[var(--color-text-gray)]">
+                      Supports JPG, PNG, WEBP, HEIC up to 25MB each
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleAddSamplePhoto("https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80");
-                    }}
-                    className="bg-primary text-white text-xs font-bold px-4 py-2 rounded-xl shadow cursor-pointer border-none"
-                  >
-                    + Add Luxury Stock Photo
-                  </button>
+
+                  {/* Action Buttons Toolbar for Photos */}
+                  <div className="flex flex-wrap justify-center items-center gap-2.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      className="bg-primary hover:bg-primary-dark text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow cursor-pointer border-none flex items-center gap-1.5 transition-all"
+                    >
+                      <Upload size={14} /> Upload from Device
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      className="bg-[var(--color-bg-white)] hover:bg-primary/10 border border-[var(--color-border-color)] text-[var(--color-text-dark)] text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-all shadow-xs"
+                    >
+                      <Camera size={14} className="text-primary" /> Take Photo (Camera)
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDriveMediaType("photo");
+                        setDriveModalOpen(true);
+                      }}
+                      className="bg-[var(--color-bg-white)] hover:bg-blue-500/10 border border-[var(--color-border-color)] text-[var(--color-text-dark)] text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-all shadow-xs"
+                    >
+                      <Globe size={14} className="text-blue-500" /> Google Drive Link
+                    </button>
+                  </div>
                 </div>
 
-                {/* Gallery Previews */}
+                {/* Photo Previews */}
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {formData.images.map((imgUrl, idx) => (
-                    <div key={idx} className="relative rounded-2xl overflow-hidden group aspect-[4/3] border border-[var(--color-border-color)]">
+                    <div key={idx} className="relative rounded-2xl overflow-hidden group aspect-[4/3] border border-[var(--color-border-color)] shadow-xs">
                       <img src={imgUrl} alt={`Space ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       {idx === 0 && (
                         <span className="absolute top-2 left-2 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-md shadow">
@@ -830,7 +1076,14 @@ export default function BecomeAHost() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                        onClick={() => setFormData(prev => {
+                          const newImages = prev.images.filter((_, i) => i !== idx);
+                          return {
+                            ...prev,
+                            images: newImages,
+                            coverImage: newImages[0] || ""
+                          };
+                        })}
                         className="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-1.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none"
                       >
                         Delete
@@ -839,24 +1092,50 @@ export default function BecomeAHost() {
                   ))}
                 </div>
 
-                {/* Upload Videos Box */}
-                <div className="border-2 border-dashed border-[var(--color-border-color)] hover:border-primary rounded-3xl p-6 text-center space-y-3 bg-[var(--color-bg-light)] mt-4">
-                  <div className="w-11 h-11 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto">
-                    <Camera size={20} />
+                {/* Upload Videos Box Dropzone */}
+                <div 
+                  className="border-2 border-dashed border-[var(--color-border-color)] hover:border-indigo-500 rounded-3xl p-6 text-center space-y-4 bg-[var(--color-bg-light)] mt-4 transition-colors"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files?.length) {
+                      handleVideoFileUpload({ target: { files: e.dataTransfer.files } });
+                    }
+                  }}
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center mx-auto">
+                    <Video size={22} />
                   </div>
                   <div className="space-y-1">
-                    <div className="text-xs font-bold text-[var(--color-text-dark)]">Upload property video tours ({(formData.videos || []).length}/2)</div>
-                    <div className="text-[11px] text-[var(--color-text-gray)]">Supports MP4, MOV, WebM up to 100MB each</div>
+                    <div className="text-xs font-extrabold text-[var(--color-text-dark)]">
+                      Upload property video tours ({(formData.videos || []).length}/2)
+                    </div>
+                    <div className="text-[11px] text-[var(--color-text-gray)]">
+                      Supports MP4, MOV, WebM up to 100MB each
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleAddSampleVideo("https://assets.mixkit.co/videos/preview/mixkit-tropical-beach-resort-with-palm-trees-42232-large.mp4");
-                    }}
-                    className="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow cursor-pointer border-none"
-                  >
-                    + Add Luxury Resort Loop Video
-                  </button>
+
+                  {/* Action Buttons Toolbar for Videos */}
+                  <div className="flex flex-wrap justify-center items-center gap-2.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => videoInputRef.current?.click()}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow cursor-pointer border-none flex items-center gap-1.5 transition-all"
+                    >
+                      <Upload size={14} /> Upload Video Tour
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDriveMediaType("video");
+                        setDriveModalOpen(true);
+                      }}
+                      className="bg-[var(--color-bg-white)] hover:bg-indigo-500/10 border border-[var(--color-border-color)] text-[var(--color-text-dark)] text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-all shadow-xs"
+                    >
+                      <Globe size={14} className="text-indigo-500" /> Google Drive Video Link
+                    </button>
+                  </div>
                 </div>
 
                 {/* Video Previews */}
@@ -880,25 +1159,14 @@ export default function BecomeAHost() {
             {/* Step 6: AI Copywriting Title & Description */}
             {currentStep === 6 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 6 • Story & Copy</span>
-                    <h2 className="text-2xl font-extrabold font-serif text-[var(--color-text-dark)] mt-1">
-                      Craft your property title & story
-                    </h2>
-                    <p className="text-xs text-[var(--color-text-gray)]">
-                      Highlight the architectural charm, views, and bespoke atmosphere.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleGenerateAiCopy}
-                    disabled={aiGenerating}
-                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-md cursor-pointer border-none flex items-center gap-1.5 transition-all shrink-0"
-                  >
-                    <Sparkles size={14} className={aiGenerating ? "animate-spin" : ""} />
-                    {aiGenerating ? "Generating..." : "AI Auto-Write"}
-                  </button>
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 6 • Story & Copy</span>
+                  <h2 className="text-2xl font-extrabold font-serif text-[var(--color-text-dark)] mt-1">
+                    Craft your property title & story
+                  </h2>
+                  <p className="text-xs text-[var(--color-text-gray)]">
+                    Highlight the architectural charm, views, and bespoke atmosphere.
+                  </p>
                 </div>
 
                 <div className="space-y-4">
@@ -1000,20 +1268,20 @@ export default function BecomeAHost() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 border border-blue-200 dark:border-slate-700 rounded-3xl space-y-3">
+                  <div className="p-6 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-3xl space-y-3 transition-colors duration-300">
                     <label className="block text-xs font-bold uppercase tracking-wider text-primary">
                       Base Nightly Price (INR ₹)
                     </label>
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl font-bold text-primary font-serif">₹</span>
+                      <span className="text-2xl font-extrabold text-primary font-sans tabular-nums">₹</span>
                       <input 
                         type="number"
                         step="500"
                         value={formData.pricePerNight}
                         onChange={(e) => setFormData(prev => ({ ...prev, pricePerNight: Number(e.target.value) }))}
-                        className="text-2xl font-black text-[var(--color-text-dark)] bg-transparent border-b-2 border-primary outline-none w-48 font-serif"
+                        className="text-2xl font-extrabold text-[var(--color-text-dark)] bg-transparent border-b-2 border-primary outline-none w-48 font-sans tabular-nums"
                       />
-                      <span className="text-xs font-bold text-[var(--color-text-gray)]">/ night</span>
+                      <span className="text-xs font-bold text-[var(--color-text-gray)] font-sans">/ night</span>
                     </div>
                   </div>
 
@@ -1059,46 +1327,145 @@ export default function BecomeAHost() {
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
-                        Host Full Legal Name
+                        Host Full Legal Name *
                       </label>
                       <input 
                         type="text"
                         value={formData.hostName}
                         onChange={(e) => setFormData(prev => ({ ...prev, hostName: e.target.value }))}
-                        placeholder="e.g., Srushti Salunke"
-                        className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
+                        placeholder="e.g., Tony Stark"
+                        className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary transition-colors"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
-                        Government ID / GST No.
+                        Government ID No. *
                       </label>
                       <input 
                         type="text"
                         value={formData.govIdNumber}
                         onChange={(e) => setFormData(prev => ({ ...prev, govIdNumber: e.target.value }))}
-                        placeholder="e.g., Aadhaar / Passport / GSTIN"
-                        className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
+                        placeholder="e.g., Aadhaar / PAN / Passport"
+                        className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary transition-colors uppercase font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
+                        GSTIN Number *
+                      </label>
+                      <input 
+                        type="text"
+                        value={formData.gstinNumber}
+                        onChange={(e) => setFormData(prev => ({ ...prev, gstinNumber: e.target.value.toUpperCase() }))}
+                        placeholder="e.g., 22AAAAA0000A1Z5"
+                        className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary transition-colors uppercase font-mono tracking-wider"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
-                      Bank Account / UPI ID for Payouts
+                  {/* Payout Method Toggle */}
+                  <div className="space-y-2.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)]">
+                      Select Payout Method *
                     </label>
-                    <input 
-                      type="text"
-                      value={formData.upiId}
-                      onChange={(e) => setFormData(prev => ({ ...prev, upiId: e.target.value }))}
-                      placeholder="e.g., srushti@okhdfcbank or HDFC A/C No."
-                      className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, payoutType: "bank" }))}
+                        className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          formData.payoutType === "bank"
+                            ? "bg-primary/10 border-primary text-primary shadow-xs"
+                            : "bg-[var(--color-bg-light)] border-[var(--color-border-color)] text-[var(--color-text-dark)] hover:border-primary/50"
+                        }`}
+                      >
+                        🏦 Bank Account (NEFT / IMPS)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, payoutType: "upi" }))}
+                        className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          formData.payoutType === "upi"
+                            ? "bg-primary/10 border-primary text-primary shadow-xs"
+                            : "bg-[var(--color-bg-light)] border-[var(--color-border-color)] text-[var(--color-text-dark)] hover:border-primary/50"
+                        }`}
+                      >
+                        ⚡ Instant UPI ID
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Dynamic Fields based on Payout Type */}
+                  {formData.payoutType === "bank" ? (
+                    <div className="p-5 rounded-2xl bg-[var(--color-bg-light)] border border-[var(--color-border-color)] space-y-4 transition-colors">
+                      <div className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                        🏦 Bank Account Details
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-[var(--color-text-dark)] mb-1.5">
+                          Bank Account Holder Name *
+                        </label>
+                        <input 
+                          type="text"
+                          value={formData.bankAccountHolderName}
+                          onChange={(e) => setFormData(prev => ({ ...prev, bankAccountHolderName: e.target.value }))}
+                          placeholder="e.g., Tony Stark"
+                          className="w-full bg-[var(--color-bg-white)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-xl text-xs font-medium outline-none focus:border-primary"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-[var(--color-text-dark)] mb-1.5">
+                            Bank Account Number *
+                          </label>
+                          <input 
+                            type="text"
+                            value={formData.bankAccountNumber}
+                            onChange={(e) => setFormData(prev => ({ ...prev, bankAccountNumber: e.target.value }))}
+                            placeholder="e.g., 50100293849102"
+                            className="w-full bg-[var(--color-bg-white)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-xl text-xs font-medium outline-none focus:border-primary font-sans tabular-nums"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-[var(--color-text-dark)] mb-1.5">
+                            IFSC Code *
+                          </label>
+                          <input 
+                            type="text"
+                            value={formData.ifscCode}
+                            onChange={(e) => setFormData(prev => ({ ...prev, ifscCode: e.target.value.toUpperCase() }))}
+                            placeholder="e.g., HDFC0001234"
+                            className="w-full bg-[var(--color-bg-white)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-xl text-xs font-medium outline-none focus:border-primary uppercase font-mono tracking-wider"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-5 rounded-2xl bg-[var(--color-bg-light)] border border-[var(--color-border-color)] space-y-3 transition-colors">
+                      <div className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                        ⚡ Instant UPI Details
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[var(--color-text-dark)] mb-1.5">
+                          UPI ID (VPA) *
+                        </label>
+                        <input 
+                          type="text"
+                          value={formData.upiId}
+                          onChange={(e) => setFormData(prev => ({ ...prev, upiId: e.target.value }))}
+                          placeholder="e.g., user@okhdfcbank or 9876543210@paytm"
+                          className="w-full bg-[var(--color-bg-white)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-xl text-xs font-medium outline-none focus:border-primary font-sans"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -1116,50 +1483,110 @@ export default function BecomeAHost() {
                   </p>
                 </div>
 
-                {/* Preview Card */}
-                <div className="max-w-md mx-auto bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-3xl overflow-hidden shadow-2xl space-y-4">
-                  <div className="relative aspect-[16/10] overflow-hidden">
-                    <img src={formData.coverImage} alt="Cover" className="w-full h-full object-cover" />
-                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-[var(--color-text-dark)] text-[11px] font-bold px-3 py-1 rounded-full shadow">
-                      {formData.category}
-                    </div>
-                  </div>
+                {/* Preview Card matching Resort Listing Cards */}
+                {(() => {
+                  const displayCoverImage = formData.coverImage || formData.images?.[0] || "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80";
+                  const previewResort = {
+                    id: "preview-host-listing",
+                    name: formData.title || `Luxury ${formData.category} in ${formData.location.city || "Goa"}`,
+                    location: formData.location.city || "Goa",
+                    price: formData.pricePerNight || 41184,
+                    heroImage: displayCoverImage,
+                    image: displayCoverImage
+                  };
+                  const isFav = (wishlist || []).some(item => String(item.id) === String(previewResort.id));
 
-                  <div className="p-5 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="text-base font-bold font-serif text-[var(--color-text-dark)] line-clamp-1">
-                          {formData.title || `Luxury ${formData.category} in ${formData.location.city}`}
-                        </h4>
-                        <div className="text-xs text-[var(--color-text-gray)] flex items-center gap-1 mt-0.5">
-                          <MapPin size={13} className="text-primary" /> {formData.location.city}, {formData.location.state}
+                  return (
+                    <div className="max-w-md mx-auto group rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 border bg-[var(--color-bg-white)] border-[var(--color-border-color)] flex flex-col justify-between text-left">
+                      {/* Hero / Cover Image with Badges */}
+                      <div className="relative h-60 overflow-hidden">
+                        <img 
+                          src={displayCoverImage} 
+                          alt={formData.title || "Luxury Resort"} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        />
+
+                        {/* Category Badge at Top-Left */}
+                        <div className="absolute top-4 left-4">
+                          <span className="px-3 py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-primary text-[10px] font-bold uppercase tracking-wider rounded-full shadow border border-white/60 dark:border-slate-700">
+                            {formData.category || "Luxury Stay"}
+                          </span>
+                        </div>
+
+                        {/* Favorite Heart Button at Top-Right */}
+                        <button 
+                          type="button" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (toggleWishlist) {
+                              toggleWishlist(previewResort);
+                            }
+                          }}
+                          className={`absolute top-4 right-4 w-9 h-9 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-center transition-all hover:scale-110 shadow cursor-pointer border-none ${
+                            isFav ? 'text-rose-500' : 'text-stone-700 dark:text-slate-200'
+                          }`}
+                          title={isFav ? "Remove from wishlist" : "Save to wishlist"}
+                        >
+                          <Heart className={`w-4 h-4 ${isFav ? 'fill-rose-500 text-rose-500' : ''}`} />
+                        </button>
+
+                        {/* Price Pill at Bottom-Right */}
+                        <div className="absolute bottom-4 right-4 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-white text-xs font-bold shadow border border-slate-700">
+                          from <span className="text-blue-400 text-sm font-sans tabular-nums font-extrabold">₹{formData.pricePerNight ? Number(formData.pricePerNight).toLocaleString("en-IN") : "41,184"}</span>/night
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-base font-black text-primary font-serif">
-                          ₹{formData.pricePerNight.toLocaleString("en-IN")}
+
+                      {/* Card Content Body */}
+                      <div className="p-5 space-y-3.5 flex-1 flex flex-col justify-between">
+                        <div>
+                          {/* Location & Rating Header */}
+                          <div className="flex items-center justify-between text-xs mb-1.5">
+                            <span className="flex items-center gap-1 font-medium text-[var(--color-text-gray)]">
+                              <MapPin className="w-3.5 h-3.5 text-primary" /> {formData.location.city || "Goa"}
+                            </span>
+                            <span className="flex items-center gap-1 font-bold px-2.5 py-0.5 rounded-full border bg-blue-500/10 text-primary border-primary/20 text-xs">
+                              <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> 5.0 (New)
+                            </span>
+                          </div>
+
+                          {/* Listing Title */}
+                          <h3 className="text-lg font-bold text-[var(--color-text-dark)] group-hover:text-primary transition-colors font-sans line-clamp-1">
+                            {formData.title || `Luxury ${formData.category} in ${formData.location.city || "Goa"}`}
+                          </h3>
+
+                          {/* Specs Bar */}
+                          <div className="text-xs font-medium text-[var(--color-text-gray)] flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            <span>{formData.specs.guests || 6} Guests</span>
+                            <span>•</span>
+                            <span>{formData.specs.rooms || 4} Rooms</span>
+                            <span>•</span>
+                            <span>{formData.specs.bedrooms || 3} Bedrooms</span>
+                            <span>•</span>
+                            <span>{formData.specs.bathrooms || 3} Baths</span>
+                          </div>
                         </div>
-                        <div className="text-[10px] text-[var(--color-text-gray)]">/ night</div>
+
+                        {/* Amenities Badges */}
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {(formData.amenities && formData.amenities.length > 0 
+                            ? formData.amenities.slice(0, 3) 
+                            : ["Private Pool", "WiFi", "Climate Control"]
+                          ).map((amenity, i) => (
+                            <span key={i} className="text-[10px] font-bold px-2.5 py-1 rounded-full border bg-[var(--color-bg-light)] text-[var(--color-text-gray)] border-[var(--color-border-color)]">
+                              {amenity}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Explore Footer Row */}
+                        <div className="pt-3 border-t border-[var(--color-border-color)] flex items-center justify-between text-xs font-bold text-primary group-hover:text-primary-dark transition-colors">
+                          <span>Explore Details & Map</span>
+                          <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                        </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-3 text-xs text-[var(--color-text-gray)] border-t border-[var(--color-border-color)] pt-3">
-                      <span>{formData.specs.guests} Guests</span>
-                      <span>•</span>
-                      <span>{formData.specs.bedrooms} Bedrooms</span>
-                      <span>•</span>
-                      <span>{formData.specs.bathrooms} Baths</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5">
-                      {formData.amenities.slice(0, 3).map((a, i) => (
-                        <span key={i} className="text-[10px] font-semibold bg-[var(--color-bg-light)] px-2 py-0.5 rounded-md text-[var(--color-text-gray)]">
-                          {a}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </motion.div>
             )}
 
@@ -1197,6 +1624,127 @@ export default function BecomeAHost() {
               )}
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Live Camera Viewfinder Modal */}
+      {cameraModalOpen && (
+        <div 
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          onClick={stopCamera}
+        >
+          <div 
+            className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-[32px] max-w-lg w-full p-6 shadow-2xl relative space-y-4 text-center animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={stopCamera}
+              className="absolute top-5 right-5 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer border-none z-20 hover:bg-black"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center justify-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+              <Camera size={16} /> Live Camera Viewfinder
+            </div>
+
+            <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3] border border-[var(--color-border-color)] flex items-center justify-center">
+              <video 
+                ref={webcamVideoRef} 
+                autoPlay 
+                playsInline 
+                muted 
+                className="w-full h-full object-cover" 
+              />
+            </div>
+
+            <div className="flex justify-center items-center gap-4 pt-2">
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="px-5 py-2.5 rounded-xl border border-[var(--color-border-color)] text-xs font-bold text-[var(--color-text-gray)] hover:text-[var(--color-text-dark)] bg-transparent cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={captureCameraPhoto}
+                className="bg-primary hover:bg-primary-dark text-white text-xs font-extrabold px-7 py-3 rounded-full shadow-lg shadow-primary/30 cursor-pointer border-none flex items-center gap-2 transition-all hover:scale-105"
+              >
+                <Camera size={16} /> Snap Photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Google Drive / Cloud Import Modal */}
+      {driveModalOpen && (
+        <div 
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+          onClick={() => setDriveModalOpen(false)}
+        >
+          <div 
+            className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-[32px] max-w-md w-full p-6 shadow-2xl relative space-y-4 text-left animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              onClick={() => setDriveModalOpen(false)}
+              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] flex items-center justify-center text-[var(--color-text-gray)] hover:text-[var(--color-text-dark)] cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+              <Globe size={22} />
+            </div>
+
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-blue-500">Google Drive / Cloud Import</span>
+              <h3 className="text-xl font-extrabold text-[var(--color-text-dark)] mt-0.5">
+                Import {driveMediaType === "photo" ? "Photo" : "Video"} Link
+              </h3>
+              <p className="text-xs text-[var(--color-text-gray)] mt-1">
+                Paste a public Google Drive link or direct cloud URL for your {driveMediaType}.
+              </p>
+            </div>
+
+            <form onSubmit={handleAddDriveUrl} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
+                  Link / URL *
+                </label>
+                <div className="relative">
+                  <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-gray)]" />
+                  <input 
+                    type="url" 
+                    required
+                    value={driveUrlInput}
+                    onChange={(e) => setDriveUrlInput(e.target.value)}
+                    placeholder="https://drive.google.com/file/d/... or direct image/video URL"
+                    className="w-full pl-10 pr-4 py-3 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] rounded-xl text-xs font-semibold outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDriveModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-[var(--color-border-color)] text-xs font-bold text-[var(--color-text-gray)] hover:text-[var(--color-text-dark)] bg-transparent cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white text-xs font-bold cursor-pointer border-none shadow-md"
+                >
+                  Import {driveMediaType === "photo" ? "Photo" : "Video"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
