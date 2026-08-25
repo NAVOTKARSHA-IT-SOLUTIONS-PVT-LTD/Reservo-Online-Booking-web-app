@@ -42,4 +42,19 @@ public class UserController {
         userService.changePassword(auth.getName(), oldPassword, newPassword);
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
     }
+
+    @PostMapping("/verify-kyc")
+    public ResponseEntity<ApiResponse<User>> verifyKyc(@RequestBody Map<String, String> body) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String documentType = body.get("documentType");
+        String documentUrl = body.get("documentUrl");
+
+        User user = userService.getUserByEmail(auth.getName());
+        user.setKycStatus(User.KycStatus.VERIFIED);
+        user.setKycDocumentType(documentType != null ? documentType : "Govt ID");
+        user.setKycDocumentUrl(documentUrl != null ? documentUrl : "mock://kyc-document-verification");
+
+        User updated = userService.saveUser(user);
+        return ResponseEntity.ok(ApiResponse.success(updated, "KYC verified successfully"));
+    }
 }

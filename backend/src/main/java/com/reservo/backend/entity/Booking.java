@@ -48,6 +48,27 @@ public class Booking {
     @Column(nullable = false)
     private BigDecimal totalAmount;
 
+    @Column(name = "guest_name")
+    private String guestName;
+
+    @Column(name = "guest_phone")
+    private String guestPhone;
+
+    @Column(name = "applied_coupon_code")
+    private String appliedCouponCode;
+
+    @Column(name = "discount_amount")
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    @Column(name = "reward_points_used")
+    @Builder.Default
+    private Integer rewardPointsUsed = 0;
+
+    @Column(name = "reward_points_value")
+    @Builder.Default
+    private BigDecimal rewardPointsValue = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BookingStatus status;

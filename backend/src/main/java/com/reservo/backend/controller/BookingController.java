@@ -31,7 +31,9 @@ public class BookingController {
         Booking booking = bookingService.createBooking(
                 userId, resortId, roomId,
                 LocalDate.parse(checkIn), LocalDate.parse(checkOut),
-                amount);
+                amount, null, null, null, BigDecimal.ZERO, 0, BigDecimal.ZERO);
+        // Standard direct booking confirms instantly for backwards-compatibility
+        bookingService.confirmBooking(booking.getBookingCode(), "ch_direct_" + System.currentTimeMillis(), "DIRECT");
         return ResponseEntity.ok(ApiResponse.success(booking, "Booking created and confirmed successfully"));
     }
 

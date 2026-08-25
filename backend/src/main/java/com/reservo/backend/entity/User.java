@@ -63,6 +63,17 @@ public class User {
     @Builder.Default
     private boolean phoneVerified = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kyc_status", nullable = false)
+    @Builder.Default
+    private KycStatus kycStatus = KycStatus.UNVERIFIED;
+
+    @Column(name = "kyc_document_type")
+    private String kycDocumentType;
+
+    @Column(name = "kyc_document_url")
+    private String kycDocumentUrl;
+
     @Column(name = "account_locked", nullable = false)
     @Builder.Default
     private boolean accountLocked = false;
@@ -90,5 +101,9 @@ public class User {
 
     public enum UserStatus {
         ACTIVE, INACTIVE, BLOCKED
+    }
+
+    public enum KycStatus {
+        UNVERIFIED, PENDING_VERIFICATION, VERIFIED, REJECTED
     }
 }

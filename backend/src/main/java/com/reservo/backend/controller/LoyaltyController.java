@@ -10,6 +10,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import com.reservo.backend.dto.CouponValidationResponse;
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("/api/v1/rewards")
 @RequiredArgsConstructor
@@ -34,10 +37,13 @@ public class LoyaltyController {
     }
 
     @GetMapping("/validate")
-    public ResponseEntity<ApiResponse<Integer>> validateCoupon(@RequestParam String code) {
+    public ResponseEntity<ApiResponse<CouponValidationResponse>> validateCoupon(
+            @RequestParam String code,
+            @RequestParam(required = false) Long resortId,
+            @RequestParam(required = false) BigDecimal amount) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) ? auth.getName() : null;
-        Integer discount = loyaltyService.validateCoupon(email, code);
-        return ResponseEntity.ok(ApiResponse.success(discount, "Coupon code is valid"));
+        CouponValidationResponse response = loyaltyService.validateCoupon(email, code, resortId, amount);
+        return ResponseEntity.ok(ApiResponse.success(response, "Coupon code is valid"));
     }
 }

@@ -128,10 +128,10 @@ function MascotShowcase() {
 
               {/* Caption details */}
               <div className="display-caption space-y-2">
-                <h4 className="text-xl sm:text-2xl font-black text-text-dark tracking-tight leading-snug transition-colors duration-300">
+                <h4 className="text-xl sm:text-2xl font-black text-text-dark dark:text-white tracking-tight leading-snug transition-colors duration-300">
                   {activeTab.heading}
                 </h4>
-                <p className="text-[14px] text-text-gray font-medium leading-relaxed m-0 transition-colors duration-300">
+                <p className="text-[14px] text-slate-700 dark:text-slate-200 font-semibold leading-relaxed m-0 transition-colors duration-300">
                   {activeTab.desc}
                 </p>
               </div>

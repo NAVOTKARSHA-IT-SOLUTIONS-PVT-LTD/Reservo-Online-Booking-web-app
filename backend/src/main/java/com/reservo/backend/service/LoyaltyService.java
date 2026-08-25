@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.reservo.backend.dto.CouponValidationResponse;
+import java.util.Optional;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,6 +32,7 @@ public class LoyaltyService {
     private final UserRepository userRepository;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
     private final CouponRepository couponRepository;
+    private final CouponService couponService;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter
             .ofPattern("MMM dd, yyyy")
@@ -90,7 +94,9 @@ public class LoyaltyService {
         Coupon coupon = Coupon.builder()
                 .code(couponCode)
                 .user(user)
-                .discountPercentage(10) // Default 10% discount
+                .discountPercentage(10)
+                .discountType(Coupon.DiscountType.PERCENTAGE)
+                .discountValue(BigDecimal.valueOf(10))
                 .status(Coupon.CouponStatus.ACTIVE)
                 .createdAt(Instant.now())
                 .build();
@@ -138,32 +144,60 @@ public class LoyaltyService {
         log.info("Revoked {} points from user: {}", pointsToDeduct, user.getEmail());
     }
 
-    public Integer validateCoupon(String email, String code) {
+    public CouponValidationResponse validateCoupon(String email, String code, Long resortId, BigDecimal bookingAmount) {
         String cleanCode = code.trim().toUpperCase();
         
-        // Support general/demo coupons for guests and logged-in users alike
-        if (cleanCode.equals("WELCOME10") || cleanCode.equals("SAVE10") || cleanCode.equals("DEMO") || cleanCode.equals("RIVO10") || cleanCode.equals("RIVO-10")) {
-            return 10;
-        }
-        if (cleanCode.equals("WELCOME15") || cleanCode.equals("SAVE15") || cleanCode.equals("RIVO15") || cleanCode.equals("RIVO-15")) {
-            return 15;
-        }
-        if (cleanCode.equals("WELCOME20") || cleanCode.equals("SAVE20") || cleanCode.equals("RIVO20") || cleanCode.equals("RIVO-20")) {
-            return 20;
+        // 1. Resolve user ID if email is present
+        Long userId = null;
+        if (email != null && !email.trim().isEmpty()) {
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            if (userOpt.isPresent()) {
+                userId = userOpt.get().getId();
+            }
         }
 
-        if (email == null) {
-            throw new IllegalArgumentException("Invalid coupon code. Please log in to validate user-specific coupons.");
+        // 2. Fallback to hardcoded coupons for standard compatibility if not in database
+        if (couponRepository.findByCode(cleanCode).isEmpty()) {
+            BigDecimal discountPct = BigDecimal.ZERO;
+            if (cleanCode.equals("WELCOME10") || cleanCode.equals("SAVE10") || cleanCode.equals("DEMO") || cleanCode.equals("RIVO10") || cleanCode.equals("RIVO-10")) {
+                discountPct = BigDecimal.valueOf(10);
+            } else if (cleanCode.equals("WELCOME15") || cleanCode.equals("SAVE15") || cleanCode.equals("RIVO15") || cleanCode.equals("RIVO-15")) {
+                discountPct = BigDecimal.valueOf(15);
+            } else if (cleanCode.equals("WELCOME20") || cleanCode.equals("SAVE20") || cleanCode.equals("RIVO20") || cleanCode.equals("RIVO-20")) {
+                discountPct = BigDecimal.valueOf(20);
+            }
+
+            if (discountPct.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal calcAmt = bookingAmount != null 
+                        ? bookingAmount.multiply(discountPct.divide(BigDecimal.valueOf(100))) 
+                        : BigDecimal.ZERO;
+                return CouponValidationResponse.builder()
+                        .code(cleanCode)
+                        .discountType("PERCENTAGE")
+                        .discountValue(discountPct)
+                        .calculatedDiscount(calcAmt)
+                        .build();
+            }
         }
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        Coupon coupon = couponRepository.findByCodeAndUserId(cleanCode, user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid coupon code or not owned by you."));
-        if (coupon.getStatus() != Coupon.CouponStatus.ACTIVE) {
-            throw new IllegalArgumentException("Coupon is already used or expired.");
+        // 3. Perform database validation
+        BigDecimal finalAmount = bookingAmount != null ? bookingAmount : BigDecimal.ZERO;
+        Coupon coupon = couponService.getAndValidateCoupon(cleanCode, userId, resortId, finalAmount);
+        
+        BigDecimal calculatedDiscount = BigDecimal.ZERO;
+        if (coupon.getDiscountType() == Coupon.DiscountType.PERCENTAGE) {
+            calculatedDiscount = finalAmount.multiply(coupon.getDiscountValue().divide(BigDecimal.valueOf(100)));
+        } else {
+            // FIXED discount
+            calculatedDiscount = coupon.getDiscountValue().min(finalAmount);
         }
-        return coupon.getDiscountPercentage();
+
+        return CouponValidationResponse.builder()
+                .code(coupon.getCode())
+                .discountType(coupon.getDiscountType().name())
+                .discountValue(coupon.getDiscountValue())
+                .calculatedDiscount(calculatedDiscount)
+                .build();
     }
 
     private void updateMembershipLevel(User user) {

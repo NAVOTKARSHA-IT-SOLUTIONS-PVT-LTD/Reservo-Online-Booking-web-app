@@ -22,8 +22,11 @@ export const rewardService = {
     throw new Error(result?.message || "Failed to redeem points.");
   },
 
-  async validateCoupon(code) {
-    const result = await apiClient.get(`/api/v1/rewards/validate?code=${encodeURIComponent(code)}`);
+  async validateCoupon(code, resortId, amount) {
+    let url = `/api/v1/rewards/validate?code=${encodeURIComponent(code)}`;
+    if (resortId) url += `&resortId=${resortId}`;
+    if (amount) url += `&amount=${amount}`;
+    const result = await apiClient.get(url);
     if (result && result.success) {
       return result.data;
     }

@@ -205,5 +205,13 @@ export const resortService = {
       return true;
     }
     throw new Error(result?.message || "Failed to delete resort");
+  },
+
+  async createResort(resortData) {
+    const result = await apiClient.post("/api/v1/resorts", resortData);
+    if (result && result.success) {
+      return result.data;
+    }
+    throw new Error(result?.message || "Failed to submit resort for approval");
   }
 };

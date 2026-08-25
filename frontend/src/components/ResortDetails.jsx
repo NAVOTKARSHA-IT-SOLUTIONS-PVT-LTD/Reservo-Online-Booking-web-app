@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useWishlist } from "../context/WishlistContext";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check } from "lucide-react";
+import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check, X } from "lucide-react";
 import ResortNavigationMap from "./ResortNavigationMap";
 
 import { useTranslation } from "../hooks/useTranslation";
@@ -28,6 +28,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const [guests, setGuests] = useState("2 Guests, 1 Room");
 
   const [activeDetailTab, setActiveDetailTab] = useState("overview");
+  const [activeVideoUrl, setActiveVideoUrl] = useState(null);
   const [resortPosts, setResortPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
 
@@ -70,6 +71,22 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const handleExploreMore = () => {
     navigate("/resorts");
   };
+
+  const dynamicPhotos = resortPosts
+    .filter(post => post.type === "IMAGE" || post.type === "image")
+    .map(post => post.mediaUrl);
+  
+  const dynamicVideos = resortPosts
+    .filter(post => post.type === "VIDEO" || post.type === "video")
+    .map(post => post.mediaUrl);
+
+  const finalGallery = resort.gallery && resort.gallery.length > 0 
+    ? resort.gallery 
+    : [resort.image || resort.imageUrl, ...dynamicPhotos].filter(Boolean);
+
+  const finalVideos = resort.videos && resort.videos.length > 0
+    ? resort.videos
+    : dynamicVideos.length > 0 ? dynamicVideos : ["https://assets.mixkit.co/videos/preview/mixkit-luxury-resort-swimming-pool-42244-large.mp4"];
 
   return (
     <div className="w-full max-w-[1280px] mx-auto px-5 py-8 font-sans transition-colors duration-300">
@@ -182,8 +199,11 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
           {/* Gallery Thumbnails row */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3.5">
             {/* View Video */}
-            <div className="relative rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group">
-              <img src={resort.heroImage} alt="Video preview" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+            <div 
+              onClick={() => setActiveVideoUrl(finalVideos[0])}
+              className="relative rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group"
+            >
+              <img src={finalGallery[0]} alt="Video preview" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
               <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 text-white z-10">
                 <Play size={16} className="fill-current" />
                 <span className="text-[9px] font-bold uppercase tracking-wider">View Video</span>
@@ -191,7 +211,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             </div>
 
             {/* Gallery images */}
-            {resort.gallery && resort.gallery.slice(1, 5).map((imgUrl, i) => (
+            {finalGallery.slice(1, 5).map((imgUrl, i) => (
               <div key={i} className="rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group">
                 <img src={imgUrl} alt={`Gallery thumbnail ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
               </div>
@@ -199,9 +219,9 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
 
             {/* View Photos Overlay */}
             <div className="relative rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group">
-              <img src={resort.gallery ? resort.gallery[0] : resort.heroImage} alt="Photos preview" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+              <img src={finalGallery[0]} alt="Photos preview" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
               <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white z-10">
-                <span className="text-sm font-extrabold">+24</span>
+                <span className="text-sm font-extrabold">+{finalGallery.length > 5 ? finalGallery.length - 5 : finalGallery.length}</span>
                 <span className="text-[9px] font-bold uppercase tracking-wider">Photos</span>
               </div>
             </div>
@@ -406,6 +426,19 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
 
       </div>
 
+      {activeVideoUrl && (
+        <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-[10005] p-4 animate-fade-in" onClick={() => setActiveVideoUrl(null)}>
+          <div className="relative w-full max-w-4xl aspect-[16/9] bg-black rounded-3xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+            <button 
+              className="absolute top-4 right-4 bg-white/20 hover:bg-white/45 text-white rounded-full p-2 border-none cursor-pointer z-30 transition flex items-center justify-center"
+              onClick={() => setActiveVideoUrl(null)}
+            >
+              <X size={20} />
+            </button>
+            <video src={activeVideoUrl} controls autoPlay className="w-full h-full object-contain" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.reservo.backend.repository.UserRepository;
+import com.reservo.backend.service.CouponService;
+import com.reservo.backend.entity.User;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/payments")
@@ -30,6 +34,8 @@ public class PaymentController {
     private final BookingService bookingService;
     private final StripeService stripeService;
     private final CouponRepository couponRepository;
+    private final UserRepository userRepository;
+    private final CouponService couponService;
 
     @Value("${app.stripe.webhook-secret}")
     private String endpointSecret;
@@ -43,43 +49,69 @@ public class PaymentController {
             @RequestParam String checkOut,
             @RequestParam BigDecimal amount,
             @RequestParam(required = false) String couponCode,
+            @RequestParam(required = false) Integer pointsToRedeem,
+            @RequestParam(required = false) String guestName,
+            @RequestParam(required = false) String guestPhone,
             @RequestParam String successUrl,
             @RequestParam String cancelUrl) {
         try {
-            BigDecimal finalAmount = amount;
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
-            if (couponCode != null && !couponCode.trim().isEmpty()) {
-                Coupon coupon = couponRepository.findByCodeAndUserId(couponCode.trim(), userId)
-                        .orElseThrow(() -> new IllegalArgumentException("Invalid coupon code or not owned by you."));
-                if (coupon.getStatus() != Coupon.CouponStatus.ACTIVE) {
-                    throw new IllegalArgumentException("Coupon code has already been used or expired.");
-                }
-
-                // Apply discount (e.g. 10% off)
-                BigDecimal discountMultiplier = BigDecimal.valueOf(100 - coupon.getDiscountPercentage())
-                        .divide(BigDecimal.valueOf(100));
-                finalAmount = amount.multiply(discountMultiplier);
-                log.info("Applied coupon {} for discount. Final amount: {}", couponCode, finalAmount);
+            // KYC validation rule: > ₹50,000 amount requires verified status
+            if (amount.compareTo(BigDecimal.valueOf(50000)) > 0 && user.getKycStatus() != User.KycStatus.VERIFIED) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("Identity verification (KYC) required for bookings over ₹50,000.", 400));
             }
+
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            if (couponCode != null && !couponCode.trim().isEmpty()) {
+                Coupon coupon = couponService.getAndValidateCoupon(couponCode.trim(), userId, resortId, amount);
+                if (coupon.getDiscountType() == Coupon.DiscountType.PERCENTAGE) {
+                    discountAmount = amount.multiply(coupon.getDiscountValue().divide(BigDecimal.valueOf(100)));
+                } else {
+                    discountAmount = coupon.getDiscountValue().min(amount);
+                }
+                log.info("Applied coupon {} for discount: {}", couponCode, discountAmount);
+            }
+
+            BigDecimal pointsDiscount = BigDecimal.ZERO;
+            int redeemedPoints = 0;
+            if (pointsToRedeem != null && pointsToRedeem > 0) {
+                if (user.getRewardPoints() < pointsToRedeem) {
+                    throw new IllegalArgumentException("Insufficient points balance.");
+                }
+                BigDecimal pointsValue = BigDecimal.valueOf(pointsToRedeem).divide(BigDecimal.valueOf(10), 2, java.math.RoundingMode.HALF_UP);
+                BigDecimal remainingAmount = amount.subtract(discountAmount);
+                BigDecimal maxPointsValueAllowed = remainingAmount.multiply(BigDecimal.valueOf(0.5));
+                if (pointsValue.compareTo(maxPointsValueAllowed) > 0) {
+                    pointsValue = maxPointsValueAllowed;
+                    redeemedPoints = pointsValue.multiply(BigDecimal.valueOf(10)).intValue();
+                } else {
+                    redeemedPoints = pointsToRedeem;
+                }
+                pointsDiscount = pointsValue;
+                log.info("Applied reward points discount: {} (Redeemed: {} points)", pointsDiscount, redeemedPoints);
+            }
+
+            BigDecimal finalAmount = amount.subtract(discountAmount).subtract(pointsDiscount).max(BigDecimal.ZERO);
 
             // Create pending booking
             Booking booking = bookingService.createBooking(
                     userId, resortId, roomId,
                     LocalDate.parse(checkIn), LocalDate.parse(checkOut),
-                    finalAmount
+                    finalAmount, guestName, guestPhone,
+                    (couponCode != null && !couponCode.trim().isEmpty()) ? couponCode.trim().toUpperCase() : null,
+                    discountAmount, redeemedPoints, pointsDiscount
             );
 
-            // Check for placeholder key simulation fallback
+            // Check for placeholder key simulation fallback (always falls back to mock payments in development)
             if (stripeService.isPlaceholderKey()) {
                 log.warn("Stripe API key is a placeholder. Falling back to local mock payment simulation.");
-                // Confirm booking and trigger mock receipt log & confirmation email
                 bookingService.confirmBooking(booking.getBookingCode(), "ch_mock_" + System.currentTimeMillis(), "MOCK_UPI");
                 
                 if (couponCode != null && !couponCode.trim().isEmpty()) {
-                    couponRepository.findByCode(couponCode.trim()).ifPresent(coupon -> {
-                        coupon.setStatus(Coupon.CouponStatus.USED);
-                        couponRepository.save(coupon);
-                    });
+                    couponService.incrementCouponUsage(couponCode.trim());
                 }
 
                 String mockSuccessUrl = successUrl + "?bookingCode=" + booking.getBookingCode();
@@ -141,11 +173,8 @@ public class PaymentController {
                     // Consume Stripe Session Coupon if applied
                     String couponCode = session.getMetadata().get("couponCode");
                     if (couponCode != null && !couponCode.trim().isEmpty()) {
-                        couponRepository.findByCode(couponCode.trim()).ifPresent(coupon -> {
-                            coupon.setStatus(Coupon.CouponStatus.USED);
-                            couponRepository.save(coupon);
-                            log.info("Webhook successfully consumed coupon: {}", couponCode);
-                        });
+                        couponService.incrementCouponUsage(couponCode.trim());
+                        log.info("Webhook successfully consumed coupon: {}", couponCode);
                     }
 
                     log.info("Webhook successfully confirmed booking: {}", bookingCode);

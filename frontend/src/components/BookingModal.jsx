@@ -1,33 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, Sparkles, QrCode, ArrowLeft } from 'lucide-react';
+import { X, CheckCircle, Sparkles, QrCode, ArrowLeft, ArrowRight, Upload, ShieldAlert, Check, Calendar, Users, DollarSign, Gift, BadgePercent } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { bookingService } from '../services/booking.service';
 import { rewardService } from '../services/reward.service';
 import { authService } from '../services/auth.service';
 import { useToast } from '../context/ToastContext';
-import StripeCardInput from './StripeCardInput';
+import { apiClient } from '../services/apiClient';
+import { secureStorage } from '../services/secureStorage';
 import rivoConfirmed from '../assets/images/rivo_confirmed.png';
 
 export default function BookingModal({ resort, room, isDarkMode, onClose, onAskRivo }) {
   const toast = useToast();
   const navigate = useNavigate();
+
+  // Wizard Steps:
+  // 1: Guest Info (Booking for self vs other)
+  // 2: KYC Identity Verification
+  // 3: Coupon & Rewards Point Redemption
+  // 4: Summary & Verified Mock Checkout
+  // 5: Booking Confirmation Pass
+  const [wizardStep, setWizardStep] = useState(1);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
-  const [addonButler, setAddonButler] = useState(true);
-  const [addonDinner, setAddonDinner] = useState(false);
-  const [addonHelicopter, setAddonHelicopter] = useState(false);
+  const [confirmedBookingCode, setConfirmedBookingCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // User details & points
+  const [currentUser, setCurrentUser] = useState(null);
+  const [pointsBalance, setPointsBalance] = useState(0);
+  const [kycStatus, setKycStatus] = useState("UNVERIFIED");
+
+  // Guest Details state (Step 1)
+  const [isBookingForSelf, setIsBookingForSelf] = useState(true);
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+
+  // KYC state (Step 2)
+  const [kycDocType, setKycDocType] = useState("Aadhaar");
+  const [kycFileSelected, setKycFileSelected] = useState(false);
+  const [kycLoading, setKycLoading] = useState(false);
+
+  // Rewards/Coupons state (Step 3)
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponDiscountVal, setCouponDiscountVal] = useState(0);
+  const [couponDiscountType, setCouponDiscountType] = useState("PERCENTAGE");
+  const [calculatedCouponDiscount, setCalculatedCouponDiscount] = useState(0);
+
+  const [redeemPointsChecked, setRedeemPointsChecked] = useState(false);
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
 
   // Currency Converter states
   const [currencySymbol, setCurrencySymbol] = useState("₹");
   const [exchangeRate, setExchangeRate] = useState(1);
-
-  // Loyalty Coupons states
-  const [couponCode, setCouponCode] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [couponApplied, setCouponApplied] = useState(false);
-  const [couponLoading, setCouponLoading] = useState(false);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -45,72 +71,141 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
+  // Fetch initial profile & loyalty details
+  useEffect(() => {
+    if (authService.isAuthenticated()) {
+      const user = authService.getCurrentUser();
+      setCurrentUser(user);
+      if (user) {
+        setKycStatus(user.kycStatus || "UNVERIFIED");
+      }
+      rewardService.getRewardStatus()
+        .then(data => {
+          setPointsBalance(data.points || 0);
+        })
+        .catch(err => console.warn("Failed to load rewards stats", err));
+    }
+  }, []);
+
+  // Price calculations
   const basePrice = room ? room.price : resort.price;
   const nights = 3;
-  const butlerFee = addonButler ? 1500 : 0;
-  const dinnerFee = addonDinner ? 3500 : 0;
-  const helicopterFee = addonHelicopter ? 8000 : 0;
-  const subtotal = (basePrice * nights) + butlerFee + dinnerFee + helicopterFee;
+  const subtotal = basePrice * nights;
   const taxes = Math.round(subtotal * 0.12);
   const totalBeforeDiscount = subtotal + taxes;
-  const discountAmount = Math.round(totalBeforeDiscount * (discountPercent / 100));
-  const grandTotal = totalBeforeDiscount - discountAmount;
 
-  const [bookingCode] = useState(() => `RES-${Math.floor(100000 + Math.random() * 900000)}`);
-  const handleConfirm = async () => {
-    setSubmitting(true);
-    try {
-      const bookingDetails = {
-        id: bookingCode,
-        resortId: resort.id,
-        roomId: room ? room.id : (resort.roomTypes && resort.roomTypes[0] ? resort.roomTypes[0].id : null),
-        resortName: resort.name,
-        location: resort.location,
-        resortImage: resort.heroImage || resort.image,
-        checkin: "2026-09-12",
-        checkout: "2026-09-15",
-        guests: 2,
-        roomTitle: room ? room.title : (resort.roomTypes && resort.roomTypes[0] ? resort.roomTypes[0].title : "Luxury Suite"),
-        total: grandTotal,
-        amount: `${currencySymbol}${(Math.round(grandTotal * exchangeRate)).toLocaleString()}`,
-        code: bookingCode
-      };
+  // Coupon discount calculation
+  useEffect(() => {
+    if (couponApplied) {
+      if (couponDiscountType === "PERCENTAGE") {
+        setCalculatedCouponDiscount(Math.round(totalBeforeDiscount * (couponDiscountVal / 100)));
+      } else {
+        setCalculatedCouponDiscount(Math.round(couponDiscountVal));
+      }
+    } else {
+      setCalculatedCouponDiscount(0);
+    }
+  }, [couponApplied, couponDiscountVal, couponDiscountType, totalBeforeDiscount]);
 
-      await bookingService.createBooking(bookingDetails);
-      setIsConfirmed(true);
-      toast(`Suite checkout for ${resort.name} confirmed!`, "success");
-    } catch (e) {
-      console.error("Failed to save booking:", e);
-      toast("Failed to confirm checkout. Please try again.", "error");
-    } finally {
-      setSubmitting(false);
+  // Points conversion (10 points = 1 INR)
+  const maxRedeemablePoints = Math.min(
+    pointsBalance,
+    Math.round((totalBeforeDiscount - calculatedCouponDiscount) * 0.5 * 10) // Limit to 50% value of remaining total
+  );
+  
+  const pointsDiscountValue = redeemPointsChecked
+    ? Math.round(pointsToRedeem / 10)
+    : 0;
+
+  const grandTotal = Math.max(0, totalBeforeDiscount - calculatedCouponDiscount - pointsDiscountValue);
+
+  const handleNextStep = () => {
+    if (wizardStep === 1) {
+      if (!authService.isAuthenticated()) {
+        toast("Please log in to continue booking your stay.", "error");
+        navigate("/login");
+        onClose();
+        return;
+      }
+      if (!isBookingForSelf && (!guestName.trim() || !guestPhone.trim())) {
+        toast("Please enter the guest's name and phone number.", "error");
+        return;
+      }
+      setWizardStep(2);
+    } else if (wizardStep === 2) {
+      const isKycRequired = totalBeforeDiscount > 50000 && kycStatus !== "VERIFIED";
+      if (isKycRequired) {
+        toast("Please complete identity verification to proceed with this high-value booking.", "error");
+        return;
+      }
+      setWizardStep(3);
+    } else if (wizardStep === 3) {
+      setWizardStep(4);
     }
   };
 
+  const handlePrevStep = () => {
+    if (wizardStep > 1) {
+      setWizardStep(wizardStep - 1);
+    }
+  };
+
+  // KYC Verification mockup call
+  const handleVerifyKyc = async () => {
+    if (!kycFileSelected) {
+      toast("Please select a file scan to upload.", "error");
+      return;
+    }
+    setKycLoading(true);
+    try {
+      const result = await apiClient.post("/api/v1/user/verify-kyc", {
+        documentType: kycDocType,
+        documentUrl: "mock://kyc-document-scan-uploaded"
+      });
+      if (result && result.success) {
+        setKycStatus("VERIFIED");
+        // Update user state locally
+        const user = authService.getCurrentUser();
+        if (user) {
+          user.kycStatus = "VERIFIED";
+          user.kycDocumentType = kycDocType;
+          user.kycDocumentUrl = "mock://kyc-document-scan-uploaded";
+          secureStorage.setItem("reservo_user", user);
+        }
+        toast("Identity verification completed successfully!", "success");
+      }
+    } catch (e) {
+      toast(e.message || "Identity verification failed.", "error");
+    } finally {
+      setKycLoading(false);
+    }
+  };
+
+  // Apply Promo Coupon
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     setCouponLoading(true);
     try {
-      const discount = await rewardService.validateCoupon(couponCode.trim());
-      setDiscountPercent(discount);
+      const resp = await rewardService.validateCoupon(
+        couponCode.trim(), 
+        resort.id, 
+        totalBeforeDiscount
+      );
+      setCouponDiscountVal(resp.discountValue);
+      setCouponDiscountType(resp.discountType);
       setCouponApplied(true);
-      toast(`Coupon applied! ${discount}% discount applied to stays.`, "success");
+      toast(`Coupon applied! ${resp.discountType === "PERCENTAGE" ? `${resp.discountValue}%` : `₹${resp.discountValue}`} discount applied.`, "success");
     } catch (e) {
       toast(e.message || "Invalid coupon code.", "error");
-      setDiscountPercent(0);
+      setCouponDiscountVal(0);
       setCouponApplied(false);
     } finally {
       setCouponLoading(false);
     }
   };
 
-  const handleStripeCheckout = async () => {
-    if (!authService.isAuthenticated()) {
-      toast("Please log in to proceed with your reservation.", "error");
-      navigate("/login");
-      onClose();
-      return;
-    }
+  // Checkout call
+  const handleCheckout = async () => {
     setSubmitting(true);
     try {
       const bookingDetails = {
@@ -118,19 +213,31 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
         roomId: room ? room.id : (resort.roomTypes && resort.roomTypes[0] ? resort.roomTypes[0].id : null),
         checkin: "2026-09-12",
         checkout: "2026-09-15",
-        total: grandTotal,
-        couponCode: couponApplied ? couponCode : undefined
+        total: totalBeforeDiscount,
+        couponCode: couponApplied ? couponCode.trim().toUpperCase() : undefined,
+        pointsToRedeem: redeemPointsChecked ? pointsToRedeem : undefined,
+        guestName: isBookingForSelf ? undefined : guestName,
+        guestPhone: isBookingForSelf ? undefined : guestPhone
       };
-      const checkoutUrl = await bookingService.createCheckoutSession(bookingDetails);
-      toast("Redirecting to secure Stripe checkout...", "success");
-      window.location.href = checkoutUrl;
+
+      const result = await bookingService.createCheckoutSession(bookingDetails);
+      // Since Stripe key is placeholder, result returns mock checkout success redirect URL
+      const url = new URL(result);
+      const bCode = url.searchParams.get("bookingCode") || `RES-${Math.floor(100000 + Math.random() * 900000)}`;
+      
+      setConfirmedBookingCode(bCode);
+      setIsConfirmed(true);
+      setWizardStep(5);
+      toast(`Booking confirmed! Pass Code: ${bCode}`, "success");
     } catch (e) {
-      console.error("Payment redirect failure:", e);
-      toast(e.message || "Failed to start payment. Please try again.", "error");
+      console.error("Checkout failure:", e);
+      toast(e.message || "Failed to confirm booking. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const isKycRequired = totalBeforeDiscount > 50000 && kycStatus !== "VERIFIED";
 
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 font-sans">
@@ -144,22 +251,22 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
         }`}
       >
         {/* Header */}
-        <div className="bg-[#2563EB] text-white p-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {showPayment && !isConfirmed && (
+        <div className="bg-[#2563EB] text-white p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {wizardStep > 1 && wizardStep < 5 && (
               <button 
-                onClick={() => setShowPayment(false)}
-                className="p-1 rounded-full hover:bg-white/20 text-white border-none bg-transparent cursor-pointer mr-1"
-                aria-label="Back to details"
+                onClick={handlePrevStep}
+                className="p-1 rounded-full hover:bg-white/20 text-white border-none bg-transparent cursor-pointer"
+                aria-label="Back"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
             <div>
               <div className="text-[10px] font-bold text-sky-200 uppercase tracking-widest">
-                {showPayment ? "SECURE CHECKOUT VIA STRIPE" : "RESERVO INSTANT RESERVATION"}
+                {wizardStep === 5 ? "RESERVATION CONFIRMED" : `Step ${wizardStep} of 4: Booking Details`}
               </div>
-              <h3 className="text-lg font-bold text-white mt-0.5">{resort.name}</h3>
+              <h3 className="text-base font-extrabold text-white mt-0.5">{resort.name}</h3>
             </div>
           </div>
           <button
@@ -170,9 +277,338 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-6 overflow-y-auto space-y-6">
-          {isConfirmed ? (
+        {/* Wizard Steps Content */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
+          
+          {/* STEP 1: Guest Information */}
+          {wizardStep === 1 && (
+            <div className="space-y-5 animate-fade-in">
+              <div className="border-b pb-3 border-slate-200 dark:border-slate-700">
+                <h4 className="text-sm font-extrabold text-[#2563EB] flex items-center gap-1.5"><Users size={16} /> Guest Information</h4>
+                <p className="text-[11px] text-stone-400 mt-1">Review guest information for your reservation</p>
+              </div>
+
+              {/* Toggle Booking For */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBookingForSelf(true)}
+                  className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                    isBookingForSelf
+                      ? 'bg-[#DBEAFE] border-[#2563EB] text-[#2563EB]'
+                      : isDarkMode ? 'bg-[#111827] border-[#334155] text-stone-400' : 'bg-[#F8FAFC] border-[#E2E8F0] text-stone-600'
+                  }`}
+                >
+                  ✓ Book for Myself
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsBookingForSelf(false)}
+                  className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                    !isBookingForSelf
+                      ? 'bg-[#DBEAFE] border-[#2563EB] text-[#2563EB]'
+                      : isDarkMode ? 'bg-[#111827] border-[#334155] text-stone-400' : 'bg-[#F8FAFC] border-[#E2E8F0] text-stone-600'
+                  }`}
+                >
+                  👥 Book for Someone Else
+                </button>
+              </div>
+
+              {isBookingForSelf ? (
+                /* Pre-filled Logged In Info */
+                <div className={`p-4 rounded-xl border text-xs space-y-3 ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Account Name:</span>
+                    <span className="font-semibold">{currentUser?.name || "Guest User"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Account Email:</span>
+                    <span className="font-semibold">{currentUser?.email || "guest@mail.in"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Contact Phone:</span>
+                    <span className="font-semibold">{currentUser?.phone || "+91 98765 43210"}</span>
+                  </div>
+                  <div className="text-[10px] text-[#2563EB] font-bold text-right">✓ Contact details linked from profile</div>
+                </div>
+              ) : (
+                /* Custom Guest Input Form */
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-stone-400 mb-1.5 uppercase tracking-wide">Guest Full Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Rahul Sharma"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      className={`w-full p-3 text-xs rounded-xl border bg-transparent font-semibold outline-none ${
+                        isDarkMode ? 'border-[#334155] focus:border-[#2563EB]' : 'border-[#E2E8F0] focus:border-[#2563EB]'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-stone-400 mb-1.5 uppercase tracking-wide">Guest Phone Number</label>
+                    <input 
+                      type="tel" 
+                      placeholder="e.g. +91 99999 88888"
+                      value={guestPhone}
+                      onChange={(e) => setGuestPhone(e.target.value)}
+                      className={`w-full p-3 text-xs rounded-xl border bg-transparent font-semibold outline-none ${
+                        isDarkMode ? 'border-[#334155] focus:border-[#2563EB]' : 'border-[#E2E8F0] focus:border-[#2563EB]'
+                      }`}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Resort Overview Card */}
+              <div className={`p-4 rounded-xl border flex justify-between items-center ${isDarkMode ? 'bg-[#111827]/40 border-[#334155]' : 'bg-[#F8FAFC]/40 border-[#E2E8F0]'}`}>
+                <div className="space-y-1">
+                  <div className="text-[10px] text-primary font-bold uppercase">Suite selection</div>
+                  <div className="text-xs font-bold">{room ? room.title : "Luxury Suite"}</div>
+                  <div className="text-[10px] text-stone-400 flex items-center gap-1.5">
+                    <Calendar size={12} /> Sep 12 - Sep 15 (3 Nights)
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] text-stone-400 uppercase">Subtotal</div>
+                  <div className="text-sm font-bold text-primary">
+                    {currencySymbol}{(Math.round(totalBeforeDiscount * exchangeRate)).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 2: Identity Verification (KYC) */}
+          {wizardStep === 2 && (
+            <div className="space-y-5 animate-fade-in">
+              <div className="border-b pb-3 border-slate-200 dark:border-slate-700">
+                <h4 className="text-sm font-extrabold text-[#2563EB] flex items-center gap-1.5"><ShieldAlert size={16} /> Guest Verification</h4>
+                <p className="text-[11px] text-stone-400 mt-1">Platform trust & security verification guidelines</p>
+              </div>
+
+              {isKycRequired ? (
+                /* KYC Upload Flow */
+                <div className="space-y-4">
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl space-y-2">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
+                      <ShieldAlert className="w-4.5 h-4.5 text-amber-500" /> Dynamic KYC Verification Required
+                    </div>
+                    <p className="text-[11.5px] leading-relaxed text-amber-700 dark:text-amber-400">
+                      Reservo triggers identity checks for high-value reservations exceeding **₹50,000**. Upload a copy of your Government Photo ID to confirm your booking request.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 items-center">
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-400 mb-1.5 uppercase tracking-wide">Document Type</label>
+                      <select
+                        value={kycDocType}
+                        onChange={(e) => setKycDocType(e.target.value)}
+                        className={`w-full p-2.5 text-xs rounded-xl border bg-transparent font-bold outline-none ${
+                          isDarkMode ? 'border-[#334155] focus:border-[#2563EB] bg-[#1E293B]' : 'border-[#E2E8F0] focus:border-[#2563EB]'
+                        }`}
+                      >
+                        <option value="Aadhaar">Aadhaar Card</option>
+                        <option value="Passport">Passport</option>
+                        <option value="PAN">PAN Card</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-stone-400 mb-1.5 uppercase tracking-wide">Upload ID Copy</label>
+                      <label className={`w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border cursor-pointer text-xs font-semibold transition border-dashed hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                        kycFileSelected ? 'border-[#22C55E] text-[#22C55E]' : 'border-stone-300 text-stone-500'
+                      }`}>
+                        <input 
+                          type="file" 
+                          accept="image/*,application/pdf"
+                          onChange={() => setKycFileSelected(true)}
+                          className="hidden" 
+                        />
+                        {kycFileSelected ? (
+                          <><Check size={14} /> ID Selected</>
+                        ) : (
+                          <><Upload size={14} /> Choose File</>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleVerifyKyc}
+                    disabled={!kycFileSelected || kycLoading}
+                    className="w-full py-3 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-stone-400 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition border-none cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    {kycLoading ? "Verifying Document..." : "Verify & Approve Document"}
+                  </button>
+                </div>
+              ) : (
+                /* Auto-approved / Standard Verification */
+                <div className="py-6 flex flex-col items-center text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-[#22C55E] flex items-center justify-center border border-emerald-200 dark:border-emerald-900/50">
+                    <Check className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h5 className="font-extrabold text-sm text-[#22C55E]">✓ Identity Check Passed</h5>
+                    <p className="text-[11.5px] text-stone-400 mt-1 max-w-sm">
+                      Your stay value is within the standard verification limit, or you have already verified your account ID. No document uploads are required at this time.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* STEP 3: Coupons & Rewards */}
+          {wizardStep === 3 && (
+            <div className="space-y-5 animate-fade-in">
+              <div className="border-b pb-3 border-slate-200 dark:border-slate-700">
+                <h4 className="text-sm font-extrabold text-[#2563EB] flex items-center gap-1.5"><Gift size={16} /> Promo Code & Loyalty Points</h4>
+                <p className="text-[11px] text-stone-400 mt-1">Apply platforms rewards or promo codes to deduct stay prices</p>
+              </div>
+
+              {/* Promo Coupon Entry */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-bold text-stone-400 uppercase tracking-wide">Do you have a Coupon Code?</label>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="e.g. WELCOME10, AZURE20" 
+                    value={couponCode} 
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    disabled={couponApplied || couponLoading}
+                    className={`flex-grow p-3 text-xs rounded-xl border bg-transparent font-bold uppercase tracking-wider outline-none ${
+                      isDarkMode 
+                        ? 'border-[#334155] focus:border-[#2563EB] text-[#F8FAFC]' 
+                        : 'border-[#E2E8F0] focus:border-[#2563EB] text-[#0F172A]'
+                    }`}
+                  />
+                  <button 
+                    onClick={handleApplyCoupon}
+                    disabled={couponApplied || !couponCode.trim() || couponLoading}
+                    className="px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-stone-400 text-white text-xs font-bold rounded-xl border-none cursor-pointer transition"
+                  >
+                    {couponLoading ? "Checking..." : couponApplied ? "Applied" : "Apply"}
+                  </button>
+                </div>
+                {couponApplied && (
+                  <div className="flex items-center justify-between text-[11px] text-[#10B981] font-semibold">
+                    <span>✓ Coupon Applied Successfully!</span>
+                    <button 
+                      onClick={() => { setCouponApplied(false); setCouponCode(""); }} 
+                      className="bg-transparent border-none text-red-500 cursor-pointer font-bold hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Loyalty Reward Points */}
+              <div className={`p-4 rounded-xl border space-y-3.5 ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      id="redeemPoints" 
+                      checked={redeemPointsChecked} 
+                      onChange={(e) => {
+                        setRedeemPointsChecked(e.target.checked);
+                        if (e.target.checked && pointsToRedeem === 0) {
+                          setPointsToRedeem(maxRedeemablePoints);
+                        }
+                      }}
+                      className="w-4 h-4 cursor-pointer accent-[#2563EB]"
+                    />
+                    <label htmlFor="redeemPoints" className="text-xs font-bold cursor-pointer">Redeem Reservo Points</label>
+                  </div>
+                  <span className="text-[10px] bg-sky-100 text-primary dark:bg-sky-950/40 px-2 py-0.5 rounded-full font-bold">
+                    Balance: {pointsBalance.toLocaleString()} pts
+                  </span>
+                </div>
+
+                {redeemPointsChecked && (
+                  <div className="space-y-2 animate-fade-in">
+                    <div className="flex justify-between text-[11px] text-stone-400">
+                      <span>Points to redeem (10 pts = ₹1):</span>
+                      <span className="font-bold text-stone-200">{pointsToRedeem.toLocaleString()} pts</span>
+                    </div>
+                    <input 
+                      type="range"
+                      min="0"
+                      max={maxRedeemablePoints}
+                      step="10"
+                      value={pointsToRedeem}
+                      onChange={(e) => setPointsToRedeem(parseInt(e.target.value, 10))}
+                      className="w-full accent-primary cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[10px] text-stone-400">
+                      <span>0 pts</span>
+                      <span className="text-primary font-bold">-{currencySymbol}{(Math.round(pointsDiscountValue * exchangeRate)).toLocaleString()} off</span>
+                      <span>{maxRedeemablePoints.toLocaleString()} pts (Max)</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: Summary & Verified Mock Checkout */}
+          {wizardStep === 4 && (
+            <div className="space-y-5 animate-fade-in">
+              <div className="border-b pb-3 border-slate-200 dark:border-slate-700">
+                <h4 className="text-sm font-extrabold text-[#2563EB] flex items-center gap-1.5"><BadgePercent size={16} /> Checkout Pricing Summary</h4>
+                <p className="text-[11px] text-stone-400 mt-1">Review the final charges and complete your mock payment</p>
+              </div>
+
+              {/* Itemized pricing breakdown */}
+              <div className={`p-4 rounded-2xl border space-y-3 text-xs ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
+                <div className="flex justify-between">
+                  <span className="text-stone-400">Stay Duration (3 nights):</span>
+                  <span className="font-bold">{currencySymbol}{(Math.round(subtotal * exchangeRate)).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stone-400">Resort Taxes (12%):</span>
+                  <span className="font-bold">{currencySymbol}{(Math.round(taxes * exchangeRate)).toLocaleString()}</span>
+                </div>
+
+                {couponApplied && (
+                  <div className="flex justify-between text-[#10B981] font-semibold">
+                    <span>Coupon Discount ({couponCode}):</span>
+                    <span>-{currencySymbol}{(Math.round(calculatedCouponDiscount * exchangeRate)).toLocaleString()}</span>
+                  </div>
+                )}
+
+                {redeemPointsChecked && (
+                  <div className="flex justify-between text-[#10B981] font-semibold">
+                    <span>Redeemed Points Discount ({pointsToRedeem} pts):</span>
+                    <span>-{currencySymbol}{(Math.round(pointsDiscountValue * exchangeRate)).toLocaleString()}</span>
+                  </div>
+                )}
+
+                <div className="border-t border-dashed border-slate-300 dark:border-slate-700 pt-3 flex justify-between text-base font-extrabold text-primary">
+                  <span>Grand Total</span>
+                  <span>{currencySymbol}{(Math.round(grandTotal * exchangeRate)).toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Secure Payment details note */}
+              <div className={`p-4 rounded-xl border flex items-start gap-3 ${isDarkMode ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-100/50 border-slate-200'}`}>
+                <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h6 className="text-[11.5px] font-bold">Reservo Verified Mock Payment</h6>
+                  <p className="text-[10.5px] text-stone-400 leading-relaxed">
+                    This reservation uses the secure development sandboxed dummy checkout flow. No real credit cards or Stripe charges will be processed. Clicking checkout completes the booking mock process automatically.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 5: Booking Confirmation Pass */}
+          {wizardStep === 5 && (
             <div className="flex flex-col items-center text-center space-y-4 py-2 animate-fade-in">
               <div className="relative w-28 h-28 mx-auto">
                 <img 
@@ -187,192 +623,100 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
 
               <div>
                 <span className="px-3 py-1 bg-emerald-100 text-[#22C55E] rounded-full text-[10px] font-bold uppercase tracking-wider">
-                  BOOKING VERIFIED & CONFIRMED
+                  ✓ PASSPORT & BOOKING CONFIRMED
                 </span>
                 <h3 className="text-2xl font-bold mt-2">Reservation Secured!</h3>
                 <p className="text-xs text-stone-400 mt-1">
-                  Rivo has secured your booking. Digital pass sent to email!
+                  Rivo has successfully finalized your booking. A digital pass has been emailed to you!
                 </p>
               </div>
 
-              <div className="bg-[#0B1120] text-white rounded-2xl p-5 text-left border border-[#2563EB] w-full space-y-3">
+              {/* Complete Booking Card */}
+              <div className="bg-[#0B1120] text-white rounded-2xl p-5 text-left border border-[#2563EB] w-full space-y-4">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-3">
                   <div>
-                    <div className="text-[10px] text-[#60A5FA] font-bold uppercase">BOOKING ID</div>
-                    <div className="text-sm font-mono font-bold">{bookingCode}</div>
+                    <div className="text-[10px] text-[#60A5FA] font-bold uppercase">BOOKING REFERENCE</div>
+                    <div className="text-sm font-mono font-bold">{confirmedBookingCode}</div>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-white p-1 flex items-center justify-center">
                     <QrCode className="w-8 h-8 text-[#0B1120]" />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div><span className="text-slate-400 text-[10px] uppercase block">GUEST</span><span className="font-bold">Valued RESERVO Guest</span></div>
-                  <div><span className="text-slate-400 text-[10px] uppercase block">DATES</span><span className="font-bold">Sep 12 - Sep 15, 2026</span></div>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase block">GUEST</span>
+                    <span className="font-bold">{isBookingForSelf ? (currentUser?.name || "Valued User") : guestName}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase block">DATES</span>
+                    <span className="font-bold">Sep 12 - Sep 15 (3 Nights)</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase block">ROOM SELECTION</span>
+                    <span className="font-bold">{room ? room.title : "Luxury Suite"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase block">LOYALTY POINTS</span>
+                    <span className="font-bold text-[#10B981]">+{Math.round(grandTotal * 0.1)} Points Earned</span>
+                  </div>
                 </div>
               </div>
             </div>
-          ) : showPayment ? (
-            /* Stripe Interactive Payment Form integration */
-            <div className="animate-fade-in">
-              <StripeCardInput 
-                grandTotal={grandTotal * exchangeRate} 
-                currencySymbol={currencySymbol} 
-                onPaymentSuccess={handleConfirm} 
-              />
-            </div>
-          ) : (
-            /* Stay and Addons Selection Details */
-            <>
-              <div className={`p-4 rounded-2xl border flex items-center justify-between ${
-                isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'
-              }`}>
-                <div>
-                  <div className="text-xs text-[#2563EB] font-bold uppercase">Selected Suite</div>
-                  <div className="text-base font-bold mt-0.5">{room ? room.title : resort.roomTypes[0].title}</div>
-                  <div className={`text-xs flex items-center gap-2 mt-1 ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-                    <span>📅 Sep 12 - Sep 15 (3 Nights)</span>
-                    <span>•</span>
-                    <span>👥 2 Guests</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-stone-400">Nightly Rate</div>
-                  <div className="text-lg font-bold text-[#2563EB]">
-                    {currencySymbol}{(Math.round(basePrice * exchangeRate)).toLocaleString()}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="text-xs font-bold uppercase tracking-wider text-stone-400">Tailored Luxury Add-ons</div>
-                
-                <label className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${
-                  addonButler
-                    ? 'bg-[#DBEAFE] border-[#2563EB] text-[#2563EB]'
-                    : isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" checked={addonButler} onChange={(e) => setAddonButler(e.target.checked)} className="accent-[#2563EB]" />
-                    <div>
-                      <div className="text-xs font-bold flex items-center gap-1">24/7 Dedicated Rivo AI Butler <Sparkles className="w-3 h-3 text-[#2563EB]" /></div>
-                      <div className="text-[11px] opacity-75">Live priority room service & packing assistance.</div>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold">+{currencySymbol}{(Math.round(1500 * exchangeRate)).toLocaleString()}</span>
-                </label>
-
-                <label className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${
-                  addonDinner
-                    ? 'bg-[#DBEAFE] border-[#2563EB] text-[#2563EB]'
-                    : isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" checked={addonDinner} onChange={(e) => setAddonDinner(e.target.checked)} className="accent-[#2563EB]" />
-                    <div>
-                      <div className="text-xs font-bold">Candlelit Beachside Seafood Dinner</div>
-                      <div className="text-[11px] opacity-75">5-course private chef menu.</div>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold">+{currencySymbol}{(Math.round(3500 * exchangeRate)).toLocaleString()}</span>
-                </label>
-
-                <label className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition ${
-                  addonHelicopter
-                    ? 'bg-[#DBEAFE] border-[#2563EB] text-[#2563EB]'
-                    : isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <input type="checkbox" checked={addonHelicopter} onChange={(e) => setAddonHelicopter(e.target.checked)} className="accent-[#2563EB]" />
-                    <div>
-                      <div className="text-xs font-bold">Helicopter Airport Transfer</div>
-                      <div className="text-[11px] opacity-75">Direct aerial transfer to resort helipad.</div>
-                    </div>
-                  </div>
-                  <span className="text-xs font-bold">+{currencySymbol}{(Math.round(8000 * exchangeRate)).toLocaleString()}</span>
-                </label>
-              </div>
-
-              <div className="border-t border-stone-200 dark:border-stone-700 pt-4 space-y-2 text-xs">
-                <div className="flex justify-between"><span>Room Charge (3 nights)</span><span className="font-bold">{currencySymbol}{(Math.round(basePrice * nights * exchangeRate)).toLocaleString()}</span></div>
-                {addonButler && <div className="flex justify-between"><span>Rivo AI Butler</span><span>{currencySymbol}{(Math.round(1500 * exchangeRate)).toLocaleString()}</span></div>}
-                {addonDinner && <div className="flex justify-between"><span>Beachfront Dinner</span><span>{currencySymbol}{(Math.round(3500 * exchangeRate)).toLocaleString()}</span></div>}
-                {addonHelicopter && <div className="flex justify-between"><span>Helicopter Shuttle</span><span>{currencySymbol}{(Math.round(8000 * exchangeRate)).toLocaleString()}</span></div>}
-                <div className="flex justify-between"><span>Resort Taxes (12%)</span><span>{currencySymbol}{(Math.round(taxes * exchangeRate)).toLocaleString()}</span></div>
-                
-                {/* Coupon Entry Block */}
-                <div className="pt-2 border-t border-dashed border-stone-200 dark:border-stone-700">
-                  <div className="flex items-center gap-2">
-                    <input 
-                      type="text" 
-                      placeholder="Redeemed Coupon Code" 
-                      value={couponCode} 
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      disabled={couponApplied || couponLoading}
-                      className={`flex-grow p-2 text-xs rounded-xl border bg-transparent font-medium uppercase tracking-wider outline-none ${
-                        isDarkMode 
-                          ? 'border-[#334155] focus:border-[#2563EB] text-[#F8FAFC]' 
-                          : 'border-[#E2E8F0] focus:border-[#2563EB] text-[#0F172A]'
-                      }`}
-                    />
-                    <button 
-                      onClick={handleApplyCoupon}
-                      disabled={couponApplied || !couponCode.trim() || couponLoading}
-                      className="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-stone-400 text-white text-xs font-bold rounded-xl border-none cursor-pointer transition"
-                    >
-                      {couponLoading ? "Checking..." : couponApplied ? "Applied" : "Apply"}
-                    </button>
-                  </div>
-                </div>
-
-                {couponApplied && (
-                  <div className="flex justify-between text-[#10B981] font-bold">
-                    <span>Loyalty Discount ({discountPercent}%)</span>
-                    <span>-{currencySymbol}{(Math.round(discountAmount * exchangeRate)).toLocaleString()}</span>
-                  </div>
-                )}
-
-                <div className="border-t pt-2 flex justify-between text-base font-bold text-[#2563EB]">
-                  <span>Total Amount</span>
-                  <span>{currencySymbol}{(Math.round(grandTotal * exchangeRate)).toLocaleString()}</span>
-                </div>
-              </div>
-            </>
           )}
+
         </div>
 
-        {/* Footer */}
-        {!showPayment && !isConfirmed && (
-          <div className={`p-6 border-t ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
-            <button
-              onClick={handleStripeCheckout}
-              disabled={submitting}
-              className="w-full py-3.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:bg-stone-400 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg border-none transition cursor-pointer flex items-center justify-center gap-2"
-            >
-              {submitting ? "Initiating secure checkout..." : "Proceed to Payment"}
-            </button>
+        {/* Footer controls */}
+        {wizardStep < 5 && (
+          <div className={`p-6 border-t flex justify-end gap-3 ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
+            {wizardStep > 1 && (
+              <button
+                onClick={handlePrevStep}
+                className="py-3 px-5 border border-stone-300 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-slate-800 rounded-xl text-xs font-bold cursor-pointer transition bg-transparent text-inherit"
+              >
+                Back
+              </button>
+            )}
+            
+            {wizardStep === 4 ? (
+              <button
+                onClick={handleCheckout}
+                disabled={submitting}
+                className="py-3 px-6 bg-[#22C55E] hover:bg-[#15803D] disabled:bg-stone-400 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg border-none transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                {submitting ? "Processing Mock Payment..." : "Complete Reservation"}
+              </button>
+            ) : (
+              <button
+                onClick={handleNextStep}
+                className="py-3 px-6 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md border-none transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                Continue <ArrowRight size={14} />
+              </button>
+            )}
           </div>
         )}
 
-        {isConfirmed && (
+        {wizardStep === 5 && (
           <div className={`p-6 border-t ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
-            <button
-              onClick={() => {
-                onClose();
-                if (onAskRivo) onAskRivo();
-              }}
-              className="w-full sm:flex-grow py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 border-none cursor-pointer transition"
-            >
-              <Sparkles className="w-4 h-4" /> Open Rivo for Check-in
-            </button>
-            <button
-              onClick={onClose}
-              className="w-full sm:w-auto px-5 py-3 bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-bold rounded-xl border-none cursor-pointer transition"
-            >
-              Close Pass
-            </button>
-          </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+              <button
+                onClick={() => {
+                  onClose();
+                  if (onAskRivo) onAskRivo();
+                }}
+                className="w-full sm:flex-grow py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 border-none cursor-pointer transition"
+              >
+                <Sparkles className="w-4 h-4" /> Open Rivo for Check-in
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full sm:w-auto px-5 py-3 bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-bold rounded-xl border-none cursor-pointer transition"
+              >
+                Close Pass
+              </button>
+            </div>
           </div>
         )}
       </motion.div>

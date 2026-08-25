@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { hostService } from "../services/host.service";
 import { authService } from "../services/auth.service";
+import { resortService } from "../services/resort.service";
 import { secureStorage } from "../services/secureStorage";
 import { useToast } from "../context/ToastContext";
 
@@ -97,6 +98,9 @@ export default function BecomeAHost() {
       "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80"
     ],
+    videos: [
+      "https://assets.mixkit.co/videos/preview/mixkit-luxury-resort-swimming-pool-42244-large.mp4"
+    ],
     description: "",
     cleaningFee: 2000,
     weekendSurgePercent: 15,
@@ -154,7 +158,7 @@ export default function BecomeAHost() {
     }
   };
 
-  const handlePublishListing = () => {
+  const handlePublishListing = async () => {
     try {
       const finalTitle = formData.title || `Bespoke ${formData.category} in ${formData.location.city}`;
       const newListing = {
@@ -162,6 +166,24 @@ export default function BecomeAHost() {
         title: finalTitle,
         description: formData.description || `Exquisite luxury ${formData.category.toLowerCase()} designed for unforgettable stays.`
       };
+
+      const resortData = {
+        name: finalTitle,
+        location: `${formData.location.city}, ${formData.location.state}, ${formData.location.country}`,
+        description: formData.description || `Exquisite luxury ${formData.category.toLowerCase()} designed for unforgettable stays.`,
+        imageUrl: formData.coverImage || "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
+        pricePerNight: formData.pricePerNight,
+        status: "PENDING_APPROVAL",
+        rating: 5.0,
+        reviewCount: 0
+      };
+
+      try {
+        await resortService.createResort(resortData);
+      } catch (apiErr) {
+        console.warn("API failed, using local storage fallback", apiErr);
+      }
+
       hostService.addListing(newListing);
 
       const currentUser = authService.getCurrentUser();
@@ -170,7 +192,7 @@ export default function BecomeAHost() {
         secureStorage.setItem("reservo_user", currentUser);
       }
 
-      toast("Congratulations! Your listing has been published to your Host Administration.", "success");
+      toast("Congratulations! Your listing has been submitted for Admin approval.", "success");
       navigate("/host/dashboard");
     } catch (err) {
       toast("Failed to publish listing: " + err.message, "error");
@@ -190,11 +212,28 @@ export default function BecomeAHost() {
   };
 
   const handleAddSamplePhoto = (url) => {
+    if (formData.images.length >= 10) {
+      toast("Security limit reached: Maximum 10 photos allowed.", "warning");
+      return;
+    }
     setFormData(prev => ({
       ...prev,
       images: [...prev.images, url]
     }));
     toast("Image added to gallery", "info");
+  };
+
+  const handleAddSampleVideo = (url) => {
+    const currentVideos = formData.videos || [];
+    if (currentVideos.length >= 2) {
+      toast("Security limit reached: Maximum 2 videos allowed.", "warning");
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      videos: [...currentVideos, url]
+    }));
+    toast("Video added to gallery", "info");
   };
 
   return (
@@ -229,20 +268,12 @@ export default function BecomeAHost() {
                 Save & Exit to Overview
               </button>
             ) : (
-              <>
-                <Link 
-                  to="/host/dashboard" 
-                  className="text-xs font-bold bg-[var(--color-bg-light)] hover:bg-[var(--color-border-color)] text-[var(--color-text-dark)] px-4 py-2 rounded-xl transition-all border border-[var(--color-border-color)] no-underline flex items-center gap-1.5"
-                >
-                  <Building2 size={14} className="text-primary" /> Host Administration
-                </Link>
-                <button 
-                  onClick={() => { setMode("wizard"); setCurrentStep(1); }} 
-                  className="text-xs font-bold bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer border-none flex items-center gap-1.5"
-                >
-                  <Plus size={14} /> + Create New Listing
-                </button>
-              </>
+              <button 
+                onClick={() => { setMode("wizard"); setCurrentStep(1); }} 
+                className="text-xs font-bold bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer border-none flex items-center gap-1.5"
+              >
+                <Plus size={14} /> + Create New Listing
+              </button>
             )}
           </div>
         </div>
@@ -282,12 +313,6 @@ export default function BecomeAHost() {
                 >
                   Start Setup Wizard <ArrowRight size={16} />
                 </button>
-                <Link 
-                  to="/host/dashboard"
-                  className="bg-white/10 hover:bg-white/20 text-white font-bold text-sm px-6 py-3.5 rounded-2xl border border-white/20 transition-all no-underline flex items-center gap-2"
-                >
-                  Open Host Administration <Building2 size={16} />
-                </Link>
               </div>
             </div>
           </div>
@@ -759,20 +784,20 @@ export default function BecomeAHost() {
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 5 • Photography</span>
                   <h2 className="text-2xl font-extrabold font-serif text-[var(--color-text-dark)] mt-1">
-                    Add photos of your luxury stay
+                    Add photos & videos of your luxury stay
                   </h2>
                   <p className="text-xs text-[var(--color-text-gray)]">
-                    High-resolution imagery is the #1 deciding factor for luxury guests.
+                    High-resolution imagery and video tours are the #1 deciding factor for luxury guests (Max 10 photos, Max 2 videos).
                   </p>
                 </div>
 
-                {/* Upload box */}
-                <div className="border-2 border-dashed border-[var(--color-border-color)] hover:border-primary rounded-3xl p-8 text-center space-y-3 bg-[var(--color-bg-light)]">
-                  <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-                    <Camera size={26} />
+                {/* Upload Photos box */}
+                <div className="border-2 border-dashed border-[var(--color-border-color)] hover:border-primary rounded-3xl p-6 text-center space-y-3 bg-[var(--color-bg-light)]">
+                  <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                    <Camera size={20} />
                   </div>
                   <div className="space-y-1">
-                    <div className="text-xs font-bold text-[var(--color-text-dark)]">Drag and drop high-res photos here</div>
+                    <div className="text-xs font-bold text-[var(--color-text-dark)]">Drag and drop high-res photos here ({formData.images.length}/10)</div>
                     <div className="text-[11px] text-[var(--color-text-gray)]">Supports JPG, PNG, WEBP up to 25MB each</div>
                   </div>
                   <button
@@ -787,21 +812,64 @@ export default function BecomeAHost() {
                 </div>
 
                 {/* Gallery Previews */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {formData.images.map((imgUrl, idx) => (
                     <div key={idx} className="relative rounded-2xl overflow-hidden group aspect-[4/3] border border-[var(--color-border-color)]">
                       <img src={imgUrl} alt={`Space ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       {idx === 0 && (
-                        <span className="absolute top-2 left-2 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow">
-                          Cover Photo
+                        <span className="absolute top-2 left-2 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-md shadow">
+                          Cover
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, coverImage: imgUrl }))}
-                        className="absolute bottom-2 right-2 bg-black/60 hover:bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none"
+                        className="absolute bottom-2 right-2 bg-black/60 hover:bg-primary text-white text-[9px] font-bold px-2 py-1 rounded-lg backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none"
                       >
-                        Set as Cover
+                        Set Cover
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                        className="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-1.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Upload Videos Box */}
+                <div className="border-2 border-dashed border-[var(--color-border-color)] hover:border-primary rounded-3xl p-6 text-center space-y-3 bg-[var(--color-bg-light)] mt-4">
+                  <div className="w-11 h-11 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mx-auto">
+                    <Camera size={20} />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold text-[var(--color-text-dark)]">Upload property video tours ({(formData.videos || []).length}/2)</div>
+                    <div className="text-[11px] text-[var(--color-text-gray)]">Supports MP4, MOV, WebM up to 100MB each</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleAddSampleVideo("https://assets.mixkit.co/videos/preview/mixkit-tropical-beach-resort-with-palm-trees-42232-large.mp4");
+                    }}
+                    className="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow cursor-pointer border-none"
+                  >
+                    + Add Luxury Resort Loop Video
+                  </button>
+                </div>
+
+                {/* Video Previews */}
+                <div className="grid grid-cols-2 gap-3">
+                  {(formData.videos || []).map((videoUrl, idx) => (
+                    <div key={idx} className="relative rounded-2xl overflow-hidden group aspect-[16/9] border border-[var(--color-border-color)] bg-black">
+                      <video src={videoUrl} controls className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, videos: prev.videos.filter((_, i) => i !== idx) }))}
+                        className="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none z-20"
+                      >
+                        Delete Video
                       </button>
                     </div>
                   ))}

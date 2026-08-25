@@ -20,6 +20,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final RoomRepository roomRepository;
     private final BookingRepository bookingRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CouponRepository couponRepository;
 
     @Override
     public void run(String... args) {
@@ -237,6 +238,35 @@ public class DatabaseSeeder implements CommandLineRunner {
                         .build());
                 log.info("Successfully seeded rooms!");
             }
+        }
+
+        if (couponRepository.count() == 0) {
+            log.info("Seeding initial demo coupons...");
+            User admin = userRepository.findByEmail("reservo@mail.in").orElse(null);
+
+            couponRepository.save(Coupon.builder()
+                    .code("WELCOME10")
+                    .user(admin)
+                    .discountType(Coupon.DiscountType.PERCENTAGE)
+                    .discountValue(BigDecimal.valueOf(10))
+                    .discountPercentage(10)
+                    .minimumAmount(BigDecimal.valueOf(1000))
+                    .status(Coupon.CouponStatus.ACTIVE)
+                    .usageLimit(1000)
+                    .build());
+
+            couponRepository.save(Coupon.builder()
+                    .code("AZURE20")
+                    .user(admin)
+                    .discountType(Coupon.DiscountType.PERCENTAGE)
+                    .discountValue(BigDecimal.valueOf(20))
+                    .discountPercentage(20)
+                    .resortId(1L)
+                    .minimumAmount(BigDecimal.valueOf(2000))
+                    .status(Coupon.CouponStatus.ACTIVE)
+                    .usageLimit(1000)
+                    .build());
+            log.info("Successfully seeded coupons!");
         }
     }
 }

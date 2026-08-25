@@ -241,9 +241,11 @@ function App() {
   useEffect(() => {
     if (isDark) {
       document.body.classList.add("dark-theme");
+      document.body.classList.add("dark");
       localStorage.setItem("reservo-theme", "dark");
     } else {
       document.body.classList.remove("dark-theme");
+      document.body.classList.remove("dark");
       localStorage.setItem("reservo-theme", "light");
     }
   }, [isDark]);
@@ -381,10 +383,6 @@ function App() {
             <Route path="/host/admin" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
             <Route path="/host" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
             <Route path="/host/*" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
-            <Route path="/admin/dashboard" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
-            <Route path="/admin/reservo" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
-            <Route path="/admin/resort" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
             <Route path="/admin/*" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
@@ -424,13 +422,10 @@ function App() {
         <Preloader onComplete={handlePreloaderComplete} />
       )}
 
-      {location.pathname === "/login" || location.pathname === "/register" ? (
-        <main id="main-content" className="flex-1 min-h-screen overflow-hidden">
+      {location.pathname === "/login" || location.pathname === "/register" || location.pathname.startsWith("/admin") || location.pathname.startsWith("/host") ? (
+        <main id="main-content" className="flex-grow flex flex-col min-h-screen">
           <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-            </Routes>
+            {renderAppRoutes()}
           </Suspense>
         </main>
       ) : isMobile ? (

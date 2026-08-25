@@ -45,6 +45,15 @@ public class AdminService {
         Resort resort = resortRepository.findById(resortId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + resortId));
         resort.setStatus(status);
+        
+        if (status == Resort.ResortStatus.APPROVED && resort.getOwner() != null) {
+            User owner = resort.getOwner();
+            if (owner.getRole() == User.Role.ROLE_CUSTOMER) {
+                owner.setRole(User.Role.ROLE_OWNER);
+                userRepository.save(owner);
+            }
+        }
+        
         logAudit(adminUsername, "UPDATE_RESORT_STATUS", "Resort", String.valueOf(resortId), "Updated resort status to " + status);
         return resortRepository.save(resort);
     }

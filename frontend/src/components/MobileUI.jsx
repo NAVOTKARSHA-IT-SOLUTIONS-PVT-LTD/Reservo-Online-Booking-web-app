@@ -556,12 +556,14 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             return [
               ...(!isLoggedIn ? [
                 { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
-                { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" },
-                { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" }
+                { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" }
               ] : [
                 { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || user?.displayName || user?.email?.split('@')[0] || "User"})`, path: "/profile" },
-                { type: "item", icon: <Building2 size={18} />, label: "Host Administration", path: "/host/dashboard" },
-                { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" }
+                ...(user?.role === "ROLE_ADMIN" || user?.role === "ROLE_OWNER" ? [
+                  { type: "item", icon: <Building2 size={18} />, label: "Host Administration", path: "/host/dashboard" }
+                ] : [
+                  { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" }
+                ])
               ]),
               { type: "divider" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
@@ -570,12 +572,6 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
               { type: "divider" },
               ...(isLoggedIn ? [
-                ...(user?.role === "ROLE_ADMIN" ? [
-                  { type: "item", icon: <Sliders size={18} />, label: "Platform Admin Control", path: "/admin/reservo" }
-                ] : []),
-                ...(user?.role === "ROLE_ADMIN" || user?.role === "ROLE_OWNER" ? [
-                  { type: "item", icon: <LayoutGrid size={18} />, label: "Resort PMS Extranet", path: "/admin/resort" }
-                ] : []),
                 { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
                 { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
                 { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },

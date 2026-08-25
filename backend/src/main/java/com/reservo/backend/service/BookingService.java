@@ -38,6 +38,8 @@ public class BookingService {
 
     private final NotificationService notificationService;
 
+    private final LoyaltyTransactionRepository loyaltyTransactionRepository;
+
 
     // ============================================================
     // CREATE BOOKING
@@ -50,7 +52,13 @@ public class BookingService {
             Long roomId,
             LocalDate checkIn,
             LocalDate checkOut,
-            BigDecimal amount
+            BigDecimal amount,
+            String guestName,
+            String guestPhone,
+            String couponCode,
+            BigDecimal discountAmount,
+            Integer pointsUsed,
+            BigDecimal pointsValue
     ) {
 
         // --------------------------------------------------------
@@ -155,13 +163,13 @@ public class BookingService {
                 .checkInDate(checkIn)
                 .checkOutDate(checkOut)
                 .totalAmount(amount)
-
-                /*
-                 * This endpoint is being used as a direct booking
-                 * confirmation endpoint in your current project.
-                 */
-                .status(Booking.BookingStatus.CONFIRMED)
-
+                .guestName(guestName)
+                .guestPhone(guestPhone)
+                .appliedCouponCode(couponCode)
+                .discountAmount(discountAmount != null ? discountAmount : BigDecimal.ZERO)
+                .rewardPointsUsed(pointsUsed != null ? pointsUsed : 0)
+                .rewardPointsValue(pointsValue != null ? pointsValue : BigDecimal.ZERO)
+                .status(Booking.BookingStatus.PENDING)
                 .bookingSource(Booking.BookingSource.DIRECT)
                 .build();
 
@@ -315,13 +323,28 @@ public class BookingService {
 
 
         // --------------------------------------------------------
-        // 3. AWARD LOYALTY POINTS
+        // 3. AWARD LOYALTY POINTS & DEDUCT REDEEMED POINTS
         // --------------------------------------------------------
 
         loyaltyService.awardPoints(
                 booking.getUser(),
                 booking.getTotalAmount()
         );
+
+        if (booking.getRewardPointsUsed() != null && booking.getRewardPointsUsed() > 0) {
+            User u = booking.getUser();
+            u.setRewardPoints(Math.max(0, u.getRewardPoints() - booking.getRewardPointsUsed()));
+            userRepository.save(u);
+
+            LoyaltyTransaction tx = LoyaltyTransaction.builder()
+                    .user(u)
+                    .description("Points Redeemed for Booking " + booking.getBookingCode())
+                    .pointsChange(-booking.getRewardPointsUsed())
+                    .createdAt(Instant.now())
+                    .build();
+            loyaltyTransactionRepository.save(tx);
+            log.info("Deducted {} points from user {} for booking {}", booking.getRewardPointsUsed(), u.getEmail(), booking.getBookingCode());
+        }
 
 
         log.info(
