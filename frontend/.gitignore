@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 .maven-cache/
-.env
+
