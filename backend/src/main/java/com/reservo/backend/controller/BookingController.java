@@ -42,15 +42,27 @@ public class BookingController {
         return ResponseEntity.ok(ApiResponse.success(bookingService.getUserBookings(userId)));
     }
     @GetMapping("/history")
-public ResponseEntity<ApiResponse<List<BookingHistoryResponse>>> getBookingHistory(
-        @RequestParam Long userId
-) {
+    public ResponseEntity<ApiResponse<List<BookingHistoryResponse>>> getBookingHistory(
+            @RequestParam Long userId
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        bookingService.getUserBookingHistory(userId),
+                        "Booking history retrieved successfully"
+                )
+        );
+    }
 
-    return ResponseEntity.ok(
-            ApiResponse.success(
-                    bookingService.getUserBookingHistory(userId),
-                    "Booking history retrieved successfully"
-            )
-    );
-}
+    @GetMapping("/admin-all")
+    public ResponseEntity<ApiResponse<List<Booking>>> getAdminAllBookings() {
+        return ResponseEntity.ok(ApiResponse.success(bookingService.getAllBookings()));
+    }
+
+    @PostMapping("/update-status")
+    public ResponseEntity<ApiResponse<Booking>> updateBookingStatus(
+            @RequestParam Long bookingId,
+            @RequestParam Booking.BookingStatus status) {
+        Booking updated = bookingService.updateBookingStatus(bookingId, status);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Booking status updated successfully"));
+    }
 }

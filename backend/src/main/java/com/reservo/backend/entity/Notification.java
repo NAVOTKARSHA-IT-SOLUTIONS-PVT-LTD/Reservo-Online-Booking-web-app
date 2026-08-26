@@ -56,7 +56,7 @@ public class Notification {
      *
      * This is separate from notification delivery status.
      */
-    @Column(nullable = false)
+    @Column(name = "is_read", nullable = false)
     @Builder.Default
     private boolean read = false;
 

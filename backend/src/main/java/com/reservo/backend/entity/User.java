@@ -6,14 +6,18 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"passwordHash"})
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(nullable = false)
@@ -41,11 +45,11 @@ public class User {
 
     @Column(name = "reward_points", nullable = false)
     @Builder.Default
-    private Integer rewardPoints = 24500;
+    private Integer rewardPoints = 0;
 
     @Column(name = "membership_level", nullable = false)
     @Builder.Default
-    private String membershipLevel = "Gold Member";
+    private String membershipLevel = "Member";
 
     // Security Requirement: User Authentication fields
     @Column(name = "login_provider", length = 50)
@@ -71,7 +75,7 @@ public class User {
     @Column(name = "kyc_document_type")
     private String kycDocumentType;
 
-    @Column(name = "kyc_document_url")
+    @Column(name = "kyc_document_url", columnDefinition = "LONGTEXT")
     private String kycDocumentUrl;
 
     @Column(name = "account_locked", nullable = false)

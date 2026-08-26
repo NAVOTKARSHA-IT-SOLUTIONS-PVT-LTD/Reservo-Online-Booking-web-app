@@ -26,6 +26,7 @@ public class Resort {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "image_url", columnDefinition = "LONGTEXT")
     private String imageUrl;
 
     @Column(nullable = false)
@@ -41,6 +42,25 @@ public class Resort {
 
     private Integer discountPercentage; // e.g. 30, 20
 
+    private String category; // e.g. "beach", "mountain", etc.
+
+    @Column(name = "gallery_urls", columnDefinition = "LONGTEXT")
+    private String galleryUrls; // Comma-separated list of image URLs/base64
+
+    @Column(name = "video_urls", columnDefinition = "LONGTEXT")
+    private String videoUrls; // Comma-separated list of video URLs/base64
+
+    @Column(columnDefinition = "TEXT")
+    private String highlights; // Comma-separated list of highlights
+
+    @Column(columnDefinition = "TEXT")
+    private String amenities; // Comma-separated list of amenities
+
+    private Integer guests;
+    private Integer bedrooms;
+    private Integer beds;
+    private Integer bathrooms;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ResortStatus status;
@@ -53,6 +73,6 @@ public class Resort {
     private Instant createdAt = Instant.now();
 
     public enum ResortStatus {
-        PENDING_APPROVAL, APPROVED, REJECTED, SUSPENDED
+        PENDING_APPROVAL, APPROVED, REJECTED, SUSPENDED, CHANGES_REQUESTED
     }
 }

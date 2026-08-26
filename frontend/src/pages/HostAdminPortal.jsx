@@ -11,6 +11,32 @@ import {
 import { hostService } from "../services/host.service";
 import { authService } from "../services/auth.service";
 import { useToast } from "../context/ToastContext";
+import { apiClient } from "../services/apiClient";
+
+const splitUrls = (urlStr) => {
+  if (!urlStr) return [];
+  if (urlStr.includes("|")) {
+    return urlStr.split("|").filter(Boolean);
+  }
+  if (urlStr.includes("data:") && urlStr.includes(",")) {
+    const rawParts = urlStr.split(",");
+    const cleaned = [];
+    for (let i = 0; i < rawParts.length; i++) {
+      if (rawParts[i].startsWith("data:") || rawParts[i].startsWith("http")) {
+        if (rawParts[i].startsWith("data:") && i + 1 < rawParts.length) {
+          cleaned.push(rawParts[i] + "," + rawParts[i+1]);
+          i++;
+        } else {
+          cleaned.push(rawParts[i]);
+        }
+      } else {
+        cleaned.push(rawParts[i]);
+      }
+    }
+    return cleaned.filter(Boolean);
+  }
+  return urlStr.split(",").filter(Boolean);
+};
 
 export default function HostAdminPortal() {
   const toast = useToast();
@@ -38,9 +64,150 @@ export default function HostAdminPortal() {
   }, []);
 
   const [hostData, setHostData] = useState(() => hostService.getData());
+  const [myProperties, setMyProperties] = useState([]);
+  const [loadingProperties, setLoadingProperties] = useState(false);
+
+  // States for new Host Panel Tabs
+  const [selectedPropertyId, setSelectedPropertyId] = useState("");
+  const [roomsList, setRoomsList] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [selectedPropertySubTab, setSelectedPropertySubTab] = useState("details"); // 'details', 'photos', 'amenities', 'settings'
+  const [newRoomData, setNewRoomData] = useState({
+    roomNumber: "",
+    type: "DELUXE",
+    pricePerNight: 5000,
+    capacity: 2,
+    status: "AVAILABLE",
+    cleaningStatus: "CLEAN",
+    maintenanceDetails: ""
+  });
+  const [offersList, setOffersList] = useState([
+    { code: "SUMMER20", discountType: "PERCENTAGE", discountValue: 20, minAmount: 5000, usageLimit: 100, status: "ACTIVE" },
+    { code: "WELCOME10", discountType: "PERCENTAGE", discountValue: 10, minAmount: 2000, usageLimit: 500, status: "ACTIVE" }
+  ]);
+  const [selectedOfferPropertyId, setSelectedOfferPropertyId] = useState("all");
+  const [selectedBookingPropertyId, setSelectedBookingPropertyId] = useState("all");
+  const [selectedReviewPropertyId, setSelectedReviewPropertyId] = useState("all");
+  const [selectedPostPropertyId, setSelectedPostPropertyId] = useState("");
+  const [newOffer, setNewOffer] = useState({ code: "", discountType: "PERCENTAGE", discountValue: 10, minAmount: 1000, usageLimit: 100 });
+  
+  const [postsList, setPostsList] = useState(() => {
+    try {
+      const saved = localStorage.getItem("reservo_resort_posts");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [
+      { id: 1, resortId: "home-1", resortName: "Goa Coastline Villa", title: "🌊 Monsoon Special Offer!", content: "Stay 2 nights and get breakfast absolutely free! Valid till end of August.", date: "2026-08-20" },
+      { id: 2, resortId: "home-2", resortName: "Kerala Backwaters Resort", title: "🧘 Aura Spa Renovation Complete", content: "We are thrilled to launch our new outdoor ayurvedic massage pavilion overlooking the lake.", date: "2026-08-15" }
+    ];
+  });
+  const [newPost, setNewPost] = useState({ title: "", content: "" });
+
+  const fetchRooms = async (resortId) => {
+    if (!resortId) return;
+    setLoadingRooms(true);
+    try {
+      const res = await apiClient.get(`/api/v1/rooms/resort/${resortId}`);
+      if (res && res.success) {
+        setRoomsList(res.data || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch rooms:", e);
+    } finally {
+      setLoadingRooms(false);
+    }
+  };
+
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
+    if (!selectedPropertyId) {
+      toast("Please select a property first", "error");
+      return;
+    }
+    if (!newRoomData.roomNumber) {
+      toast("Please enter a room number", "error");
+      return;
+    }
+    try {
+      const res = await apiClient.post(`/api/v1/rooms/resort/${selectedPropertyId}`, newRoomData);
+      if (res && res.success) {
+        toast("Room created successfully!", "success");
+        fetchRooms(selectedPropertyId);
+        setNewRoomData({
+          roomNumber: "",
+          type: "DELUXE",
+          pricePerNight: 5000,
+          capacity: 2,
+          status: "AVAILABLE",
+          cleaningStatus: "CLEAN",
+          maintenanceDetails: ""
+        });
+      }
+    } catch (err) {
+      toast("Failed to create room: " + err.message, "error");
+    }
+  };
+
+  const handleUpdateRoomStatus = async (roomId, nextStatus, nextCleaning) => {
+    try {
+      const res = await apiClient.patch(`/api/v1/rooms/${roomId}/status`, {
+        status: nextStatus,
+        cleaningStatus: nextCleaning
+      });
+      if (res && res.success) {
+        toast("Room status updated successfully!", "success");
+        fetchRooms(selectedPropertyId);
+      }
+    } catch (err) {
+      toast("Failed to update room status: " + err.message, "error");
+    }
+  };
+
+  const handleGlobalPropertyChange = (propertyId) => {
+    setSelectedPropertyId(propertyId);
+    setSelectedListingForCalendar(propertyId);
+    setSelectedBookingPropertyId(propertyId);
+    setSelectedOfferPropertyId(propertyId);
+    setSelectedReviewPropertyId(propertyId);
+    setSelectedPostPropertyId(propertyId);
+    fetchRooms(propertyId);
+  };
+
+  const fetchMyProperties = async () => {
+    setLoadingProperties(true);
+    try {
+      const res = await apiClient.get("/api/v1/resorts/my-properties");
+      if (res && res.success) {
+        const props = res.data || [];
+        setMyProperties(props);
+        if (props.length > 0 && !selectedPropertyId) {
+          handleGlobalPropertyChange(props[0].id);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load owner properties:", e);
+    } finally {
+      setLoadingProperties(false);
+    }
+  };
+
+  const handleThumbnailClick = (propertyId, imageUrl) => {
+    setMyProperties(prev => prev.map(p => {
+      if (p.id === propertyId) {
+        return { ...p, activePhoto: imageUrl };
+      }
+      return p;
+    }));
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchMyProperties();
+    }
+  }, [currentUser]);
 
   const formatName = (name) => {
-    if (!name) return "Srushti Salunke";
+    if (!name) return "Resort Owner";
     return name
       .trim()
       .split(/\s+/)
@@ -48,8 +215,52 @@ export default function HostAdminPortal() {
       .join(" ");
   };
 
-  const hostName = formatName(currentUser?.name || hostData.profile?.name || "Srushti Salunke");
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const hostName = formatName(currentUser?.name || hostData.profile?.name || currentUser?.email || hostData.profile?.email || "Resort Owner");
+  const [activeTab, setActiveTab] = useState(() => {
+    const userObj = authService.getCurrentUser();
+    return userObj?.role === "ROLE_ADMIN" ? "host_applications" : "dashboard";
+  });
+
+  const [pendingHosts, setPendingHosts] = useState([]);
+  const [loadingPendingHosts, setLoadingPendingHosts] = useState(false);
+
+  useEffect(() => {
+    if (currentUser?.role === "ROLE_ADMIN") {
+      setLoadingPendingHosts(true);
+      apiClient.get("/api/v1/user/pending-hosts")
+        .then(res => {
+          if (res && res.success) {
+            setPendingHosts(res.data || []);
+          }
+        })
+        .catch(err => console.error("Failed to load pending hosts", err))
+        .finally(() => setLoadingPendingHosts(false));
+    }
+  }, [currentUser]);
+
+  const handleApproveHost = async (userId) => {
+    try {
+      const res = await apiClient.post(`/api/v1/user/approve-host?userId=${userId}`);
+      if (res && res.success) {
+        // Silently approved — no popup
+        setPendingHosts(prev => prev.filter(h => h.id !== userId));
+      }
+    } catch (e) {
+      toast("Failed to approve host: " + e.message, "error");
+    }
+  };
+
+  const handleRejectHost = async (userId) => {
+    try {
+      const res = await apiClient.post(`/api/v1/user/reject-host?userId=${userId}`);
+      if (res && res.success) {
+        toast("Host request rejected", "info");
+        setPendingHosts(prev => prev.filter(h => h.id !== userId));
+      }
+    } catch (e) {
+      toast("Failed to reject host: " + e.message, "error");
+    }
+  };
 
   // Filter States
   const [resStatusFilter, setResStatusFilter] = useState("all");
@@ -179,90 +390,222 @@ export default function HostAdminPortal() {
   };
 
   const TABS = [
-    { id: "dashboard", label: "Executive Overview", icon: BarChart3, badge: pendingApprovalsCount > 0 ? `${pendingApprovalsCount} action` : null },
-    { id: "listings", label: "Property Inventory", icon: Building2, count: hostData.listings?.length },
-    { id: "reservations", label: "Reservations & Stays", icon: FileText, count: hostData.reservations?.length },
-    { id: "notifications", label: "Booking Confirmation Notifications", icon: MailCheck, badge: pendingNotificationCount > 0 ? `${pendingNotificationCount} ready` : null },
-    { id: "calendar", label: "Calendar & Rates", icon: Calendar },
-    { id: "earnings", label: "Earnings & Payouts", icon: DollarSign },
-    { id: "messages", label: "Guest Messages", icon: MessageSquare, badge: hostData.messages?.some(m => m.unread) ? "New" : null },
-    { id: "reviews", label: "Reviews & Quality", icon: Star, count: hostData.reviews?.length },
-    { id: "settings", label: "Policies & Settings", icon: Settings }
+    ...(currentUser?.role === "ROLE_ADMIN" ? [
+      { id: "host_applications", label: "Host Applications", icon: ShieldCheck, badge: pendingHosts.length > 0 ? `${pendingHosts.length} pending` : null }
+    ] : []),
+    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+    { id: "property", label: "My Property", icon: Building2, count: myProperties?.length },
+    { id: "rooms", label: "Rooms & Accommodation", icon: Bed },
+    { id: "bookings", label: "Bookings", icon: FileText, count: hostData.reservations?.length },
+    { id: "calendar", label: "Availability & Calendar", icon: Calendar },
+    { id: "earnings", label: "Earnings & Payments", icon: DollarSign },
+    { id: "offers", label: "Offers & Promotions", icon: Award },
+    { id: "posts", label: "Property Posts", icon: Send },
+    { id: "reviews", label: "Reviews & Ratings", icon: Star, count: hostData.reviews?.length },
+    { id: "messages", label: "Guest Messages", icon: MessageSquare },
+    { id: "analytics", label: "Analytics", icon: Activity },
+    { id: "notifications", label: "Notifications", icon: Bell, badge: pendingNotificationCount > 0 ? `${pendingNotificationCount} ready` : null },
+    { id: "settings", label: "Settings", icon: Settings }
   ];
 
   return (
-    <div className="w-full font-sans transition-colors duration-300 pb-16 max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#111827] flex font-sans transition-colors duration-300 w-full">
       
-      {/* Top Host Profile & Control Header */}
-      <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-3xl p-5 mb-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      {/* Left Sidebar Panel (Desktop only) */}
+      <aside className="w-64 bg-white dark:bg-[#1E293B] border-r border-[#E2E8F0] dark:border-[#334155] p-5 flex flex-col justify-between shrink-0 hidden md:flex">
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 border-b border-[#E2E8F0] dark:border-[#334155] pb-4">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-serif font-black text-lg select-none shrink-0 shadow-sm">
+              R
+            </div>
+            <div>
+              <span className="font-extrabold text-slate-800 dark:text-white text-[13px] block tracking-tight font-serif">Reservo Host Hub</span>
+              <span className="text-[9px] text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full mt-0.5 inline-block border border-emerald-200">Active Partner</span>
+            </div>
+          </div>
+
+          {/* Global Property Switcher */}
+          {myProperties.length > 0 && (
+            <div className="space-y-1 bg-slate-50 dark:bg-slate-900/80 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <label className="block text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
+                GLOBAL ACTIVE PROPERTY
+              </label>
+              <select
+                value={selectedPropertyId}
+                onChange={(e) => handleGlobalPropertyChange(e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-white p-2 rounded-xl text-xs font-extrabold outline-none border border-slate-200 dark:border-slate-700 cursor-pointer shadow-xs"
+              >
+                {myProperties.map(p => (
+                  <option key={p.id} value={p.id}>🏨 {p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <Link 
+            to="/become-a-host" 
+            className="w-full py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/10 no-underline transition-all"
+          >
+            <Plus size={14} /> Add Property
+          </Link>
+
+          <nav className="space-y-1">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer border-none text-left ${
+                    isActive 
+                      ? "bg-[#2563EB] text-white shadow-md shadow-blue-500/10" 
+                      : "bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <Icon size={15} className={isActive ? "text-white" : "text-slate-400"} />
+                  <span className="flex-1">{tab.label}</span>
+                  {tab.badge && (
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-900 font-extrabold">
+                      {tab.badge}
+                    </span>
+                  )}
+                  {tab.count !== undefined && !tab.badge && (
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold ${isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"}`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-2.5 border-t border-[#E2E8F0] dark:border-[#334155] pt-4">
           <img 
             src={hostData.profile?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"} 
             alt={hostName} 
-            className="w-12 h-12 rounded-full object-cover border-2 border-primary/50 shadow-xs"
+            className="w-9 h-9 rounded-full object-cover border"
           />
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-extrabold font-sans text-[var(--color-text-dark)] tracking-tight">
-                {hostName}
-              </h2>
-              <span className="text-[10px] font-extrabold bg-amber-400/20 text-amber-600 dark:text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Award size={12} /> Superhost (4.96 ★)
-              </span>
+          <div className="truncate">
+            <span className="block text-[11px] font-black text-slate-800 dark:text-white truncate">{hostName}</span>
+            <span className="block text-[9px] text-slate-400 truncate">{currentUser?.email}</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 p-6 md:p-8 overflow-y-auto max-w-6xl w-full">
+        
+        {/* Mobile-Only Header bar & Scroll Tab list */}
+        <div className="flex flex-col gap-4 md:hidden mb-6 bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] p-4 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white font-serif font-black text-sm select-none shrink-0 shadow-sm">
+                R
+              </div>
+              <span className="font-extrabold text-slate-800 dark:text-white text-xs">Host Panel</span>
             </div>
-            <div className="text-xs text-[var(--color-text-gray)] flex items-center gap-2 mt-0.5">
-              <span>{activeListingsCount} Active Luxury Properties</span>
-            </div>
+            <Link 
+              to="/become-a-host" 
+              className="text-[10px] font-bold bg-[#2563EB] text-white px-3 py-1.5 rounded-xl shadow no-underline"
+            >
+              + Add Property
+            </Link>
+          </div>
+          
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scrollbar-none">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold whitespace-nowrap transition-all border ${
+                    isActive 
+                      ? "bg-[#2563EB] text-white border-[#2563EB]" 
+                      : "bg-transparent text-slate-600 dark:text-slate-300 border-[#E2E8F0] dark:border-[#334155]"
+                  }`}
+                >
+                  <Icon size={12} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start md:self-auto">
-          <Link 
-            to="/become-a-host" 
-            className="text-xs font-bold bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl shadow flex items-center gap-1.5 no-underline transition-all"
-          >
-            <Plus size={14} /> + Add Property
-          </Link>
-        </div>
-      </div>
-
-      {/* Horizontal Scrollable Tab Bar */}
-      <div 
-        className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 hide-scrollbar no-scrollbar scrollbar-none"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
-                isActive 
-                  ? "bg-primary text-white border-primary shadow-md shadow-primary/20" 
-                  : "bg-[var(--color-bg-white)] text-[var(--color-text-dark)] border-[var(--color-border-color)] hover:border-primary/40"
-              }`}
-            >
-              <Icon size={15} className={isActive ? "text-white" : "text-[var(--color-text-gray)]"} />
-              <span>{tab.label}</span>
-              {tab.badge && (
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-400 text-slate-900 font-extrabold">
-                  {tab.badge}
-                </span>
-              )}
-              {tab.count !== undefined && !tab.badge && (
-                <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${isActive ? "bg-white/20 text-white" : "bg-[var(--color-bg-light)] text-[var(--color-text-gray)]"}`}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* TAB CONTENT AREA */}
+        {/* TAB CONTENT AREA */}
       <div>
+        {/* TAB 0: HOST APPLICATIONS (ADMIN ONLY) */}
+        {activeTab === "host_applications" && currentUser?.role === "ROLE_ADMIN" && (
+          <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-[32px] p-6 shadow-xs space-y-6">
+            <div className="flex items-center justify-between border-b border-[var(--color-border-color)] pb-3">
+              <h3 className="text-base font-bold font-serif text-[var(--color-text-dark)] flex items-center gap-2">
+                <ShieldCheck size={18} className="text-primary" /> Pending Host Applications
+              </h3>
+              <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-bold">
+                {pendingHosts.length} Pending Approval
+              </span>
+            </div>
+
+            {loadingPendingHosts ? (
+              <div className="flex justify-center py-10">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : pendingHosts.length === 0 ? (
+              <div className="text-center py-12 text-[var(--color-text-gray)]">
+                <div className="text-3xl mb-2">🏖️</div>
+                <h4 className="text-sm font-bold text-[var(--color-text-dark)]">All caught up!</h4>
+                <p className="text-xs mt-1">There are no pending host registration requests currently awaiting approval.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingHosts.map((host) => (
+                  <div key={host.id} className="p-5 rounded-2xl bg-[var(--color-bg-light)] border border-[var(--color-border-color)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-in">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-sm">
+                          {host.name?.charAt(0).toUpperCase() || "H"}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-extrabold text-[var(--color-text-dark)]">{host.name}</h4>
+                          <p className="text-[11px] text-[var(--color-text-gray)]">{host.email} • {host.phone || "No phone"}</p>
+                        </div>
+                      </div>
+                      <div className="bg-[var(--color-bg-white)] p-3 rounded-xl border border-[var(--color-border-color)] text-[11px]">
+                        <span className="text-[10px] text-[var(--color-text-gray)] block font-semibold mb-1">VERIFICATION KYC INFO:</span>
+                        <span className="font-bold text-[var(--color-text-dark)] block">Document Type: {host.kycDocumentType || "Aadhaar Card"}</span>
+                        {host.kycDocumentUrl && (
+                          <span className="block text-[var(--color-text-gray)] mt-1">
+                            Verification Scan: <a href={host.kycDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline font-bold">View Uploaded Scan / Media</a>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-stretch md:self-auto justify-end">
+                      <button
+                        onClick={() => handleRejectHost(host.id)}
+                        className="flex-1 md:flex-none text-xs font-bold px-4 py-2.5 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 cursor-pointer transition-all"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => handleApproveHost(host.id)}
+                        className="flex-1 md:flex-none text-xs font-bold px-4 py-2.5 rounded-xl bg-primary text-white hover:bg-primary-dark cursor-pointer border-none shadow transition-all"
+                      >
+                        Approve Host
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* TAB 1: EXECUTIVE OVERVIEW / DASHBOARD */}
         {activeTab === "dashboard" && (
           <div className="space-y-6">
@@ -307,7 +650,7 @@ export default function HostAdminPortal() {
                   </span>
                 </div>
                 <div className="text-[11px] font-medium text-emerald-600 flex items-center gap-1">
-                  <TrendingUp size={13} /> +18.4% vs last month
+                  <TrendingUp size={13} /> Tracked earnings live
                 </div>
               </div>
 
@@ -319,11 +662,11 @@ export default function HostAdminPortal() {
                 </div>
                 <div className="flex items-baseline gap-1.5 mb-2 h-8">
                   <span className="text-3xl font-extrabold text-[var(--color-text-dark)] tabular-nums leading-none tracking-tight">
-                    {hostData.financials?.occupancyRate || 84.5}%
+                    {hostData.financials?.occupancyRate !== undefined ? hostData.financials.occupancyRate : 0}%
                   </span>
                 </div>
                 <div className="text-[11px] font-medium text-blue-600">
-                  High season pacing across {activeListingsCount} listings
+                  Across {activeListingsCount} active listings
                 </div>
               </div>
 
@@ -342,7 +685,7 @@ export default function HostAdminPortal() {
                   </span>
                 </div>
                 <div className="text-[11px] font-medium text-purple-600">
-                  1 stay checking out tomorrow
+                  {inHouseGuestsCount === 0 ? "No checked-in guests currently" : `${inHouseGuestsCount} active check-outs today`}
                 </div>
               </div>
 
@@ -354,14 +697,14 @@ export default function HostAdminPortal() {
                 </div>
                 <div className="flex items-baseline gap-2 mb-2 h-8">
                   <span className="text-3xl font-extrabold text-[var(--color-text-dark)] tabular-nums leading-none tracking-tight">
-                    {hostData.profile?.rating || 4.96}
+                    {hostData.profile?.rating !== undefined ? hostData.profile.rating : 0}
                   </span>
                   <span className="text-xs font-semibold text-[var(--color-text-gray)]">
-                    ({hostData.profile?.totalReviews || 128} reviews)
+                    ({hostData.profile?.totalReviews !== undefined ? hostData.profile.totalReviews : 0} reviews)
                   </span>
                 </div>
                 <div className="text-[11px] font-medium text-amber-600">
-                  Response rate: {hostData.profile?.responseRate || "99%"}
+                  Response rate: {hostData.profile?.responseRate || "0%"}
                 </div>
               </div>
 
@@ -385,53 +728,59 @@ export default function HostAdminPortal() {
                 </div>
 
                 <div className="space-y-3">
-                  {hostData.reservations?.slice(0, 3).map((res) => (
-                    <div 
-                      key={res.id} 
-                      className="p-4 rounded-2xl bg-[var(--color-bg-light)] border border-[var(--color-border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={res.guest.avatar} 
-                          alt={res.guest.name} 
-                          className="w-11 h-11 rounded-full object-cover border border-primary/40"
-                        />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-[var(--color-text-dark)]">{res.guest.name}</span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              res.status === "In-House" ? "bg-purple-100 text-purple-700" :
-                              res.status === "Upcoming" ? "bg-blue-100 text-blue-700" :
-                              res.status === "Pending Approval" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
-                            }`}>
-                              {res.status}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-[var(--color-text-gray)] mt-0.5 line-clamp-1">
-                            {res.listingTitle}
-                          </div>
-                          <div className="text-[11px] font-medium text-[var(--color-text-dark)] mt-0.5">
-                            📅 {res.dates.checkIn} to {res.dates.checkOut} ({res.dates.nights} nights) • ₹{res.payoutAmount.toLocaleString("en-IN")}
+                  {hostData.reservations && hostData.reservations.length > 0 ? (
+                    hostData.reservations.slice(0, 3).map((res) => (
+                      <div 
+                        key={res.id} 
+                        className="p-4 rounded-2xl bg-[var(--color-bg-light)] border border-[var(--color-border-color)] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={res.guest.avatar} 
+                            alt={res.guest.name} 
+                            className="w-11 h-11 rounded-full object-cover border border-primary/40"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-[var(--color-text-dark)]">{res.guest.name}</span>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                res.status === "In-House" ? "bg-purple-100 text-purple-700" :
+                                res.status === "Upcoming" ? "bg-blue-100 text-blue-700" :
+                                res.status === "Pending Approval" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
+                              }`}>
+                                {res.status}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-[var(--color-text-gray)] mt-0.5 line-clamp-1">
+                              {res.listingTitle}
+                            </div>
+                            <div className="text-[11px] font-medium text-[var(--color-text-dark)] mt-0.5">
+                              📅 {res.dates.checkIn} to {res.dates.checkOut} ({res.dates.nights} nights) • ₹{res.payoutAmount.toLocaleString("en-IN")}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <button
-                          onClick={() => { setActiveTab("messages"); }}
-                          className="text-xs font-bold px-3 py-1.5 rounded-xl border border-[var(--color-border-color)] bg-[var(--color-bg-white)] text-[var(--color-text-dark)] hover:border-primary cursor-pointer flex items-center gap-1"
-                        >
-                          <MessageSquare size={13} /> Message
-                        </button>
-                        <button
-                          onClick={() => setSelectedResModal(res)}
-                          className="text-xs font-bold px-3 py-1.5 rounded-xl bg-primary text-white hover:bg-primary-dark cursor-pointer border-none"
-                        >
-                          Dossier
-                        </button>
+                        <div className="flex items-center gap-2 self-end sm:self-center">
+                          <button
+                            onClick={() => { setActiveTab("messages"); }}
+                            className="text-xs font-bold px-3 py-1.5 rounded-xl border border-[var(--color-border-color)] bg-[var(--color-bg-white)] text-[var(--color-text-dark)] hover:border-primary cursor-pointer flex items-center gap-1"
+                          >
+                            <MessageSquare size={13} /> Message
+                          </button>
+                          <button
+                            onClick={() => setSelectedResModal(res)}
+                            className="text-xs font-bold px-3 py-1.5 rounded-xl bg-primary text-white hover:bg-primary-dark cursor-pointer border-none"
+                          >
+                            Dossier
+                          </button>
+                        </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-stone-400 text-xs">
+                      No active or upcoming guest stays currently scheduled.
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -443,14 +792,14 @@ export default function HostAdminPortal() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-blue-300">Next Payout</span>
                     <span className="text-[10px] font-extrabold bg-blue-500/30 text-blue-200 px-2 py-0.5 rounded-md">
-                      Aug 21, 2026
+                      {hostData.financials?.payouts?.find(p => p.status === "Scheduled")?.date || "No Pending Date"}
                     </span>
                   </div>
                   <div className="text-3xl font-extrabold font-sans tabular-nums tracking-tight">
-                    ₹105,600
+                    ₹{(hostData.financials?.payouts?.find(p => p.status === "Scheduled")?.amount || 0).toLocaleString("en-IN")}
                   </div>
                   <div className="text-xs text-blue-200">
-                    Direct Deposit to HDFC Bank (****4910)
+                    Direct Deposit to {hostData.financials?.payouts?.find(p => p.status === "Scheduled")?.method || "None Registered"}
                   </div>
                   <button 
                     onClick={() => setActiveTab("earnings")}
@@ -495,7 +844,7 @@ export default function HostAdminPortal() {
           </div>
         )}
 
-        {/* TAB 2: PROPERTY INVENTORY & LISTINGS */}
+        {/* TAB 2: PROPERTY INVENTORY & LISTINGS (LEGACY) */}
         {activeTab === "listings" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -507,7 +856,6 @@ export default function HostAdminPortal() {
                   Manage active listings, adjust nightly rates, and toggle instant booking.
                 </p>
               </div>
-
               <Link
                 to="/become-a-host"
                 className="bg-primary hover:bg-primary-dark text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-1.5 no-underline self-start sm:self-auto"
@@ -515,7 +863,6 @@ export default function HostAdminPortal() {
                 <Plus size={14} /> + Create New Property
               </Link>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {hostData.listings?.map((prop) => {
                 const cardCover = prop.coverImage || prop.images?.[0] || "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80";
@@ -641,6 +988,669 @@ export default function HostAdminPortal() {
           </div>
         )}
 
+        {/* NEW TAB: MY PROPERTY */}
+        {activeTab === "property" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-extrabold font-serif text-slate-800 dark:text-white">
+                  My Property Details
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Manage your hosted properties, cover images, amenities, and approval status.
+                </p>
+              </div>
+              <Link
+                to="/become-a-host"
+                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md no-underline flex items-center gap-1.5"
+              >
+                <Plus size={14} /> Add Another Property
+              </Link>
+            </div>
+
+            {loadingProperties ? (
+              <div className="flex justify-center py-12">
+                <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : myProperties.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-3xl space-y-4">
+                <div className="text-4xl">🏨</div>
+                <h3 className="text-base font-bold text-slate-800 dark:text-white">No properties registered on the database yet</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Click the button below to launch the host wizard and register your first luxury resort, villa, or boutique chalet.
+                </p>
+                <Link
+                  to="/become-a-host"
+                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold px-5 py-3 rounded-xl shadow-md no-underline inline-block"
+                >
+                  Register Your First Property
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {myProperties.map((prop) => (
+                  <div key={prop.id} className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm space-y-6">
+                    
+                    {/* Status Alerts if action required */}
+                    {prop.status === "CHANGES_REQUESTED" && (
+                      <div className="bg-amber-50 border border-amber-200 dark:bg-amber-950/30 dark:border-amber-800 rounded-2xl p-4 flex gap-3 text-xs text-amber-800 dark:text-amber-300 font-medium">
+                        <span className="text-lg">⚠️</span>
+                        <div>
+                          <strong className="block font-bold">Action Required: Changes Requested by Admin</strong>
+                          <span className="block mt-0.5">{prop.featuredTag || "Please review property details."}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col lg:flex-row gap-6">
+                      {/* Left: Photos & Cover */}
+                      <div className="w-full lg:w-1/3 space-y-3 flex flex-col justify-start">
+                        <div className="relative aspect-[16/10] rounded-2xl overflow-hidden border">
+                          <img src={prop.activePhoto || prop.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80"} alt={prop.name} className="w-full h-full object-cover" />
+                          <span className={`absolute top-3 left-3 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow text-white ${
+                            prop.status === "APPROVED" ? "bg-emerald-600" :
+                            prop.status === "PENDING_APPROVAL" ? "bg-amber-500" :
+                            prop.status === "CHANGES_REQUESTED" ? "bg-red-500" : "bg-slate-600"
+                          }`}>
+                            {prop.status}
+                          </span>
+                        </div>
+                        
+                        {/* Gallery List */}
+                        <div className="grid grid-cols-5 gap-1.5 mt-1">
+                          {splitUrls(prop.galleryUrls || prop.imageUrl).map((url, i) => (
+                            <div 
+                              key={i} 
+                              onClick={() => handleThumbnailClick(prop.id, url)}
+                              className={`aspect-[4/3] rounded-lg overflow-hidden border cursor-pointer transition-all duration-200 ${
+                                (prop.activePhoto === url || (!prop.activePhoto && i === 0))
+                                  ? "border-blue-600 border-2 scale-[1.03] shadow-xs"
+                                  : "border-slate-200 hover:border-blue-400"
+                              }`}
+                            >
+                              <img src={url} alt="Gallery" className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Right: Info & Settings */}
+                      <div className="flex-1 space-y-4">
+                        <div>
+                          <div className="flex items-center gap-2 text-xs text-[#2563EB] font-bold uppercase tracking-wider">
+                            <MapPin size={13} /> {prop.location}
+                          </div>
+                          <h3 className="text-xl font-extrabold text-slate-800 dark:text-white mt-1 font-serif">
+                            {prop.name}
+                          </h3>
+                        </div>
+
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {prop.description}
+                        </p>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-900/60 p-4 rounded-2xl border text-center">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Base Price</span>
+                            <span className="text-sm font-black text-slate-800 dark:text-white">₹{Number(prop.pricePerNight).toLocaleString("en-IN")}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Guests</span>
+                            <span className="text-sm font-black text-slate-800 dark:text-white">{prop.guests || 4} Guests</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Bedrooms</span>
+                            <span className="text-sm font-black text-slate-800 dark:text-white">{prop.bedrooms || 2} Rooms</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Rating</span>
+                            <span className="text-sm font-black text-slate-800 dark:text-white">★ {prop.rating || 5.0}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Standout Amenities</span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(prop.amenities ? prop.amenities.split(",") : ["Wi-Fi", "Pool", "Spa", "Butler Service"]).map((am, i) => (
+                              <span key={i} className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                {am}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* NEW TAB: ROOMS & ACCOMMODATION */}
+        {activeTab === "rooms" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-extrabold font-serif text-slate-800 dark:text-white">
+                  Rooms & Accommodation
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Add rooms, update availability, block maintenance statuses, and configure pricing.
+                </p>
+              </div>
+              
+              {/* Property Selector */}
+              {myProperties.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase">Property:</span>
+                  <select
+                    value={selectedPropertyId}
+                    onChange={(e) => {
+                      setSelectedPropertyId(e.target.value);
+                      fetchRooms(e.target.value);
+                    }}
+                    className="p-2.5 rounded-xl border bg-white dark:bg-slate-800 text-xs font-bold outline-none cursor-pointer"
+                  >
+                    {myProperties.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {myProperties.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-[#1E293B] border rounded-3xl">
+                <div className="text-3xl mb-2">🛏️</div>
+                <h3 className="text-sm font-bold">No active properties</h3>
+                <p className="text-xs text-slate-400 mt-1">Please register your property under "My Property" before managing rooms.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* Left Side: Room list table */}
+                <div className="lg:col-span-8 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-3xl p-5 shadow-sm space-y-4">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    🏠 Registered Rooms & Suites ({roomsList.length})
+                  </h3>
+
+                  {loadingRooms ? (
+                    <div className="flex justify-center py-10">
+                      <div className="w-7 h-7 border-3 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : roomsList.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400 text-xs">
+                      No rooms registered for this property yet. Use the right-side form to add rooms!
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase font-bold">
+                            <th className="py-2.5">Room No</th>
+                            <th className="py-2.5">Type</th>
+                            <th className="py-2.5">Capacity</th>
+                            <th className="py-2.5">Price / Night</th>
+                            <th className="py-2.5">Status</th>
+                            <th className="py-2.5">Cleaning</th>
+                            <th className="py-2.5 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {roomsList.map((room) => (
+                            <tr key={room.id} className="border-b border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                              <td className="py-3 font-extrabold text-slate-900 dark:text-white">#{room.roomNumber}</td>
+                              <td className="py-3">{room.type}</td>
+                              <td className="py-3">{room.capacity} Guests</td>
+                              <td className="py-3 font-bold text-primary">₹{Number(room.pricePerNight).toLocaleString("en-IN")}</td>
+                              <td className="py-3">
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                                  room.status === "AVAILABLE" ? "bg-emerald-50 text-emerald-600 border border-emerald-200" :
+                                  room.status === "OCCUPIED" ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-red-50 text-red-600 border border-red-200"
+                                }`}>
+                                  {room.status}
+                                </span>
+                              </td>
+                              <td className="py-3">
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                                  room.cleaningStatus === "CLEAN" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                                }`}>
+                                  {room.cleaningStatus}
+                                </span>
+                              </td>
+                              <td className="py-3 text-right">
+                                <div className="inline-flex gap-1.5">
+                                  <button
+                                    onClick={() => handleUpdateRoomStatus(room.id, room.status === "AVAILABLE" ? "BLOCKED" : "AVAILABLE", room.cleaningStatus)}
+                                    className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold border-none cursor-pointer"
+                                  >
+                                    Toggle Block
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateRoomStatus(room.id, room.status, room.cleaningStatus === "CLEAN" ? "DIRTY" : "CLEAN")}
+                                    className="px-2 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold border-none cursor-pointer"
+                                  >
+                                    Clean status
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Side: Add room form */}
+                <div className="lg:col-span-4 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-3xl p-5 shadow-sm space-y-4">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">
+                    ➕ Add New Room / Suite
+                  </h3>
+
+                  <form onSubmit={handleCreateRoom} className="space-y-4 text-xs">
+                    <div>
+                      <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Room Number / ID</label>
+                      <input
+                        type="text"
+                        required
+                        value={newRoomData.roomNumber}
+                        onChange={(e) => setNewRoomData(prev => ({ ...prev, roomNumber: e.target.value }))}
+                        placeholder="e.g. 101, Villa A"
+                        className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none text-xs font-bold"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Room Type</label>
+                        <select
+                          value={newRoomData.type}
+                          onChange={(e) => setNewRoomData(prev => ({ ...prev, type: e.target.value }))}
+                          className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none text-xs font-bold"
+                        >
+                          <option value="SINGLE">Single</option>
+                          <option value="DOUBLE">Double</option>
+                          <option value="SUITE">Suite</option>
+                          <option value="DELUXE">Deluxe</option>
+                          <option value="VILLA_WITH_POOL">Villa with Pool</option>
+                          <option value="DELUXE_SEA_VIEW">Deluxe Sea View</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Max Guests</label>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          value={newRoomData.capacity}
+                          onChange={(e) => setNewRoomData(prev => ({ ...prev, capacity: parseInt(e.target.value, 10) }))}
+                          className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none text-xs font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Nightly Price (₹)</label>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        value={newRoomData.pricePerNight}
+                        onChange={(e) => setNewRoomData(prev => ({ ...prev, pricePerNight: Number(e.target.value) }))}
+                        className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none text-xs font-bold"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer border-none shadow transition-all"
+                    >
+                      Publish Room Unit
+                    </button>
+                  </form>
+                </div>
+
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* NEW TAB: OFFERS & PROMOTIONS */}
+        {activeTab === "offers" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-extrabold font-serif text-slate-800 dark:text-white">
+                  Offers & Promotions
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Create coupon codes and custom percentage discounts exclusive to your property.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* Active Coupons List */}
+              <div className="lg:col-span-8 bg-white dark:bg-[#1E293B] border rounded-3xl p-5 shadow-sm space-y-4">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white">
+                  🎟️ Active Promotions & Codes
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {offersList.map((off, i) => (
+                    <div key={i} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-dashed border-[#2563EB]/40 flex justify-between items-center">
+                      <div>
+                        <span className="font-mono text-sm font-extrabold bg-[#2563EB]/10 text-[#2563EB] px-3 py-1 rounded-md border border-[#2563EB]/20 uppercase">
+                          {off.code}
+                        </span>
+                        <div className="text-xs text-slate-800 dark:text-white font-extrabold mt-2">
+                          {off.discountValue}% OFF
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-1">
+                          Min purchase: ₹{off.minAmount} • Limit: {off.usageLimit}
+                        </div>
+                      </div>
+                      <span className="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded-full uppercase">
+                        {off.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Create Coupon form */}
+              <div className="lg:col-span-4 bg-white dark:bg-[#1E293B] border rounded-3xl p-5 shadow-sm space-y-4 text-xs">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white">
+                  ✨ + Create Custom Offer
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Select Target Property</label>
+                    <select
+                      value={selectedOfferPropertyId}
+                      onChange={(e) => setSelectedOfferPropertyId(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none text-xs font-bold cursor-pointer"
+                    >
+                      <option value="all">All Properties</option>
+                      {myProperties.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Promo Code Name</label>
+                    <input
+                      type="text"
+                      value={newOffer.code}
+                      onChange={(e) => setNewOffer(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                      placeholder="e.g. MONSOON30"
+                      className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none font-extrabold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Discount (%)</label>
+                      <input
+                        type="number"
+                        value={newOffer.discountValue}
+                        onChange={(e) => setNewOffer(prev => ({ ...prev, discountValue: parseInt(e.target.value, 10) }))}
+                        className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Usage Limit</label>
+                      <input
+                        type="number"
+                        value={newOffer.usageLimit}
+                        onChange={(e) => setNewOffer(prev => ({ ...prev, usageLimit: parseInt(e.target.value, 10) }))}
+                        className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (!newOffer.code) return;
+                      setOffersList(prev => [...prev, { ...newOffer, status: "ACTIVE" }]);
+                      setNewOffer({ code: "", discountType: "PERCENTAGE", discountValue: 10, minAmount: 1000, usageLimit: 100 });
+                      toast("Promotion coupon created!", "success");
+                    }}
+                    className="w-full py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer border-none shadow transition-all"
+                  >
+                    Deploy Promo Code
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* NEW TAB: PROPERTY POSTS */}
+        {activeTab === "posts" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-extrabold font-serif text-slate-800 dark:text-white">
+                  Property Feed & Posts
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Publish announcement cards (monsoon offers, aura spa events) directly on your property detail page.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* Posts Feed */}
+              <div className="lg:col-span-8 space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white">
+                    📢 Published Announcements & Posts ({postsList.length})
+                  </h3>
+                </div>
+                
+                <div className="space-y-4">
+                  {postsList.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-slate-400 border rounded-3xl bg-white dark:bg-[#1E293B]">
+                      No announcements posted yet. Use the form on the right to post your first update!
+                    </div>
+                  ) : (
+                    postsList.map((post) => (
+                      <div key={post.id} className="bg-white dark:bg-[#1E293B] border rounded-3xl p-5 shadow-xs space-y-2 relative">
+                        <div className="flex flex-wrap justify-between items-center gap-2">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-extrabold text-slate-800 dark:text-white font-serif">{post.title}</h4>
+                            {post.resortName && (
+                              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 border border-blue-200">
+                                🏨 {post.resortName}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400">{post.date}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {post.content}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Create Post form */}
+              <div className="lg:col-span-4 bg-white dark:bg-[#1E293B] border rounded-3xl p-5 shadow-sm space-y-4 text-xs">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white">
+                  ✍️ Create Announcement Card
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Select Target Property</label>
+                    <select
+                      value={selectedPostPropertyId || (myProperties[0]?.id || "")}
+                      onChange={(e) => setSelectedPostPropertyId(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none text-xs font-bold cursor-pointer"
+                    >
+                      {myProperties.length > 0 ? (
+                        myProperties.map(p => (
+                          <option key={p.id} value={p.id}>{p.name} ({p.location})</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="home-1">Goa Coastline Villa</option>
+                          <option value="home-2">Kerala Backwaters Resort</option>
+                          <option value="home-3">Himalayan Luxury Chalet</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Headline / Title</label>
+                    <input
+                      type="text"
+                      value={newPost.title}
+                      onChange={(e) => setNewPost(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g. Monsoon Special Offer"
+                      className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none text-xs font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1 uppercase tracking-wider text-[10px]">Card Description / Message</label>
+                    <textarea
+                      value={newPost.content}
+                      onChange={(e) => setNewPost(prev => ({ ...prev, content: e.target.value }))}
+                      placeholder="Write your event announcement or coupon description..."
+                      rows="4"
+                      className="w-full p-2.5 rounded-xl border bg-slate-50 dark:bg-slate-900 outline-none text-xs font-bold leading-relaxed resize-none"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (!newPost.title || !newPost.content) {
+                        toast("Please provide both title and content", "error");
+                        return;
+                      }
+                      const activePropId = selectedPostPropertyId || (myProperties[0]?.id || "home-1");
+                      const activeProp = myProperties.find(p => String(p.id) === String(activePropId)) || myProperties[0];
+                      const propName = activeProp?.name || "Target Property";
+
+                      const newCard = {
+                        id: Date.now(),
+                        resortId: activePropId,
+                        resortName: propName,
+                        title: newPost.title,
+                        content: newPost.content,
+                        caption: newPost.content,
+                        mediaUrl: activeProp?.imageUrl || activeProp?.image || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80",
+                        type: "image",
+                        date: new Date().toISOString().split('T')[0],
+                        createdAt: new Date().toISOString()
+                      };
+
+                      const updatedList = [newCard, ...postsList];
+                      setPostsList(updatedList);
+                      try {
+                        localStorage.setItem("reservo_resort_posts", JSON.stringify(updatedList));
+                      } catch (e) {}
+
+                      setNewPost({ title: "", content: "" });
+                      toast(`Announcement published for ${propName}!`, "success");
+                    }}
+                    className="w-full py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs uppercase tracking-wider rounded-xl cursor-pointer border-none shadow transition-all"
+                  >
+                    Publish Post Card
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* NEW TAB: ANALYTICS */}
+        {activeTab === "analytics" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-extrabold font-serif text-slate-800 dark:text-white">
+                  Property Analytics
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Measure conversion rates, property views, and popular accommodation suites.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+              <div className="bg-white dark:bg-[#1E293B] border rounded-3xl p-5 shadow-xs">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Property Views</span>
+                <span className="text-xl font-black text-slate-800 dark:text-white block mt-1">14,208</span>
+                <span className="text-[10px] text-emerald-600 font-bold block mt-1">↑ 12% vs last month</span>
+              </div>
+              <div className="bg-white dark:bg-[#1E293B] border rounded-3xl p-5 shadow-xs">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Booking Conversion</span>
+                <span className="text-xl font-black text-slate-800 dark:text-white block mt-1">3.24%</span>
+                <span className="text-[10px] text-emerald-600 font-bold block mt-1">↑ 0.5% vs last month</span>
+              </div>
+              <div className="bg-white dark:bg-[#1E293B] border rounded-3xl p-5 shadow-xs">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Occupancy Rate</span>
+                <span className="text-xl font-black text-slate-800 dark:text-white block mt-1">74.5%</span>
+                <span className="text-[10px] text-indigo-600 font-bold block mt-1">Stable peak season</span>
+              </div>
+              <div className="bg-white dark:bg-[#1E293B] border rounded-3xl p-5 shadow-xs">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">Average Rating</span>
+                <span className="text-xl font-black text-slate-800 dark:text-white block mt-1">4.96 ★</span>
+                <span className="text-[10px] text-amber-500 font-bold block mt-1">Superhost status active</span>
+              </div>
+            </div>
+            
+            <div className="bg-white dark:bg-[#1E293B] border rounded-3xl p-6 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white font-serif mb-4">Popular Accommodation Categories</h3>
+              <div className="space-y-3 text-xs">
+                <div>
+                  <div className="flex justify-between font-bold mb-1">
+                    <span>Deluxe Sea View Suite</span>
+                    <span>45% of Bookings</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-[#2563EB] h-full w-[45%]" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between font-bold mb-1">
+                    <span>Luxury Pool Villa</span>
+                    <span>35% of Bookings</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-[#2563EB] h-full w-[35%]" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between font-bold mb-1">
+                    <span>Standard Double Room</span>
+                    <span>20% of Bookings</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-[#2563EB] h-full w-[20%]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* TAB 3: RESERVATIONS & GUEST STAYS */}
         {activeTab === "reservations" && (
           <div className="space-y-6">
@@ -654,7 +1664,20 @@ export default function HostAdminPortal() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {myProperties.length > 0 && (
+                  <select
+                    value={selectedBookingPropertyId}
+                    onChange={(e) => setSelectedBookingPropertyId(e.target.value)}
+                    className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-2 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="all">All Properties</option>
+                    {myProperties.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                )}
+
                 {["all", "Pending Approval", "Upcoming", "In-House", "Completed"].map((status) => (
                   <button
                     key={status}
@@ -673,7 +1696,12 @@ export default function HostAdminPortal() {
 
             <div className="space-y-4">
               {hostData.reservations
-                ?.filter(r => resStatusFilter === "all" || r.status === resStatusFilter)
+                ?.filter(r => {
+                  const matchesStatus = resStatusFilter === "all" || r.status === resStatusFilter;
+                  const targetProp = myProperties.find(p => String(p.id) === String(selectedBookingPropertyId));
+                  const matchesProp = selectedBookingPropertyId === "all" || !targetProp || (r.listingTitle && r.listingTitle.toLowerCase().includes((targetProp.name || "").toLowerCase()));
+                  return matchesStatus && matchesProp;
+                })
                 .map((res) => (
                   <div
                     key={res.id}
@@ -1134,11 +2162,17 @@ export default function HostAdminPortal() {
               <select
                 value={selectedListingForCalendar}
                 onChange={(e) => setSelectedListingForCalendar(e.target.value)}
-                className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-2.5 rounded-2xl text-xs font-bold outline-none focus:border-primary"
+                className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-2.5 rounded-2xl text-xs font-bold outline-none focus:border-primary cursor-pointer"
               >
-                {hostData.listings?.map((l) => (
-                  <option key={l.id} value={l.id}>{l.title}</option>
-                ))}
+                {myProperties.length > 0 ? (
+                  myProperties.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.location})</option>
+                  ))
+                ) : (
+                  hostData.listings?.map((l) => (
+                    <option key={l.id} value={l.id}>{l.title}</option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -1420,7 +2454,7 @@ export default function HostAdminPortal() {
         {/* TAB 7: REVIEWS & QUALITY */}
         {activeTab === "reviews" && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h2 className="text-2xl font-extrabold font-serif text-[var(--color-text-dark)]">
                   Guest Reviews & Ratings
@@ -1429,16 +2463,36 @@ export default function HostAdminPortal() {
                   Maintain a 4.8+ rating to preserve your Superhost badge and boost placement rank.
                 </p>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-extrabold font-sans tabular-nums text-amber-500 flex items-center gap-1 justify-end">
-                  <Star size={20} className="fill-amber-500" /> {hostData.profile?.rating || 4.96}
+
+              <div className="flex items-center gap-3">
+                {myProperties.length > 0 && (
+                  <select
+                    value={selectedReviewPropertyId}
+                    onChange={(e) => setSelectedReviewPropertyId(e.target.value)}
+                    className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-2.5 rounded-2xl text-xs font-bold outline-none cursor-pointer"
+                  >
+                    <option value="all">All Properties</option>
+                    {myProperties.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                )}
+                <div className="text-right">
+                  <div className="text-2xl font-extrabold font-sans tabular-nums text-amber-500 flex items-center gap-1 justify-end">
+                    <Star size={20} className="fill-amber-500" /> {hostData.profile?.rating || 4.96}
+                  </div>
+                  <div className="text-[11px] text-[var(--color-text-gray)]">100% 5-Star Reviews this Quarter</div>
                 </div>
-                <div className="text-[11px] text-[var(--color-text-gray)]">100% 5-Star Reviews this Quarter</div>
               </div>
             </div>
 
             <div className="space-y-4">
-              {hostData.reviews?.map((rev) => (
+              {hostData.reviews
+                ?.filter(rev => {
+                  const targetProp = myProperties.find(p => String(p.id) === String(selectedReviewPropertyId));
+                  return selectedReviewPropertyId === "all" || !targetProp || (rev.propertyTitle && rev.propertyTitle.toLowerCase().includes((targetProp.name || "").toLowerCase()));
+                })
+                .map((rev) => (
                 <div key={rev.id} className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-3xl p-6 shadow-xs space-y-4">
                   <div className="flex justify-between items-start">
                     <div>
@@ -1909,6 +2963,7 @@ export default function HostAdminPortal() {
         })()}
       </AnimatePresence>
 
+      </main>
     </div>
   );
 }

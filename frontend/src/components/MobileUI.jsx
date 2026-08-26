@@ -559,10 +559,14 @@ function MobileUI({ isDark, onToggleTheme, children }) {
                 { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" }
               ] : [
                 { type: "item", icon: <User size={18} />, label: `Profile (${user?.name || user?.displayName || user?.email?.split('@')[0] || "User"})`, path: "/profile" },
-                ...(user?.role === "ROLE_ADMIN" || user?.role === "ROLE_OWNER" ? [
+                ...(user?.role === "ROLE_ADMIN" ? [
+                  { type: "item", icon: <Building2 size={18} />, label: "Reservo Team Admin", path: "/admin/reservo" }
+                ] : user?.role === "ROLE_OWNER" ? [
                   { type: "item", icon: <Building2 size={18} />, label: "Host Administration", path: "/host/dashboard" }
                 ] : [
-                  { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" }
+                    user?.kycStatus === "PENDING_VERIFICATION"
+                    ? { type: "item", icon: <LayoutGrid size={18} />, label: "Host Request Pending", action: () => alert("Your host request is currently pending admin review. Please wait for approval.") }
+                    : { type: "item", icon: <LayoutGrid size={18} />, label: "Become a Host", path: "/become-a-host" }
                 ])
               ]),
               { type: "divider" },

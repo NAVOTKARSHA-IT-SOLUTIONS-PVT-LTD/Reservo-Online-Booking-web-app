@@ -43,7 +43,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
   const [sortBy, setSortBy] = useState('recommended');
 
   // Filter States
-  const [maxPrice, setMaxPrice] = useState(40000);
+  const [maxPrice, setMaxPrice] = useState(150000);
   const [minRating, setMinRating] = useState(0);
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [selectedPerks, setSelectedPerks] = useState([]);
@@ -113,7 +113,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
   };
 
   const resetAllFilters = () => {
-    setMaxPrice(40000);
+    setMaxPrice(150000);
     setMinRating(0);
     setSelectedAmenities([]);
     setSelectedPerks([]);
@@ -137,7 +137,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
       setIsFilterOpen(true);
       if (mode === "luxury") {
         setSortBy("price-high");
-        setMaxPrice(40000);
+        setMaxPrice(150000);
         setSelectedAmenities(["Personal AI Butler", "Private Beach Access"]);
       } else if (mode === "budget") {
         setSortBy("price-low");
@@ -145,11 +145,11 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
         setSelectedAmenities([]);
       } else if (mode === "relax") {
         setSortBy("rating-high");
-        setMaxPrice(40000);
+        setMaxPrice(150000);
         setSelectedAmenities(["Aura Ayurvedic Spa", "Infinity Edge Pool"]);
       } else if (mode === "adventure") {
         setSortBy("popular");
-        setMaxPrice(40000);
+        setMaxPrice(150000);
         setSelectedAmenities(["Private Helipad Access", "Scuba & Water Sports"]);
       } else if (mode === "support") {
         resetAllFilters();
@@ -230,7 +230,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
   });
 
   const activeFilterCount = (activeCategory !== 'all' ? 1 : 0) +
-    (maxPrice < 40000 ? 1 : 0) +
+    (maxPrice < 150000 ? 1 : 0) +
     (minRating > 0 ? 1 : 0) +
     selectedAmenities.length +
     selectedPerks.length;
@@ -269,16 +269,16 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
           id="filter-price"
           type="range"
           min="5000"
-          max="40000"
-          step="1000"
+          max="150000"
+          step="5000"
           value={maxPrice}
           onChange={(e) => setMaxPrice(Number(e.target.value))}
           className="w-full accent-[#2563EB] cursor-pointer"
         />
         <div className="flex justify-between text-[10px] text-stone-400 font-medium">
           <span>{currencySymbol}{(Math.round(5000 * exchangeRate)).toLocaleString()}</span>
-          <span>{currencySymbol}{(Math.round(20000 * exchangeRate)).toLocaleString()}</span>
-          <span>{currencySymbol}{(Math.round(40000 * exchangeRate)).toLocaleString()}+</span>
+          <span>{currencySymbol}{(Math.round(75000 * exchangeRate)).toLocaleString()}</span>
+          <span>{currencySymbol}{(Math.round(150000 * exchangeRate)).toLocaleString()}+</span>
         </div>
       </div>
 

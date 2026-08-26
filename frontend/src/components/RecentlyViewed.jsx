@@ -12,7 +12,18 @@ export default function RecentlyViewed({ currencySymbol = "₹", rates = 1 }) {
   useEffect(() => {
     // Read from secure storage
     const fetchHistory = () => {
-      const history = secureStorage.getItem("reservo-recently-viewed") || [];
+      let history = secureStorage.getItem("reservo-recently-viewed") || [];
+      // Filter out old pre-seeded mock IDs from secureStorage history
+      const mockIds = [
+        "goa-coastline", "kerala-backwaters", "himalayan-chalet", "udaipur-palace", "maldives-overwater",
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
+      ];
+      const cleaned = history.filter(item => !mockIds.includes(item.id));
+      if (cleaned.length !== history.length) {
+        secureStorage.setItem("reservo-recently-viewed", cleaned);
+        history = cleaned;
+      }
       setList(history);
     };
 

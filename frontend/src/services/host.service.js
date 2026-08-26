@@ -1,20 +1,20 @@
 // Host Service for Reservo Web App
 
-const HOST_STORAGE_KEY = "reservo_host_data_v1";
+const HOST_STORAGE_KEY = "reservo_host_data_v2";
 
 const INITIAL_HOST_DATA = {
   profile: {
     hostId: "HOST-89421",
-    name: "User",
-    email: "user@reservo.com",
+    name: "Resort Owner",
+    email: "owner@reservo.com",
     phone: "+91 98450 12345",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
-    isSuperhost: true,
-    rating: 5.0,
+    isSuperhost: false,
+    rating: 0,
     totalReviews: 0,
-    responseTime: "< 15 mins",
-    responseRate: "100%",
-    joinedDate: "January 2026",
+    responseTime: "N/A",
+    responseRate: "N/A",
+    joinedDate: "August 2026",
     kycVerified: true,
     coHosts: []
   },
@@ -32,8 +32,7 @@ const INITIAL_HOST_DATA = {
     projectedNextMonth: 0,
     payouts: [],
     payoutMethods: [
-      { id: "pm-1", type: "Bank Account", title: "Bank Account", details: "A/C: ****4910 • IFSC: HDFC000124", isPrimary: true },
-      { id: "pm-2", type: "UPI", title: "Unified Payments Interface", details: "user@upi", isPrimary: false }
+      { id: "pm-1", type: "Bank Account", title: "Bank Account", details: "A/C: ****4910 • IFSC: HDFC000124", isPrimary: true }
     ]
   },
   confirmationLogs: []
@@ -54,21 +53,20 @@ export const hostService = {
           try {
             const rawUser = localStorage.getItem("reservo_user");
             if (rawUser) {
-              const u = JSON.parse(rawUser);
-              parsed.profile.name = u.name || u.displayName || "User";
-              parsed.profile.email = u.email || "user@reservo.com";
-            } else {
-              parsed.profile.name = "User";
+              const user = JSON.parse(rawUser);
+              parsed.profile.name = user.name || "Resort Owner";
+              parsed.profile.email = user.email || "owner@reservo.com";
             }
-          } catch (err) {
-            parsed.profile.name = "User";
-          }
+          } catch (e) {}
         }
-        if (parsed.listings) {
-          parsed.listings = parsed.listings.filter(l => !["host-prop-1", "host-prop-2", "host-prop-3"].includes(l.id));
+        if (!parsed.confirmationLogs) {
+          parsed.confirmationLogs = [];
         }
-        if (parsed.reservations) {
-          parsed.reservations = parsed.reservations.filter(r => !["host-prop-1", "host-prop-2", "host-prop-3"].includes(r.listingId));
+        if (!parsed.blockedDates) {
+          parsed.blockedDates = {};
+        }
+        if (!parsed.customPricing) {
+          parsed.customPricing = {};
         }
         return parsed;
       }

@@ -10,6 +10,7 @@ import {
 
 import { RESORTS } from "../data/resortsData";
 import { apiClient } from "../services/apiClient";
+import { resortService } from "../services/resort.service";
 
 // Rivo Mascots
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
@@ -87,122 +88,101 @@ const REGION_METADATA = {
   }
 };
 
-// Default setup values matching the requested professional screenshot exactly
-const DEFAULT_OPTIONS = [
-  {
-    id: "opt-1",
-    type: "A",
-    title: "Goa Beach Escape",
-    resortName: "Azure Beach Resort & Spa",
-    resortImage: "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=600&q=80",
-    location: "Goa, India",
-    roomTitle: "Ocean View Private Pool Villa",
-    grandTotal: 48750,
-    guests: 2,
-    nights: 2,
-    weather: "28°C • Breezy Coastline",
-    bestMonths: "November to February",
-    safety: "Very Safe • Tourist Friendly",
-    scores: { luxury: 5.0, romantic: 4.8, family: 4.1, adventure: 3.5, value: 4.5 },
-    breakdown: { hotel: 28000, transport: 6500, activities: 7500, food: 4750, taxes: 2000, cab: 0, buffer: 0 },
-    activities: [{ name: "Water Sports Adventure" }, { name: "Private Pool & Spa" }],
-    pros: ["Michelin dinner included", "Helipad access"],
-    cons: ["Higher rate", "No refunds"],
-    resortDetails: RESORTS[0] || { id: "goa-coastline" },
-    itinerary: {
-      day1: [
-        { time: "11:30 AM", title: "Arrival in Goa", desc: "Cab pickup from Dabolim Airport / Madgaon Station" },
-        { time: "01:00 PM", title: "Check-in at Resort", desc: "Welcome drinks & refreshing towels" },
-        { time: "02:00 PM", title: "Lunch by the Pool", desc: "Enjoy delicious lunch with ocean view" },
-        { time: "04:00 PM", title: "Relax at the Beach", desc: "Sunset walk & stunning views" },
-        { time: "08:00 PM", title: "Candle Light Dinner", desc: "Romantic private dinner by the beach" }
-      ],
-      day2: [
-        { time: "08:00 AM", title: "Breakfast with a View", desc: "Healthy breakfast with ocean view" },
-        { time: "10:00 AM", title: "Water Sports Adventure", desc: "Jet ski, Parasailing, Banana ride" },
-        { time: "01:00 PM", title: "Lunch at Beach Shack", desc: "Goan specialties" },
-        { time: "04:00 PM", title: "Private Pool & Spa", desc: "Relax and unwind with couple spa" },
-        { time: "08:00 PM", title: "BBQ Dinner Night", desc: "Live music & BBQ dinner" }
-      ],
-      day3: [
-        { time: "08:00 AM", title: "Breakfast & Leisure", desc: "Relax and enjoy your last morning" },
-        { time: "11:00 AM", title: "Checkout", desc: "Check-out and cab drop" },
-        { time: "01:00 PM", title: "Departure", desc: "Drive back to Mumbai with memories" }
-      ]
-    }
-  },
-  {
-    id: "opt-2",
-    type: "B",
-    title: "Alibaug Coastal Bliss",
-    resortName: "Alibaug Coastal Bliss Resort",
-    resortImage: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80",
-    location: "Alibaug, Maharashtra",
-    roomTitle: "Luxury Garden Suite",
-    grandTotal: 45210,
-    guests: 2,
-    nights: 2,
-    weather: "29°C • Coastal Breeze",
-    bestMonths: "November to March",
-    safety: "Safe • Peaceful Zone",
-    scores: { luxury: 4.3, romantic: 4.5, family: 4.4, adventure: 3.2, value: 4.8 },
-    breakdown: { hotel: 25000, transport: 5000, activities: 6500, food: 4210, taxes: 4500, cab: 0, buffer: 0 },
-    activities: [{ name: "Sea Fort Jet Skiing" }, { name: "Beachside Barbecue" }],
-    pros: ["Close driving distance", "Spa massage included"],
-    cons: ["Ferry schedule binding"],
-    resortDetails: RESORTS[1] || { id: "goa-coastline" },
-    itinerary: {
-      day1: [
-        { time: "10:00 AM", title: "Ferry Departure", desc: "Speedboat ferry from Gateway of India to Mandwa" },
-        { time: "12:00 PM", title: "Resort Check-In", desc: "Check-in to your luxury garden suite" },
-        { time: "02:00 PM", title: "Sea Fort Tour", desc: "Explore Kolaba Fort walking inside the sea water" }
-      ],
-      day2: [
-        { time: "09:00 AM", title: "Resort Spa Session", desc: "Traditional ayurvedic full body therapy" },
-        { time: "04:00 PM", title: "Sunset Beach Walk", desc: "Walk along Alibaug black sand beach" }
-      ],
-      day3: [
-        { time: "09:00 AM", title: "Poolside Breakfast", desc: "Relaxed outdoor breakfast buffet" },
-        { time: "12:00 PM", title: "Ferry Return", desc: "Speedboat ride back to Mumbai" }
-      ]
-    }
-  },
-  {
-    id: "opt-3",
-    type: "C",
-    title: "Dapoli Serenity Stays",
-    resortName: "Dapoli Serenity Heights Resort",
-    resortImage: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80",
-    location: "Dapoli, Maharashtra",
-    roomTitle: "Executive Suite",
-    grandTotal: 41890,
-    guests: 2,
-    nights: 2,
-    weather: "26°C • Hillside Breeze",
-    bestMonths: "October to March",
-    safety: "Safe • Hill Escape",
-    scores: { luxury: 3.8, romantic: 4.1, family: 4.5, adventure: 4.0, value: 5.0 },
-    breakdown: { hotel: 22000, transport: 4000, activities: 5500, food: 3890, taxes: 6500, cab: 0, buffer: 0 },
-    activities: [{ name: "Dolphin Watch boat ride" }, { name: "Hot Water Spring Tour" }],
-    pros: ["Quiet & less crowded", "Authentic Konkan meals"],
-    cons: ["5-hour road journey"],
-    resortDetails: RESORTS[2] || { id: "goa-coastline" },
-    itinerary: {
-      day1: [
-        { time: "08:00 AM", title: "Road Journey Start", desc: "Drive from Mumbai through scenic Western Ghats" },
-        { time: "02:00 PM", title: "Resort Check-In", desc: "Check-in and traditional lunch" }
-      ],
-      day2: [
-        { time: "07:00 AM", title: "Dolphin Safari", desc: "Early morning boat ride in Harnai port" },
-        { time: "03:00 PM", title: "Hot Springs", desc: "Visit Unhavare hot sulfur springs" }
-      ],
-      day3: [
-        { time: "09:00 AM", title: "Local Konkan Breakfast", desc: "Ukadiche Modak and Ghavan tasting" },
-        { time: "11:00 AM", title: "Drive Return", desc: "Check-out and road transit back to Mumbai" }
-      ]
+// Dynamic option generator using real database resorts & today's real date
+const createDynamicOptions = (resortsList, targetKeyword = "", nights = 2, guests = 2, budget = 100000) => {
+  if (!resortsList || resortsList.length === 0) return [];
+
+  let filtered = resortsList;
+  if (targetKeyword) {
+    const kw = targetKeyword.toLowerCase().trim();
+    const matches = resortsList.filter(r => {
+      const fullText = `${r.name || ""} ${r.location || ""} ${r.city || ""} ${r.description || ""}`.toLowerCase();
+      return fullText.includes(kw);
+    });
+    if (matches.length > 0) {
+      filtered = matches;
     }
   }
-];
+
+  const primaryResort = filtered[0] || resortsList[0];
+  const secondaryResort = filtered[1] || resortsList[1] || primaryResort;
+  const tertiaryResort = filtered[2] || resortsList[2] || primaryResort;
+
+  const resortPickers = [
+    { resort: primaryResort, tierName: "Royal Luxury Villa Suite", multiplier: 1.0, type: "A" },
+    { resort: secondaryResort, tierName: "Executive Panorama Suite", multiplier: 0.8, type: "B" },
+    { resort: tertiaryResort, tierName: "Deluxe Premium Suite", multiplier: 0.65, type: "C" }
+  ];
+
+  // Dynamic real date calculation based on today
+  const today = new Date();
+  const checkInObj = new Date(today);
+  const checkOutObj = new Date(today);
+  checkOutObj.setDate(checkOutObj.getDate() + nights);
+
+  const formatLabel = (d) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const checkInStr = formatLabel(checkInObj);
+  const checkOutStr = formatLabel(checkOutObj);
+
+  return resortPickers.map((item, idx) => {
+    const r = item.resort;
+    const nightlyRate = r.pricePerNight || r.price || 45000;
+    const rate = Math.round(nightlyRate * item.multiplier);
+    const hotelCost = rate * nights;
+    const taxes = Math.round(hotelCost * 0.18);
+    const grandTotal = hotelCost + taxes;
+
+    const locName = r.location || "India";
+    const resName = r.name || "Luxury Resort";
+
+    return {
+      id: `opt-live-${r.id}-${idx}`,
+      type: item.type,
+      title: `${resName}`,
+      resortName: resName,
+      resortImage: r.imageUrl || r.image || r.heroImage || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80",
+      location: locName,
+      roomTitle: item.tierName,
+      grandTotal: grandTotal,
+      guests: guests,
+      nights: nights,
+      checkIn: checkInStr,
+      checkOut: checkOutStr,
+      weather: "28°C • Pleasant Climate",
+      bestMonths: "All Season",
+      safety: "Very Safe • Partner Property",
+      scores: { luxury: idx === 0 ? 5.0 : 4.5, romantic: 4.8, family: 4.5, adventure: 4.0, value: idx === 2 ? 4.9 : 4.3 },
+      breakdown: {
+        hotel: hotelCost,
+        taxes: taxes
+      },
+      activities: [
+        { name: "Private Infinity Pool & Spa Session" },
+        { name: "Resort Gourmet Breakfast & Dining" }
+      ],
+      pros: idx === 0 ? ["Handpicked luxury partner resort", "Full suite access"] : ["Best value for stay", "Free breakfast"],
+      cons: idx === 0 ? ["Popular weekend dates book fast"] : ["Standard suite allocation"],
+      resortDetails: r,
+      itinerary: {
+        day1: [
+          { time: "11:30 AM", title: `Arrival in ${locName}`, desc: `Transit and check-in to ${resName}` },
+          { time: "01:00 PM", title: "Resort Check-In", desc: `Welcome drinks and suite setup in ${item.tierName}` },
+          { time: "02:30 PM", title: "Lunch by the Pool", desc: "Enjoy fresh local delicacies with a view" },
+          { time: "08:00 PM", title: "Candlelight Dinner", desc: "Romantic course dinner at resort restaurant" }
+        ],
+        day2: [
+          { time: "09:00 AM", title: "Breakfast & Morning Spa", desc: "Organic buffet breakfast & relaxation" },
+          { time: "11:30 AM", title: `Sightseeing in ${locName}`, desc: "Explore local heritage & attractions" },
+          { time: "05:00 PM", title: "Sunset Lounge & Tea", desc: "Relaxation with panoramic views" }
+        ],
+        day3: [
+          { time: "09:00 AM", title: "Morning Dip & Breakfast", desc: "Relaxed morning swimming session" },
+          { time: "11:00 AM", title: "Check-out & Departure", desc: "Check-out and transit" }
+        ]
+      }
+    };
+  });
+};
 
 export default function AIPlanner() {
   const navigate = useNavigate();
@@ -222,7 +202,7 @@ export default function AIPlanner() {
       sender: "rivo",
       text: "Hi! I'm RIVO 👋\n\nTell me your travel plan or choose from suggestions below.",
       avatar: rivoMascot,
-      time: "10:30 AM"
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
 
@@ -242,11 +222,27 @@ export default function AIPlanner() {
     food: "Veg"
   });
 
-  // Generated options
+  // Live database resorts state
+  const [liveResorts, setLiveResorts] = useState([]);
+
+  // Generated options (starts empty so page does not auto-force a plan when nothing is typed)
   const [options, setOptions] = useState([]);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isBooked, setIsBooked] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+
+  // Load real resorts from backend database
+  useEffect(() => {
+    resortService.getAllResorts()
+      .then(data => {
+        if (data && data.length > 0) {
+          setLiveResorts(data);
+        }
+      })
+      .catch(err => {
+        console.warn("Could not load dynamic resorts in AIPlanner:", err);
+      });
+  }, []);
 
   // Expanded days state
   const [expandedDays, setExpandedDays] = useState({ day1: true, day2: true, day3: true, day4: false });
@@ -337,176 +333,45 @@ export default function AIPlanner() {
       }
     }
 
-    // 4. Strict inventory verification from local RESORTS database
+    // 4. Inventory verification from live dynamic database resorts
     let queryLoc = "";
     if (userInputText) {
       const text = userInputText.toLowerCase();
-      const locations = ["goa", "kerala", "udaipur", "manali", "maldives"];
-      for (const loc of locations) {
-        if (text.includes(loc)) {
-          queryLoc = loc;
-          break;
+      const words = text.split(/[\s,.]+/);
+      for (const w of words) {
+        if (w.length >= 3 && !["create", "night", "plan", "show", "resort", "hotel", "stay", "with", "from", "for", "the", "and"].includes(w)) {
+          const match = liveResorts.find(r => 
+            (r.name && r.name.toLowerCase().includes(w)) || 
+            (r.location && r.location.toLowerCase().includes(w))
+          );
+          if (match) {
+            queryLoc = w;
+            break;
+          }
         }
       }
     }
 
-    let matchedResorts = RESORTS;
-    if (queryLoc) {
-      matchedResorts = RESORTS.filter(r => (r.region || "").toLowerCase() === queryLoc);
-    } else if (isNearMumbai) {
-      matchedResorts = RESORTS.filter(r => {
-        const meta = REGION_METADATA[r.id];
-        return meta && meta.nearMumbai;
-      });
-    }
+    const availableResorts = liveResorts.length > 0 ? liveResorts : RESORTS;
+    const generated = createDynamicOptions(availableResorts, queryLoc, parsedNights, parsedGuests, parsedBudget);
 
-    // Fallback message if requested location is not in our inventory
-    if (userInputText && queryLoc && matchedResorts.length === 0) {
+    if (generated.length === 0) {
       setIsAnalyzing(false);
-      setOptions([]);
-      setSelectedOption(null);
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now(),
-          sender: "rivo",
-          text: `I couldn't find any resorts in **${queryLoc.toUpperCase()}** in our database. Currently, Reservo specializes in handpicked premium properties in **Goa**, **Udaipur**, **Kerala**, **Manali**, and the **Maldives**. Let's plan an amazing trip to one of these spots instead!`,
-          avatar: rivoMascot,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
       return;
     }
 
-    const resort = matchedResorts[0] || RESORTS[0];
-    const meta = REGION_METADATA[resort.id] || REGION_METADATA["goa-coastline"];
-
-    // Try fetching dynamic travel itinerary timeline from the live Spring Boot AI backend
-    let timelineEvents = null;
-    try {
-      const destName = queryLoc ? queryLoc.charAt(0).toUpperCase() + queryLoc.slice(1) : "Goa";
-      const resBody = await apiClient.post("/api/v1/ai/itinerary", {
-        destination: destName,
-        days: parsedNights + 1,
-        interests: preferences.style ? [preferences.style] : ["Relaxation"],
-        budget: parsedBudget > 200000 ? "luxury" : "balanced"
-      });
-
-      if (resBody && resBody.success && resBody.data) {
-        const parsedData = JSON.parse(resBody.data);
-        if (parsedData && parsedData.timeline) {
-          timelineEvents = {};
-          parsedData.timeline.forEach(t => {
-            timelineEvents[`day${t.day}`] = t.activities;
-          });
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch live itinerary from Spring Boot, using local default timelines:", err);
-    }
-
-    const roomTypes = resort.roomTypes;
-    const baseRoomTypes = [
-      roomTypes[roomTypes.length - 1] || roomTypes[0], // Option A (Luxury / highest suite)
-      roomTypes[1] || roomTypes[0],                     // Option B (Balanced / mid suite)
-      roomTypes[0]                                      // Option C (Budget / standard suite)
-    ];
-
-    const generated = baseRoomTypes.map((room, idx) => {
-      const cap = parseInt(room.capacity.replace(/\D/g, ""), 10) || 2;
-      const roomsNeeded = Math.ceil(parsedGuests / cap);
-      const hotelCost = room.price * parsedNights * roomsNeeded;
-      
-      let transportMode = preferences.transport;
-      if (idx === 0) transportMode = "flight";
-      else if (idx === 2) transportMode = "train";
-      
-      const transportCost = (meta.transportOptions[transportMode] || 3000) * parsedGuests;
-      const foodCostPerDay = preferences.food === "Veg" ? 800 : 1200;
-      const totalFoodCost = foodCostPerDay * parsedGuests * parsedNights;
-
-      const selectedActivities = meta.activities.slice(0, idx === 0 ? 3 : idx === 1 ? 2 : 1);
-      const activitiesCost = selectedActivities.reduce((sum, a) => sum + a.cost, 0) * parsedGuests;
-      const cabCost = 1500 * parsedNights;
-      const subtotal = hotelCost + transportCost + totalFoodCost + activitiesCost + cabCost;
-      const taxes = Math.round(subtotal * 0.12);
-      const grandTotal = subtotal + taxes;
-
-      let luxuryScore = idx === 0 ? 5.0 : idx === 1 ? 4.3 : 3.8;
-      let romanticScore = resort.category === "beach" ? 4.8 : 4.2;
-      let familyScore = resort.category === "mountain" ? 4.7 : 4.1;
-      let adventureScore = resort.category === "mountain" ? 4.9 : 3.5;
-      let valueScore = idx === 2 ? 4.9 : idx === 1 ? 4.5 : 3.9;
-
-      const label = idx === 0 ? "Luxury Escape" : idx === 1 ? "Balanced / Recommended" : "Budget Value";
-
-      const day1Events = [
-        { time: "11:30 AM", title: `Arrival in ${meta.region}`, desc: `Cab pick-up transit to ${resort.name}` },
-        { time: "01:00 PM", title: "Resort Check-In", desc: `Welcome drinks and check-in to ${roomsNeeded}x ${room.title}` },
-        { time: "02:00 PM", title: "Lunch by the Pool", desc: "Enjoy delicious local delicacies with a view" },
-        { time: "08:00 PM", title: "Dinner Night", desc: "Fine course dinner served by the resort beachside" }
-      ];
-
-      const day2Events = [
-        { time: "08:00 AM", title: "Breakfast with a View", desc: "Healthy buffet breakfast selection" },
-        { time: "10:00 AM", title: `${selectedActivities[0]?.name || "Local Excursions"}`, desc: "Included resort activity excursion" },
-        { time: "04:00 PM", title: "Leisure & Spa", desc: "Access to private sauna and pool facilities" },
-        { time: "08:00 PM", title: "BBQ Dinner Night", desc: "Live music acoustic show & grill BBQ dinner" }
-      ];
-
-      const day3Events = [
-        { time: "09:00 AM", title: "Buffet Breakfast", desc: "Final morning breakfast and pool walk" },
-        { time: "11:00 AM", title: "Resort Checkout", desc: "Checkout from room and baggage assistance" },
-        { time: "01:00 PM", title: "Departure Transit", desc: "Cab drop back to airport / station" }
-      ];
-
-      let finalItinerary = { day1: day1Events, day2: day2Events, day3: day3Events };
-      if (timelineEvents) {
-        finalItinerary = timelineEvents;
-      }
-
-      return {
-        id: `opt-${idx + 1}`,
-        type: idx === 0 ? "A" : idx === 1 ? "B" : "C",
-        title: `${resort.name} - ${label}`,
-        resortName: resort.name,
-        resortImage: resort.heroImage,
-        location: resort.location,
-        roomTitle: `${roomsNeeded}x ${room.title}`,
-        grandTotal,
-        guests: parsedGuests,
-        nights: parsedNights,
-        weather: meta.weather,
-        bestMonths: meta.bestMonths,
-        safety: meta.safety,
-        scores: { luxury: luxuryScore, romantic: romanticScore, family: familyScore, adventure: adventureScore, value: valueScore },
-        breakdown: { hotel: hotelCost, transport: transportCost, food: totalFoodCost, activities: activitiesCost, taxes, cab: cabCost, buffer: 0 },
-        activities: selectedActivities,
-        pros: idx === 0 ? ["All activities included", "Butler service"] : ["Free cancellation", "Spa voucher"],
-        cons: idx === 0 ? ["Premium rate"] : ["Standard suite"],
-        resortDetails: resort,
-        itinerary: finalItinerary
-      };
-    });
-
-    const sorted = [...generated].sort((a, b) => b.grandTotal - a.grandTotal);
-    sorted[0].type = "A"; 
-    if (sorted[1]) sorted[1].type = "B"; 
-    if (sorted[2]) sorted[2].type = "C"; 
-
-    const recommended = sorted[0];
-    
+    const recommended = generated[0];
     let replyText = "";
     if (recommended.grandTotal > parsedBudget) {
       const overshoot = recommended.grandTotal - parsedBudget;
-      replyText = `Hi! I'm RIVO 👋\n\nI parsed your request for ${parsedGuests} guests. The premium Option A slightly exceeds your ₹${parsedBudget.toLocaleString()} budget by ₹${overshoot.toLocaleString()}.\n\n⚠️ **Rivo Budget Optimization options:**\n- Switch to **Option B** or **C** (saves up to ₹${(recommended.grandTotal - sorted[2].grandTotal).toLocaleString()} by selecting lower suite allocations).\n- Change dates to mid-week rates (saves 15%).`;
+      replyText = `Hi! I'm RIVO 👋\n\nI parsed your request for ${parsedGuests} guests. Option A (${recommended.resortName} at ${recommended.location}) is ready for your stay.`;
     } else {
       const savings = parsedBudget - recommended.grandTotal;
-      replyText = `Hi! I'm RIVO 👋\n\nI parsed your request for ${parsedGuests} guests. Option A is fully under your ₹${parsedBudget.toLocaleString()} budget (saves ₹${savings.toLocaleString()})! I've mapped ${recommended.roomTitle} at *${recommended.resortName}*. Enjoy your luxury vacation!`;
+      replyText = `Hi! I'm RIVO 👋\n\nI parsed your request for ${parsedGuests} guests. Option A is fully under your ₹${parsedBudget.toLocaleString()} budget (saves ₹${savings.toLocaleString()})! I've mapped ${recommended.roomTitle} at *${recommended.resortName}* (${recommended.location}). Enjoy your luxury vacation!`;
     }
 
-    setOptions(sorted);
-    setSelectedOption(sorted[0]); 
+    setOptions(generated);
+    setSelectedOption(generated[0]); 
     setIsAnalyzing(false);
     setActiveMobileTab("itinerary");
 
@@ -557,17 +422,17 @@ export default function AIPlanner() {
       if (responseBody && responseBody.success && responseBody.data) {
         // If the message text contains keywords suggesting planning, run the planner engine
         const lowerText = userText.toLowerCase();
-        const needsPlanning = lowerText.includes("plan") || lowerText.includes("goa") || lowerText.includes("udaipur") || lowerText.includes("kerala") || lowerText.includes("manali") || lowerText.includes("maldives");
+        const needsPlanning = lowerText.includes("plan") || lowerText.includes("create") || lowerText.includes("book") || lowerText.includes("stay") || lowerText.includes("resort") || liveResorts.some(r => (r.location || "").toLowerCase().split(",").some(part => part.trim() && lowerText.includes(part.trim())));
         
         setMessages(prev => [
           ...prev,
           {
             id: Date.now(),
             sender: "rivo",
-            text: responseBody.data.replyText,
+            text: responseBody.data.text || responseBody.data.replyText,
             avatar: rivoMascot,
             time: timeStr,
-            recommendation: responseBody.data.recommendedResort
+            recommendation: responseBody.data.recommendation || responseBody.data.recommendedResort
           }
         ]);
 
@@ -585,7 +450,10 @@ export default function AIPlanner() {
         let reply = "I'm having a little trouble connecting right now. Let's plan our next getaway soon!";
         
         if (msg.includes("available") || msg.includes("resort") || msg.includes("list")) {
-          reply = "Here are our available luxury resorts:\n\n🌴 **Ocean Bliss Resort** - Goa, India\n🌴 **Royal Palm Retreat** - Bali, Indonesia\n🌴 **Sunset Lagoon Resort** - Maldives\n🌴 **Hill View Escape** - Udaipur, India\n\nLet me know if you'd like to learn more about any of these retreats!";
+          reply = "Here are our available luxury resorts:\n\n" +
+            (liveResorts.length > 0 
+              ? liveResorts.map(r => `• **${r.name}** at ${r.location} (₹${(r.pricePerNight || r.price || 45000).toLocaleString()}/night)`).join("\n\n")
+              : "• **The Royal Villa Sanctuary** at Pune\n• **The Royal Boutique Resort Sanctuary** at Kolkata\n• **The Royal Heritage Haven Sanctuary** at Jaipur");
         } else if (msg.includes("hello") || msg.includes("hi ")) {
           reply = "Greetings! I'm Rivo, your luxury travel companion. How can I assist you with your booking today?";
         }
@@ -806,11 +674,11 @@ export default function AIPlanner() {
             </div>
             <div className="flex justify-between">
               <span className="text-text-gray flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary" /> Check-in</span>
-              <span>12 May 2026</span>
+              <span>{selectedOption.checkIn}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-gray flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-primary" /> Check-out</span>
-              <span>14 May 2026</span>
+              <span>{selectedOption.checkOut}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-gray flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-primary" /> Guests</span>
@@ -825,31 +693,19 @@ export default function AIPlanner() {
 
         {/* PRICE BREAKDOWN TABLE */}
         <div className="bg-bg-white border border-border-color rounded-2xl p-5 shadow-sm space-y-3.5 text-[11.5px]">
-          <h4 className="text-xs font-bold text-text-dark uppercase tracking-wider border-b border-border-color pb-2">Price Breakdown</h4>
+          <h4 className="text-xs font-bold text-text-dark uppercase tracking-wider border-b border-border-color pb-2">Resort Price Breakdown</h4>
           
           <div className="space-y-2.5">
             <div className="flex justify-between items-center text-text-gray">
-              <span>🏨 Resort ({selectedOption.nights} Nights)</span>
+              <span>🏨 Resort Stay ({selectedOption.nights} Nights)</span>
               <span className="font-bold text-text-dark">₹{selectedOption.breakdown.hotel.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between items-center text-text-gray">
-              <span>✈️ Transport (Cab + Airport)</span>
-              <span className="font-bold text-text-dark">₹{selectedOption.breakdown.transport.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between items-center text-text-gray">
-              <span>🏄 Activities & Experiences</span>
-              <span className="font-bold text-text-dark">₹{selectedOption.breakdown.activities.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between items-center text-text-gray">
-              <span>🥗 Food & Beverages</span>
-              <span className="font-bold text-text-dark">₹{selectedOption.breakdown.food.toLocaleString()}</span>
-            </div>
             <div className="flex justify-between items-center text-text-gray border-b border-border-color pb-2.5">
-              <span>🛡️ Taxes & Service Fees</span>
+              <span>🛡️ GST & Service Tax (18%)</span>
               <span className="font-bold text-text-dark">₹{selectedOption.breakdown.taxes.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center text-sm font-extrabold text-primary pt-0.5">
-              <span>Total Trip Cost</span>
+              <span>Total Stay Cost</span>
               <span>₹{selectedOption.grandTotal.toLocaleString()}</span>
             </div>
           </div>
@@ -881,30 +737,17 @@ export default function AIPlanner() {
           </div>
         </div>
 
-        {/* BOOK ENTIRE TRIP CTA */}
+        {/* SEE RESORT FEATURES & BOOK CTA */}
         <div className="space-y-2 pt-2">
-          {!isBooked ? (
-            <button
-              onClick={handleBookEntireTrip}
-              className="w-full py-3.5 bg-primary hover:bg-primary-dark text-white text-xs font-extrabold uppercase tracking-widest rounded-xl shadow-lg border-none cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Check className="w-4 h-4 text-emerald-300" /> Book Entire Trip (Single Checkout)
-            </button>
-          ) : (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 p-4.5 rounded-2xl flex flex-col items-center text-center gap-2 animate-fade-in">
-              <CheckCircle className="w-8 h-8 text-emerald-500 animate-bounce" />
-              <div>
-                <h4 className="text-xs font-extrabold text-emerald-500">Unified Vacation Confirmed!</h4>
-                <p className="text-[9.5px] text-text-gray">Hotel room, transfers and flights details saved to your profile booking tab.</p>
-              </div>
-              <button
-                onClick={() => navigate("/profile")}
-                className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-lg border-none cursor-pointer"
-              >
-                View Passes in Profile
-              </button>
-            </div>
-          )}
+          <button
+            onClick={() => {
+              const resId = selectedOption?.resortDetails?.id || selectedOption?.resortId || 1;
+              navigate(`/resort/${resId}`);
+            }}
+            className="w-full py-3.5 bg-primary hover:bg-primary-dark text-white text-xs font-extrabold uppercase tracking-widest rounded-xl shadow-lg border-none cursor-pointer flex items-center justify-center gap-2 transition"
+          >
+            <ArrowRight className="w-4 h-4 text-white" /> See Resort Features & Book
+          </button>
           <div className="flex justify-between items-center text-[10px] font-semibold text-text-gray px-1">
             <span>Free cancellation up to 24 hours</span>
             <div className="flex items-center gap-1">

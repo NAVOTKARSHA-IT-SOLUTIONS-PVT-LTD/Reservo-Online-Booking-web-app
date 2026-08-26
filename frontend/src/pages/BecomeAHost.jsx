@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
-  Building2, Sparkles, MapPin, Shield, 
+  Sparkles, MapPin, Shield, 
   ArrowRight, ArrowLeft, Check, Camera, 
   Users, Bed, Bath, Plus, Minus, ChevronDown, Award, Zap, HeartHandshake, 
   ShieldCheck, Coffee, Wifi, Tv, Wind, 
@@ -15,6 +15,7 @@ import { resortService } from "../services/resort.service";
 import { secureStorage } from "../services/secureStorage";
 import { useToast } from "../context/ToastContext";
 import { useWishlist } from "../context/WishlistContext";
+import { apiClient } from "../services/apiClient";
 
 const DESTINATIONS = [
   { name: "Goa (North & South)", multiplier: 1.35, baseRate: 22000 },
@@ -326,7 +327,16 @@ export default function BecomeAHost() {
         pricePerNight: formData.pricePerNight || 24500,
         status: "ACTIVE",
         rating: 5.0,
-        reviewCount: 0
+        reviewCount: 0,
+        category: formData.category.toLowerCase(),
+        galleryUrls: (formData.images || []).join("|"),
+        videoUrls: (formData.videos || []).join("|"),
+        highlights: (formData.amenities || []).slice(0, 5).join(","),
+        amenities: (formData.amenities || []).join(","),
+        guests: formData.specs.guests,
+        bedrooms: formData.specs.bedrooms,
+        beds: formData.specs.beds,
+        bathrooms: formData.specs.bathrooms
       };
 
       try {
@@ -340,25 +350,32 @@ export default function BecomeAHost() {
       window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new Event("reservo-host-data-updated"));
 
+      try {
+        await apiClient.post("/api/v1/user/apply-host", {
+          documentType: "Aadhaar / GST / Passport Scan",
+          documentUrl: formData.kycDocumentBase64 || "mock://host-kyc-submitted"
+        });
+      } catch (e) {
+        console.warn("Backend apply-host call failed:", e);
+      }
+
       let currentUser = authService.getCurrentUser();
       if (!currentUser) {
         currentUser = {
           id: `host-${Date.now()}`,
           name: formData.hostName || "Host User",
           email: formData.hostEmail || "host@reservo.com",
-          role: "ROLE_HOST"
+          role: "ROLE_USER",
+          kycStatus: "PENDING_VERIFICATION"
         };
-      } else if (currentUser.role !== "ROLE_ADMIN") {
-        currentUser.role = "ROLE_HOST";
+      } else {
+        currentUser.kycStatus = "PENDING_VERIFICATION";
       }
       secureStorage.setItem("reservo_user", currentUser);
-      if (!secureStorage.getItem("reservo_auth_token")) {
-        secureStorage.setItem("reservo_auth_token", "demo_host_token_" + Date.now());
-      }
 
-      toast("🎉 Congratulations! Your listing has been published live to the Resort Listings.", "success");
+      toast("🎉 Congratulations! Your host application has been submitted for Admin approval.", "success");
       setTimeout(() => {
-        navigate("/resorts");
+        navigate("/dashboard");
       }, 600);
     } catch (err) {
       toast("Failed to publish listing: " + err.message, "error");
@@ -377,29 +394,63 @@ export default function BecomeAHost() {
     });
   };
 
-  const handleAddSamplePhoto = (url) => {
-    if (formData.images.length >= 10) {
-      toast("Security limit reached: Maximum 10 photos allowed.", "warning");
-      return;
-    }
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, url]
-    }));
-    toast("Image added to gallery", "info");
+  const handlePhotoUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const readerPromises = files.map(file => {
+      if (file.size === 0) return null;
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }).filter(Boolean);
+
+    Promise.all(readerPromises).then(newImages => {
+      setFormData(prev => {
+        // Clear default Unsplash placeholders on first upload
+        const currentList = prev.images.every(img => img.startsWith("http"))
+          ? []
+          : prev.images.filter(img => !img.startsWith("http"));
+        const updatedImages = [...currentList, ...newImages].slice(0, 10);
+        return {
+          ...prev,
+          images: updatedImages,
+          coverImage: prev.coverImage && !prev.coverImage.startsWith("http") ? prev.coverImage : updatedImages[0]
+        };
+      });
+      toast(`Successfully loaded ${newImages.length} images!`, "success");
+    });
   };
 
-  const handleAddSampleVideo = (url) => {
-    const currentVideos = formData.videos || [];
-    if (currentVideos.length >= 2) {
-      toast("Security limit reached: Maximum 2 videos allowed.", "warning");
-      return;
-    }
-    setFormData(prev => ({
-      ...prev,
-      videos: [...currentVideos, url]
-    }));
-    toast("Video added to gallery", "info");
+  const handleVideoUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const readerPromises = files.map(file => {
+      if (file.size === 0) return null;
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }).filter(Boolean);
+
+    Promise.all(readerPromises).then(newVideos => {
+      setFormData(prev => {
+        // Clear default placeholder video on first upload
+        const currentList = (prev.videos || []).every(vid => vid.startsWith("http"))
+          ? []
+          : (prev.videos || []).filter(vid => !vid.startsWith("http"));
+        const updatedVideos = [...currentList, ...newVideos].slice(0, 2);
+        return {
+          ...prev,
+          videos: updatedVideos
+        };
+      });
+      toast(`Successfully loaded ${newVideos.length} videos!`, "success");
+    });
   };
 
   return (
@@ -409,8 +460,8 @@ export default function BecomeAHost() {
       <div className="max-w-6xl mx-auto px-4 mb-6">
         <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3">
-            <span className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-              <Building2 size={16} />
+            <span className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-serif font-black text-sm select-none shrink-0 shadow-sm">
+              R
             </span>
             <div>
               <div className="text-xs font-extrabold text-[var(--color-text-dark)] flex items-center gap-2">
@@ -691,7 +742,7 @@ export default function BecomeAHost() {
       {/* 10-STEP INTERACTIVE LISTING WIZARD */}
       {mode === "wizard" && (
         <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-[32px] p-6 md:p-10 shadow-xl space-y-8">
+          <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-[24px] p-5 md:p-7 shadow-lg space-y-4">
             
             {/* Step 1: Category Selection */}
             {currentStep === 1 && (
@@ -847,11 +898,11 @@ export default function BecomeAHost() {
 
                 <div className="space-y-4">
                   {[
-                    { label: "Maximum Guests", key: "guests", min: 1, icon: Users },
-                    { label: "Rooms", key: "rooms", min: 1, icon: Building2 },
-                    { label: "Bedrooms", key: "bedrooms", min: 1, icon: Bed },
-                    { label: "Beds", key: "beds", min: 1, icon: Bed },
-                    { label: "Bathrooms", key: "bathrooms", min: 1, icon: Bath }
+                    { label: "Maximum Guests", key: "guests", min: 1, max: 10000, icon: Users },
+                    { label: "Rooms", key: "rooms", min: 1, max: 1000, icon: Building2 },
+                    { label: "Bedrooms", key: "bedrooms", min: 1, max: 1000, icon: Bed },
+                    { label: "Beds", key: "beds", min: 1, max: 1000, icon: Bed },
+                    { label: "Bathrooms", key: "bathrooms", min: 1, max: 1000, icon: Bath }
                   ].map((item) => {
                     const Icon = item.icon;
                     const currentValue = formData.specs[item.key] ?? 1;
@@ -875,9 +926,33 @@ export default function BecomeAHost() {
                           >
                             <Minus size={13} />
                           </button>
-                          <span className="text-xs font-extrabold text-[var(--color-text-dark)] w-8 text-center font-sans tabular-nums transition-colors duration-300">
-                            {currentValue}
-                          </span>
+                          <input
+                            type="number"
+                            value={formData.specs[item.key] === "" ? "" : (formData.specs[item.key] ?? 1)}
+                            onChange={(e) => {
+                              const val = e.target.value === "" ? "" : parseInt(e.target.value, 10);
+                              if (val === "") {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  specs: { ...prev.specs, [item.key]: "" }
+                                }));
+                              } else if (!isNaN(val)) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  specs: { ...prev.specs, [item.key]: Math.max(item.min, Math.min(item.max, val)) }
+                                }));
+                              }
+                            }}
+                            onBlur={() => {
+                              if (formData.specs[item.key] === "" || isNaN(formData.specs[item.key])) {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  specs: { ...prev.specs, [item.key]: item.min }
+                                }));
+                              }
+                            }}
+                            className="text-xs font-extrabold text-[var(--color-text-dark)] w-10 text-center bg-transparent border-none outline-none focus:ring-1 focus:ring-primary rounded font-sans"
+                          />
                           <button
                             type="button"
                             onClick={() => setFormData(prev => ({
@@ -1401,7 +1476,6 @@ export default function BecomeAHost() {
                       </button>
                     </div>
                   </div>
-
                   {/* Dynamic Fields based on Payout Type */}
                   {formData.payoutType === "bank" ? (
                     <div className="p-5 rounded-2xl bg-[var(--color-bg-light)] border border-[var(--color-border-color)] space-y-4 transition-colors">
@@ -1469,6 +1543,47 @@ export default function BecomeAHost() {
                       </div>
                     </div>
                   )}
+
+                  <div className="pt-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
+                      Upload Government ID / GST Proof Document Scan
+                    </label>
+                    <div className="border border-dashed border-[var(--color-border-color)] hover:border-primary rounded-2xl p-4 text-center bg-[var(--color-bg-white)] flex flex-col items-center gap-2">
+                      <input 
+                        type="file" 
+                        id="kyc-doc-file-input"
+                        accept="image/*,.pdf" 
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setFormData(prev => ({ ...prev, kycDocumentBase64: reader.result }));
+                              toast("Document scan loaded successfully!", "success");
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById("kyc-doc-file-input").click()}
+                        className="bg-primary text-white text-xs font-bold px-4 py-2 rounded-xl shadow cursor-pointer border-none"
+                      >
+                        + Upload ID Scan / Document Proof
+                      </button>
+                      {formData.kycDocumentBase64 ? (
+                        <div className="text-[11px] text-emerald-600 font-bold mt-1">
+                          ✓ Document attached ({formData.kycDocumentBase64.substring(0, 30)}...)
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-[var(--color-text-gray)]">
+                          Supports PNG, JPG, or PDF scans (Max 10MB)
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}

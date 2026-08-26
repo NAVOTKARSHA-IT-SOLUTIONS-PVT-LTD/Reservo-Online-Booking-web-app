@@ -1,169 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Heart, Star, ChevronLeft, ChevronRight, Waves, Mountain, TreePine, Home, Tent, Palmtree, ArrowRight, ShieldCheck, HeadphonesIcon } from "lucide-react";
-
-const goaImage = "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=70&fm=webp";
-const keralaImage = "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&w=800&q=70&fm=webp";
-const coorgImage = "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=70&fm=webp";
-const manaliImage = "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=70&fm=webp";
-const jaipurImage = "https://images.unsplash.com/photo-1477587458883-47135fbdb5ee?auto=format&fit=crop&w=800&q=70&fm=webp";
-const udaipurImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=70&fm=webp";
-const shimlaImage = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=70&fm=webp";
-const andamanImage = "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?auto=format&fit=crop&w=800&q=70&fm=webp";
-
-const CATEGORIES = [
-  { id: "beach", label: "Beach Resorts", icon: <Waves size={16} /> },
-  { id: "mountain", label: "Mountain Retreats", icon: <Mountain size={16} /> },
-  { id: "forest", label: "Forest Chalets", icon: <TreePine size={16} /> },
-  { id: "villas", label: "Luxury Villas", icon: <Home size={16} /> },
-  { id: "cabins", label: "Rustic Cabins", icon: <Home size={16} /> },
-  { id: "glamping", label: "Glamping Stays", icon: <Tent size={16} /> },
-  { id: "islands", label: "Private Islands", icon: <Palmtree size={16} /> },
-];
-
-const DESTINATIONS = [
-  {
-    id: 1,
-    name: "Goa Coastline",
-    location: "West Coast, India",
-    price: 8000,
-    rating: 4.9,
-    reviews: "Exceptional",
-    image: goaImage,
-    category: "beach"
-  },
-  {
-    id: 2,
-    name: "Kerala Backwaters",
-    location: "South Coast, India",
-    price: 9000,
-    rating: 4.9,
-    reviews: "Exceptional",
-    image: keralaImage,
-    category: "beach"
-  },
-  {
-    id: 11,
-    name: "Andaman Beach Cove",
-    location: "Andaman Islands, India",
-    price: 13500,
-    rating: 4.9,
-    reviews: "Exceptional",
-    image: andamanImage,
-    category: "beach"
-  },
-  {
-    id: 3,
-    name: "Solang Valley Manali",
-    location: "Himachal Pradesh, India",
-    price: 6500,
-    rating: 4.8,
-    reviews: "Excellent",
-    image: manaliImage,
-    category: "mountain"
-  },
-  {
-    id: 4,
-    name: "Coorg Hill Station",
-    location: "Karnataka, India",
-    price: 7200,
-    rating: 4.7,
-    reviews: "Excellent",
-    image: coorgImage,
-    category: "mountain"
-  },
-  {
-    id: 12,
-    name: "Shimla Alpine Resort",
-    location: "Himachal Pradesh, India",
-    price: 8200,
-    rating: 4.8,
-    reviews: "Exceptional",
-    image: shimlaImage,
-    category: "mountain"
-  },
-  {
-    id: 5,
-    name: "Coorg Forest Chalet",
-    location: "Karnataka, India",
-    price: 8500,
-    rating: 4.8,
-    reviews: "Exceptional",
-    image: coorgImage,
-    category: "forest"
-  },
-  {
-    id: 6,
-    name: "Udaipur Lake Palace",
-    location: "Rajasthan, India",
-    price: 15000,
-    rating: 4.9,
-    reviews: "Exceptional",
-    image: udaipurImage,
-    category: "villas"
-  },
-  {
-    id: 7,
-    name: "Jaipur Haveli",
-    location: "Rajasthan, India",
-    price: 12000,
-    rating: 4.8,
-    reviews: "Excellent",
-    image: jaipurImage,
-    category: "villas"
-  },
-  {
-    id: 13,
-    name: "Goa Heritage Villa",
-    location: "Goa, India",
-    price: 11000,
-    rating: 4.7,
-    reviews: "Excellent",
-    image: goaImage,
-    category: "villas"
-  },
-  {
-    id: 8,
-    name: "Shimla Log Cabin",
-    location: "Himachal Pradesh, India",
-    price: 5800,
-    rating: 4.6,
-    reviews: "Good",
-    image: shimlaImage,
-    category: "cabins"
-  },
-  {
-    id: 9,
-    name: "Manali Glamping Tents",
-    location: "Himachal Pradesh, India",
-    price: 7500,
-    rating: 4.9,
-    reviews: "Exceptional",
-    image: manaliImage,
-    category: "glamping"
-  },
-  {
-    id: 10,
-    name: "Andaman Private Shore",
-    location: "Andaman Islands, India",
-    price: 18000,
-    rating: 5.0,
-    reviews: "Exceptional",
-    image: andamanImage,
-    category: "islands"
-  }
-];
-
+import { MapPin, Heart, Star, ChevronLeft, ChevronRight, Waves, Mountain, TreePine, Home, Tent, Palmtree, ArrowRight, ShieldCheck, HeadphonesIcon, Sparkles } from "lucide-react";
+import { CATEGORIES } from '../data/resortsData';
+import { resortService } from '../services/resort.service';
 import { useTranslation } from "../hooks/useTranslation";
+import rivoSearching from "../assets/images/rivo_searching.png";
 
 function PopularDestinations({ wishlist = [], toggleWishlist, currencySymbol = "₹", exchangeRate = 1 }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [activeCat, setActiveCat] = useState("beach");
+  const [activeCat, setActiveCat] = useState("all");
+  const [resorts, setResorts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredDestinations = DESTINATIONS.filter(
-    (dest) => dest.category === activeCat
-  );
+  useEffect(() => {
+    resortService.getAllResorts()
+      .then(data => {
+        setResorts(data || []);
+      })
+      .catch(err => {
+        console.warn("No dynamic resorts to display on landing page.", err);
+        setResorts([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  const filteredDestinations = resorts.filter((dest) => {
+    const cat = (dest.category || "").toLowerCase();
+    if (activeCat === "all") return true;
+    if (activeCat === "beach") return cat.includes("beach");
+    if (activeCat === "mountain") return cat.includes("mountain") || cat.includes("hill");
+    if (activeCat === "chalet") return cat.includes("chalet") || cat.includes("forest") || cat.includes("tree");
+    if (activeCat === "villa") return cat.includes("villa") || cat.includes("estate");
+    if (activeCat === "cabin") return cat.includes("cabin") || cat.includes("lodge");
+    if (activeCat === "glamping") return cat.includes("glamping") || cat.includes("tent") || cat.includes("camp");
+    if (activeCat === "island") return cat.includes("island") || cat.includes("sanctuary");
+    if (activeCat === "eco") return cat.includes("eco") || cat.includes("camp");
+    return false;
+  });
 
   return (
     <section className="py-12 bg-bg-light transition-colors duration-300" id="explore">
@@ -181,7 +57,17 @@ function PopularDestinations({ wishlist = [], toggleWishlist, currencySymbol = "
                   isActive ? "text-primary" : "text-text-gray hover:text-primary"
                 } bg-transparent border-none cursor-pointer focus:outline-none`}
               >
-                <span>{cat.icon}</span>
+                {/* Fallback mock simple icons for styling */}
+                <span className="text-slate-600 dark:text-slate-300">
+                  {cat.id === "beach" && <Waves size={16} />}
+                  {cat.id === "mountain" && <Mountain size={16} />}
+                  {cat.id === "forest" && <TreePine size={16} />}
+                  {cat.id === "villa" && <Home size={16} />}
+                  {cat.id === "cabin" && <Home size={16} />}
+                  {cat.id === "glamping" && <Tent size={16} />}
+                  {cat.id === "island" && <Palmtree size={16} />}
+                  {!["beach", "mountain", "forest", "villa", "cabin", "glamping", "island"].includes(cat.id) && <Sparkles size={16} />}
+                </span>
                 <span className="text-[12px] font-bold">{cat.label}</span>
                 {isActive && (
                   <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full"></div>
@@ -197,7 +83,7 @@ function PopularDestinations({ wishlist = [], toggleWishlist, currencySymbol = "
           {/* Left Title Area */}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-[1.5px] text-primary">POPULAR DESTINATIONS</span>
+              <span className="text-[11px] font-bold uppercase tracking-[1.5px] text-primary">POPULAR STAYS</span>
               <div className="w-8 h-0.5 bg-primary"></div>
             </div>
             <h2 className="text-[24px] sm:text-[30px] font-extrabold text-text-dark mb-1.5 font-serif transition-colors duration-300">
@@ -244,87 +130,125 @@ function PopularDestinations({ wishlist = [], toggleWishlist, currencySymbol = "
             </div>
 
             <div className="flex items-center justify-between lg:justify-end w-full lg:w-auto gap-3">
-              <button className="flex items-center gap-1.5 text-primary font-bold text-[13px] hover:text-primary-dark bg-transparent border-none cursor-pointer transition-colors px-2">
+              <button 
+                onClick={() => navigate("/resorts")}
+                className="flex items-center gap-1.5 text-primary font-bold text-[13px] hover:text-primary-dark bg-transparent border-none cursor-pointer transition-colors px-2"
+              >
                 View All Stays <ArrowRight size={14} />
               </button>
-              <div className="flex gap-1.5">
-                <button className="w-8.5 h-8.5 rounded-full bg-bg-white border border-border-color flex items-center justify-center text-text-gray hover:text-primary hover:border-primary transition-all cursor-pointer">
-                  <ChevronLeft size={16} />
-                </button>
-                <button className="w-8.5 h-8.5 rounded-full bg-primary flex items-center justify-center text-white hover:bg-primary-dark transition-all cursor-pointer shadow-[0_5px_15px_rgba(47,128,237,0.2)]">
-                  <ChevronRight size={16} />
-                </button>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Destination Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 justify-center">
-          {filteredDestinations.map((dest) => {
-            const isLiked = wishlist.includes(dest.id);
-            return (
-              <div 
-                key={dest.id} 
-                onClick={() => navigate(`/resort/${dest.id}`)}
-                className="bg-bg-white rounded-[20px] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-border-color transition-colors duration-300 group cursor-pointer max-w-[380px] w-full mx-auto"
-              >
-                
-                {/* Image Area */}
-                <div className="relative h-[210px] overflow-hidden">
-                  <img 
-                    src={dest.image} 
-                    alt={dest.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                  />
-                  
-                  {/* Top Left Rating Badge */}
-                  <div className="absolute top-4 left-4 bg-primary/95 backdrop-blur-sm text-white p-1.5 rounded-lg shadow-md border border-white/10 flex flex-col items-center justify-center">
-                    <div className="flex items-center gap-0.5 text-[12px] font-bold text-yellow-400">
-                      <Star size={10} className="fill-current" /> {dest.rating}
-                    </div>
+        {/* Destination Cards Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 justify-center">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-bg-white rounded-[20px] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-border-color max-w-[380px] w-full mx-auto animate-pulse">
+                {/* Skeleton Image */}
+                <div className="h-[210px] bg-slate-200 dark:bg-slate-700" />
+                {/* Skeleton Content */}
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                    <div className="h-3 w-12 bg-slate-200 dark:bg-slate-700 rounded-full" />
                   </div>
-
-                  {/* Top Right Heart */}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleWishlist(dest.id);
-                    }}
-                    className="absolute top-4 right-4 w-8.5 h-8.5 rounded-full bg-bg-white text-text-gray flex items-center justify-center shadow-md hover:text-red-500 transition-all border-none cursor-pointer focus:outline-none"
-                  >
-                    <Heart 
-                      size={16} 
-                      className={`transition-colors duration-300 ${
-                        isLiked ? "fill-red-500 text-red-500" : "text-text-gray"
-                      }`} 
-                    />
-                  </button>
-                </div>
-
-                {/* Content Area */}
-                <div className="p-4.5">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-[16px] font-extrabold text-text-dark mb-1 font-serif transition-colors duration-300">{dest.name}</h3>
-                      <div className="flex items-center gap-1 text-text-gray font-medium text-[12.5px] transition-colors duration-300">
-                        <MapPin size={14} /> {dest.location}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-text-gray/80 text-[11px] font-medium block">{t("from")}</span>
-                      <div className="text-[16px] font-extrabold text-text-dark transition-colors duration-300">
-                        {currencySymbol}{(Math.round(dest.price * exchangeRate)).toLocaleString()}<span className="text-[12px] text-text-gray font-medium"> / {t("per_night")}</span>
-                      </div>
-                    </div>
+                  <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                  <div className="h-3 w-1/2 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+                    <div className="h-5 w-20 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                    <div className="h-8 w-24 bg-slate-200 dark:bg-slate-700 rounded-xl" />
                   </div>
                 </div>
-
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : filteredDestinations.length === 0 ? (
+          <div className="text-center py-12 px-6 bg-bg-white border border-border-color rounded-[32px] w-full max-w-md mx-auto shadow-sm transition-colors duration-300 flex flex-col items-center">
+            <div className="w-24 h-24 mb-4 relative">
+              <img 
+                src={rivoSearching} 
+                alt="Rivo Mascot Searching Stays" 
+                className="w-full h-full object-cover rounded-2xl shadow-md border-2 border-border-color/80 animate-in zoom-in-95 duration-300" 
+              />
+            </div>
+            <h4 className="font-extrabold text-base text-text-dark">No Active Stays Found</h4>
+            <p className="text-xs text-text-gray mt-2 max-w-xs mx-auto leading-relaxed">
+              All mock listings have been removed. Use <strong className="text-primary font-bold">Become a Host</strong> in the menu drawer to register your own stays!
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 justify-center">
+            {filteredDestinations.map((dest) => {
+              const isLiked = wishlist.includes(dest.id);
+              return (
+                <div 
+                  key={dest.id} 
+                  onClick={() => navigate(`/resort/${dest.id}`)}
+                  className="bg-bg-white rounded-[20px] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-border-color transition-colors duration-300 group cursor-pointer max-w-[380px] w-full mx-auto"
+                >
+                  
+                  {/* Image Area */}
+                  <div className="relative h-[210px] overflow-hidden">
+                    <img 
+                      src={dest.imageUrl || dest.image || "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80"} 
+                      alt={dest.name} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                    />
+                    
+                    {/* Top Left Rating Badge */}
+                    <div className="absolute top-4 left-4 bg-primary/95 backdrop-blur-sm text-white p-1.5 rounded-lg shadow-md border border-white/10 flex flex-col items-center justify-center">
+                      <div className="flex items-center gap-0.5 text-[12px] font-bold text-yellow-400">
+                        <Star size={10} className="fill-current" /> {dest.rating || 5.0}
+                      </div>
+                    </div>
 
+                    {/* Top Right Heart */}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(dest.id);
+                      }}
+                      className="absolute top-4 right-4 w-8.5 h-8.5 rounded-full bg-bg-white text-text-gray flex items-center justify-center shadow-md hover:text-red-500 transition-all border-none cursor-pointer focus:outline-none"
+                    >
+                      <Heart 
+                        size={16} 
+                        className={`transition-colors duration-300 ${
+                          isLiked ? "fill-red-500 text-red-500" : "text-text-gray"
+                        }`} 
+                      />
+                    </button>
+                  </div>
+
+                  {/* Text Details Area */}
+                  <div className="p-5.5 space-y-3.5">
+                    <div>
+                      <div className="flex items-center gap-1.5 text-text-gray text-[11px] mb-1 font-semibold uppercase tracking-wide">
+                        <MapPin size={12} className="text-primary" /> {dest.location}
+                      </div>
+                      <h3 className="font-extrabold text-[16px] text-text-dark group-hover:text-primary transition-colors duration-300 line-clamp-1">
+                        {dest.name}
+                      </h3>
+                    </div>
+
+                    <div className="flex justify-between items-center border-t border-border-color pt-3.5 transition-colors duration-300">
+                      <div>
+                        <span className="text-[11px] text-text-gray block font-semibold">{t("price_per_night")}</span>
+                        <span className="text-[17px] font-black text-primary">
+                          {currencySymbol}{(Math.round((dest.price || dest.pricePerNight || 0) * exchangeRate)).toLocaleString()}
+                        </span>
+                      </div>
+                      <button className="px-4 py-2 bg-primary text-white text-[12px] font-bold rounded-xl shadow-[0_5px_15px_rgba(47,128,237,0.15)] group-hover:bg-primary-dark transition-all flex items-center gap-1 border-none cursor-pointer">
+                        Book Stay <ChevronRight size={12} />
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

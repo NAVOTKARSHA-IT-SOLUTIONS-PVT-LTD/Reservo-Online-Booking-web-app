@@ -139,7 +139,34 @@ export const resortService = {
   },
 
   mapBackendResort(item) {
+    // Helper to safely split URLs that might contain base64 string commas
+    const splitUrls = (urlStr) => {
+      if (!urlStr) return [];
+      if (urlStr.includes("|")) {
+        return urlStr.split("|").filter(Boolean);
+      }
+      if (urlStr.includes("data:") && urlStr.includes(",")) {
+        const rawParts = urlStr.split(",");
+        const cleaned = [];
+        for (let i = 0; i < rawParts.length; i++) {
+          if (rawParts[i].startsWith("data:") || rawParts[i].startsWith("http")) {
+            if (rawParts[i].startsWith("data:") && i + 1 < rawParts.length) {
+              cleaned.push(rawParts[i] + "," + rawParts[i+1]);
+              i++;
+            } else {
+              cleaned.push(rawParts[i]);
+            }
+          } else {
+            cleaned.push(rawParts[i]);
+          }
+        }
+        return cleaned.filter(Boolean);
+      }
+      return urlStr.split(",").filter(Boolean);
+    };
+
     // Map backend resort data to match frontend static data structure
+    const category = item.category || this.getCategoryForResort(item.name, item.location);
     return {
       id: item.id,
       name: item.name,
@@ -148,22 +175,30 @@ export const resortService = {
       image: item.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80",
       heroImage: item.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80",
       price: item.pricePerNight,
+      pricePerNight: item.pricePerNight, // Ensure pricePerNight is returned!
       rating: item.rating || 4.5,
       reviewCount: item.reviewCount || 0,
       reviewsCount: item.reviewCount || 0, // For consistency with static data
       featuredTag: item.featuredTag,
-      badge: item.featuredTag, // For consistency with static data
+      badge: item.featuredTag || "New Host", // For consistency with static data
       discount: item.discountPercentage || 0,
       currency: "₹",
-      // Add proper highlights based on resort name/location
-      highlights: this.getHighlightsForResort(item.name, item.location),
-      // Add proper amenities based on resort type
-      amenities: this.getAmenitiesForResort(item.name),
-      // Add perks
+      gallery: item.galleryUrls ? splitUrls(item.galleryUrls) : [item.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80"],
+      videos: item.videoUrls ? splitUrls(item.videoUrls) : [],
+      highlights: item.highlights ? item.highlights.split(",") : this.getHighlightsForResort(item.name, item.location),
+      amenities: item.amenities ? item.amenities.split(",").map(name => ({ name, icon: "Sparkles" })) : this.getAmenitiesForResort(item.name),
       perks: ["Free Cancellation", "Breakfast Included", "Transfer Services"],
-      // Determine category based on location/name
-      category: this.getCategoryForResort(item.name, item.location),
-      categoryLabel: this.getCategoryLabel(item.name, item.location)
+      category: category,
+      categoryLabel: this.getCategoryLabel(item.name, item.location),
+      specs: {
+        guests: item.guests ? `${item.guests} Guests` : "2-4 Guests",
+        bedrooms: item.bedrooms ? `${item.bedrooms} Bedrooms` : "1-2 Bedrooms",
+        beds: item.beds ? `${item.beds} Beds` : "1-2 Beds",
+        bathrooms: item.bathrooms ? `${item.bathrooms} Bathrooms` : "2 En-suite Baths",
+        area: "2,500 sq.ft.",
+        checkIn: "3:00 PM",
+        checkOut: "11:00 AM"
+      }
     };
   },
 

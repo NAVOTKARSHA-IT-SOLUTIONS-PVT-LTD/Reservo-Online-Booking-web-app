@@ -10,9 +10,9 @@ export const profileService = {
       if (result && result.success && result.data) {
         const profile = {
           ...result.data,
-          tier: "Elite Diamond Status",
-          joined: "Member since July 2026",
-          points: "24,500 pts"
+          tier: result.data.membershipLevel || "Standard Member",
+          joined: result.data.createdAt ? `Member since ${new Date(result.data.createdAt).toLocaleDateString("en-US", { month: 'long', year: 'numeric' })}` : "Member since 2026",
+          points: `${result.data.rewardPoints !== undefined ? result.data.rewardPoints : 0} pts`
         };
         secureStorage.setItem(USER_KEY, profile);
         return profile;
@@ -24,9 +24,9 @@ export const profileService = {
         name: "User Profile",
         email: "user@mail.in",
         phone: "+91 98765 43210",
-        tier: "Elite Diamond Status",
-        joined: "Member since July 2026",
-        points: "24,500 pts"
+        tier: "Standard Member",
+        joined: "Member since 2026",
+        points: "0 pts"
       };
     }
   },

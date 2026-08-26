@@ -8,9 +8,10 @@ import com.reservo.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.reservo.backend.specification.ResortSpecification;
-import java.math.BigDecimal;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -23,6 +24,28 @@ public class ResortService {
 
     public List<Resort> getAllApprovedResorts() {
         return resortRepository.findByStatus(Resort.ResortStatus.APPROVED);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Resort> getAllResortsForAdmin() {
+        return resortRepository.findAll();
+    }
+
+    @Transactional
+    public Resort updateResortStatus(Long resortId, Resort.ResortStatus status) {
+        Resort resort = getResortById(resortId);
+        resort.setStatus(status);
+        return resortRepository.save(resort);
+    }
+
+    @Transactional
+    public Resort requestChanges(Long resortId, String comment) {
+        Resort resort = getResortById(resortId);
+        resort.setStatus(Resort.ResortStatus.CHANGES_REQUESTED);
+        if (comment != null && !comment.isBlank()) {
+            resort.setFeaturedTag("Action Required: " + comment);
+        }
+        return resortRepository.save(resort);
     }
 
     public Resort getResortById(Long id) {
@@ -56,6 +79,7 @@ public class ResortService {
         resort.setStatus(Resort.ResortStatus.PENDING_APPROVAL);
         return resortRepository.save(resort);
     }
+
     public List<Resort> filterResorts(
         String location,
         BigDecimal minPrice,
@@ -69,6 +93,14 @@ public class ResortService {
                     maxPrice,
                     minRating
             )
-    );
+        );
+    }
+
+    public List<Resort> getResortsByOwnerEmail(String email) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return List.of();
+        }
+        return resortRepository.findByOwnerId(user.getId());
     }
 }

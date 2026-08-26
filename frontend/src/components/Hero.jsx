@@ -179,8 +179,27 @@ function Hero() {
 
   const handleSearchComplete = () => {
     setIsSearching(false);
-    const finalGuests = guestsSelected ? guests : "2 Adults, 1 Room";
-    navigate("/search", { state: { location, checkIn, checkOut, guests: finalGuests } });
+    const finalGuests = guestsSelected 
+      ? `${guestCount} Adult${guestCount !== 1 ? "s" : ""}${childCount > 0 ? `, ${childCount} Child${childCount !== 1 ? "ren" : ""}` : ""}, ${roomCount} Room${roomCount !== 1 ? "s" : ""}`
+      : "2 Guests, 1 Room";
+    
+    const searchPayload = {
+      location,
+      checkInDate: checkInDate || "2026-05-12",
+      checkOutDate: checkOutDate || "2026-05-15",
+      checkIn,
+      checkOut,
+      guestCount,
+      childCount,
+      roomCount,
+      guestsLabel: finalGuests
+    };
+
+    try {
+      sessionStorage.setItem("reservo_search_state", JSON.stringify(searchPayload));
+    } catch (e) {}
+
+    navigate("/search", { state: searchPayload });
   };
 
   const scrollToExplore = () => {

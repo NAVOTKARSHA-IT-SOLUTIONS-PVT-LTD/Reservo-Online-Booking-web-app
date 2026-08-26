@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -56,5 +57,59 @@ public class UserController {
 
         User updated = userService.saveUser(user);
         return ResponseEntity.ok(ApiResponse.success(updated, "KYC verified successfully"));
+    }
+
+    @PostMapping("/apply-host")
+    public ResponseEntity<ApiResponse<User>> applyHost(@RequestBody Map<String, String> body) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = userService.getUserByEmail(auth.getName());
+        user.setKycStatus(User.KycStatus.PENDING_VERIFICATION);
+        user.setKycDocumentType(body.getOrDefault("documentType", "Aadhaar Card"));
+        user.setKycDocumentUrl(body.getOrDefault("documentUrl", "mock://kyc-document-scan-uploaded"));
+        User updated = userService.saveUser(user);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Host application submitted successfully. Pending Admin Approval."));
+    }
+
+    @GetMapping("/pending-hosts")
+    public ResponseEntity<ApiResponse<List<User>>> getPendingHosts() {
+        List<User> pending = userService.getPendingHosts();
+        return ResponseEntity.ok(ApiResponse.success(pending, "Pending host applications retrieved"));
+    }
+
+    @PostMapping("/approve-host")
+    public ResponseEntity<ApiResponse<User>> approveHost(@RequestParam Long userId) {
+        User user = userService.getUserById(userId);
+        user.setRole(User.Role.ROLE_OWNER);
+        user.setKycStatus(User.KycStatus.VERIFIED);
+        
+        // Also save a custom string in user settings or trigger user flag so frontend displays approval alert
+        user.setMembershipLevel("Host Approved"); 
+
+        User updated = userService.saveUser(user);
+        userService.approveResortsForUser(user);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Host approved successfully"));
+    }
+
+    @PostMapping("/reject-host")
+    public ResponseEntity<ApiResponse<User>> rejectHost(@RequestParam Long userId) {
+        User user = userService.getUserById(userId);
+        user.setKycStatus(User.KycStatus.REJECTED);
+        User updated = userService.saveUser(user);
+        return ResponseEntity.ok(ApiResponse.success(updated, "Host application rejected"));
+    }
+
+    @GetMapping("/all-users")
+    public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
+        return ResponseEntity.ok(ApiResponse.success(userService.getAllUsers()));
+    }
+
+    @PostMapping("/change-status")
+    public ResponseEntity<ApiResponse<User>> changeUserStatus(
+            @RequestParam Long userId,
+            @RequestParam User.UserStatus status) {
+        User user = userService.getUserById(userId);
+        user.setStatus(status);
+        User updated = userService.saveUser(user);
+        return ResponseEntity.ok(ApiResponse.success(updated, "User status updated to " + status));
     }
 }

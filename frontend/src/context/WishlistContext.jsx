@@ -12,10 +12,23 @@ const WISHLIST_KEY = "reservo-wishlist";
 export function WishlistProvider({ children }) {
   const [wishlist, setWishlist] = useState(() => {
     try {
-      const secured = secureStorage.getItem(WISHLIST_KEY);
-      if (secured) return secured;
-      const plain = localStorage.getItem(WISHLIST_KEY);
-      return plain ? JSON.parse(plain) : [];
+      let secured = secureStorage.getItem(WISHLIST_KEY);
+      if (!secured) {
+        const plain = localStorage.getItem(WISHLIST_KEY);
+        secured = plain ? JSON.parse(plain) : [];
+      }
+      // Filter out old pre-seeded mock IDs from secureStorage wishlist
+      const mockIds = [
+        "goa-coastline", "kerala-backwaters", "himalayan-chalet", "udaipur-palace", "maldives-overwater",
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
+      ];
+      return (secured || []).filter(item => {
+        const id = item?.id;
+        if (!id) return false;
+        const checkId = typeof id === 'string' && id.startsWith('home-') ? id.replace('home-', '') : id;
+        return !mockIds.includes(checkId);
+      });
     } catch {
       return [];
     }

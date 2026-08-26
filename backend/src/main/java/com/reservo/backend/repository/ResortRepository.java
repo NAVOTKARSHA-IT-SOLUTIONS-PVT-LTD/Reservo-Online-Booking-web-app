@@ -11,6 +11,7 @@ import java.util.List;
 public interface ResortRepository extends JpaRepository<Resort, Long>,
                                           JpaSpecificationExecutor<Resort> {
     List<Resort> findByStatus(Resort.ResortStatus status);
+    List<Resort> findByOwnerId(Long ownerId);
     List<Resort> findByLocationContainingIgnoreCase(String location);
     List<Resort> findByNameContainingIgnoreCaseOrLocationContainingIgnoreCase(
             String name,

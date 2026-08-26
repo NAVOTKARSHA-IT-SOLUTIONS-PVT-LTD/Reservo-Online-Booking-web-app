@@ -17,6 +17,7 @@ import { secureStorage } from "./services/secureStorage";
 import { useToast } from "./context/ToastContext";
 import { useWishlist } from "./context/WishlistContext";
 import { RESORTS } from "./data/resortsData";
+import { resortService } from "./services/resort.service";
 
 // Lazy-loaded pages
 const About = React.lazy(() => import("./pages/About"));
@@ -37,6 +38,7 @@ const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = React.lazy(() => import("./pages/PaymentCancel"));
 const BecomeAHost = React.lazy(() => import("./pages/BecomeAHost"));
 const HostAdminPortal = React.lazy(() => import("./pages/HostAdminPortal"));
+const SuperAdminPortal = React.lazy(() => import("./pages/SuperAdminPortal"));
 
 // Lazy-loaded dummy pages
 const Careers = React.lazy(() => import("./pages/DummyPages").then(m => ({ default: m.Careers })));
@@ -89,7 +91,6 @@ function Home({ wishlist, toggleWishlist, currencySymbol, exchangeRate }) {
       <RecentlyViewed currencySymbol={currencySymbol} rates={exchangeRate} />
       <PopularDestinations wishlist={wishlist} toggleWishlist={toggleWishlist} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />
       <WhyChooseUs />
-      <Testimonials />
       <FAQ />
       <MascotShowcase />
     </>
@@ -100,25 +101,31 @@ function Home({ wishlist, toggleWishlist, currencySymbol, exchangeRate }) {
 function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate, onBook }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [resort, setResort] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const idMap = {
-    "1": "goa-coastline",
-    "2": "kerala-backwaters",
-    "3": "himalayan-chalet",
-    "4": "himalayan-chalet",
-    "5": "himalayan-chalet",
-    "6": "udaipur-palace",
-    "7": "udaipur-palace",
-    "8": "himalayan-chalet",
-    "9": "himalayan-chalet",
-    "10": "maldives-overwater",
-    "11": "goa-coastline",
-    "12": "himalayan-chalet",
-    "13": "udaipur-palace"
-  };
-
-  const mappedId = idMap[id] || id;
-  const resort = RESORTS.find((r) => r.id === mappedId) || RESORTS[0];
+  useEffect(() => {
+    let active = true;
+    const fetchResort = async () => {
+      setLoading(true);
+      try {
+        const data = await resortService.getResortById(id);
+        if (active) {
+          setResort(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch resort details:", err);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+    fetchResort();
+    return () => {
+      active = false;
+    };
+  }, [id]);
 
   // Log details checks to recently viewed stays in secureStorage
   useEffect(() => {
@@ -131,7 +138,7 @@ function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate, onBook
           name: resort.name,
           location: resort.location,
           price: resort.price,
-          heroImage: resort.heroImage,
+          heroImage: resort.image || resort.heroImage,
           rating: resort.rating
         },
         ...filtered
@@ -140,6 +147,69 @@ function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate, onBook
       window.dispatchEvent(new Event("storage"));
     }
   }, [resort]);
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-pulse">
+        <div className="flex justify-between items-start">
+          <div className="space-y-3">
+            <div className="h-8 w-64 bg-slate-200 rounded-xl" />
+            <div className="h-4 w-40 bg-slate-200 rounded-lg" />
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 w-10 bg-slate-200 rounded-full" />
+            <div className="h-10 w-10 bg-slate-200 rounded-full" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[400px]">
+          <div className="md:col-span-2 h-full bg-slate-200 rounded-3xl" />
+          <div className="hidden md:flex flex-col gap-4 h-full">
+            <div className="h-1/2 bg-slate-200 rounded-3xl" />
+            <div className="h-1/2 bg-slate-200 rounded-3xl" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="h-12 w-full bg-slate-200 rounded-2xl" />
+            <div className="space-y-3">
+              <div className="h-4 w-full bg-slate-200 rounded-lg" />
+              <div className="h-4 w-5/6 bg-slate-200 rounded-lg" />
+              <div className="h-4 w-4/6 bg-slate-200 rounded-lg" />
+            </div>
+            <div className="grid grid-cols-4 gap-4 pt-4">
+              {[1, 2, 3, 4].map(n => (
+                <div key={n} className="h-20 bg-slate-200 rounded-2xl" />
+              ))}
+            </div>
+          </div>
+
+          <div className="h-96 bg-slate-200 rounded-3xl p-6 space-y-6">
+            <div className="h-8 w-32 bg-slate-300 rounded-lg" />
+            <div className="h-16 w-full bg-slate-300 rounded-2xl" />
+            <div className="h-12 w-full bg-slate-300 rounded-xl" />
+            <div className="h-12 w-full bg-slate-300 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!resort) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="text-3xl">🏜️</div>
+        <h3 className="text-base font-bold text-text-dark">Resort Not Found</h3>
+        <p className="text-xs text-text-gray max-w-sm text-center">
+          The property code could not be verified on the ledger or has been archived by the hosts.
+        </p>
+        <button onClick={() => navigate("/")} className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl border-none cursor-pointer">
+          Go back home
+        </button>
+      </div>
+    );
+  }
 
   return (
     <ResortDetails
@@ -379,11 +449,15 @@ function App() {
             <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />
             <Route path="/become-a-host" element={<BecomeAHost />} />
             <Route path="/host/onboarding" element={<BecomeAHost />} />
-            <Route path="/host/dashboard" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
-            <Route path="/host/admin" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
-            <Route path="/host" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
-            <Route path="/host/*" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
-            <Route path="/admin/*" element={<ProtectedRoute><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/host/dashboard" element={<ProtectedRoute allowedRoles={["ROLE_OWNER"]}><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/host/admin" element={<ProtectedRoute allowedRoles={["ROLE_OWNER"]}><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/host" element={<ProtectedRoute allowedRoles={["ROLE_OWNER"]}><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/host/*" element={<ProtectedRoute allowedRoles={["ROLE_OWNER"]}><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin/reservo/*" element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]}><SuperAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin/reservo" element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]}><SuperAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin/resort/*" element={<ProtectedRoute allowedRoles={["ROLE_OWNER"]}><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin/resort" element={<ProtectedRoute allowedRoles={["ROLE_OWNER"]}><HostAdminPortal /></ProtectedRoute>} />
+            <Route path="/admin/*" element={<ProtectedRoute allowedRoles={["ROLE_ADMIN"]}><SuperAdminPortal /></ProtectedRoute>} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
             <Route path="*" element={<NotFound />} />

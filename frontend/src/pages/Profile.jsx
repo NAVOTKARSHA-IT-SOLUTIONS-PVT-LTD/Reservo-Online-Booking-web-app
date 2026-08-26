@@ -129,7 +129,7 @@ function Profile() {
               alt={profile.name} 
               className="w-full h-full rounded-full object-cover border-3 border-gold"
             />
-            <span className="absolute -bottom-1.25 left-1/2 -translate-x-1/2 bg-[#121e1b] text-white text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap shadow-[0_4px_10px_rgba(0,0,0,0.15)]">{profile.tier || "Elite Diamond Status"}</span>
+             <span className="absolute -bottom-1.25 left-1/2 -translate-x-1/2 bg-[#121e1b] text-white text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap shadow-[0_4px_10px_rgba(0,0,0,0.15)]">{profile.tier || "Standard Member"}</span>
           </div>
 
           <div className="profile-meta-info">
@@ -139,7 +139,7 @@ function Profile() {
 
           <div className="bg-bg-light border border-border-color p-3.75 rounded-2xl mb-6.25">
             <span className="text-[11px] uppercase tracking-wider text-text-gray font-bold block mb-1.25">Loyalty Points Available</span>
-            <h3 className="text-2xl font-extrabold text-text-dark">{profile.points?.toLocaleString() || "24,500"} pts</h3>
+            <h3 className="text-2xl font-extrabold text-text-dark">{profile.points || "0 pts"}</h3>
           </div>
 
           <nav className="flex flex-col gap-2.5">
@@ -197,20 +197,20 @@ function Profile() {
                 <div className="mb-6 p-5 rounded-2xl bg-slate-900/5 border border-slate-900/10 flex flex-col gap-3 text-left">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] bg-primary text-white font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                      Business Extranet Partner
+                      Verified Host Extranet
                     </span>
                     <span className="text-xs text-emerald-500 font-bold flex items-center gap-1">
-                      <CheckCircle2 size={12} className="text-emerald-500" /> Verified Partner
+                      <CheckCircle2 size={12} className="text-emerald-500" /> Verified Host
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-text-dark mt-1">
                     <div>
                       <span className="block text-[9.5px] text-text-gray uppercase tracking-wider">Company Name</span>
-                      <strong className="text-sm mt-0.5 block">{user.businessName || "Reservo Partner Group"}</strong>
+                      <strong className="text-sm mt-0.5 block">{user.businessName || "Reservo Host Group"}</strong>
                     </div>
                     <div>
                       <span className="block text-[9.5px] text-text-gray uppercase tracking-wider">Registered Resort</span>
-                      <strong className="text-sm mt-0.5 block">{user.name || "Reservo Partner Resort"}</strong>
+                      <strong className="text-sm mt-0.5 block">{user.name || "Reservo Host Resort"}</strong>
                     </div>
                     <div>
                       <span className="block text-[9.5px] text-text-gray uppercase tracking-wider">Extranet Email</span>

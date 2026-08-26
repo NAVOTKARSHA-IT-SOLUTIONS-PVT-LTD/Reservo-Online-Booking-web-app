@@ -14,6 +14,7 @@ function Preloader({ onComplete }) {
 
   useEffect(() => {
     // Cycle loading messages
+    // Cycle loading messages faster for better UX
     const textInterval = setInterval(() => {
       setStepIndex((prev) => {
         if (prev < LOADING_STEPS.length - 1) {
@@ -21,17 +22,17 @@ function Preloader({ onComplete }) {
         }
         return prev;
       });
-    }, 800);
+    }, 300);
 
-    // Fade out after 3.2 seconds
+    // Fade out after 1.2 seconds
     const fadeTimer = setTimeout(() => {
       setIsFadingOut(true);
-    }, 3200);
+    }, 1200);
 
-    // Call onComplete after transition finishes (3.9s total)
+    // Call onComplete after transition finishes (1.6s total)
     const completeTimer = setTimeout(() => {
       onComplete();
-    }, 3900);
+    }, 1600);
 
     return () => {
       clearInterval(textInterval);
@@ -71,7 +72,7 @@ function Preloader({ onComplete }) {
 
         {/* Elegant Gold Progress Line */}
         <div className="w-40 h-[2px] bg-white/10 rounded-full mt-6 overflow-hidden relative">
-          <div className="absolute top-0 left-0 h-full bg-gold rounded-full animate-[loadingProgress_3.2s_ease-out_forwards]" />
+          <div className="absolute top-0 left-0 h-full bg-gold rounded-full animate-[loadingProgress_1.2s_ease-out_forwards]" />
         </div>
       </div>
     </div>
