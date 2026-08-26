@@ -34,7 +34,7 @@ async function request(endpoint, options = {}) {
 
   const isAuthEndpoint = endpoint.includes("/api/v1/auth/");
 
-  if (response.status === 401 && !isAuthEndpoint) {
+  if (response.status === 401 && !isAuthEndpoint && !options.suppressAuthRedirect) {
     secureStorage.removeItem(TOKEN_KEY);
     secureStorage.removeItem("reservo_user");
     if (!window.location.pathname.includes("/login")) {

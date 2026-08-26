@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Building2, Bed, Calendar, Users, DollarSign, Activity, 
   MessageSquare, BarChart3, Check, X, ShieldCheck, 
   ChevronRight, Clock, Star, Lock, Send, Download, 
   TrendingUp, Award, CheckCircle2, Plus, Info, MapPin, FileText, Sparkles, Settings,
-  Mail, MailCheck, Bell, Key, Copy, ExternalLink, CheckCheck, Eye, Smartphone
+  Mail, MailCheck, Bell, Key, Copy, ExternalLink, CheckCheck, Eye, Smartphone, Trash2
 } from "lucide-react";
 import { hostService } from "../services/host.service";
 import { authService } from "../services/auth.service";
@@ -14,7 +14,15 @@ import { useToast } from "../context/ToastContext";
 
 export default function HostAdminPortal() {
   const toast = useToast();
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
+
+  useEffect(() => {
+    if (!hostService.hasPublishedListing()) {
+      toast("Please list at least one resort to access the Host Administration Dashboard.", "info");
+      navigate("/become-a-host", { replace: true });
+    }
+  }, [navigate, toast]);
 
   useEffect(() => {
     const handleAuth = () => {
@@ -509,105 +517,126 @@ export default function HostAdminPortal() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {hostData.listings?.map((prop) => (
-                <div 
-                  key={prop.id}
-                  className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-[28px] overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="relative aspect-[16/10] overflow-hidden">
-                      <img src={prop.coverImage} alt={prop.title} className="w-full h-full object-cover" />
-                      <span className={`absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full shadow ${
-                        prop.status === "Active" ? "bg-emerald-500 text-white" :
-                        prop.status === "Paused" ? "bg-amber-500 text-white" : "bg-slate-600 text-white"
-                      }`}>
-                        {prop.status}
-                      </span>
-                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <Star size={12} className="text-amber-400 fill-amber-400" /> {prop.rating}
-                      </div>
-                    </div>
+              {hostData.listings?.map((prop) => {
+                const cardCover = prop.coverImage || prop.images?.[0] || "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80";
+                const cityStr = typeof prop.location === 'string' ? prop.location : `${prop.location?.city || 'Goa'}`;
 
-                    <div className="p-5 space-y-3">
-                      <h4 className="text-sm font-bold font-serif text-[var(--color-text-dark)] line-clamp-1">
-                        {prop.title}
-                      </h4>
-                      <div className="text-xs text-[var(--color-text-gray)] flex items-center gap-1">
-                        <MapPin size={13} className="text-primary" /> {prop.location.city}, {prop.location.state}
+                return (
+                  <div 
+                    key={prop.id}
+                    className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-[28px] overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="relative aspect-[16/10] overflow-hidden bg-slate-800">
+                        <img src={cardCover} alt={prop.title} className="w-full h-full object-cover" />
+                        <span className={`absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-full shadow ${
+                          prop.status === "Active" ? "bg-emerald-500 text-white" :
+                          prop.status === "Paused" ? "bg-amber-500 text-white" : "bg-slate-600 text-white"
+                        }`}>
+                          {prop.status}
+                        </span>
+                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <Star size={12} className="text-amber-400 fill-amber-400" /> {prop.rating || 5.0}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-xs text-[var(--color-text-gray)] border-y border-[var(--color-border-color)] py-2">
-                        <span>{prop.specs.guests} Guests</span>
-                        <span>•</span>
-                        <span>{prop.specs.bedrooms} Beds</span>
-                        <span>•</span>
-                        <span>{prop.specs.bathrooms} Baths</span>
-                      </div>
+                      <div className="p-5 space-y-3">
+                        <h4 className="text-sm font-bold font-serif text-[var(--color-text-dark)] line-clamp-1">
+                          {prop.title}
+                        </h4>
+                        <div className="text-xs text-[var(--color-text-gray)] flex items-center gap-1">
+                          <MapPin size={13} className="text-primary" /> {cityStr}
+                        </div>
 
-                      {/* Inline Price Adjuster */}
-                      <div className="flex items-center justify-between pt-1">
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-[var(--color-text-gray)] block">Nightly Price</span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm font-extrabold text-primary font-sans">₹</span>
-                            <input 
-                              type="number" 
-                              step="500"
-                              value={prop.pricePerNight} 
-                              onChange={(e) => {
-                                hostService.updateListingPrice(prop.id, e.target.value);
+                        <div className="flex items-center gap-2 text-xs text-[var(--color-text-gray)] border-y border-[var(--color-border-color)] py-2">
+                          <span>{prop.specs?.guests || 6} Guests</span>
+                          <span>•</span>
+                          <span>{prop.specs?.bedrooms || 3} Beds</span>
+                          <span>•</span>
+                          <span>{prop.specs?.bathrooms || 3} Baths</span>
+                        </div>
+
+                        {/* Inline Price Adjuster */}
+                        <div className="flex items-center justify-between pt-1">
+                          <div>
+                            <span className="text-[10px] uppercase font-bold text-[var(--color-text-gray)] block">Nightly Price</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm font-extrabold text-primary font-sans">₹</span>
+                              <input 
+                                type="number" 
+                                step="500"
+                                value={prop.pricePerNight} 
+                                onChange={(e) => {
+                                  hostService.updateListingPrice(prop.id, e.target.value);
+                                  setHostData(hostService.getData());
+                                }}
+                                className="w-24 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-lg p-1 text-xs font-bold text-[var(--color-text-dark)] font-sans tabular-nums"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Instant Book Switch */}
+                          <div className="text-right">
+                            <span className="text-[10px] uppercase font-bold text-[var(--color-text-gray)] block">Instant Book</span>
+                            <button
+                              onClick={() => {
+                                hostService.toggleInstantBook(prop.id);
                                 setHostData(hostService.getData());
+                                toast(`Instant Book ${!prop.instantBook ? "Enabled" : "Disabled"} for ${prop.title.split(' ')[0]}`, "info");
                               }}
-                              className="w-24 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-lg p-1 text-xs font-bold text-[var(--color-text-dark)] font-sans tabular-nums"
-                            />
+                              className={`text-[10px] font-extrabold px-2 py-1 rounded-md cursor-pointer border-none mt-0.5 ${
+                                prop.instantBook ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"
+                              }`}
+                            >
+                              {prop.instantBook ? "⚡ Enabled" : "Request Only"}
+                            </button>
                           </div>
                         </div>
+                      </div>
+                    </div>
 
-                        {/* Instant Book Switch */}
-                        <div className="text-right">
-                          <span className="text-[10px] uppercase font-bold text-[var(--color-text-gray)] block">Instant Book</span>
-                          <button
-                            onClick={() => {
-                              hostService.toggleInstantBook(prop.id);
+                    <div className="p-4 bg-[var(--color-bg-light)] border-t border-[var(--color-border-color)] flex items-center justify-between gap-2 flex-wrap">
+                      <button
+                        onClick={() => {
+                          const nextStatus = prop.status === "Active" ? "Paused" : "Active";
+                          hostService.updateListingStatus(prop.id, nextStatus);
+                          setHostData(hostService.getData());
+                          toast(`Listing status updated to ${nextStatus}`, "success");
+                        }}
+                        className="text-xs font-bold px-3 py-1.5 rounded-xl border border-[var(--color-border-color)] bg-[var(--color-bg-white)] text-[var(--color-text-dark)] hover:border-primary cursor-pointer"
+                      >
+                        {prop.status === "Active" ? "Pause Listing" : "Activate Listing"}
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setSelectedListingForCalendar(prop.id);
+                            setActiveTab("calendar");
+                          }}
+                          className="text-xs font-bold px-3 py-1.5 rounded-xl bg-primary text-white hover:bg-primary-dark cursor-pointer border-none flex items-center gap-1"
+                        >
+                          <Calendar size={12} /> Calendar
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete "${prop.title}" from your Host Inventory?`)) {
+                              hostService.deleteListing(prop.id);
                               setHostData(hostService.getData());
-                              toast(`Instant Book ${!prop.instantBook ? "Enabled" : "Disabled"} for ${prop.title.split(' ')[0]}`, "info");
-                            }}
-                            className={`text-[10px] font-extrabold px-2 py-1 rounded-md cursor-pointer border-none mt-0.5 ${
-                              prop.instantBook ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"
-                            }`}
-                          >
-                            {prop.instantBook ? "⚡ Enabled" : "Request Only"}
-                          </button>
-                        </div>
+                              toast(`Property "${prop.title}" has been deleted.`, "success");
+                            }
+                          }}
+                          className="text-xs font-bold px-2.5 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white cursor-pointer transition-all flex items-center gap-1"
+                          title="Delete Property"
+                        >
+                          <Trash2 size={12} /> Delete
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  <div className="p-4 bg-[var(--color-bg-light)] border-t border-[var(--color-border-color)] flex items-center justify-between gap-2">
-                    <button
-                      onClick={() => {
-                        const nextStatus = prop.status === "Active" ? "Paused" : "Active";
-                        hostService.updateListingStatus(prop.id, nextStatus);
-                        setHostData(hostService.getData());
-                        toast(`Listing status updated to ${nextStatus}`, "success");
-                      }}
-                      className="text-xs font-bold px-3 py-1.5 rounded-xl border border-[var(--color-border-color)] bg-[var(--color-bg-white)] text-[var(--color-text-dark)] hover:border-primary cursor-pointer"
-                    >
-                      {prop.status === "Active" ? "Pause Listing" : "Activate Listing"}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setSelectedListingForCalendar(prop.id);
-                        setActiveTab("calendar");
-                      }}
-                      className="text-xs font-bold px-3 py-1.5 rounded-xl bg-primary text-white hover:bg-primary-dark cursor-pointer border-none flex items-center gap-1"
-                    >
-                      <Calendar size={12} /> Calendar
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

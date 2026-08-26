@@ -178,27 +178,44 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     if (!isSearchActive) return true;
     const q = searchQuery.toLowerCase().trim();
     const searchTerms = q.split(/[,\s]+/).filter(Boolean);
-    return searchTerms.some(term =>
-      (resort.name || '').toLowerCase().includes(term) ||
-      (resort.location || '').toLowerCase().includes(term) ||
-      (resort.region || '').toLowerCase().includes(term) ||
-      (resort.description || '').toLowerCase().includes(term) ||
-      (resort.category || '').toLowerCase().includes(term) ||
-      (resort.categoryLabel || '').toLowerCase().includes(term)
-    );
+    return searchTerms.some(term => {
+      const t = term.toLowerCase();
+      const locationStr = typeof resort.location === 'string' 
+        ? resort.location 
+        : `${resort.location?.address || ''} ${resort.location?.city || ''} ${resort.location?.state || ''} ${resort.location?.country || ''}`;
+
+      return (
+        (resort.name || '').toLowerCase().includes(t) ||
+        locationStr.toLowerCase().includes(t) ||
+        (resort.region || '').toLowerCase().includes(t) ||
+        (resort.description || '').toLowerCase().includes(t) ||
+        (resort.category || '').toLowerCase().includes(t) ||
+        (resort.categoryLabel || '').toLowerCase().includes(t) ||
+        (resort.badge || '').toLowerCase().includes(t)
+      );
+    });
   };
 
   // Filter Logic
   const filteredResorts = resorts.filter(resort => {
     const matchesSearchQuery = matchesSearch(resort);
-    const matchesCategory = activeCategory === 'all' || resort.category === activeCategory;
-    const matchesPrice = resort.price <= maxPrice;
-    const matchesRating = resort.rating >= minRating;
+    const resortCat = (resort.category || '').toLowerCase();
+    const activeCat = (activeCategory || 'all').toLowerCase();
+    const matchesCategory = activeCat === 'all' || resortCat === activeCat;
     
-    const matchesAmenities = selectedAmenities.length === 0 || selectedAmenities.every(a =>
-      resort.highlights.some(h => h.toLowerCase().includes(a.toLowerCase())) ||
-      resort.amenities.some(item => item.name.toLowerCase().includes(a.toLowerCase()))
-    );
+    // If maxPrice is at the top limit (40000+), treat as no price ceiling
+    const matchesPrice = maxPrice >= 40000 ? true : (Number(resort.price) || 0) <= maxPrice;
+    
+    const numericRating = typeof resort.rating === 'number' ? resort.rating : (parseFloat(resort.rating) || 5.0);
+    const matchesRating = numericRating >= minRating;
+    
+    const matchesAmenities = selectedAmenities.length === 0 || selectedAmenities.every(a => {
+      const inHighlights = resort.highlights && resort.highlights.some(h => String(h).toLowerCase().includes(a.toLowerCase()));
+      const inAmenities = resort.amenities && resort.amenities.some(item => 
+        (typeof item === 'string' ? item : item.name || '').toLowerCase().includes(a.toLowerCase())
+      );
+      return inHighlights || inAmenities;
+    });
 
     return matchesSearchQuery && matchesCategory && matchesPrice && matchesRating && matchesAmenities;
   });
