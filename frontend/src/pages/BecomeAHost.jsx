@@ -7,7 +7,7 @@ import {
   Users, Bed, Bath, Plus, Minus, ChevronDown, Award, Zap, HeartHandshake, 
   ShieldCheck, Coffee, Wifi, Tv, Wind, 
   Waves, Mountain, Compass, Upload, Video, Globe, FileImage, X,
-  Star, Heart, ChevronRight
+  Star, Heart, ChevronRight, Building2
 } from "lucide-react";
 import { hostService } from "../services/host.service";
 import { authService } from "../services/auth.service";
