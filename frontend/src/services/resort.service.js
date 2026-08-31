@@ -3,6 +3,29 @@ import { RESORTS } from "../data/resortsData";
 import { ALL_RESORTS } from "../data/resorts";
 import { hostService } from "./host.service";
 
+const findStaticResort = (idOrName) => {
+  const key = String(idOrName ?? '').trim();
+  if (!key) return null;
+  return ALL_RESORTS.find(r => String(r.id) === key)
+    || ALL_RESORTS.find(r => String(r.name).toLowerCase() === key.toLowerCase())
+    || null;
+};
+
+const normalizeStaticResort = (r) => {
+  if (!r) return null;
+  return {
+    ...r,
+    heroImage: r.heroImage || r.image,
+    gallery: Array.isArray(r.gallery) && r.gallery.length ? r.gallery : (r.image ? [r.image] : []),
+    highlights: Array.isArray(r.highlights) ? r.highlights : (Array.isArray(r.amenities) ? r.amenities.slice(0, 5) : []),
+    amenities: Array.isArray(r.amenities) ? r.amenities.map(a => typeof a === 'string' ? { name: a, icon: 'Sparkles' } : a) : [],
+    reviewsCount: Number(r.reviewsCount ?? r.reviewCount ?? 0),
+    reviewCount: Number(r.reviewCount ?? r.reviewsCount ?? 0),
+    pricePerNight: Number(r.pricePerNight ?? r.price ?? 0),
+    categoryLabel: r.categoryLabel || r.type || 'Stay'
+  };
+};
+
 export const resortService = {
   async getAllResorts() {
     let resortsList = [];
@@ -97,30 +120,32 @@ export const resortService = {
 
   async getResortById(id) {
     try {
-      const result = await apiClient.get(`/api/v1/resorts/${id}`);
+      const result = await apiClient.get(`/api/v1/resorts/${encodeURIComponent(id)}`);
       if (result && result.success && result.data) {
-        return this.mapBackendResort(result.data);
+        const mapped = this.mapBackendResort(result.data);
+        const staticResort = findStaticResort(id);
+
+        // Numeric IDs 1..12 belong to the frontend catalog. If Firestore
+        // contains a different document under the same numeric ID, never
+        // show that unrelated document when opening a catalog card directly.
+        if (staticResort && String(id).match(/^\d+$/) &&
+            String(mapped.name || '').toLowerCase() !== String(staticResort.name || '').toLowerCase()) {
+          return normalizeStaticResort(staticResort);
+        }
+
+        return mapped;
       }
       throw new Error("Resort not found");
     } catch (e) {
-      console.warn("Fallback to static details for ID:", id, e);
-      const idMap = {
-        "1": "goa-coastline",
-        "2": "kerala-backwaters",
-        "3": "himalayan-chalet",
-        "4": "himalayan-chalet",
-        "5": "himalayan-chalet",
-        "6": "udaipur-palace",
-        "7": "udaipur-palace",
-        "8": "himalayan-chalet",
-        "9": "himalayan-chalet",
-        "10": "maldives-overwater",
-        "11": "goa-coastline",
-        "12": "himalayan-chalet",
-        "13": "udaipur-palace"
-      };
-      const mappedId = idMap[id] || id;
-      return RESORTS.find((r) => r.id === mappedId) || RESORTS[0];
+      console.warn("Falling back to local resort details for ID:", id, e);
+
+      // IMPORTANT: use the same ID the listing uses.
+      // Never map unrelated IDs (e.g. 2 -> Kerala) because that causes
+      // a clicked resort to open a completely different property.
+      const staticResort = findStaticResort(id);
+      if (staticResort) return normalizeStaticResort(staticResort);
+
+      return null;
     }
   },
 
@@ -166,30 +191,43 @@ export const resortService = {
     };
 
     // Map backend resort data to match frontend static data structure
-    const category = item.category || this.getCategoryForResort(item.name, item.location);
+    item = item || {};
+    const safeName = typeof item.name === "string" ? item.name : "Luxury Stay";
+    const safeLocation = typeof item.location === "string"
+      ? item.location
+      : (item.location?.city || item.location?.address || "India");
+    const asList = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value == null || value === "") return [];
+      return String(value).split(",").map(v => v.trim()).filter(Boolean);
+    };
+    const category = item.category || this.getCategoryForResort(safeName, safeLocation);
+    const staticMatch = ALL_RESORTS.find(r => String(r.name).toLowerCase() === safeName.toLowerCase()) || null;
+    const fallbackImage = staticMatch?.image || 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80';
+    const backendImage = typeof item.imageUrl === 'string' ? item.imageUrl.trim() : '';
     return {
-      id: item.id,
-      name: item.name,
-      location: item.location,
-      description: item.description,
-      image: item.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80",
-      heroImage: item.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80",
-      price: item.pricePerNight,
-      pricePerNight: item.pricePerNight, // Ensure pricePerNight is returned!
-      rating: item.rating || 4.5,
-      reviewCount: item.reviewCount || 0,
-      reviewsCount: item.reviewCount || 0, // For consistency with static data
+      id: item.id ?? `resort-${Math.random().toString(36).slice(2)}`,
+      name: safeName,
+      location: safeLocation,
+      description: typeof item.description === "string" ? item.description : "Luxury stay for an unforgettable experience.",
+      image: backendImage || fallbackImage,
+      heroImage: backendImage || fallbackImage,
+      price: Number(item.pricePerNight ?? item.price ?? 0),
+      pricePerNight: Number(item.pricePerNight ?? item.price ?? 0),
+      rating: Number(item.rating ?? 4.5),
+      reviewCount: Number(item.reviewCount ?? 0),
+      reviewsCount: Number(item.reviewCount ?? 0),
       featuredTag: item.featuredTag,
       badge: item.featuredTag || "New Host", // For consistency with static data
       discount: item.discountPercentage || 0,
       currency: "₹",
-      gallery: item.galleryUrls ? splitUrls(item.galleryUrls) : [item.imageUrl || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80"],
+      gallery: item.galleryUrls ? splitUrls(item.galleryUrls) : [backendImage || fallbackImage],
       videos: item.videoUrls ? splitUrls(item.videoUrls) : [],
-      highlights: item.highlights ? item.highlights.split(",") : this.getHighlightsForResort(item.name, item.location),
-      amenities: item.amenities ? item.amenities.split(",").map(name => ({ name, icon: "Sparkles" })) : this.getAmenitiesForResort(item.name),
+      highlights: asList(item.highlights).length ? asList(item.highlights) : this.getHighlightsForResort(safeName, safeLocation),
+      amenities: asList(item.amenities).map(name => ({ name, icon: "Sparkles" })),
       perks: ["Free Cancellation", "Breakfast Included", "Transfer Services"],
       category: category,
-      categoryLabel: this.getCategoryLabel(item.name, item.location),
+      categoryLabel: this.getCategoryLabel(safeName, safeLocation),
       specs: {
         guests: item.guests ? `${item.guests} Guests` : "2-4 Guests",
         bedrooms: item.bedrooms ? `${item.bedrooms} Bedrooms` : "1-2 Bedrooms",
@@ -203,8 +241,8 @@ export const resortService = {
   },
 
   getHighlightsForResort(name, location) {
-    const lowerName = name.toLowerCase();
-    const lowerLocation = location.toLowerCase();
+    const lowerName = String(name || "").toLowerCase();
+    const lowerLocation = String(location || "").toLowerCase();
     
     if (lowerName.includes("goa") || lowerLocation.includes("goa")) {
       return ["Private Beach Access", "Infinity Edge Pool", "Aura Ayurvedic Spa", "Personal AI Butler", "Private Helipad Access"];
@@ -269,8 +307,8 @@ export const resortService = {
   },
 
   getCategoryForResort(name, location) {
-    const lowerName = name.toLowerCase();
-    const lowerLocation = location.toLowerCase();
+    const lowerName = String(name || "").toLowerCase();
+    const lowerLocation = String(location || "").toLowerCase();
     
     if (lowerName.includes("goa") || lowerLocation.includes("goa")) return "beach";
     if (lowerName.includes("kerala")) return "villa";

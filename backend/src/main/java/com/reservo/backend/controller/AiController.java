@@ -34,9 +34,9 @@ public class AiController {
     }
 
     @GetMapping("/sessions")
-    public ResponseEntity<ApiResponse<List<AiChatSession>>> getUserSessions(@RequestParam(required = false) Long userId) {
+    public ResponseEntity<ApiResponse<List<AiChatSession>>> getUserSessions(@RequestParam(required = false) String userId) {
         // Fallback to default user 1 if not specified
-        Long targetUserId = userId != null ? userId : 1L;
+        String targetUserId = userId != null ? userId : "1";
         List<AiChatSession> sessions = aiService.getUserSessions(targetUserId);
         return ResponseEntity.ok(ApiResponse.success(sessions, "Sessions retrieved successfully"));
     }

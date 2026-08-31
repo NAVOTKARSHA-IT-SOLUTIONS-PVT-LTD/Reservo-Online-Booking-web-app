@@ -1,39 +1,31 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.Instant;
 
-@Entity
-@Table(name = "staff_members")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Staff {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @Column(nullable = false)
     private String name;
-
-    @Column(nullable = false)
-    private String role; // e.g. "Owner", "Manager", "Reception", "Housekeeping", "Finance"
-
-    @Column(nullable = false)
+    private String role;
     private String department;
-
-    @Column(nullable = false)
     private String email;
+    private String status;
 
-    @Column(nullable = false)
-    private String status; // e.g. "Active", "Inactive"
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "resort_id")
-    private Resort resort;
+    /** Firestore document ID of the resort. */
+    private String resortId;
 
     @Builder.Default
     private Instant createdAt = Instant.now();

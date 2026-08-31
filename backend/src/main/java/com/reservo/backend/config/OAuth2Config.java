@@ -1,15 +1,16 @@
 package com.reservo.backend.config;
 
-import com.reservo.backend.security.OAuth2AuthenticationSuccessHandler;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+
+import com.reservo.backend.security.OAuth2AuthenticationSuccessHandler;
+
 import lombok.RequiredArgsConstructor;
 
-@Configuration
+//@Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "spring.security.oauth2.client.enabled", havingValue = "true", matchIfMissing = false)

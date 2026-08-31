@@ -77,7 +77,7 @@ public class UserController {
     }
 
     @PostMapping("/approve-host")
-    public ResponseEntity<ApiResponse<User>> approveHost(@RequestParam Long userId) {
+    public ResponseEntity<ApiResponse<User>> approveHost(@RequestParam String userId) {
         User user = userService.getUserById(userId);
         user.setRole(User.Role.ROLE_OWNER);
         user.setKycStatus(User.KycStatus.VERIFIED);
@@ -91,7 +91,7 @@ public class UserController {
     }
 
     @PostMapping("/reject-host")
-    public ResponseEntity<ApiResponse<User>> rejectHost(@RequestParam Long userId) {
+    public ResponseEntity<ApiResponse<User>> rejectHost(@RequestParam String userId) {
         User user = userService.getUserById(userId);
         user.setKycStatus(User.KycStatus.REJECTED);
         User updated = userService.saveUser(user);
@@ -105,7 +105,7 @@ public class UserController {
 
     @PostMapping("/change-status")
     public ResponseEntity<ApiResponse<User>> changeUserStatus(
-            @RequestParam Long userId,
+            @RequestParam String userId,
             @RequestParam User.UserStatus status) {
         User user = userService.getUserById(userId);
         user.setStatus(status);

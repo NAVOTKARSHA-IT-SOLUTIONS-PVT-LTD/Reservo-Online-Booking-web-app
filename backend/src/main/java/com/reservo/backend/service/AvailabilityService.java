@@ -15,20 +15,21 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AvailabilityService {
-
     private final RoomRepository roomRepository;
     private final BookingRepository bookingRepository;
 
-    public List<Room> checkAvailability(Long resortId, LocalDate checkIn, LocalDate checkOut) {
+    public List<Room> checkAvailability(String resortId, LocalDate checkIn, LocalDate checkOut) {
         List<Room> allRooms = roomRepository.findByResortId(resortId);
-        List<Booking> overlappingBookings = bookingRepository.findOverlappingBookings(resortId, checkIn, checkOut);
+        List<Booking> overlapping = bookingRepository.findOverlappingBookings(resortId, checkIn, checkOut);
 
-        Set<Long> occupiedRoomIds = overlappingBookings.stream()
-                .map(b -> b.getRoom().getId())
+        Set<String> occupiedRoomIds = overlapping.stream()
+                .map(Booking::getRoomId)
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toSet());
 
         return allRooms.stream()
-                .filter(room -> !occupiedRoomIds.contains(room.getId()) && room.getStatus() == Room.RoomStatus.AVAILABLE)
-                .collect(Collectors.toList());
+                .filter(r -> !occupiedRoomIds.contains(r.getId()))
+                .filter(r -> r.getStatus() == Room.RoomStatus.AVAILABLE)
+                .toList();
     }
 }

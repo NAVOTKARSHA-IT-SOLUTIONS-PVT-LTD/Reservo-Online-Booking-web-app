@@ -1,33 +1,33 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.Instant;
 
-@Entity
-@Table(name = "ai_chat_messages")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class AiChatMessage {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "session_id", nullable = false)
-    @ToString.Exclude
-    private AiChatSession session;
+    /** Firestore document ID of the parent chat session. */
+    private String sessionId;
 
-    @Column(nullable = false)
-    private String sender; // "user" or "rivo"
+    /** Message sender: user or rivo. */
+    private String sender;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
     private String messageText;
 
-    private Long recommendedResortId; // Optional link to specific seeded Resort ID
+    /** Optional Firestore document ID of a recommended resort. */
+    private String recommendedResortId;
 
     @Builder.Default
     private Instant createdAt = Instant.now();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import { useSearchParams, useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Search, MapPin, Calendar, Users, Heart, Star,
   X, ChevronDown, Map, Sparkles, Filter, Wind,
@@ -72,7 +72,7 @@ function ResortCard({ resort, searchParams, nights }) {
     navigate(`/resort/${resort.id}?${searchParams.toString()}`);
   };
 
-  const total = resort.price * nights;
+  const total = (Number(resort.price ?? resort.pricePerNight) || 0) * nights;
 
   return (
     <Link to={`/resort/${resort.id}?${searchParams.toString()}`} className="bg-bg-white border border-border-color rounded-[24px] overflow-hidden shadow-sm transition-all duration-300 ease-out flex flex-col group hover:-translate-y-1 hover:shadow-custom no-underline">
@@ -158,14 +158,16 @@ function ResortCard({ resort, searchParams, nights }) {
 
 function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const routerLocation = useLocation();
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
 
-  const dest = searchParams.get("destination") || "";
-  const checkinStr = searchParams.get("checkin") || "";
-  const checkoutStr = searchParams.get("checkout") || "";
-  const guests = parseInt(searchParams.get("guests") || "2", 10);
-  const rooms = parseInt(searchParams.get("rooms") || "1", 10);
+  const routeState = routerLocation.state || {};
+  const dest = searchParams.get("destination") || routeState.destination || routeState.location || "";
+  const checkinStr = searchParams.get("checkin") || routeState.checkin || routeState.checkIn || "";
+  const checkoutStr = searchParams.get("checkout") || routeState.checkout || routeState.checkOut || "";
+  const guests = Number(searchParams.get("guests") || routeState.guests || 2) || 2;
+  const rooms = Number(searchParams.get("rooms") || routeState.rooms || 1) || 1;
 
   const [isLoading, setIsLoading] = useState(true);
   const [maxPrice, setMaxPrice] = useState(800);
@@ -234,19 +236,48 @@ function SearchResults() {
       prev.includes(am) ? prev.filter((a) => a !== am) : [...prev, am]
     );
 
-  const filtered = resortsList.filter((r) => {
-    const destKey = dest.split(",")[0].trim().toLowerCase();
-    const destMatch = !dest || r.location.toLowerCase().includes(destKey);
-    const priceMatch = r.price <= maxPrice;
-    const ratingMatch = r.rating >= minRating;
-    const amenityMatch = selectedAmenities.length === 0 || selectedAmenities.every((a) => r.amenities.includes(a));
+  const normalizeText = (value) => {
+    if (value == null) return "";
+    if (typeof value === "string" || typeof value === "number") return String(value);
+    if (Array.isArray(value)) return value.map(normalizeText).filter(Boolean).join(" ");
+    if (typeof value === "object") {
+      return [value.name, value.address, value.city, value.state, value.country, value.label]
+        .map(normalizeText).filter(Boolean).join(" ");
+    }
+    return String(value);
+  };
+
+  const getLocationText = (resort) => normalizeText(resort?.location || resort?.city || resort?.region);
+  const getAmenitiesText = (resort) => normalizeText(resort?.amenities).toLowerCase();
+  const getHighlightsText = (resort) => normalizeText(resort?.highlights).toLowerCase();
+
+  const filtered = (Array.isArray(resortsList) ? resortsList : []).filter((r) => {
+    if (!r || typeof r !== "object") return false;
+
+    const destKey = normalizeText(dest).split(",")[0].trim().toLowerCase();
+    const locationText = getLocationText(r).toLowerCase();
+    const destMatch = !destKey || locationText.includes(destKey);
+    const price = Number(r.price ?? r.pricePerNight ?? 0);
+    const rating = Number(r.rating ?? 0);
+    const priceMatch = Number.isFinite(price) && price <= maxPrice;
+    const ratingMatch = Number.isFinite(rating) && rating >= minRating;
+
+    const amenityMatch = selectedAmenities.length === 0 || selectedAmenities.every((a) => {
+      const needle = String(a).toLowerCase();
+      return getAmenitiesText(r).includes(needle) || getHighlightsText(r).includes(needle);
+    });
+
     return destMatch && priceMatch && ratingMatch && amenityMatch;
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    if (sortKey === "price_asc") return a.price - b.price;
-    if (sortKey === "price_desc") return b.price - a.price;
-    if (sortKey === "rating") return b.rating - a.rating;
+    const ap = Number(a.price ?? a.pricePerNight ?? 0);
+    const bp = Number(b.price ?? b.pricePerNight ?? 0);
+    const ar = Number(a.rating ?? 0);
+    const br = Number(b.rating ?? 0);
+    if (sortKey === "price_asc") return ap - bp;
+    if (sortKey === "price_desc") return bp - ap;
+    if (sortKey === "rating") return br - ar;
     return 0;
   });
 
@@ -257,8 +288,12 @@ function SearchResults() {
 
   const getMapSrc = () => {
     if (sorted.length === 0) return "https://www.openstreetmap.org/export/embed.html?bbox=60.0%2C-10.0%2C120.0%2C40.0&layer=mapnik";
-    const centerLat = sorted.reduce((sum, r) => sum + r.lat, 0) / sorted.length;
-    const centerLng = sorted.reduce((sum, r) => sum + r.lng, 0) / sorted.length;
+    const points = sorted
+      .map(r => ({ lat: Number(r.lat), lng: Number(r.lng) }))
+      .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    if (!points.length) return "https://www.openstreetmap.org/export/embed.html?bbox=60.0%2C-10.0%2C120.0%2C40.0&layer=mapnik";
+    const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
+    const centerLng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
     const bbox = `${centerLng - 2}%2C${centerLat - 2}%2C${centerLng + 2}%2C${centerLat + 2}`;
     const marker = `${centerLat}%2C${centerLng}`;
     return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${marker}`;

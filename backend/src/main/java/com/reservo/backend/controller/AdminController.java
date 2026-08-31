@@ -23,7 +23,7 @@ public class AdminController {
 
     @PatchMapping("/users/{id}/status")
     public ResponseEntity<ApiResponse<User>> updateUserStatus(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestParam User.UserStatus status,
             @RequestParam(required = false, defaultValue = "Admin") String adminName) {
         User updated = adminService.updateUserStatus(id, status, adminName);
@@ -42,7 +42,7 @@ public class AdminController {
 
     @PatchMapping("/resorts/{id}/status")
     public ResponseEntity<ApiResponse<Resort>> updateResortStatus(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestParam Resort.ResortStatus status,
             @RequestParam(required = false, defaultValue = "Admin") String adminName) {
         Resort updated = adminService.updateResortStatus(id, status, adminName);
@@ -56,7 +56,7 @@ public class AdminController {
 
     @PatchMapping("/bookings/{id}/cancel")
     public ResponseEntity<ApiResponse<Booking>> cancelBooking(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestParam(required = false, defaultValue = "Admin") String adminName) {
         Booking cancelled = adminService.cancelBookingByAdmin(id, adminName);
         return ResponseEntity.ok(ApiResponse.success(cancelled, "Booking cancelled by admin successfully"));

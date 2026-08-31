@@ -1,42 +1,36 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.Instant;
+import java.time.LocalDate;
 
-@Entity
-@Table(name = "bookings")
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Booking {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @Column(nullable = false, unique = true)
+    /** Human-readable booking reference, e.g. RSV-20260830-ABC123. */
     private String bookingCode;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    /** Firestore document ID of the user. */
+    private String userId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "resort_id", nullable = false)
-    private Resort resort;
+    /** Firestore document ID of the resort. */
+    private String resortId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "room_id", nullable = false)
-    private Room room;
+    /** Firestore document ID of the room. */
+    private String roomId;
 
-    @Column(nullable = false)
     private LocalDate checkInDate;
-
-    @Column(nullable = false)
     private LocalDate checkOutDate;
 
     @Builder.Default
@@ -45,45 +39,37 @@ public class Booking {
     @Builder.Default
     private Integer roomsCount = 1;
 
-    @Column(nullable = false)
     private BigDecimal totalAmount;
-
-    @Column(name = "guest_name")
     private String guestName;
-
-    @Column(name = "guest_phone")
     private String guestPhone;
-
-    @Column(name = "applied_coupon_code")
     private String appliedCouponCode;
 
-    @Column(name = "discount_amount")
     @Builder.Default
     private BigDecimal discountAmount = BigDecimal.ZERO;
 
-    @Column(name = "reward_points_used")
     @Builder.Default
     private Integer rewardPointsUsed = 0;
 
-    @Column(name = "reward_points_value")
     @Builder.Default
     private BigDecimal rewardPointsValue = BigDecimal.ZERO;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private BookingStatus status;
-
-    @Enumerated(EnumType.STRING)
     private BookingSource bookingSource;
 
     @Builder.Default
     private Instant createdAt = Instant.now();
 
     public enum BookingStatus {
-        PENDING, CONFIRMED, CANCELLED, COMPLETED
+        PENDING,
+        CONFIRMED,
+        CANCELLED,
+        COMPLETED
     }
 
     public enum BookingSource {
-        DIRECT, SEARCH, REFERRAL, OTHERS
+        DIRECT,
+        SEARCH,
+        REFERRAL,
+        OTHERS
     }
 }

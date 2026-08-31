@@ -28,7 +28,7 @@ public class OfferController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<String>> deleteOffer(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> deleteOffer(@PathVariable String id) {
         offerRepository.deleteById(id);
         return ResponseEntity.ok(ApiResponse.success("Offer deleted successfully"));
     }

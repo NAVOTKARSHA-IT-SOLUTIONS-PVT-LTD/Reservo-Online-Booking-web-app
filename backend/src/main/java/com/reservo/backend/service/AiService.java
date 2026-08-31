@@ -63,7 +63,7 @@ public class AiService {
 
         // Save User Message
         AiChatMessage userMsg = AiChatMessage.builder()
-                .session(session)
+                .sessionId(session.getId())
                 .sender("user")
                 .messageText(request.getMessage())
                 .build();
@@ -90,7 +90,7 @@ public class AiService {
 
         // Save Rivo Response Message
         AiChatMessage rivoMsg = AiChatMessage.builder()
-                .session(session)
+                .sessionId(session.getId())
                 .sender("rivo")
                 .messageText(responseText)
                 .recommendedResortId(recommendation != null ? recommendation.getId() : null)
@@ -161,7 +161,7 @@ public class AiService {
     /**
      * Retrieves previous sessions for a user
      */
-    public List<AiChatSession> getUserSessions(Long userId) {
+    public List<AiChatSession> getUserSessions(String userId) {
         return sessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
@@ -212,10 +212,14 @@ public class AiService {
         if (bookings != null && !bookings.isEmpty()) {
             context.append("User has confirmed bookings in ").append(dest).append(":\n");
             for (com.reservo.backend.entity.Booking b : bookings) {
-                if (b.getResort() != null && b.getResort().getLocation().toLowerCase().contains(dest.toLowerCase())) {
-                    context.append("- Resort: ").append(b.getResort().getName())
-                           .append(" (Address: ").append(b.getResort().getLocation()).append(")")
-                           .append(" from ").append(b.getCheckInDate()).append(" to ").append(b.getCheckOutDate()).append("\n");
+                if (b.getResortId() != null) {
+                    Resort bookedResort = resortRepository.findById(b.getResortId()).orElse(null);
+                    if (bookedResort != null && bookedResort.getLocation() != null
+                            && bookedResort.getLocation().toLowerCase().contains(dest.toLowerCase())) {
+                        context.append("- Resort: ").append(bookedResort.getName())
+                               .append(" (Address: ").append(bookedResort.getLocation()).append(")")
+                               .append(" from ").append(b.getCheckInDate()).append(" to ").append(b.getCheckOutDate()).append("\n");
+                    }
                 }
             }
         }

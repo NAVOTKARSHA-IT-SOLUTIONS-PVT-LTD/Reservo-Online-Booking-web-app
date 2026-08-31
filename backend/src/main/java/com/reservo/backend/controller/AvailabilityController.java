@@ -20,7 +20,7 @@ public class AvailabilityController {
 
     @GetMapping("/check")
     public ResponseEntity<ApiResponse<List<Room>>> checkAvailability(
-            @RequestParam Long resortId,
+            @RequestParam String resortId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut) {
         List<Room> availableRooms = availabilityService.checkAvailability(resortId, checkIn, checkOut);

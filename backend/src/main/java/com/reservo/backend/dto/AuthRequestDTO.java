@@ -16,8 +16,8 @@ public class AuthRequestDTO {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    private String name; // Required for signup
+    private String name;
     private String phone;
-    private String role; // e.g. "ROLE_CUSTOMER", "ROLE_OWNER"
-    private String otpCode; // Required for signup verification
+    private String role;
+    private String otpCode;
 }

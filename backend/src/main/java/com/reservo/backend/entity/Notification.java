@@ -1,68 +1,46 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.Instant;
 
-@Entity
-@Table(name = "notifications")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Notification {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    /** Firestore document ID of the recipient user. */
+    private String userId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "booking_id")
-    private Booking booking;
+    /** Optional Firestore document ID of the related booking. */
+    private String bookingId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private NotificationType type;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private NotificationChannel channel;
 
-    @Column(nullable = false)
+    /** Email address or WhatsApp number. */
     private String recipient;
 
-    @Column(columnDefinition = "TEXT")
     private String message;
 
-    /**
-     * Delivery status of the notification.
-     *
-     * PENDING = notification is waiting to be sent
-     * SENT    = notification was successfully sent
-     * FAILED  = notification sending failed
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     @Builder.Default
     private NotificationStatus status = NotificationStatus.SENT;
 
-    /**
-     * Whether the user has read the notification.
-     *
-     * This is separate from notification delivery status.
-     */
-    @Column(name = "is_read", nullable = false)
+    /** Whether the user has read the notification. */
     @Builder.Default
     private boolean read = false;
 
     private Instant sentAt;
 
-    @Column(nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { Star, Heart, MapPin, Sparkles, ChevronRight, SlidersHorizontal, ArrowUpDown, RotateCcw, Check, X, ArrowLeft, Search, Calendar, Users } from 'lucide-react';
 import { CATEGORIES } from '../data/resortsData';
+import { ALL_RESORTS } from '../data/resorts';
 import { resortService } from '../services/resort.service';
 import { ResortCardSkeleton } from './Skeleton';
 import EmptyState from './EmptyState';
@@ -228,6 +229,11 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     if (sortBy === 'popular') return b.reviewsCount - a.reviewsCount;
     return 0;
   });
+
+  const getImageFallback = (resort) => {
+    const staticMatch = ALL_RESORTS.find(r => String(r.id) === String(resort?.id));
+    return staticMatch?.image || 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80';
+  };
 
   const activeFilterCount = (activeCategory !== 'all' ? 1 : 0) +
     (maxPrice < 150000 ? 1 : 0) +
@@ -611,8 +617,12 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                         {/* Image */}
                         <div className="relative h-60 overflow-hidden">
                           <img
-                            src={resort.heroImage}
+                            src={resort.heroImage || resort.image || resort.imageUrl || getImageFallback(resort)}
                             alt={resort.name}
+                            onError={(e) => {
+                              const fallback = getImageFallback(resort);
+                              if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+                            }}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             loading="lazy"
                           />
@@ -659,7 +669,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                           </div>
 
                           <div className="flex flex-wrap gap-1.5 pt-1">
-                            {resort.highlights.slice(0, 3).map((h, i) => (
+                            {(Array.isArray(resort.highlights) ? resort.highlights : []).slice(0, 3).map((h, i) => (
                               <span key={i} className={`text-[10px] px-2.5 py-1 rounded-full border ${
                                 isDarkMode ? 'bg-[#111827] text-[#CBD5E1] border-[#334155]' : 'bg-[#F8FAFC] text-[#475569] border-[#E2E8F0]'
                               }`}>

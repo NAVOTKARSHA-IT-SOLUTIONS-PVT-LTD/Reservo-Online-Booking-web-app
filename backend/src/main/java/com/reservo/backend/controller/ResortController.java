@@ -24,7 +24,7 @@ public class ResortController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Resort>> getResortById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Resort>> getResortById(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(resortService.getResortById(id)));
     }
 
@@ -74,7 +74,7 @@ public class ResortController {
 
     @PostMapping("/update-status")
     public ResponseEntity<ApiResponse<Resort>> updateResortStatus(
-            @RequestParam Long resortId,
+            @RequestParam String resortId,
             @RequestParam Resort.ResortStatus status) {
         Resort updated = resortService.updateResortStatus(resortId, status);
         return ResponseEntity.ok(ApiResponse.success(updated, "Resort status updated successfully"));
@@ -82,7 +82,7 @@ public class ResortController {
 
     @PostMapping("/request-changes")
     public ResponseEntity<ApiResponse<Resort>> requestChanges(
-            @RequestParam Long resortId,
+            @RequestParam String resortId,
             @RequestBody Map<String, String> body) {
         String comment = body.get("comment");
         Resort updated = resortService.requestChanges(resortId, comment);

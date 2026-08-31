@@ -4,12 +4,12 @@ import ErrorScreen from "./ErrorScreen";
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, errorType: "general" };
+    this.state = { hasError: false, errorType: "general", error: null };
   }
 
   static getDerivedStateFromError(error) {
     // Update state so the next render will show the fallback UI.
-    return { hasError: true };
+    return { hasError: true, error };
   }
 
   componentDidCatch(error, errorInfo) {
@@ -22,7 +22,7 @@ export default class ErrorBoundary extends React.Component {
         <div className="min-h-[70vh] flex items-center justify-center p-6 bg-bg-light">
           <ErrorScreen 
             type="server" 
-            message="We encountered an unexpected crash while rendering this section. Our team has been notified."
+            message={this.state.error?.message ? `Render error: ${this.state.error.message}` : "We encountered an unexpected crash while rendering this section."}
             onRetry={() => {
               this.setState({ hasError: false });
               window.location.reload();

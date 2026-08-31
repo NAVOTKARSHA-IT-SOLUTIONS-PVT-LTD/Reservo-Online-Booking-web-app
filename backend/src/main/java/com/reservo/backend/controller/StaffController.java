@@ -17,7 +17,7 @@ public class StaffController {
     private final StaffRepository staffRepository;
 
     @GetMapping("/resort/{resortId}")
-    public ResponseEntity<ApiResponse<List<Staff>>> getStaffByResort(@PathVariable Long resortId) {
+    public ResponseEntity<ApiResponse<List<Staff>>> getStaffByResort(@PathVariable String resortId) {
         return ResponseEntity.ok(ApiResponse.success(staffRepository.findByResortId(resortId)));
     }
 
@@ -28,7 +28,7 @@ public class StaffController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<String>> deleteStaffMember(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> deleteStaffMember(@PathVariable String id) {
         staffRepository.deleteById(id);
         return ResponseEntity.ok(ApiResponse.success("Staff member removed successfully"));
     }

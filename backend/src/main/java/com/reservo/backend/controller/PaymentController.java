@@ -36,15 +36,33 @@ public class PaymentController {
     private final CouponRepository couponRepository;
     private final UserRepository userRepository;
     private final CouponService couponService;
+    private final com.reservo.backend.service.AuthService authService;
 
     @Value("${app.stripe.webhook-secret}")
     private String endpointSecret;
 
+    private User resolveEffectiveUser(String requestedUserId) {
+        java.util.Optional<User> authUser = authService.getOptionalAuthenticatedUser();
+        if (authUser.isPresent()) {
+            User user = authUser.get();
+            if (user.getRole() == User.Role.ROLE_ADMIN && requestedUserId != null && !requestedUserId.isBlank()) {
+                return userRepository.findById(requestedUserId)
+                        .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + requestedUserId));
+            }
+            return user;
+        }
+        if (requestedUserId != null && !requestedUserId.isBlank()) {
+            return userRepository.findById(requestedUserId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + requestedUserId));
+        }
+        throw new IllegalArgumentException("Authenticated user context or valid User ID is required");
+    }
+
     @PostMapping("/checkout")
     public ResponseEntity<ApiResponse<String>> createCheckoutSession(
-            @RequestParam Long userId,
-            @RequestParam Long resortId,
-            @RequestParam Long roomId,
+            @RequestParam(required = false) String userId,
+            @RequestParam String resortId,
+            @RequestParam String roomId,
             @RequestParam String checkIn,
             @RequestParam String checkOut,
             @RequestParam BigDecimal amount,
@@ -55,8 +73,8 @@ public class PaymentController {
             @RequestParam String successUrl,
             @RequestParam String cancelUrl) {
         try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+            User user = resolveEffectiveUser(userId);
+            String effectiveUserId = user.getId();
 
             // KYC validation rule: > ₹50,000 amount requires verified status
             if (amount.compareTo(BigDecimal.valueOf(50000)) > 0 && user.getKycStatus() != User.KycStatus.VERIFIED) {
@@ -66,7 +84,7 @@ public class PaymentController {
 
             BigDecimal discountAmount = BigDecimal.ZERO;
             if (couponCode != null && !couponCode.trim().isEmpty()) {
-                Coupon coupon = couponService.getAndValidateCoupon(couponCode.trim(), userId, resortId, amount);
+                Coupon coupon = couponService.getAndValidateCoupon(couponCode.trim(), effectiveUserId, resortId, amount);
                 if (coupon.getDiscountType() == Coupon.DiscountType.PERCENTAGE) {
                     discountAmount = amount.multiply(coupon.getDiscountValue().divide(BigDecimal.valueOf(100)));
                 } else {
@@ -98,7 +116,7 @@ public class PaymentController {
 
             // Create pending booking
             Booking booking = bookingService.createBooking(
-                    userId, resortId, roomId,
+                    effectiveUserId, resortId, roomId,
                     LocalDate.parse(checkIn), LocalDate.parse(checkOut),
                     finalAmount, guestName, guestPhone,
                     (couponCode != null && !couponCode.trim().isEmpty()) ? couponCode.trim().toUpperCase() : null,
@@ -129,7 +147,7 @@ public class PaymentController {
     }
 
     @PostMapping("/refund/{bookingId}")
-    public ResponseEntity<ApiResponse<Booking>> refundBooking(@PathVariable Long bookingId) {
+    public ResponseEntity<ApiResponse<Booking>> refundBooking(@PathVariable String bookingId) {
         try {
             Booking booking = bookingService.cancelAndRefundBooking(bookingId);
             return ResponseEntity.ok(ApiResponse.success(booking, "Booking cancelled and payment refunded successfully"));

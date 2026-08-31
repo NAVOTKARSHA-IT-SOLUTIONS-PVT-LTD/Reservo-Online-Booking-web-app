@@ -20,13 +20,13 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @GetMapping("/resort/{resortId}")
-    public ResponseEntity<ApiResponse<List<Review>>> getReviewsByResort(@PathVariable Long resortId) {
+    public ResponseEntity<ApiResponse<List<Review>>> getReviewsByResort(@PathVariable String resortId) {
         return ResponseEntity.ok(ApiResponse.success(reviewService.getReviewsByResort(resortId)));
     }
 
     @PostMapping("/resort/{resortId}")
     public ResponseEntity<ApiResponse<Review>> createReview(
-            @PathVariable Long resortId,
+            @PathVariable String resortId,
             @RequestBody Map<String, Object> body) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Double rating = Double.valueOf(body.get("rating").toString());

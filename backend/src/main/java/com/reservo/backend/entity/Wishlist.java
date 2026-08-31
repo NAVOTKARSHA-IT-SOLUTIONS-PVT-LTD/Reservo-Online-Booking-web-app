@@ -1,28 +1,28 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.Instant;
 
-@Entity
-@Table(name = "wishlists")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Wishlist {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    /** Firestore document ID of the user. */
+    private String userId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "resort_id", nullable = false)
-    private Resort resort;
+    /** Firestore document ID of the resort. */
+    private String resortId;
 
     @Builder.Default
     private Instant addedAt = Instant.now();

@@ -14,28 +14,20 @@ import java.time.Instant;
 @Builder
 public class NotificationResponse {
 
-    private Long id;
-
-    private Long bookingId;
-
+    private String id;
+    private String bookingId;
     private String bookingCode;
 
     private Notification.NotificationType type;
-
     private Notification.NotificationChannel channel;
 
     private String recipient;
-
     private String message;
 
     private Notification.NotificationStatus status;
 
-    /**
-     * True when the user has opened/read the notification.
-     */
     private boolean read;
 
     private Instant sentAt;
-
     private Instant createdAt;
 }

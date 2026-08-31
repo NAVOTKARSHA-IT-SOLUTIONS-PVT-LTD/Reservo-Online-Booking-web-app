@@ -1,34 +1,30 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.Instant;
 
-@Entity
-@Table(name = "ai_itineraries")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class AiItinerary {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    private Long userId; // Optional registered user ID
+    /** Optional Firestore document ID of the registered user. */
+    private String userId;
 
-    @Column(nullable = false)
     private String destination;
-
-    @Column(nullable = false)
     private Integer durationDays;
-
-    @Column(nullable = false)
-    private String budgetLevel; // "budget", "moderate", "luxury"
-
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String itineraryJson; // Structured daily timeline blocks
+    private String budgetLevel;
+    private String itineraryJson;
 
     @Builder.Default
     private Instant createdAt = Instant.now();

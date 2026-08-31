@@ -1,15 +1,14 @@
 package com.reservo.backend.service;
 
-import com.reservo.backend.entity.Wishlist;
 import com.reservo.backend.entity.Resort;
 import com.reservo.backend.entity.User;
+import com.reservo.backend.entity.Wishlist;
 import com.reservo.backend.exception.ResourceNotFoundException;
-import com.reservo.backend.repository.WishlistRepository;
 import com.reservo.backend.repository.ResortRepository;
 import com.reservo.backend.repository.UserRepository;
+import com.reservo.backend.repository.WishlistRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +16,6 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class WishlistService {
-
     private final WishlistRepository wishlistRepository;
     private final ResortRepository resortRepository;
     private final UserRepository userRepository;
@@ -28,32 +26,34 @@ public class WishlistService {
         return wishlistRepository.findByUserId(user.getId());
     }
 
-    @Transactional
-    public String toggleWishlist(String email, Long resortId) {
+    public String toggleWishlist(String email, String resortId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         Resort resort = resortRepository.findById(resortId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resort not found"));
 
-        Optional<Wishlist> existing = wishlistRepository.findByUserIdAndResortId(user.getId(), resortId);
+        Optional<Wishlist> existing =
+                wishlistRepository.findByUserIdAndResortId(user.getId(), resort.getId());
+
         if (existing.isPresent()) {
-            wishlistRepository.delete(existing.get());
+            wishlistRepository.deleteById(existing.get().getId());
             return "Resort removed from wishlist";
-        } else {
-            Wishlist item = Wishlist.builder()
-                    .user(user)
-                    .resort(resort)
-                    .build();
-            wishlistRepository.save(item);
-            return "Resort added to wishlist";
         }
+
+        wishlistRepository.save(Wishlist.builder()
+                .userId(user.getId())
+                .resortId(resort.getId())
+                .build());
+
+        return "Resort added to wishlist";
     }
 
-    @Transactional
     public void clearWishlist(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        List<Wishlist> items = wishlistRepository.findByUserId(user.getId());
-        wishlistRepository.deleteAll(items);
+
+        wishlistRepository.findByUserId(user.getId())
+                .forEach(item -> wishlistRepository.deleteById(item.getId()));
     }
 }

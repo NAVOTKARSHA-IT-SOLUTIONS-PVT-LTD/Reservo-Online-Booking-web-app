@@ -1,32 +1,29 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.Instant;
 
-@Entity
-@Table(name = "loyalty_transactions")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class LoyaltyTransaction {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    /** Firestore document ID of the user. */
+    private String userId;
 
-    @Column(nullable = false)
     private String description;
-
-    @Column(name = "points_change", nullable = false)
     private Integer pointsChange;
 
-    @Column(name = "created_at", nullable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 }

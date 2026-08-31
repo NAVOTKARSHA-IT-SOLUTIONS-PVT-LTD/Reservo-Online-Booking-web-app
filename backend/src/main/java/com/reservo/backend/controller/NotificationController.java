@@ -2,12 +2,16 @@ package com.reservo.backend.controller;
 
 import com.reservo.backend.dto.ApiResponse;
 import com.reservo.backend.dto.NotificationResponse;
+import com.reservo.backend.entity.User;
+import com.reservo.backend.exception.UnauthorizedException;
+import com.reservo.backend.service.AuthService;
 import com.reservo.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
@@ -15,6 +19,22 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final AuthService authService;
+
+    private String resolveEffectiveUserId(String requestedUserId) {
+        Optional<User> authUser = authService.getOptionalAuthenticatedUser();
+        if (authUser.isPresent()) {
+            User user = authUser.get();
+            if (user.getRole() == User.Role.ROLE_ADMIN) {
+                return (requestedUserId != null && !requestedUserId.isBlank()) ? requestedUserId : user.getId();
+            }
+            return user.getId();
+        }
+        if (requestedUserId != null && !requestedUserId.isBlank()) {
+            return requestedUserId;
+        }
+        throw new UnauthorizedException("Authentication required to access notifications");
+    }
 
     /**
      * Get all notifications for a user.
@@ -24,11 +44,11 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<NotificationResponse>>>
     getNotifications(
-            @RequestParam Long userId
+            @RequestParam(required = false) String userId
     ) {
-
+        String effectiveUserId = resolveEffectiveUserId(userId);
         List<NotificationResponse> notifications =
-                notificationService.getUserNotifications(userId);
+                notificationService.getUserNotifications(effectiveUserId);
 
         return ResponseEntity.ok(
                 ApiResponse.success(
@@ -46,11 +66,11 @@ public class NotificationController {
     @GetMapping("/unread")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>>
     getUnreadNotifications(
-            @RequestParam Long userId
+            @RequestParam(required = false) String userId
     ) {
-
+        String effectiveUserId = resolveEffectiveUserId(userId);
         List<NotificationResponse> notifications =
-                notificationService.getUnreadNotifications(userId);
+                notificationService.getUnreadNotifications(effectiveUserId);
 
         return ResponseEntity.ok(
                 ApiResponse.success(
@@ -67,9 +87,8 @@ public class NotificationController {
      */
     @PatchMapping("/{id}/read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
-            @PathVariable Long id
+            @PathVariable String id
     ) {
-
         notificationService.markAsRead(id);
 
         return ResponseEntity.ok(
@@ -87,10 +106,10 @@ public class NotificationController {
      */
     @PatchMapping("/read-all")
     public ResponseEntity<ApiResponse<Void>> markAllAsRead(
-            @RequestParam Long userId
+            @RequestParam(required = false) String userId
     ) {
-
-        notificationService.markAllAsRead(userId);
+        String effectiveUserId = resolveEffectiveUserId(userId);
+        notificationService.markAllAsRead(effectiveUserId);
 
         return ResponseEntity.ok(
                 ApiResponse.success(
@@ -107,9 +126,8 @@ public class NotificationController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(
-            @PathVariable Long id
+            @PathVariable String id
     ) {
-
         notificationService.deleteNotification(id);
 
         return ResponseEntity.ok(

@@ -4,15 +4,12 @@ import com.reservo.backend.dto.DashboardSummaryDTO;
 import com.reservo.backend.entity.Booking;
 import com.reservo.backend.entity.Room;
 import com.reservo.backend.repository.BookingRepository;
-import com.reservo.backend.repository.ResortRepository;
 import com.reservo.backend.repository.RoomRepository;
-import com.reservo.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -20,156 +17,133 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
-
     private final BookingRepository bookingRepository;
-    private final UserRepository userRepository;
-    private final ResortRepository resortRepository;
     private final RoomRepository roomRepository;
 
     public DashboardSummaryDTO getDashboardSummary() {
-        long totalBookings = bookingRepository.count();
-        BigDecimal revenue = bookingRepository.calculateTotalRevenue();
-
-        if (totalBookings == 0) {
-            totalBookings = 128;
-        }
-        if (revenue == null || revenue.compareTo(BigDecimal.ZERO) == 0) {
-            revenue = new BigDecimal("245890");
-        }
-
-        // 1. Dynamic Line Chart Revenue Overview (for the last 7 days)
-        List<DashboardSummaryDTO.RevenuePoint> revenueOverview = new ArrayList<>();
         List<Booking> allBookings = bookingRepository.findAll();
-        
-        if (allBookings.isEmpty()) {
-            revenueOverview = List.of(
-                    new DashboardSummaryDTO.RevenuePoint("10 Jul", 20),
-                    new DashboardSummaryDTO.RevenuePoint("11 Jul", 45),
-                    new DashboardSummaryDTO.RevenuePoint("12 Jul", 30),
-                    new DashboardSummaryDTO.RevenuePoint("13 Jul", 60),
-                    new DashboardSummaryDTO.RevenuePoint("14 Jul", 50),
-                    new DashboardSummaryDTO.RevenuePoint("15 Jul", 75),
-                    new DashboardSummaryDTO.RevenuePoint("16 Jul", 90)
-            );
-        } else {
-            Map<String, BigDecimal> dailyRevenue = new TreeMap<>();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM");
-            
-            LocalDate today = LocalDate.now();
-            for (int i = 6; i >= 0; i--) {
-                dailyRevenue.put(today.minusDays(i).format(formatter), BigDecimal.ZERO);
-            }
-            
-            for (Booking b : allBookings) {
-                if (b.getStatus() == Booking.BookingStatus.CONFIRMED || b.getStatus() == Booking.BookingStatus.COMPLETED) {
-                    String dateKey = b.getCheckInDate().format(formatter);
-                    if (dailyRevenue.containsKey(dateKey)) {
-                        dailyRevenue.put(dateKey, dailyRevenue.get(dateKey).add(b.getTotalAmount()));
-                    }
-                }
-            }
-            
-            for (Map.Entry<String, BigDecimal> entry : dailyRevenue.entrySet()) {
-                int relativeValue = entry.getValue().divide(BigDecimal.valueOf(1000), 0, BigDecimal.ROUND_HALF_UP).intValue();
-                revenueOverview.add(new DashboardSummaryDTO.RevenuePoint(entry.getKey(), relativeValue));
-            }
-        }
+        long totalBookings = allBookings.size();
 
-        // 2. Dynamic Donut Chart Booking Sources
-        List<DashboardSummaryDTO.SourceShare> sources = new ArrayList<>();
-        List<Object[]> sourceCounts = bookingRepository.countBookingsBySource();
-        
-        if (sourceCounts.isEmpty()) {
-            sources = List.of(
-                    new DashboardSummaryDTO.SourceShare("Direct", 45),
-                    new DashboardSummaryDTO.SourceShare("Search", 30),
-                    new DashboardSummaryDTO.SourceShare("Referral", 15),
-                    new DashboardSummaryDTO.SourceShare("Others", 10)
-            );
-        } else {
-            long totalFromSources = sourceCounts.stream().mapToLong(row -> (long) row[1]).sum();
-            for (Object[] row : sourceCounts) {
-                String sourceName = row[0] != null ? row[0].toString() : "Direct";
-                sourceName = sourceName.substring(0, 1).toUpperCase() + sourceName.substring(1).toLowerCase();
-                long count = (long) row[1];
-                int share = totalFromSources > 0 ? (int) ((count * 100) / totalFromSources) : 0;
-                sources.add(new DashboardSummaryDTO.SourceShare(sourceName, share));
-            }
-        }
+        BigDecimal revenue = allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.CONFIRMED ||
+                             b.getStatus() == Booking.BookingStatus.COMPLETED)
+                .map(Booking::getTotalAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 3. Dynamic Recent Bookings
-        List<DashboardSummaryDTO.RecentBookingItem> recentBookings = new ArrayList<>();
-        List<Booking> recentList = bookingRepository.findAll(
-                PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"))
-        ).getContent();
-        
-        if (recentList.isEmpty()) {
-            recentBookings = List.of(
-                    new DashboardSummaryDTO.RecentBookingItem("RS12345", "Aman Sharma", "Deluxe Sea View Room", "16 Jul - 18 Jul", new BigDecimal("17998"), "CONFIRMED"),
-                    new DashboardSummaryDTO.RecentBookingItem("RS12346", "Priya Patel", "Sea View Room", "17 Jul - 20 Jul", new BigDecimal("21499"), "CONFIRMED"),
-                    new DashboardSummaryDTO.RecentBookingItem("RS12347", "Rahul Verma", "Villa with Pool", "19 Jul - 21 Jul", new BigDecimal("35999"), "PENDING"),
-                    new DashboardSummaryDTO.RecentBookingItem("RS12348", "Neha Singh", "Deluxe Room", "18 Jul - 20 Jul", new BigDecimal("9499"), "CONFIRMED")
-            );
-        } else {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM");
-            for (Booking b : recentList) {
-                String guestName = b.getUser() != null ? b.getUser().getName() : "Guest User";
-                String roomType = b.getRoom() != null ? b.getRoom().getType().name().replace("_", " ") : "Luxury Room";
-                String datesStr = b.getCheckInDate().format(formatter) + " - " + b.getCheckOutDate().format(formatter);
-                recentBookings.add(new DashboardSummaryDTO.RecentBookingItem(
-                        b.getBookingCode(),
-                        guestName,
-                        roomType,
-                        datesStr,
-                        b.getTotalAmount(),
-                        b.getStatus().name()
-                ));
-            }
-        }
-
-        // 4. Dynamic Room Occupancy Matrix (next 7 days starting today)
-        Map<String, List<Boolean>> matrix = new LinkedHashMap<>();
-        List<Room> allRooms = roomRepository.findAll();
-        
-        if (allRooms.isEmpty()) {
-            matrix.put("Deluxe Room", List.of(true, true, false, true, true, false, true));
-            matrix.put("Sea View Room", List.of(true, false, true, true, false, true, true));
-            matrix.put("Villa with Pool", List.of(false, true, true, true, true, false, false));
-            matrix.put("Suite Room", List.of(true, true, false, true, false, true, true));
-        } else {
-            LocalDate today = LocalDate.now();
-            for (Room room : allRooms) {
-                String roomTypeLabel = room.getType().name().replace("_", " ");
-                if (!matrix.containsKey(roomTypeLabel)) {
-                    List<Boolean> dayStatusList = new ArrayList<>();
-                    for (int i = 0; i < 7; i++) {
-                        LocalDate dateToCheck = today.plusDays(i);
-                        boolean isOccupied = allBookings.stream().anyMatch(b ->
-                                b.getRoom().getId().equals(room.getId())
-                                && b.getStatus() != Booking.BookingStatus.CANCELLED
-                                && !dateToCheck.isBefore(b.getCheckInDate())
-                                && dateToCheck.isBefore(b.getCheckOutDate())
-                        );
-                        dayStatusList.add(!isOccupied);
-                    }
-                    matrix.put(roomTypeLabel, dayStatusList);
-                }
-            }
-        }
+        List<DashboardSummaryDTO.RevenuePoint> revenueOverview = buildRevenueOverview(allBookings);
+        List<DashboardSummaryDTO.SourceShare> sources = buildSourceShares(allBookings);
+        List<DashboardSummaryDTO.RecentBookingItem> recent = buildRecentBookings(allBookings);
+        Map<String, List<Boolean>> matrix = buildRoomMatrix(allBookings);
 
         return DashboardSummaryDTO.builder()
                 .totalBookings(totalBookings)
                 .totalBookingsGrowth("+12% vs last week")
                 .totalRevenue(revenue)
                 .totalRevenueGrowth("+18% vs last week")
-                .occupancyRate(78.0)
+                .occupancyRate(calculateOccupancy(allBookings))
                 .occupancyRateGrowth("+8% vs last week")
                 .avgRating(4.7)
                 .avgRatingGrowth("+0.2 vs last week")
                 .revenueOverview(revenueOverview)
                 .bookingSources(sources)
-                .recentBookings(recentBookings)
+                .recentBookings(recent)
                 .roomOccupancyMatrix(matrix)
                 .build();
+    }
+
+    private List<DashboardSummaryDTO.RevenuePoint> buildRevenueOverview(List<Booking> bookings) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM");
+        LocalDate today = LocalDate.now();
+        Map<String, BigDecimal> daily = new LinkedHashMap<>();
+        for (int i = 6; i >= 0; i--) daily.put(today.minusDays(i).format(fmt), BigDecimal.ZERO);
+
+        for (Booking b : bookings) {
+            if ((b.getStatus() == Booking.BookingStatus.CONFIRMED ||
+                 b.getStatus() == Booking.BookingStatus.COMPLETED) &&
+                b.getCheckInDate() != null && b.getTotalAmount() != null) {
+                String key = b.getCheckInDate().format(fmt);
+                if (daily.containsKey(key)) daily.put(key, daily.get(key).add(b.getTotalAmount()));
+            }
+        }
+
+        List<DashboardSummaryDTO.RevenuePoint> result = new ArrayList<>();
+        daily.forEach((date, amount) -> result.add(
+                new DashboardSummaryDTO.RevenuePoint(
+                        date, amount.divide(BigDecimal.valueOf(1000), 0, RoundingMode.HALF_UP).intValue())));
+        return result;
+    }
+
+    private List<DashboardSummaryDTO.SourceShare> buildSourceShares(List<Booking> bookings) {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (Booking b : bookings) {
+            String source = b.getBookingSource() == null ? "Direct" :
+                    b.getBookingSource().name();
+            source = source.substring(0, 1).toUpperCase() +
+                    source.substring(1).toLowerCase();
+            counts.merge(source, 1L, Long::sum);
+        }
+
+        long total = counts.values().stream().mapToLong(Long::longValue).sum();
+        List<DashboardSummaryDTO.SourceShare> result = new ArrayList<>();
+        counts.forEach((source, count) -> result.add(
+                new DashboardSummaryDTO.SourceShare(
+                        source, total == 0 ? 0 : (int) (count * 100 / total))));
+        return result;
+    }
+
+    private List<DashboardSummaryDTO.RecentBookingItem> buildRecentBookings(List<Booking> bookings) {
+        return bookings.stream()
+                .sorted(Comparator.comparing(
+                        Booking::getCreatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(5)
+                .map(b -> new DashboardSummaryDTO.RecentBookingItem(
+                        b.getBookingCode(),
+                        b.getGuestName() != null ? b.getGuestName() : "Guest User",
+                        b.getRoomId() != null ? "Room " + b.getRoomId() : "Room",
+                        formatDates(b),
+                        b.getTotalAmount(),
+                        b.getStatus() != null ? b.getStatus().name() : "PENDING"))
+                .toList();
+    }
+
+    private String formatDates(Booking b) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM");
+        if (b.getCheckInDate() == null || b.getCheckOutDate() == null) return "";
+        return b.getCheckInDate().format(fmt) + " - " + b.getCheckOutDate().format(fmt);
+    }
+
+    private Map<String, List<Boolean>> buildRoomMatrix(List<Booking> bookings) {
+        Map<String, List<Boolean>> matrix = new LinkedHashMap<>();
+        LocalDate today = LocalDate.now();
+
+        for (Room room : roomRepository.findAll()) {
+            String label = room.getRoomType() != null ? room.getRoomType() : "Room";
+            List<Boolean> days = matrix.computeIfAbsent(label, k -> new ArrayList<>());
+
+            if (days.isEmpty()) {
+                for (int i = 0; i < 7; i++) {
+                    LocalDate date = today.plusDays(i);
+                    boolean occupied = bookings.stream().anyMatch(b ->
+                            room.getId() != null && room.getId().equals(b.getRoomId()) &&
+                            b.getStatus() != Booking.BookingStatus.CANCELLED &&
+                            b.getCheckInDate() != null && b.getCheckOutDate() != null &&
+                            !date.isBefore(b.getCheckInDate()) &&
+                            date.isBefore(b.getCheckOutDate()));
+                    days.add(!occupied);
+                }
+            }
+        }
+        return matrix;
+    }
+
+    private double calculateOccupancy(List<Booking> bookings) {
+        long active = bookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.CONFIRMED ||
+                             b.getStatus() == Booking.BookingStatus.COMPLETED)
+                .count();
+        long rooms = roomRepository.findAll().size();
+        return rooms == 0 ? 0.0 : Math.min(100.0, active * 100.0 / rooms);
     }
 }

@@ -1,42 +1,41 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Entity
-@Table(name = "payments")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Payment {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @Column(nullable = false, unique = true)
+    /** Stripe/payment provider transaction ID. */
     private String transactionId;
 
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "booking_id", nullable = false)
-    private Booking booking;
+    /** Firestore document ID of the related booking. */
+    private String bookingId;
 
-    @Column(nullable = false)
     private BigDecimal amount;
-
-    private String paymentMethod; // e.g. "CREDIT_CARD", "UPI", "PAYPAL"
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    private String paymentMethod;
     private PaymentStatus status;
 
     @Builder.Default
     private Instant createdAt = Instant.now();
 
     public enum PaymentStatus {
-        PENDING, SUCCESS, FAILED, REFUNDED
+        PENDING,
+        SUCCESS,
+        FAILED,
+        REFUNDED
     }
 }

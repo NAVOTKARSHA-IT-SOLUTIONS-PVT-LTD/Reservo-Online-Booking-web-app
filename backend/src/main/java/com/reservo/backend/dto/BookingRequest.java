@@ -1,57 +1,33 @@
 package com.reservo.backend.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class BookingRequest {
-    private Long resortId;
 
-    private Long userId;
+    @NotBlank(message = "Resort ID is required")
+    private String resortId;
 
+    @NotBlank(message = "User ID is required")
+    private String userId;
+
+    @NotNull(message = "Check-in date is required")
     private LocalDate checkIn;
 
+    @NotNull(message = "Check-out date is required")
     private LocalDate checkOut;
 
+    @Min(value = 1, message = "Guests must be at least 1")
     private int guests;
-
-    // getters setters
-
-    public Long getResortId() {
-        return resortId;
-    }
-
-    public void setResortId(Long resortId) {
-        this.resortId = resortId;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public LocalDate getCheckIn() {
-        return checkIn;
-    }
-
-    public void setCheckIn(LocalDate checkIn) {
-        this.checkIn = checkIn;
-    }
-
-    public LocalDate getCheckOut() {
-        return checkOut;
-    }
-
-    public void setCheckOut(LocalDate checkOut) {
-        this.checkOut = checkOut;
-    }
-
-    public int getGuests() {
-        return guests;
-    }
-
-    public void setGuests(int guests) {
-        this.guests = guests;
-    }
 }

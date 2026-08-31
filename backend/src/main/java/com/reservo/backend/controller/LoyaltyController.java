@@ -39,7 +39,7 @@ public class LoyaltyController {
     @GetMapping("/validate")
     public ResponseEntity<ApiResponse<CouponValidationResponse>> validateCoupon(
             @RequestParam String code,
-            @RequestParam(required = false) Long resortId,
+            @RequestParam(required = false) String resortId,
             @RequestParam(required = false) BigDecimal amount) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) ? auth.getName() : null;

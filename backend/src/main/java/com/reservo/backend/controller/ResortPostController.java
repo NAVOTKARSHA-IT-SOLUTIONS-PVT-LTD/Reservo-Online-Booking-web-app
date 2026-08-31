@@ -17,13 +17,13 @@ public class ResortPostController {
     private final ResortPostRepository resortPostRepository;
 
     @GetMapping("/{resortId}/posts")
-    public ResponseEntity<ApiResponse<List<ResortPost>>> getPostsByResort(@PathVariable Long resortId) {
+    public ResponseEntity<ApiResponse<List<ResortPost>>> getPostsByResort(@PathVariable String resortId) {
         List<ResortPost> posts = resortPostRepository.findByResortIdOrderByCreatedAtDesc(resortId);
         return ResponseEntity.ok(ApiResponse.success(posts));
     }
 
     @PostMapping("/{resortId}/posts")
-    public ResponseEntity<ApiResponse<ResortPost>> createPost(@PathVariable Long resortId, @RequestBody ResortPost post) {
+    public ResponseEntity<ApiResponse<ResortPost>> createPost(@PathVariable String resortId, @RequestBody ResortPost post) {
         post.setResortId(resortId);
         ResortPost saved = resortPostRepository.save(post);
         return ResponseEntity.ok(ApiResponse.success(saved, "Social post added successfully"));

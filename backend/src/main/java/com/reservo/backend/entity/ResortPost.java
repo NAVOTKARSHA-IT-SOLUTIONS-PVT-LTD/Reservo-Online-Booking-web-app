@@ -1,29 +1,28 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.Instant;
 
-@Entity
-@Table(name = "resort_posts")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ResortPost {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @Column(nullable = false)
-    private Long resortId;
+    /** Firestore document ID of the resort. */
+    private String resortId;
 
-    private String type; // e.g. "image", "video", "event"
-
+    private String type;
     private String mediaUrl;
-
-    @Column(columnDefinition = "TEXT")
     private String caption;
 
     @Builder.Default

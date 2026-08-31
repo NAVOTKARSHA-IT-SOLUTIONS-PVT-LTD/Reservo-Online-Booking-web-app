@@ -1,65 +1,64 @@
 package com.reservo.backend.service;
 
-import com.reservo.backend.entity.Room;
 import com.reservo.backend.entity.Resort;
+import com.reservo.backend.entity.Room;
 import com.reservo.backend.exception.ResourceNotFoundException;
-import com.reservo.backend.repository.RoomRepository;
 import com.reservo.backend.repository.ResortRepository;
+import com.reservo.backend.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class RoomService {
-
     private final RoomRepository roomRepository;
     private final ResortRepository resortRepository;
 
-    public List<Room> getRoomsByResort(Long resortId) {
+    public List<Room> getRoomsByResort(String resortId) {
+        resortRepository.findById(resortId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + resortId));
         return roomRepository.findByResortId(resortId);
     }
 
-    public Room getRoomById(Long id) {
+    public Room getRoomById(String id) {
         return roomRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + id));
     }
 
-    @Transactional
-    public Room createRoom(Long resortId, Room room) {
-        Resort resort = resortRepository.findById(resortId)
+    public Room createRoom(String resortId, Room room) {
+        resortRepository.findById(resortId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + resortId));
-        room.setResort(resort);
-        if (room.getStatus() == null) {
-            room.setStatus(Room.RoomStatus.AVAILABLE);
-        }
+        room.setResortId(resortId);
+        if (room.getStatus() == null) room.setStatus(Room.RoomStatus.AVAILABLE);
+        if (room.getCapacity() == null) room.setCapacity(2);
         return roomRepository.save(room);
     }
 
-    @Transactional
-    public Room updateRoomStatus(Long id, Room.RoomStatus status, Room.CleaningStatus cleaningStatus, String maintenance) {
+    public Room updateRoomStatus(String id, Room.RoomStatus status, String maintenance) {
         Room room = getRoomById(id);
         if (status != null) room.setStatus(status);
-        if (cleaningStatus != null) room.setCleaningStatus(cleaningStatus);
-        if (maintenance != null) room.setMaintenanceDetails(maintenance);
+        if (maintenance != null) room.setDescription(maintenance);
         return roomRepository.save(room);
     }
 
-    @Transactional
-    public Room updateRoom(Long id, Room updatedDetails) {
+    public Room updateRoom(String id, Room updatedDetails) {
         Room room = getRoomById(id);
-        room.setRoomNumber(updatedDetails.getRoomNumber());
-        room.setPricePerNight(updatedDetails.getPricePerNight());
-        room.setCapacity(updatedDetails.getCapacity());
-        room.setType(updatedDetails.getType());
+        if (updatedDetails.getRoomNumber() != null) room.setRoomNumber(updatedDetails.getRoomNumber());
+        if (updatedDetails.getPricePerNight() != null) room.setPricePerNight(updatedDetails.getPricePerNight());
+        if (updatedDetails.getCapacity() != null) room.setCapacity(updatedDetails.getCapacity());
+        if (updatedDetails.getRoomType() != null) room.setRoomType(updatedDetails.getRoomType());
+        if (updatedDetails.getDescription() != null) room.setDescription(updatedDetails.getDescription());
+        if (updatedDetails.getBedCount() != null) room.setBedCount(updatedDetails.getBedCount());
+        if (updatedDetails.getBedType() != null) room.setBedType(updatedDetails.getBedType());
+        if (updatedDetails.getImageUrl() != null) room.setImageUrl(updatedDetails.getImageUrl());
+        if (updatedDetails.getStatus() != null) room.setStatus(updatedDetails.getStatus());
         return roomRepository.save(room);
     }
 
-    @Transactional
-    public void deleteRoom(Long id) {
-        Room room = getRoomById(id);
-        roomRepository.delete(room);
+    public void deleteRoom(String id) {
+        getRoomById(id);
+        roomRepository.deleteById(id);
     }
 }

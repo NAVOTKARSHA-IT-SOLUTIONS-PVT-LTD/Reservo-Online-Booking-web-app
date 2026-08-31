@@ -30,7 +30,21 @@ async function request(endpoint, options = {}) {
     config.body = options.body;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  config.signal = controller.signal;
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error("Request timed out. Please check the backend server.");
+    }
+    throw new Error(`Unable to connect to backend at ${API_BASE_URL}`);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const isAuthEndpoint = endpoint.includes("/api/v1/auth/");
 

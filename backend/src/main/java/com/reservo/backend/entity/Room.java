@@ -1,61 +1,73 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Entity
-@Table(name = "rooms")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Room {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @Column(nullable = false)
+    /** Firestore document ID of the resort. */
+    private String resortId;
+
     private String roomNumber;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private RoomType type;
-
-    @Column(nullable = false)
+    private String roomType;
+    private String description;
     private BigDecimal pricePerNight;
+    private Integer capacity;
+    private Integer bedCount;
+    private String bedType;
+    private String imageUrl;
 
     @Builder.Default
-    private Integer capacity = 2;
+    private RoomStatus status = RoomStatus.AVAILABLE;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private RoomStatus status;
-
-    @Enumerated(EnumType.STRING)
     @Builder.Default
     private CleaningStatus cleaningStatus = CleaningStatus.CLEAN;
-
-    private String maintenanceDetails;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "resort_id", nullable = false)
-    private Resort resort;
 
     @Builder.Default
     private Instant createdAt = Instant.now();
 
-    public enum RoomType {
-        SINGLE, DOUBLE, SUITE, DELUXE, VILLA_WITH_POOL, DELUXE_SEA_VIEW
-    }
+    @Builder.Default
+    private Instant updatedAt = Instant.now();
 
     public enum RoomStatus {
-        AVAILABLE, OCCUPIED, MAINTENANCE, BLOCKED
+        AVAILABLE,
+        BOOKED,
+        MAINTENANCE,
+        INACTIVE
     }
 
     public enum CleaningStatus {
-        CLEAN, DIRTY, CLEANING
+        CLEAN,
+        DIRTY,
+        IN_PROGRESS,
+        INSPECTED
+    }
+
+    public void updateTimestamp() {
+        this.updatedAt = Instant.now();
+    }
+
+    /** Backward-compatible alias for older code. */
+    public String getType() {
+        return roomType;
+    }
+
+    /** Backward-compatible alias for older code. */
+    public void setType(String type) {
+        this.roomType = type;
     }
 }

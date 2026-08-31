@@ -1,73 +1,76 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "coupons")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Coupon {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @Column(nullable = false, unique = true)
+    /** Unique coupon code, e.g. WELCOME10. */
     private String code;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = true)
-    private User user;
+    /**
+     * Firestore document ID of the user who owns the coupon.
+     * null means platform-wide coupon.
+     */
+    private String userId;
 
-    @Column(name = "discount_percentage", nullable = false)
     @Builder.Default
     private Integer discountPercentage = 10;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "discount_type", nullable = false)
     @Builder.Default
     private DiscountType discountType = DiscountType.PERCENTAGE;
 
-    @Column(name = "discount_value", nullable = false)
     @Builder.Default
     private BigDecimal discountValue = BigDecimal.TEN;
 
-    @Column(name = "resort_id")
-    private Long resortId;
+    /** null means valid for all resorts. */
+    private String resortId;
 
-    @Column(name = "minimum_amount")
     private BigDecimal minimumAmount;
-
-    @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
-    @Column(name = "usage_limit")
     @Builder.Default
     private Integer usageLimit = 1000;
 
-    @Column(name = "used_count")
     @Builder.Default
     private Integer usedCount = 0;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private CouponStatus status;
 
-    @Column(name = "created_at", nullable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 
+    @Builder.Default
+    private Instant updatedAt = Instant.now();
+
     public enum CouponStatus {
-        ACTIVE, USED, EXPIRED, EXHAUSTED
+        ACTIVE,
+        USED,
+        EXPIRED,
+        EXHAUSTED
     }
 
     public enum DiscountType {
-        PERCENTAGE, FIXED
+        PERCENTAGE,
+        FIXED
+    }
+
+    public void updateTimestamp() {
+        this.updatedAt = Instant.now();
     }
 }

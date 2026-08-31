@@ -1,37 +1,32 @@
 package com.reservo.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.Instant;
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "resort_documents")
-@Data
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ResortDocument {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    /** Firestore document ID. */
+    private String id;
 
-    @Column(nullable = false)
-    private String name; // e.g. "GST Certificate", "PAN Card Registration", "Resort License"
-
-    @Column(nullable = false)
-    private String status; // e.g. "Verified", "Verification Pending", "Expired"
-
+    private String name;
+    private String status;
     private LocalDate expiryDate;
+    private String documentUrl;
+    private String fileSize;
 
-    private String documentUrl; // URL or path of the uploaded file
-
-    private String fileSize; // Formatted size of the file
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "resort_id", nullable = false)
-    private Resort resort;
+    /** Firestore document ID of the related resort. */
+    private String resortId;
 
     @Builder.Default
     private Instant createdAt = Instant.now();

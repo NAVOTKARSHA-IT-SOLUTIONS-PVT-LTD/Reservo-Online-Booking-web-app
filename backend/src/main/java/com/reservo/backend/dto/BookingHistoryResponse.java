@@ -16,30 +16,24 @@ import java.time.LocalDate;
 @Builder
 public class BookingHistoryResponse {
 
-    private Long bookingId;
-
+    private String bookingId;
     private String bookingCode;
 
     private String resortName;
-
     private String resortLocation;
 
     private String roomNumber;
-
     private String roomType;
 
     private LocalDate checkInDate;
-
     private LocalDate checkOutDate;
 
     private Integer guestsCount;
-
     private Integer roomsCount;
 
     private BigDecimal totalAmount;
 
     private Booking.BookingStatus status;
-
     private Booking.BookingSource bookingSource;
 
     private Instant createdAt;

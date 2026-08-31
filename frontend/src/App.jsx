@@ -101,31 +101,38 @@ function Home({ wishlist, toggleWishlist, currencySymbol, exchangeRate }) {
 function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate, onBook }) {
   const { id } = useParams();
   const navigate = useNavigate();
+  const routeLocation = useLocation();
   const [resort, setResort] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
+    const selectedFromListing = routeLocation.state?.selectedResort;
+
+    // When a user clicks a card, use the exact object that was clicked.
+    // This prevents a numeric/static ID from being resolved to a different
+    // Firestore document and showing the wrong resort.
+    if (selectedFromListing && String(selectedFromListing.id) === String(id)) {
+      setResort(selectedFromListing);
+      setLoading(false);
+      return () => { active = false; };
+    }
+
     const fetchResort = async () => {
       setLoading(true);
       try {
         const data = await resortService.getResortById(id);
-        if (active) {
-          setResort(data);
-        }
+        if (active) setResort(data);
       } catch (err) {
         console.error("Failed to fetch resort details:", err);
+        if (active) setResort(null);
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     };
     fetchResort();
-    return () => {
-      active = false;
-    };
-  }, [id]);
+    return () => { active = false; };
+  }, [id, routeLocation.state]);
 
   // Log details checks to recently viewed stays in secureStorage
   useEffect(() => {
@@ -397,7 +404,7 @@ function App() {
   const renderResortListing = () => (
     <ResortListing
       isDarkMode={isDark}
-      onSelectResort={(resort) => navigate(`/resort/${resort.id}`)}
+      onSelectResort={(resort) => navigate(`/resort/${resort.id}`, { state: { selectedResort: resort } })}
     />
   );
 
