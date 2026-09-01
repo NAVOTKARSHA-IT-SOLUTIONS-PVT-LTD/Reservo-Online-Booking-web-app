@@ -180,32 +180,20 @@ export const authService = {
     try {
       const firebaseResult = await firebaseService.signInWithGoogle();
       
-      // For testing: Store Firebase user directly without backend
-      // TODO: Remove this when backend social auth endpoints are implemented
-      const testUserData = {
-        token: firebaseResult.idToken, // Use Firebase token as session token
-        email: firebaseResult.user.email,
-        name: firebaseResult.user.displayName || firebaseResult.user.email?.split('@')[0] || 'User',
-        displayName: firebaseResult.user.displayName,
-        role: role,
-        uid: firebaseResult.user.uid,
-        photoURL: firebaseResult.user.photoURL,
-        provider: 'google',
-        providerData: firebaseResult.user.providerData
-      };
+      // Call backend social auth endpoint
+      const result = await apiClient.post("/api/v1/auth/social/login", {
+        provider: "google",
+        firebaseIdToken: firebaseResult.idToken,
+        role
+      });
       
-      console.log("About to store user data:", testUserData);
-      console.log("Name field will be:", testUserData.name);
-      
-      secureStorage.setItem(TOKEN_KEY, testUserData.token);
-      secureStorage.setItem(USER_KEY, testUserData);
-      
-      const storedUser = authService.getCurrentUser();
-      console.log("Immediately after storage, user data is:", storedUser);
-      console.log("Stored user name field:", storedUser?.name);
-      console.log("Stored user displayName field:", storedUser?.displayName);
-      
-      return testUserData;
+      if (result.success && result.data) {
+        secureStorage.setItem(TOKEN_KEY, result.data.token);
+        secureStorage.setItem(USER_KEY, result.data);
+        return result.data;
+      } else {
+        throw new Error(result.message || "Google authentication failed");
+      }
       
     } catch (error) {
       console.error("Google sign-in error:", error);
@@ -241,26 +229,6 @@ export const authService = {
       
       throw error;
     }
-      
-      /* Production code with backend integration:
-      const result = await apiClient.post("/api/v1/auth/social/login", {
-        provider: "google",
-        idToken: firebaseResult.idToken,
-        uid: firebaseResult.user.uid,
-        email: firebaseResult.user.email,
-        displayName: firebaseResult.user.displayName,
-        photoURL: firebaseResult.user.photoURL,
-        role
-      });
-      
-      if (result.success && result.data) {
-        secureStorage.setItem(TOKEN_KEY, result.data.token);
-        secureStorage.setItem(USER_KEY, result.data);
-        return result.data;
-      } else {
-        throw new Error(result.message || "Google authentication failed");
-      }
-      */
   },
 
   async signInWithFacebook(role = "ROLE_CUSTOMER") {
@@ -270,30 +238,20 @@ export const authService = {
       
       console.log("Auth Service: Firebase result received:", firebaseResult);
       
-      // For testing: Store Firebase user directly without backend
-      // TODO: Remove this when backend social auth endpoints are implemented
-      const testUserData = {
-        token: firebaseResult.idToken, // Use Firebase token as session token
-        email: firebaseResult.user.email,
-        name: firebaseResult.user.displayName || firebaseResult.user.email?.split('@')[0] || 'User',
-        displayName: firebaseResult.user.displayName,
-        role: role,
-        uid: firebaseResult.user.uid,
-        photoURL: firebaseResult.user.photoURL,
-        provider: 'facebook',
-        providerData: firebaseResult.user.providerData
-      };
+      // Call backend social auth endpoint
+      const result = await apiClient.post("/api/v1/auth/social/login", {
+        provider: "facebook",
+        firebaseIdToken: firebaseResult.idToken,
+        role
+      });
       
-      console.log("Auth Service: About to store user data:", testUserData);
-      
-      secureStorage.setItem(TOKEN_KEY, testUserData.token);
-      secureStorage.setItem(USER_KEY, testUserData);
-      
-      const storedUser = secureStorage.getItem(USER_KEY);
-      console.log("Auth Service: Stored user data:", storedUser);
-      
-      console.log("Facebook auth successful (testing mode):", testUserData);
-      return testUserData;
+      if (result.success && result.data) {
+        secureStorage.setItem(TOKEN_KEY, result.data.token);
+        secureStorage.setItem(USER_KEY, result.data);
+        return result.data;
+      } else {
+        throw new Error(result.message || "Facebook authentication failed");
+      }
       
     } catch (error) {
       console.error("Facebook sign-in error:", error);
@@ -337,31 +295,20 @@ export const authService = {
       
       console.log("Auth Service: Firebase result received:", firebaseResult);
       
-      // For testing: Store Firebase user directly without backend
-      // TODO: Remove this when backend social auth endpoints are implemented
-      const testUserData = {
-        token: firebaseResult.idToken, // Use Firebase token as session token
-        email: firebaseResult.user.email,
-        name: firebaseResult.user.displayName || firebaseResult.user.username || firebaseResult.user.email?.split('@')[0] || 'User',
-        displayName: firebaseResult.user.displayName,
-        role: role,
-        uid: firebaseResult.user.uid,
-        photoURL: firebaseResult.user.photoURL,
-        username: firebaseResult.user.username,
-        provider: 'twitter',
-        providerData: firebaseResult.user.providerData
-      };
+      // Call backend social auth endpoint
+      const result = await apiClient.post("/api/v1/auth/social/login", {
+        provider: "twitter",
+        firebaseIdToken: firebaseResult.idToken,
+        role
+      });
       
-      console.log("Auth Service: About to store user data:", testUserData);
-      
-      secureStorage.setItem(TOKEN_KEY, testUserData.token);
-      secureStorage.setItem(USER_KEY, testUserData);
-      
-      const storedUser = secureStorage.getItem(USER_KEY);
-      console.log("Auth Service: Stored user data:", storedUser);
-      
-      console.log("Twitter auth successful (testing mode):", testUserData);
-      return testUserData;
+      if (result.success && result.data) {
+        secureStorage.setItem(TOKEN_KEY, result.data.token);
+        secureStorage.setItem(USER_KEY, result.data);
+        return result.data;
+      } else {
+        throw new Error(result.message || "Twitter authentication failed");
+      }
       
     } catch (error) {
       console.error("Twitter sign-in error:", error);
@@ -402,25 +349,21 @@ export const authService = {
     try {
       const firebaseResult = await firebaseService.signInWithGoogle();
       
-      // For testing: Store Firebase user directly without backend
-      // TODO: Remove this when backend social auth endpoints are implemented
-      const testUserData = {
-        token: firebaseResult.idToken,
-        email: firebaseResult.user.email,
-        name: name || firebaseResult.user.displayName || firebaseResult.user.email?.split('@')[0] || 'User',
-        displayName: firebaseResult.user.displayName,
-        role: role,
-        uid: firebaseResult.user.uid,
-        photoURL: firebaseResult.user.photoURL,
-        provider: 'google',
-        providerData: firebaseResult.user.providerData
-      };
+      // Call backend social auth endpoint (same as login for social providers)
+      const result = await apiClient.post("/api/v1/auth/social/login", {
+        provider: "google",
+        firebaseIdToken: firebaseResult.idToken,
+        name: name || firebaseResult.user.displayName,
+        role
+      });
       
-      secureStorage.setItem(TOKEN_KEY, testUserData.token);
-      secureStorage.setItem(USER_KEY, testUserData);
-      
-      console.log("Google registration successful (testing mode):", testUserData);
-      return testUserData;
+      if (result.success && result.data) {
+        secureStorage.setItem(TOKEN_KEY, result.data.token);
+        secureStorage.setItem(USER_KEY, result.data);
+        return result.data;
+      } else {
+        throw new Error(result.message || "Google authentication failed");
+      }
       
     } catch (error) {
       console.error("Google registration error:", error);
@@ -461,84 +404,21 @@ export const authService = {
     try {
       const firebaseResult = await firebaseService.signInWithFacebook();
       
-      // For testing: Store Firebase user directly without backend
-      // TODO: Remove this when backend social auth endpoints are implemented
-      const testUserData = {
-        token: firebaseResult.idToken,
-        email: firebaseResult.user.email,
-        name: name || firebaseResult.user.displayName || firebaseResult.user.email?.split('@')[0] || 'User',
-        displayName: firebaseResult.user.displayName,
-        role: role,
-        uid: firebaseResult.user.uid,
-        photoURL: firebaseResult.user.photoURL,
-        provider: 'facebook',
-        providerData: firebaseResult.user.providerData
-      };
+      // Call backend social auth endpoint (same as login for social providers)
+      const result = await apiClient.post("/api/v1/auth/social/login", {
+        provider: "facebook",
+        firebaseIdToken: firebaseResult.idToken,
+        name: name || firebaseResult.user.displayName,
+        role
+      });
       
-      secureStorage.setItem(TOKEN_KEY, testUserData.token);
-      secureStorage.setItem(USER_KEY, testUserData);
-      
-      console.log("Google registration successful (testing mode):", testUserData);
-      return testUserData;
-      
-    } catch (error) {
-      console.error("Google registration error:", error);
-      
-      // Handle account exists with different credential error
-      if (error.code === 'auth/account-exists-with-different-credential') {
-        const email = error.customData?.email;
-        const credential = error.customData?._tokenResponse;
-        
-        const methods = await firebaseService.fetchSignInMethodsForEmail(email);
-        
-        // Map Firebase method names to our provider names
-        const providerMap = {
-          'google.com': 'google',
-          'facebook.com': 'facebook',
-          'twitter.com': 'twitter',
-          'password': 'email',
-          'phone': 'phone'
-        };
-        
-        const existingProvider = providerMap[methods[0]] || 'google';
-        
-        return {
-          accountConflict: true,
-          existingProvider: existingProvider,
-          newProvider: 'google',
-          email: email,
-          pendingCredential: credential,
-          message: `This email is already registered with ${existingProvider.charAt(0).toUpperCase() + existingProvider.slice(1)}. Sign in with ${existingProvider} first to link Google.`
-        };
+      if (result.success && result.data) {
+        secureStorage.setItem(TOKEN_KEY, result.data.token);
+        secureStorage.setItem(USER_KEY, result.data);
+        return result.data;
+      } else {
+        throw new Error(result.message || "Facebook authentication failed");
       }
-      
-      throw error;
-    }
-  },
-
-  async registerWithFacebook(name, role = "ROLE_CUSTOMER") {
-    try {
-      const firebaseResult = await firebaseService.signInWithFacebook();
-      
-      // For testing: Store Firebase user directly without backend
-      // TODO: Remove this when backend social auth endpoints are implemented
-      const testUserData = {
-        token: firebaseResult.idToken,
-        email: firebaseResult.user.email,
-        name: name || firebaseResult.user.displayName || firebaseResult.user.email?.split('@')[0] || 'User',
-        displayName: firebaseResult.user.displayName,
-        role: role,
-        uid: firebaseResult.user.uid,
-        photoURL: firebaseResult.user.photoURL,
-        provider: 'facebook',
-        providerData: firebaseResult.user.providerData
-      };
-      
-      secureStorage.setItem(TOKEN_KEY, testUserData.token);
-      secureStorage.setItem(USER_KEY, testUserData);
-      
-      console.log("Facebook registration successful (testing mode):", testUserData);
-      return testUserData;
       
     } catch (error) {
       console.error("Facebook registration error:", error);
@@ -579,26 +459,21 @@ export const authService = {
     try {
       const firebaseResult = await firebaseService.signInWithTwitter();
       
-      // For testing: Store Firebase user directly without backend
-      // TODO: Remove this when backend social auth endpoints are implemented
-      const testUserData = {
-        token: firebaseResult.idToken,
-        email: firebaseResult.user.email,
-        name: name || firebaseResult.user.displayName || firebaseResult.user.username || firebaseResult.user.email?.split('@')[0] || 'User',
-        displayName: firebaseResult.user.displayName,
-        role: role,
-        uid: firebaseResult.user.uid,
-        photoURL: firebaseResult.user.photoURL,
-        username: firebaseResult.user.username,
-        provider: 'twitter',
-        providerData: firebaseResult.user.providerData
-      };
+      // Call backend social auth endpoint (same as login for social providers)
+      const result = await apiClient.post("/api/v1/auth/social/login", {
+        provider: "twitter",
+        firebaseIdToken: firebaseResult.idToken,
+        name: name || firebaseResult.user.displayName,
+        role
+      });
       
-      secureStorage.setItem(TOKEN_KEY, testUserData.token);
-      secureStorage.setItem(USER_KEY, testUserData);
-      
-      console.log("Twitter registration successful (testing mode):", testUserData);
-      return testUserData;
+      if (result.success && result.data) {
+        secureStorage.setItem(TOKEN_KEY, result.data.token);
+        secureStorage.setItem(USER_KEY, result.data);
+        return result.data;
+      } else {
+        throw new Error(result.message || "Twitter authentication failed");
+      }
       
     } catch (error) {
       console.error("Twitter registration error:", error);
@@ -707,30 +582,28 @@ export const authService = {
   async signInForLinking(provider) {
     try {
       console.log(`Signing in with ${provider} for account linking...`);
-      const result = await firebaseService.signInWithProvider(provider);
+      const firebaseResult = await firebaseService.signInWithProvider(provider);
       
-      if (result.success) {
-        // Store the signed-in user
-        const testUserData = {
-          token: result.idToken,
-          email: result.user.email,
-          name: result.user.displayName || result.user.email?.split('@')[0] || 'User',
-          displayName: result.user.displayName,
-          role: authService.getCurrentUser()?.role || "ROLE_CUSTOMER",
-          uid: result.user.uid,
-          photoURL: result.user.photoURL,
+      if (firebaseResult.success) {
+        // Call backend social auth endpoint to get proper JWT token
+        const result = await apiClient.post("/api/v1/auth/social/login", {
           provider: provider,
-          providerData: result.user.providerData
-        };
+          firebaseIdToken: firebaseResult.idToken,
+          role: authService.getCurrentUser()?.role || "ROLE_CUSTOMER"
+        });
         
-        secureStorage.setItem(TOKEN_KEY, testUserData.token);
-        secureStorage.setItem(USER_KEY, testUserData);
-        
-        return {
-          success: true,
-          user: testUserData,
-          message: `Signed in with ${provider}. You can now link other providers.`
-        };
+        if (result.success && result.data) {
+          secureStorage.setItem(TOKEN_KEY, result.data.token);
+          secureStorage.setItem(USER_KEY, result.data);
+          
+          return {
+            success: true,
+            user: result.data,
+            message: `Signed in with ${provider}. You can now link other providers.`
+          };
+        } else {
+          throw new Error(result.message || "Authentication failed");
+        }
       }
       
       throw new Error("Failed to sign in");

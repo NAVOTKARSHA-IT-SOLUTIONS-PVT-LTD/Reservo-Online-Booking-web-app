@@ -142,7 +142,10 @@ public class SecurityConfig {
                                 "/api/v1/auth/otp/**",
                                 "/api/v1/auth/password-reset/**",
                                 "/api/v1/auth/login/phone",
-                                "/api/v1/auth/signup/phone"
+                                "/api/v1/auth/signup/phone",
+                                "/api/v1/auth/social/login",
+                                "/api/v1/auth/logout",
+                                "/api/v1/auth/me"
                         ).permitAll()
 
 

@@ -55,6 +55,18 @@ export default function Register() {
     if (r === "resort_admin" || r === "host") {
       setRoleMode("business");
     }
+    
+    // Clear any invalid testing mode tokens on register page load
+    try {
+      const currentUser = authService.getCurrentUser();
+      if (currentUser && currentUser.provider) {
+        // This is a testing mode token - clear it
+        console.log("Clearing old testing mode token");
+        authService.logout();
+      }
+    } catch (error) {
+      console.log("Error checking for old tokens:", error);
+    }
   }, []);
 
   // Setup Hook Form
@@ -210,13 +222,19 @@ export default function Register() {
         try {
           setToastMsg(`Account exists with ${result.existingProvider}. Signing in with that provider...`);
           // Sign in with the existing provider only (don't link)
-          await authService.signInForLinking(result.existingProvider);
-          setToastMsg(`Signed in successfully! Redirecting...`);
-          setTimeout(() => {
-            setToastMsg("");
-            const role = roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER";
-            navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });
-          }, 1500);
+          const signInResult = await authService.signInForLinking(result.existingProvider);
+          
+          if (signInResult.success) {
+            setToastMsg(`Signed in successfully! Redirecting...`);
+            setTimeout(() => {
+              setToastMsg("");
+              const user = authService.getCurrentUser();
+              const finalRole = user?.role || (roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER");
+              navigate(finalRole === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });
+            }, 1500);
+          } else {
+            throw new Error(signInResult.message || "Failed to sign in with existing provider");
+          }
         } catch (error) {
           console.error("Auto-sign-in error:", error);
           console.error("Error code:", error.code);

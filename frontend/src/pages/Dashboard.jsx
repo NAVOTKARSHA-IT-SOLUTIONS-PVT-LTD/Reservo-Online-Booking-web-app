@@ -52,6 +52,9 @@ export default function Dashboard() {
         }
       } catch (err) {
         console.error("Error loading dashboard data:", err);
+        // Even if API calls fail, still show dashboard with empty data
+        setBookings([]);
+        setRewardStatus({ points: 0, membershipLevel: "Standard Member", history: [] });
       } finally {
         setLoading(false);
       }

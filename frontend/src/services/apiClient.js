@@ -60,7 +60,7 @@ async function request(endpoint, options = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const errorMessage = data?.message || data?.error || "An error occurred during request execution.";
+    const errorMessage = data?.message || data?.error || "An unexpected error occurred. Please try again.";
     throw new Error(errorMessage);
   }
 
