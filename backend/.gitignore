@@ -34,8 +34,3 @@ build/
 
 !.env.example
 .maven-cache/
-serviceAccountKey.json
-
-.env
-.env.*
-!.env.example
