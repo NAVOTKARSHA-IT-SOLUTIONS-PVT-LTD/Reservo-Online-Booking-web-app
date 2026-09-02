@@ -169,6 +169,13 @@ export default function Register() {
         navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });
       }, 1200);
     } catch (err) {
+      // Check if error is due to email already existing
+      if (err.message && err.message.includes("already registered")) {
+        // Automatically redirect to login page without showing error
+        // Pass the email to login page so user doesn't have to re-enter it
+        navigate(`/login?email=${encodeURIComponent(data.email)}`, { replace: true });
+        return;
+      }
       setToastMsg(err.message || "Failed to create account. Please try again.");
       setTimeout(() => setToastMsg(""), 3000);
     }
@@ -192,6 +199,13 @@ export default function Register() {
         navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });
       }, 1200);
     } catch (err) {
+      // Check if error is due to phone number already existing
+      if (err.message && err.message.includes("already registered")) {
+        // Automatically redirect to login page without showing error
+        // Pass the phone number to login page so user doesn't have to re-enter it
+        navigate(`/login?phone=${encodeURIComponent(phoneAuthData.phoneNumber)}`, { replace: true });
+        return;
+      }
       setToastMsg(err.message || "Phone registration failed. Please try again.");
       setTimeout(() => setToastMsg(""), 3000);
     }
@@ -239,8 +253,9 @@ export default function Register() {
           console.error("Auto-sign-in error:", error);
           console.error("Error code:", error.code);
           console.error("Error message:", error.message);
-          setToastMsg(error.message || "Failed to sign in. Please try again.");
-          setTimeout(() => setToastMsg(""), 5000);
+          // If auto sign-in fails, redirect to login page
+          navigate("/login", { replace: true });
+          return;
         }
         return;
       }
@@ -251,6 +266,12 @@ export default function Register() {
         navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });
       }, 1200);
     } catch (err) {
+      // Check if error is due to email already existing
+      if (err.message && err.message.includes("already registered")) {
+        // Automatically redirect to login page without showing error
+        navigate("/login", { replace: true });
+        return;
+      }
       setToastMsg(err.message || `${provider.charAt(0).toUpperCase() + provider.slice(1)} registration failed. Please try again.`);
       setTimeout(() => setToastMsg(""), 3000);
     }

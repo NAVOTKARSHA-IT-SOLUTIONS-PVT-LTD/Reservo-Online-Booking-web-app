@@ -54,12 +54,26 @@ export default function Login() {
 
 
   const [roleMode, setRoleMode] = useState("traveller");
+  const [initialPhone, setInitialPhone] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const r = params.get("role");
     if (r === "resort_admin" || r === "host") {
       setRoleMode("business");
+    }
+    
+    // Pre-fill email if redirected from registration with existing account
+    const emailParam = params.get("email");
+    if (emailParam) {
+      setValue("email", emailParam);
+    }
+    
+    // Pre-fill phone if redirected from registration with existing account
+    const phoneParam = params.get("phone");
+    if (phoneParam) {
+      setInitialPhone(phoneParam);
+      setAuthMethod("phone"); // Switch to phone auth mode
     }
     
     // Clear any invalid testing mode tokens on login page load
@@ -80,6 +94,7 @@ export default function Login() {
     register,
     handleSubmit,
     getValues,
+    setValue,
     formState: { errors, isSubmitting, isValid }
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -622,6 +637,7 @@ export default function Login() {
                 mode="login"
                 onAuthSuccess={handlePhoneAuthSuccess}
                 role={roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER"}
+                initialPhoneNumber={initialPhone}
               />
             )}
 

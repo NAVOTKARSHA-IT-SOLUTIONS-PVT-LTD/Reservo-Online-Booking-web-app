@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Phone, ShieldCheck, ArrowRight, RefreshCw } from "lucide-react";
 import firebasePhoneService from "../services/firebase.service";
 
-const PhoneAuth = ({ mode = "login", onAuthSuccess, role = "ROLE_CUSTOMER", name = "" }) => {
-  const [phoneNumber, setPhoneNumber] = useState("");
+const PhoneAuth = ({ mode = "login", onAuthSuccess, role = "ROLE_CUSTOMER", name = "", initialPhoneNumber = "" }) => {
+  const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber || "");
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
@@ -14,6 +14,13 @@ const PhoneAuth = ({ mode = "login", onAuthSuccess, role = "ROLE_CUSTOMER", name
   
   const recaptchaContainerRef = useRef(null);
   const [isFirebaseConfigured, setIsFirebaseConfigured] = useState(false);
+
+  // Update phone number when initialPhoneNumber prop changes
+  useEffect(() => {
+    if (initialPhoneNumber && !phoneNumber) {
+      setPhoneNumber(initialPhoneNumber);
+    }
+  }, [initialPhoneNumber]);
 
   useEffect(() => {
     // Check if Firebase is configured
