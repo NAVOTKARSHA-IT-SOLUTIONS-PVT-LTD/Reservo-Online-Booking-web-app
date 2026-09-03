@@ -120,18 +120,86 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
   };
 
   const isHome = location.pathname === "/";
-  const navLinkClass = "inline-flex items-center justify-center h-10 relative text-[15px] font-semibold transition-colors duration-300 cursor-pointer border-none bg-transparent text-text-dark hover:text-primary after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-primary after:transition-transform after:duration-300";
+
+  // ── Page + Scroll + Theme adaptive classes ──────────────────────────────────
+  // useHeroStyle = true  → transparent dark glass + white controls
+  //              = false → solid themed navbar (white/light in light mode, dark navy in dark mode)
+  //
+  // Hero style is ONLY applied on the home page when NOT scrolled.
+  // On any other page (AI Planner, Rewards, Contact…) always use the solid style.
+  const useHeroStyle = isHome && !isScrolled;
+
+  const navLinkBase = "inline-flex items-center justify-center h-10 relative text-[15px] font-semibold transition-all duration-[400ms] ease-[ease] cursor-pointer border-none bg-transparent after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:transition-transform after:duration-300";
+
+  // Solid navbar colors depend on theme
+  const solidNavColors = isDark
+    ? "text-white/90 hover:text-white after:bg-white"
+    : "text-[#102A43]/80 hover:text-[#102A43] after:bg-[#102A43]";
+  const navLinkColors = useHeroStyle ? "text-white hover:text-white/90 after:bg-white" : solidNavColors;
+  const navLinkStyle = !useHeroStyle && !isDark ? {} : { textShadow: "0 1px 4px rgba(0,0,0,0.55)" };
+  const navLinkClass = `${navLinkBase} ${navLinkColors}`;
+
+  const solidActiveColor = isDark ? "text-white after:scale-x-100" : "text-[#102A43] after:scale-x-100";
   const getNavLinkClass = (isActive) =>
-    `${navLinkClass} ${isActive ? "text-primary after:scale-x-100" : "after:scale-x-0 hover:after:scale-x-100"}`;
+    `${navLinkClass} ${isActive
+      ? (useHeroStyle ? "text-white after:scale-x-100" : solidActiveColor)
+      : "after:scale-x-0 hover:after:scale-x-100"}`;
+
+  // Icon button classes
+  const solidIconBtn = isDark
+    ? "cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-white hover:border-white/40 transition-all"
+    : "bg-white border border-[#DDE6EF] cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-[#102A43] hover:border-primary hover:text-primary transition-all shadow-sm";
+  const iconBtnClass = useHeroStyle
+    ? "cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-white hover:border-white/40 transition-all"
+    : solidIconBtn;
+
+  // Inline styles for icon buttons
+  const solidIconStyle = isDark
+    ? { background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)" }
+    : {};
+  const iconBtnStyle = useHeroStyle
+    ? { background: "rgba(0,0,0,0.18)", border: "1px solid rgba(255,255,255,0.2)" }
+    : solidIconStyle;
+
+  // Globe/chevron sub-icon color
+  const subIconColor = !useHeroStyle && !isDark ? "text-[#102A43]/60" : "text-white/80";
+
+  // Language selector button
+  const solidLangBtn = isDark
+    ? "flex items-center gap-2 text-[13px] font-semibold h-10 px-4 rounded-full text-white hover:border-white/40 cursor-pointer transition-all focus:outline-none"
+    : "flex items-center gap-2 text-[13px] font-semibold h-10 px-4 rounded-full border border-[#DDE6EF] bg-white text-[#102A43] hover:border-primary cursor-pointer transition-all focus:outline-none shadow-sm";
+  const langBtnClass = useHeroStyle
+    ? "flex items-center gap-2 text-[13px] font-semibold h-10 px-4 rounded-full text-white hover:border-white/40 cursor-pointer transition-all focus:outline-none"
+    : solidLangBtn;
+
+  const solidLangStyle = isDark
+    ? { background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)" }
+    : {};
+  const langBtnStyle = useHeroStyle
+    ? { background: "rgba(0,0,0,0.18)", border: "1px solid rgba(255,255,255,0.2)" }
+    : solidLangStyle;
+
+  // Navbar pill inline style
+  const solidPillStyle = isDark
+    ? { background: "rgba(10,20,35,0.92)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderColor: "rgba(255,255,255,0.1)", transition: "all 400ms ease" }
+    : { background: "rgba(255,255,255,0.96)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderColor: "rgba(0,0,0,0.08)", transition: "all 400ms ease" };
+  const heroPillStyle = { background: "rgba(10,25,45,0.35)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", border: "1px solid rgba(255,255,255,0.25)", boxShadow: "0 8px 30px rgba(0,0,0,0.15)", transition: "all 400ms ease" };
+
+  // Reservo brand text color
+  const brandTextColor = !useHeroStyle && !isDark ? "text-[#102A43]" : "text-white drop-shadow-sm";
 
   return (
     <>
       <header className="fixed top-0 left-0 w-full z-50 flex justify-center pointer-events-none">
-        <div className={`flex justify-between items-center px-6 navbar-transition pointer-events-auto ${
-          isScrolled
-            ? "max-w-full w-full mt-0 rounded-none py-4 bg-bg-white border-b border-border-color border-t-transparent border-l-transparent border-r-transparent shadow-md"
-            : "max-w-[1300px] w-[95%] mt-6 rounded-[32px] py-3 bg-bg-white/95 backdrop-blur-md shadow-[0_15px_40px_rgba(0,0,0,0.1)] border border-border-color"
-        }`}>
+        {/* Navbar pill — page + theme + scroll aware */}
+        <div
+          className={`flex justify-between items-center px-6 navbar-transition pointer-events-auto ${
+            useHeroStyle
+              ? "max-w-[1300px] w-[95%] mt-6 rounded-[32px] py-3"
+              : "max-w-full w-full mt-0 rounded-none py-4 border-b shadow-md"
+          }`}
+          style={useHeroStyle ? heroPillStyle : solidPillStyle}
+        >
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 no-underline group select-none shrink-0">
@@ -140,7 +208,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               alt="Reservo Logo" 
               className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
             />
-            <span className="text-[22px] font-extrabold tracking-[0.5px] text-text-dark font-serif leading-none transition-colors duration-300 group-hover:text-primary">
+            <span className={`text-[22px] font-extrabold tracking-[0.5px] font-serif leading-none transition-colors duration-[400ms] ${brandTextColor}`}>
               Reservo
             </span>
           </Link>
@@ -149,37 +217,37 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
           <nav className="hidden lg:flex flex-1 justify-center px-4">
             <ul className="flex gap-7 list-none m-0 p-0 items-center justify-center">
               <li>
-                <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className={getNavLinkClass(isHome && activeSection === "home")}>
+                <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className={getNavLinkClass(isHome && activeSection === "home")} style={navLinkStyle}>
                   {t("home")}
                 </Link>
               </li>
               <li>
-                <button className={getNavLinkClass(isHome && activeSection === "explore")} onClick={() => scrollToSection("explore")}>
+                <button className={getNavLinkClass(isHome && activeSection === "explore")} style={navLinkStyle} onClick={() => scrollToSection("explore")}>
                   {t("explore")}
                 </button>
               </li>
               <li>
-                <Link to="/ai-planner" className={getNavLinkClass(location.pathname === "/ai-planner")}>
+                <Link to="/ai-planner" className={getNavLinkClass(location.pathname === "/ai-planner")} style={navLinkStyle}>
                   ✨ {t("ai_planner")}
                 </Link>
               </li>
               <li>
-                <button className={getNavLinkClass(isHome && activeSection === "why")} onClick={() => scrollToSection("why")}>
+                <button className={getNavLinkClass(isHome && activeSection === "why")} style={navLinkStyle} onClick={() => scrollToSection("why")}>
                   {t("why_us")}
                 </button>
               </li>
               <li>
-                <Link to="/rewards" className={getNavLinkClass(location.pathname === "/rewards")}>
+                <Link to="/rewards" className={getNavLinkClass(location.pathname === "/rewards")} style={navLinkStyle}>
                   {t("rewards")}
                 </Link>
               </li>
               <li>
-                <button className={getNavLinkClass(isHome && activeSection === "reviews")} onClick={() => scrollToSection("testimonials")}>
+                <button className={getNavLinkClass(isHome && activeSection === "reviews")} style={navLinkStyle} onClick={() => scrollToSection("testimonials")}>
                   {t("reviews")}
                 </button>
               </li>
               <li>
-                <Link to="/contact" className={getNavLinkClass(location.pathname === "/contact")}>
+                <Link to="/contact" className={getNavLinkClass(location.pathname === "/contact")} style={navLinkStyle}>
                   {t("contact")}
                 </Link>
               </li>
@@ -188,26 +256,23 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3 shrink-0">
-            <button 
-              onClick={onToggleTheme} 
-              className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all"
-            >
+            {/* Theme toggle */}
+            <button onClick={onToggleTheme} className={iconBtnClass} style={iconBtnStyle}>
               {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
-            <Link to="/wishlist" aria-label="View Wishlist" className="relative bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all">
+            {/* Wishlist */}
+            <Link to="/wishlist" aria-label="View Wishlist" className={`relative ${iconBtnClass}`} style={iconBtnStyle}>
               <Heart size={18} />
-              <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-bg-white">
+              <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-white">
                 {wishlist.length}
               </span>
             </Link>
 
+            {/* Language / Currency */}
             <div className="relative" ref={currencyMenuRef}>
-              <button 
-                onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
-                className="flex items-center gap-2 text-[13px] font-semibold h-10 px-4 rounded-full border border-border-color bg-bg-white text-text-dark hover:border-primary cursor-pointer transition-all focus:outline-none"
-              >
-                <Globe size={15} className="text-text-gray" />
+              <button onClick={() => setShowCurrencyMenu(!showCurrencyMenu)} className={langBtnClass} style={langBtnStyle}>
+                <Globe size={15} className={subIconColor} />
                 <span className="flex items-center gap-1.5">
                   {(() => {
                     const lang = localStorage.getItem("reservo-language") || "en";
@@ -217,7 +282,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                     return `${langLabel} • ${currLabel}`;
                   })()}
                 </span> 
-                <ChevronDown size={13} className="text-text-gray" />
+                <ChevronDown size={13} className={subIconColor} />
               </button>
               
               <AnimatePresence>
@@ -280,7 +345,8 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               </AnimatePresence>
             </div>
 
-            <button aria-label="Open Navigation Menu" className="bg-bg-white border border-border-color cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-text-dark hover:text-primary hover:border-primary transition-all" onClick={toggleMenu}>
+            {/* Hamburger menu */}
+            <button aria-label="Open Navigation Menu" className={iconBtnClass} style={iconBtnStyle} onClick={toggleMenu}>
               <Menu size={20} />
             </button>
           </div>

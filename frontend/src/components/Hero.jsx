@@ -20,13 +20,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import hero1 from "../assets/images/hero1.jpg";
-import hero2 from "../assets/images/hero2.jpg";
-import hero3 from "../assets/images/hero3.jpg";
-import hero4 from "../assets/images/hero4.jpg";
+
+
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 import heroVideo1 from "../assets/images/hero-video1.mp4";
-import heroVideo2 from "../assets/images/hero-Video2.mp4";
+import heroVideo2 from "../assets/images/hero-video2.mp4";
 import heroVideo3 from "../assets/images/hero-video3.mp4";
 import heroVideo4 from "../assets/images/hero-video4.mp4";
 import CustomCalendar from "./CustomCalendar";
@@ -80,8 +78,31 @@ function Hero() {
   const navigate = useNavigate();
   const [isSearching, setIsSearching] = useState(false);
   const [scrollY, setScrollY] = useState(0);
-  const [currentVideo, setCurrentVideo] = useState(0);
-  
+  // ── Duration-aware two-slot crossfade ──────────────────────────────────────
+  // Two video elements (A/B) live permanently in the DOM.
+  // Their srcs are set imperatively (via refs) so React never re-renders them.
+  //
+  // Flow per transition:
+  //  1. Active slot plays its video normally.
+  //  2. `timeupdate` fires on the active slot.
+  //  3. When (duration − currentTime) ≤ CROSSFADE_LEAD_S:
+  //       - hidden slot starts playing from 0 (it already buffered via preload)
+  //       - opacity crossfade starts (CSS transition)
+  //  4. After CROSSFADE_DURATION_MS: commit slot swap, reset + reload old slot
+  //     with the next-next video so it silently buffers while the new active plays.
+  const CROSSFADE_LEAD_S   = 1.4;   // seconds before end to start crossfade
+  const CROSSFADE_DURATION_MS = 1200; // must match CSS transition duration below
+
+  const videoARef = useRef(null);
+  const videoBRef = useRef(null);
+  const [activeSlot, setActiveSlot]       = useState('a');
+  const [isCrossfading, setIsCrossfading] = useState(false);
+  const activeSlotRef       = useRef('a');
+  const isCrossfadingRef    = useRef(false); // guard against duplicate triggers
+  const videoSequenceRef    = useRef(0);     // index of video currently in ACTIVE slot
+  const swapTimerRef        = useRef(null);
+
+
 
 
   // Dropdown visibility states
@@ -207,50 +228,142 @@ function Hero() {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  // ── Mount: initialise both slots, attach timeupdate listener ──────────────
+  useEffect(() => {
+    const a = videoARef.current;
+    const b = videoBRef.current;
+    if (!a || !b) return;
+
+    // Slot A = video[0] (visible + playing)
+    a.src = HERO_VIDEOS[0];
+    a.load();
+    a.play().catch(() => {});
+
+    // Slot B = video[1] (hidden, preloading silently)
+    b.src = HERO_VIDEOS[1];
+    b.load();
+    // DON'T play B yet — just buffer it. We'll play it from 0 when crossfade starts.
+
+    // timeupdate fires many times per second on the ACTIVE video.
+    // We watch whichever slot is currently active via activeSlotRef.
+    const handleTimeUpdate = () => {
+      const activeEl = activeSlotRef.current === 'a' ? videoARef.current : videoBRef.current;
+      const hiddenEl = activeSlotRef.current === 'a' ? videoBRef.current : videoARef.current;
+      if (!activeEl || !hiddenEl) return;
+
+      const { duration, currentTime } = activeEl;
+      if (!duration || isNaN(duration)) return;
+
+      const remaining = duration - currentTime;
+
+      // Trigger crossfade when close to end AND not already crossfading
+      if (remaining <= CROSSFADE_LEAD_S && !isCrossfadingRef.current) {
+        isCrossfadingRef.current = true;
+
+        // If the hidden video isn't ready, wait for it — but don't freeze active
+        const startCrossfade = () => {
+          // Start the hidden video from the beginning
+          hiddenEl.currentTime = 0;
+          hiddenEl.play().catch(() => {});
+
+          // Begin CSS opacity transition
+          setIsCrossfading(true);
+
+          // After CSS transition completes → commit the slot swap
+          swapTimerRef.current = setTimeout(() => {
+            const nowHidden = activeSlotRef.current;        // about to go invisible
+            const newActive  = nowHidden === 'a' ? 'b' : 'a'; // about to go visible
+
+            // Commit React state (triggers re-render of className only)
+            activeSlotRef.current = newActive;
+            setActiveSlot(newActive);
+            setIsCrossfading(false);
+            isCrossfadingRef.current = false;
+
+            // Advance global sequence counter
+            videoSequenceRef.current = (videoSequenceRef.current + 1) % HERO_VIDEOS.length;
+
+            // Reset + preload next-next video into the now-hidden slot
+            const oldActiveEl = nowHidden === 'a' ? videoARef.current : videoBRef.current;
+            if (oldActiveEl) {
+              oldActiveEl.pause();
+              oldActiveEl.currentTime = 0;
+              const nextNextIdx = (videoSequenceRef.current + 1) % HERO_VIDEOS.length;
+              oldActiveEl.src = HERO_VIDEOS[nextNextIdx];
+              oldActiveEl.load(); // buffers silently in background (no play yet)
+            }
+          }, CROSSFADE_DURATION_MS);
+        };
+
+        // If hidden video is already buffered enough → crossfade immediately
+        if (hiddenEl.readyState >= 3) {
+          startCrossfade();
+        } else {
+          // Wait until hidden video can play, then crossfade
+          // Active video keeps playing — no freeze
+          const onCanPlay = () => {
+            hiddenEl.removeEventListener('canplaythrough', onCanPlay);
+            startCrossfade();
+          };
+          hiddenEl.addEventListener('canplaythrough', onCanPlay);
+          // Also try to trigger buffering in case it hasn't started
+          if (hiddenEl.networkState === HTMLVideoElement.NETWORK_IDLE) {
+            hiddenEl.load();
+          }
+        }
+      }
+    };
+
+    // Attach to BOTH video elements — whichever becomes active will have data
+    a.addEventListener('timeupdate', handleTimeUpdate);
+    b.addEventListener('timeupdate', handleTimeUpdate);
+
+    return () => {
+      a.removeEventListener('timeupdate', handleTimeUpdate);
+      b.removeEventListener('timeupdate', handleTimeUpdate);
+      clearTimeout(swapTimerRef.current);
+      a.pause();
+      b.pause();
+    };
+  }, []); // runs once on mount — uses refs, no stale closure issues
+
   return (
     
     <section className="relative w-full min-h-[600px] md:min-h-[700px] md:h-screen flex flex-col items-center justify-center pt-16 md:pt-24 pb-12 md:pb-16 overflow-hidden">
       
-      
-      {/* Background Video hero-video */}
+  {/* Duration-aware two-slot crossfade background */}
 <div
   className="absolute inset-0 z-10 overflow-hidden"
   style={{
-    transform: `translateY(${scrollY * 0.3}px) scale(${1 + scrollY * 0.0002})`
+    transform: `translateY(${scrollY * 0.3}px) scale(${1 + scrollY * 0.0002})`,
   }}
 >
- 
-  {/* Premium Cinematic Background Video */}
-<video
-  key={HERO_VIDEOS[currentVideo]}
-  className="hero-video absolute inset-0 w-full h-full object-cover"
-  autoPlay
-  muted
-  playsInline
-  poster={hero1}
-  onEnded={() => {
-    setCurrentVideo(
-      (prev) => (prev + 1) % HERO_VIDEOS.length
-    );
-  }}
->
-  <source
-    src={HERO_VIDEOS[currentVideo]}
-    type="video/mp4"
+  {/* Slot A — visible when activeSlot==='a' and not crossfading, or fading IN when activeSlot==='b' and crossfading */}
+  <video
+    ref={videoARef}
+    className={`absolute inset-0 w-full h-full object-cover ${
+      (activeSlot === 'a') !== isCrossfading ? 'opacity-100' : 'opacity-0'
+    }`}
+    style={{ transition: `opacity ${CROSSFADE_DURATION_MS}ms ease-in-out` }}
+    muted
+    playsInline
+    preload="auto"
   />
-</video>
-{/* Premium Cinematic Overlay */}
-    {/* <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-black/20 z-[1]" /> */}
-
-    {/* Bottom Cinematic Fade */}
-    {/* <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/60 to-transparent z-[2]" /> */}
-
-
-  {/* Dark overlay for text readability */}
-  <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/25 to-transparent"></div>
-
-  <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/55"></div>
+  {/* Slot B */}
+  <video
+    ref={videoBRef}
+    className={`absolute inset-0 w-full h-full object-cover ${
+      (activeSlot === 'b') !== isCrossfading ? 'opacity-100' : 'opacity-0'
+    }`}
+    style={{ transition: `opacity ${CROSSFADE_DURATION_MS}ms ease-in-out` }}
+    muted
+    playsInline
+    preload="auto"
+  />
 </div>
+
+
+
 
       <div className="relative z-10 w-full max-w-[1300px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-12 mt-4 md:mt-10">
         
