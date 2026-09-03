@@ -145,7 +145,24 @@ public class RoomRepository {
                         .get()
                         .getDocuments();
 
-        return convertDocuments(documents);
+        List<Room> rooms = convertDocuments(documents);
+
+        // Legacy Firestore data may contain resortId as a number instead of a
+        // string. Fall back to a full scan and compare canonical string values
+        // so those rooms remain bookable after the ID type was normalized.
+        if (rooms.isEmpty()) {
+            List<QueryDocumentSnapshot> allDocuments = firestore
+                    .collection(COLLECTION)
+                    .get()
+                    .get()
+                    .getDocuments();
+            rooms = convertDocuments(allDocuments).stream()
+                    .filter(room -> room.getResortId() != null
+                            && room.getResortId().equals(String.valueOf(resortId)))
+                    .toList();
+        }
+
+        return rooms;
 
     } catch (InterruptedException e) {
 

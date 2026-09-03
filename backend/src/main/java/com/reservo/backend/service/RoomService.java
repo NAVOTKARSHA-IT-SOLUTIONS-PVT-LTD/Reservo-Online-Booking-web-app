@@ -17,9 +17,37 @@ public class RoomService {
     private final ResortRepository resortRepository;
 
     public List<Room> getRoomsByResort(String resortId) {
-        resortRepository.findById(resortId)
+        Resort resort = resortRepository.findById(resortId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + resortId));
-        return roomRepository.findByResortId(resortId);
+
+        List<Room> rooms = roomRepository.findByResortId(resortId);
+
+        // A published resort must always be bookable. Older/demo properties can
+        // exist without a room document, so provision one safe default room on
+        // first access. Availability is then open by default for every date
+        // until a real booking or an explicit maintenance block exists.
+        if (rooms.isEmpty()) {
+            Room defaultRoom = Room.builder()
+                    .resortId(resortId)
+                    .roomNumber("101")
+                    .roomType("Standard Room")
+                    .description("Default bookable room")
+                    .pricePerNight(resort.getPricePerNight() != null
+                            ? resort.getPricePerNight() : java.math.BigDecimal.ZERO)
+                    .capacity(resort.getGuests() != null && resort.getGuests() > 0
+                            ? resort.getGuests() : 2)
+                    .bedCount(resort.getBeds() != null && resort.getBeds() > 0
+                            ? resort.getBeds() : 1)
+                    .bedType("King")
+                    .imageUrl(resort.getImageUrl())
+                    .status(Room.RoomStatus.AVAILABLE)
+                    .cleaningStatus(Room.CleaningStatus.CLEAN)
+                    .build();
+
+            rooms = List.of(roomRepository.save(defaultRoom));
+        }
+
+        return rooms;
     }
 
     public Room getRoomById(String id) {

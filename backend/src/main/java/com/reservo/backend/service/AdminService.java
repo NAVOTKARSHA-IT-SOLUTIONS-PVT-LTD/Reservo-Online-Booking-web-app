@@ -56,9 +56,11 @@ public class AdminService {
             userRepository.findById(resort.getOwnerId()).ifPresent(owner -> {
                 if (owner.getRole() == User.Role.ROLE_CUSTOMER) {
                     owner.setRole(User.Role.ROLE_OWNER);
-                    owner.updateTimestamp();
-                    userRepository.save(owner);
                 }
+                owner.setKycStatus(User.KycStatus.VERIFIED);
+                owner.setMembershipLevel("Host Approved");
+                owner.updateTimestamp();
+                userRepository.save(owner);
             });
         }
 

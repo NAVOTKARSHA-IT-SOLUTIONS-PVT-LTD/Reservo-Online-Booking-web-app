@@ -480,7 +480,7 @@ export default function SuperAdminPortal() {
                 <div>
                   <h2 className="text-lg font-extrabold text-slate-800">Property Requests</h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Review properties submitted by owners. Only approved properties become visible on the public platform.
+                    Review property applications submitted by users. Only approved properties become visible on the public platform.
                   </p>
                 </div>
 

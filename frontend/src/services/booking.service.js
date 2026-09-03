@@ -4,13 +4,6 @@ import { resortService } from "./resort.service";
 
 const BOOKINGS_KEY = "reservo-bookings";
 
-const resortStringToIdMap = {
-  "goa-coastline": 1,
-  "kerala-backwaters": 2,
-  "himalayan-chalet": 3,
-  "udaipur-palace": 6,
-  "maldives-overwater": 10
-};
 
 const mapBackendBooking = (b, resort = null) => ({
   // IMPORTANT: booking ID and resort ID are different things.
@@ -48,159 +41,115 @@ migrateBookings();
 export const bookingService = {
   async getBookings() {
     const user = secureStorage.getItem("reservo_user");
-    if (!user || !user.id) {
-      const list = secureStorage.getItem(BOOKINGS_KEY) || [];
-      return list;
+    if (!user?.id) {
+      throw new Error("Please log in to view your bookings.");
     }
 
-    try {
-      const result = await apiClient.get(`/api/v1/bookings/my-bookings?userId=${user.id}`);
-      if (result && result.success && Array.isArray(result.data)) {
-        // The /my-bookings endpoint returns Booking objects, not nested resort
-        // objects. Resolve the actual Firestore resort using resortId so the
-        // booking card always shows the real property name/image.
-        const mapped = await Promise.all(
-          result.data.map(async (booking) => {
-            let resort = null;
-            if (booking?.resortId) {
-              try {
-                resort = await resortService.getResortById(booking.resortId);
-              } catch (e) {
-                console.warn(`Could not load resort ${booking.resortId} for booking ${booking.id}:`, e);
-              }
-            }
-            return mapBackendBooking(booking, resort);
-          })
-        );
-        return mapped;
-      }
-    } catch (e) {
-      console.warn("Failed to load live reservations from backend, using cache:", e);
+    const result = await apiClient.get(
+      `/api/v1/bookings/my-bookings?userId=${encodeURIComponent(user.id)}`
+    );
+
+    if (!result?.success || !Array.isArray(result.data)) {
+      throw new Error(result?.message || "Failed to load your bookings.");
     }
 
-    const list = secureStorage.getItem(BOOKINGS_KEY) || [];
-    return list;
+    const mapped = await Promise.all(
+      result.data.map(async (booking) => {
+        let resort = null;
+        if (booking?.resortId) {
+          try {
+            resort = await resortService.getResortById(booking.resortId);
+          } catch (e) {
+            console.warn(`Could not load resort ${booking.resortId} for booking ${booking.id}:`, e);
+          }
+        }
+        return mapBackendBooking(booking, resort);
+      })
+    );
+
+    return mapped;
   },
 
   async createBooking(bookingDetails) {
     const user = secureStorage.getItem("reservo_user");
-    let uId = user ? user.id : null;
-
-    let rId = bookingDetails.resortId;
-    if (typeof rId === "string") {
-      const mapped = resortStringToIdMap[rId];
-      if (mapped) rId = mapped;
-    }
-    if (!rId) rId = 1;
-
-    let roomId = bookingDetails.roomId;
-    if (typeof roomId === "string") {
-      roomId = parseInt(roomId.replace(/\D/g, ""), 10) || 1;
-    }
-    if (!roomId) roomId = 1;
-
-    if (uId) {
-      try {
-        const result = await apiClient.post(
-          `/api/v1/bookings/create?userId=${uId}&resortId=${rId}&roomId=${roomId}&checkIn=${bookingDetails.checkin}&checkOut=${bookingDetails.checkout}&amount=${bookingDetails.total}`
-        );
-        if (result && result.success && result.data) {
-          const list = secureStorage.getItem(BOOKINGS_KEY) || [];
-          const localBooking = mapBackendBooking(result.data);
-          list.push(localBooking);
-          secureStorage.setItem(BOOKINGS_KEY, list);
-          localStorage.setItem(BOOKINGS_KEY, JSON.stringify(list));
-          return localBooking;
-        }
-      } catch (e) {
-        console.warn("Failed to create booking on backend, using local cache fallback:", e);
-      }
+    if (!user?.id) {
+      throw new Error("Please log in before creating a booking.");
     }
 
-    // Fallback saving
-    const list = secureStorage.getItem(BOOKINGS_KEY) || [];
-    const newBooking = {
-      id: bookingDetails.id || "bk-" + Math.floor(100000 + Math.random() * 900000),
-      resortName: bookingDetails.resortName,
-      location: bookingDetails.location || "Goa, India",
-      resortImage: bookingDetails.resortImage || bookingDetails.image,
-      checkin: bookingDetails.checkin,
-      checkout: bookingDetails.checkout,
-      guests: bookingDetails.guests || 2,
-      roomTitle: bookingDetails.roomTitle || "Luxury Suite",
-      total: bookingDetails.total,
-      status: "Confirmed",
-      code: bookingDetails.code || `RES-${Math.floor(100000 + Math.random() * 900000)}`,
-      createdAt: new Date().toISOString()
-    };
+    const rId = bookingDetails.resortId;
+    const roomId = bookingDetails.roomId;
+    if (!rId || !roomId) {
+      throw new Error("A valid resort and room are required.");
+    }
 
-    list.push(newBooking);
-    secureStorage.setItem(BOOKINGS_KEY, list);
-    localStorage.setItem(BOOKINGS_KEY, JSON.stringify(list));
+    const result = await apiClient.post(
+      `/api/v1/bookings/create?userId=${encodeURIComponent(user.id)}&resortId=${encodeURIComponent(rId)}&roomId=${encodeURIComponent(roomId)}&checkIn=${encodeURIComponent(bookingDetails.checkin)}&checkOut=${encodeURIComponent(bookingDetails.checkout)}&amount=${encodeURIComponent(bookingDetails.total)}`
+    );
 
-    return newBooking;
+    if (!result?.success || !result.data) {
+      throw new Error(result?.message || "Failed to create booking.");
+    }
+
+    const resort = await resortService.getResortById(rId).catch(() => null);
+    return mapBackendBooking(result.data, resort);
   },
 
   async cancelBooking(bookingId) {
-    let list = secureStorage.getItem(BOOKINGS_KEY) || [];
-    list = list.filter(b => b.id !== bookingId);
-    secureStorage.setItem(BOOKINGS_KEY, list);
-    localStorage.setItem(BOOKINGS_KEY, JSON.stringify(list));
-    return { success: true };
+    if (!bookingId) {
+      throw new Error("Booking ID is required.");
+    }
+
+    const result = await apiClient.patch(
+      `/api/v1/bookings/${encodeURIComponent(bookingId)}/cancel`
+    );
+
+    if (!result?.success) {
+      throw new Error(result?.message || "Could not cancel booking.");
+    }
+
+    return result;
   },
 
   async checkAvailability(resortId, dates) {
-    let rId = resortId;
-    if (typeof rId === "string") {
-      const mapped = resortStringToIdMap[rId];
-      if (mapped) rId = mapped;
-    }
-    if (!rId) rId = 1;
-
-    const checkIn = dates.checkIn || "2026-09-12";
-    const checkOut = dates.checkOut || "2026-09-15";
-
-    try {
-      const result = await apiClient.get(`/api/v1/availability/check?resortId=${rId}&checkIn=${checkIn}&checkOut=${checkOut}`);
-      if (result && result.success && result.data) {
-        const available = result.data.length > 0;
-        const rooms = result.data.map(room => ({
-          id: room.id,
-          title: room.type.replace(/_/g, " "),
-          price: room.pricePerNight
-        }));
-        return { available, suggestedRooms: rooms };
-      }
-    } catch (e) {
-      console.warn("Failed to check backend availability, using mock fallback:", e);
+    if (!resortId) {
+      throw new Error("A valid resort ID is required.");
     }
 
-    const isAvailable = Math.random() > 0.1;
+    const checkIn = dates?.checkIn;
+    const checkOut = dates?.checkOut;
+    if (!checkIn || !checkOut) {
+      throw new Error("Check-in and check-out dates are required.");
+    }
+
+    const result = await apiClient.get(
+      `/api/v1/availability/check?resortId=${encodeURIComponent(resortId)}&checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
+    );
+
+    if (!result?.success) {
+      throw new Error(result?.message || "Failed to check availability.");
+    }
+
+    const rooms = Array.isArray(result.data) ? result.data.map(room => ({
+      id: room.id,
+      title: (room.roomType || room.type || "Room").replace(/_/g, " "),
+      price: Number(room.pricePerNight || 0)
+    })) : [];
+
     return {
-      available: isAvailable,
-      suggestedRooms: isAvailable ? [
-        { id: "suite", title: "Luxury Suite", price: 8000 },
-        { id: "deluxe", title: "Presidential Villa", price: 15000 }
-      ] : []
+      available: rooms.length > 0,
+      suggestedRooms: rooms
     };
   },
 
   async createCheckoutSession(bookingDetails) {
     const user = secureStorage.getItem("reservo_user");
-    let uId = user ? user.id : 1;
+    const uId = user?.id;   if (!uId) throw new Error("Please log in before checkout.");
 
-    let rId = bookingDetails.resortId;
-    if (typeof rId === "string") {
-      const mapped = resortStringToIdMap[rId];
-      if (mapped) rId = mapped;
+    const rId = bookingDetails.resortId;
+    const roomId = bookingDetails.roomId;
+    if (!rId || !roomId) {
+      throw new Error("A valid resort and room are required.");
     }
-    if (!rId) rId = 1;
-
-    let roomId = bookingDetails.roomId;
-    if (typeof roomId === "string") {
-      roomId = parseInt(roomId.replace(/\D/g, ""), 10) || 1;
-    }
-    if (!roomId) roomId = 1;
 
     const successUrl = `${window.location.origin}/payment/success`;
     const cancelUrl = `${window.location.origin}/payment/cancel`;

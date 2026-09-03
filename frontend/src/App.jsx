@@ -17,6 +17,7 @@ import { secureStorage } from "./services/secureStorage";
 import { useToast } from "./context/ToastContext";
 import { useWishlist } from "./context/WishlistContext";
 import { resortService } from "./services/resort.service";
+import { apiClient } from "./services/apiClient";
 
 // Lazy-loaded pages
 const About = React.lazy(() => import("./pages/About"));
@@ -291,6 +292,7 @@ function App() {
   // Booking states
   const [bookingResort, setBookingResort] = useState(null);
   const [bookingRoom, setBookingRoom] = useState(null);
+  const [bookingDates, setBookingDates] = useState({ checkIn: null, checkOut: null });
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -382,30 +384,78 @@ function App() {
     toast("Cookies preferences accepted.", "info");
   };
 
+  // Centralized booking opener: resolve the real Firestore room before the
+  // BookingModal is rendered. This prevents checkout from ever receiving an
+  // undefined roomId when booking starts from Resort Details/Wishlist.
+  const openBookingForResort = async (inputResort) => {
+    if (!inputResort?.id) {
+      toast("This property has an invalid ID.", "error");
+      return;
+    }
+
+    setIsCheckingAvailability(true);
+    try {
+      const resort = await resortService.getResortById(String(inputResort.id));
+      if (!resort?.id) {
+        throw new Error("This property could not be found.");
+      }
+
+      const response = await apiClient.get(
+        `/api/v1/rooms/resort/${encodeURIComponent(resort.id)}`
+      );
+
+      const rooms = Array.isArray(response?.data) ? response.data : [];
+      const availableRoom =
+        rooms.find((r) => {
+          const status = String(r?.status || "AVAILABLE").toUpperCase();
+          return r?.id && !["MAINTENANCE", "INACTIVE", "BLOCKED"].includes(status);
+        }) || null;
+
+      if (!availableRoom?.id) {
+        throw new Error("No available room is configured for this resort. Please add an available room in the Host panel.");
+      }
+
+      // Keep the current search dates. ResortDetails writes these values to
+      // sessionStorage whenever the user changes the date/guest controls.
+      let bookingDates = {};
+      try {
+        bookingDates = JSON.parse(
+          sessionStorage.getItem("reservo_search_state") || "{}"
+        );
+      } catch (_) {}
+
+      setBookingRoom(availableRoom);
+      setBookingResort(resort);
+      setIsCheckingAvailability(false);
+      setBookingDates({
+        checkIn: bookingDates.checkInDate || null,
+        checkOut: bookingDates.checkOutDate || null,
+      });
+    } catch (err) {
+      console.error("Failed to prepare booking:", err);
+      setBookingRoom(null);
+      setBookingResort(null);
+      setIsCheckingAvailability(false);
+      toast(err?.message || "Unable to prepare this booking.", "error");
+    }
+  };
+
   const lastProcessedKeyRef = useRef(null);
   useEffect(() => {
     const key = location.key || (location.pathname + JSON.stringify(location.state || {}));
-    if ((location.pathname === "/resorts" || location.pathname === "/search" || location.pathname === "/search-results") && location.state?.checkAvailabilityFor) {
+    if (
+      (location.pathname === "/resorts" ||
+        location.pathname === "/search" ||
+        location.pathname === "/search-results") &&
+      location.state?.checkAvailabilityFor
+    ) {
       if (lastProcessedKeyRef.current !== key) {
         lastProcessedKeyRef.current = key;
         const resortId = location.state.checkAvailabilityFor;
 
-        // Resolve the selected property from the backend only.
-        resortService.getResortById(resortId)
-          .then((resort) => {
-            if (resort) {
-              setBookingResort(resort);
-              setBookingRoom(null);
-              setIsCheckingAvailability(true);
-            }
-          })
-          .catch((err) => {
-            console.error("Failed to load booking property:", err);
-            toast("This property is no longer available.", "error");
-          })
-          .finally(() => {
-            navigate(location.pathname, { replace: true, state: {} });
-          });
+        openBookingForResort({ id: resortId }).finally(() => {
+          navigate(location.pathname, { replace: true, state: {} });
+        });
       }
     }
   }, [location, navigate]);
@@ -459,8 +509,8 @@ function App() {
             <Route path="/search" element={renderResortListing()} />
             <Route path="/search-results" element={renderResortListing()} />
             <Route path="/resorts" element={renderResortListing()} />
-            <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} onBook={(resort) => setBookingResort(resort)} />} />
-            <Route path="/wishlist" element={<Wishlist onBook={(resort) => setBookingResort(resort)} />} />
+            <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} onBook={openBookingForResort} />} />
+            <Route path="/wishlist" element={<Wishlist onBook={openBookingForResort} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />
             <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />
             <Route path="/become-a-host" element={<BecomeAHost />} />
@@ -552,10 +602,12 @@ function App() {
         <BookingModal
           resort={bookingResort}
           room={bookingRoom}
+          bookingDates={bookingDates}
           isDarkMode={isDark}
           onClose={() => {
             setBookingResort(null);
             setBookingRoom(null);
+            setBookingDates({ checkIn: null, checkOut: null });
           }}
           onAskRivo={() => {
             const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]');

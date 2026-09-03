@@ -455,18 +455,20 @@ export default function HostAdminPortal() {
             bookingCode: booking.bookingCode,
             resortId: booking.resortId,
             roomId: booking.roomId,
-            listingTitle: booking.resort?.name || booking.resortName || "Property",
+            listingTitle: booking.resortName || "Property",
+            listingLocation: booking.resortLocation || "India",
+            listingImage: booking.resortImage || "",
             status: statusMap[booking.status] || booking.status || "Pending Approval",
             paymentStatus: Number(booking.totalAmount || 0) === 0
               ? "Fully Comped / ₹0 Paid"
               : (booking.status === "CONFIRMED" ? "Payment Confirmed" : "Payment Pending"),
             payoutAmount: Number(booking.totalAmount || 0),
             guest: {
-              name: booking.guestName || booking.user?.name || "Guest",
-              email: booking.user?.email || booking.guestEmail || "",
-              phone: booking.guestPhone || booking.user?.phone || "",
-              country: booking.user?.country || "India",
-              avatar: booking.user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+              name: booking.guestName || booking.guestEmail || "Guest",
+              email: booking.guestEmail || "",
+              phone: booking.guestPhone || "",
+              country: booking.guestCountry || "India",
+              avatar: booking.guestAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
               verified: true
             },
             dates: {
@@ -479,6 +481,8 @@ export default function HostAdminPortal() {
               children: 0
             },
             specialRequest: booking.specialRequest || "",
+            roomType: booking.roomType || "Luxury Room",
+            roomNumber: booking.roomNumber || "",
             accessCode: booking.accessCode || "",
             confirmationSent: booking.confirmationSent || {}
           };
@@ -518,6 +522,10 @@ export default function HostAdminPortal() {
   // Calendar Custom Price & Date Block State
   const [customPriceDate, setCustomPriceDate] = useState("");
   const [customPriceVal, setCustomPriceVal] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
 
   // Selected reservation modal for invoice/voucher
   const [selectedResModal, setSelectedResModal] = useState(null);
@@ -580,10 +588,14 @@ export default function HostAdminPortal() {
     toast(`Stay status updated to "${newStatus}"`, "success");
   };
 
-  const handleToggleBlock = (dateStr) => {
-    hostService.toggleDateBlock(selectedListingForCalendar, dateStr);
-    setHostData(hostService.getData());
-    toast(`Availability updated for ${dateStr}`, "info");
+  const handleToggleBlock = async (dateStr) => {
+    try {
+      await hostService.toggleDateBlock(selectedListingForCalendar, dateStr);
+      setHostData(hostService.getData());
+      toast(`Availability updated for ${dateStr}`, "info");
+    } catch (e) {
+      toast(e.message || "Could not update availability.", "error");
+    }
   };
 
   const handleSaveCustomPrice = (e) => {
@@ -866,7 +878,7 @@ export default function HostAdminPortal() {
                   </div>
                 </div>
                 <button 
-                  onClick={() => setActiveTab("reservations")}
+                  onClick={() => setActiveTab("bookings")}
                   className="text-xs font-extrabold bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl cursor-pointer border-none shadow transition-all"
                 >
                   Review Request →
@@ -959,7 +971,7 @@ export default function HostAdminPortal() {
                     <Users size={18} className="text-primary" /> Active & Upcoming Guest Stays
                   </h3>
                   <button 
-                    onClick={() => setActiveTab("reservations")}
+                    onClick={() => setActiveTab("bookings")}
                     className="text-xs font-bold text-primary hover:underline bg-transparent border-none cursor-pointer"
                   >
                     View All ({hostData.reservations?.length || 0}) →
@@ -1930,7 +1942,7 @@ export default function HostAdminPortal() {
                   </select>
                 )}
 
-                {["all", "Pending Approval", "Upcoming", "In-House", "Completed"].map((status) => (
+                {["all", "Pending Approval", "Upcoming", "In-House", "Completed", "Cancelled"].map((status) => (
                   <button
                     key={status}
                     onClick={() => setResStatusFilter(status)}
@@ -1950,8 +1962,8 @@ export default function HostAdminPortal() {
               {hostData.reservations
                 ?.filter(r => {
                   const matchesStatus = resStatusFilter === "all" || r.status === resStatusFilter;
-                  const targetProp = myProperties.find(p => String(p.id) === String(selectedBookingPropertyId));
-                  const matchesProp = selectedBookingPropertyId === "all" || !targetProp || (r.listingTitle && r.listingTitle.toLowerCase().includes((targetProp.name || "").toLowerCase()));
+                  const matchesProp = selectedBookingPropertyId === "all"
+                    || String(r.resortId) === String(selectedBookingPropertyId);
                   return matchesStatus && matchesProp;
                 })
                 .map((res) => (
@@ -1977,7 +1989,8 @@ export default function HostAdminPortal() {
                             <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
                               res.status === "Pending Approval" ? "bg-amber-100 text-amber-800" :
                               res.status === "In-House" ? "bg-purple-100 text-purple-800" :
-                              res.status === "Upcoming" ? "bg-blue-100 text-blue-800" : "bg-emerald-100 text-emerald-800"
+                              res.status === "Upcoming" ? "bg-blue-100 text-blue-800" :
+                              res.status === "Cancelled" ? "bg-red-100 text-red-800" : "bg-emerald-100 text-emerald-800"
                             }`}>
                               {res.status}
                             </span>
@@ -2455,61 +2468,52 @@ export default function HostAdminPortal() {
               </button>
             </form>
 
-            {/* Simulated August 2026 Interactive Calendar Grid */}
+            {/* Live month calendar. Every date is available by default; only
+                explicit host blocks are shown as blocked. */}
             <div className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-[32px] p-6 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-[var(--color-border-color)] pb-3">
-                <h3 className="text-base font-bold font-serif text-[var(--color-text-dark)]">
-                  August 2026 Availability Schedule
-                </h3>
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> Available</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500"></span> Blocked</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-amber-400"></span> Custom Price</span>
+                <div>
+                  <h3 className="text-base font-bold font-serif text-[var(--color-text-dark)]">
+                    {calendarMonth.toLocaleDateString("en-IN", { month: "long", year: "numeric" })} Availability Schedule
+                  </h3>
+                  <p className="text-[10px] text-[var(--color-text-gray)] mt-1">All dates are available by default.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))} className="p-2 rounded-xl border border-[var(--color-border-color)] hover:border-primary cursor-pointer bg-transparent">
+                    <ChevronRight size={15} className="rotate-180" />
+                  </button>
+                  <button type="button" onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))} className="p-2 rounded-xl border border-[var(--color-border-color)] hover:border-primary cursor-pointer bg-transparent">
+                    <ChevronRight size={15} />
+                  </button>
                 </div>
               </div>
 
+              <div className="flex items-center gap-3 text-xs">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> Available</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500"></span> Blocked</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-amber-400"></span> Custom Price</span>
+              </div>
+
               <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-[var(--color-text-gray)]">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-                  <div key={d} className="py-1">{d}</div>
-                ))}
+                {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d} className="py-1">{d}</div>)}
               </div>
 
               <div className="grid grid-cols-7 gap-2">
-                {/* Empty slots for starting day */}
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={`empty-${i}`} className="p-3 rounded-2xl bg-transparent opacity-0" />
-                ))}
-
-                {/* 31 days of August */}
-                {Array.from({ length: 31 }).map((_, idx) => {
+                {Array.from({ length: calendarMonth.getDay() }).map((_, i) => <div key={`empty-${i}`} className="h-20" />)}
+                {Array.from({ length: new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate() }).map((_, idx) => {
                   const dayNum = idx + 1;
-                  const dateStr = `2026-08-${dayNum < 10 ? `0${dayNum}` : dayNum}`;
-                  const isBlocked = (hostData.blockedDates?.[selectedListingForCalendar] || []).includes(dateStr);
+                  const y = calendarMonth.getFullYear();
+                  const m = String(calendarMonth.getMonth() + 1).padStart(2, '0');
+                  const dateStr = `${y}-${m}-${String(dayNum).padStart(2, '0')}`;
+                  const blocked = (hostData.blockedDates?.[selectedListingForCalendar] || []).includes(dateStr);
                   const customPrice = (hostData.customPricing?.[selectedListingForCalendar] || {})[dateStr];
-                  const selectedProp = hostData.listings?.find(l => l.id === selectedListingForCalendar) || hostData.listings?.[0];
-                  const priceToShow = customPrice || selectedProp?.pricePerNight || 24500;
-
+                  const selectedProp = myProperties.find(l => String(l.id) === String(selectedListingForCalendar)) || hostData.listings?.find(l => String(l.id) === String(selectedListingForCalendar)) || myProperties[0] || hostData.listings?.[0];
+                  const basePrice = Number(selectedProp?.pricePerNight ?? selectedProp?.price ?? 0);
+                  const priceToShow = customPrice ? Number(customPrice) : basePrice;
                   return (
-                    <button
-                      key={dateStr}
-                      type="button"
-                      onClick={() => handleToggleBlock(dateStr)}
-                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${
-                        isBlocked
-                          ? "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400"
-                          : customPrice
-                          ? "bg-amber-500/10 border-amber-500/40 text-[var(--color-text-dark)] shadow-xs"
-                          : "bg-[var(--color-bg-light)] border-[var(--color-border-color)] text-[var(--color-text-dark)] hover:border-primary"
-                      }`}
-                    >
-                      <div className="flex justify-between items-center w-full">
-                        <span className="text-xs font-extrabold">{dayNum}</span>
-                        {isBlocked && <Lock size={11} className="text-red-500" />}
-                        {!isBlocked && customPrice && <Sparkles size={11} className="text-amber-500" />}
-                      </div>
-                      <div className="text-[10px] font-bold mt-auto">
-                        {isBlocked ? "Blocked" : `₹${priceToShow.toLocaleString("en-IN")}`}
-                      </div>
+                    <button key={dateStr} type="button" onClick={() => handleToggleBlock(dateStr)} className={`p-3 rounded-2xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${blocked ? 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400' : customPrice ? 'bg-amber-500/10 border-amber-500/40 text-[var(--color-text-dark)]' : 'bg-emerald-500/10 border-emerald-500/20 text-[var(--color-text-dark)] hover:border-primary'}`}>
+                      <div className="flex justify-between items-center w-full"><span className="text-xs font-extrabold">{dayNum}</span>{blocked ? <Lock size={11} className="text-red-500" /> : customPrice ? <Sparkles size={11} className="text-amber-500" /> : <Check size={11} className="text-emerald-600" />}</div>
+                      <div className="text-[10px] font-bold mt-auto">{blocked ? 'Blocked' : priceToShow > 0 ? `₹${priceToShow.toLocaleString('en-IN')}` : 'Available'}</div>
                     </button>
                   );
                 })}
@@ -2532,7 +2536,7 @@ export default function HostAdminPortal() {
               </div>
 
               <button 
-                onClick={() => toast("Exported GST Tax Statement for August 2026 (PDF)", "success")}
+                onClick={() => toast("Exported GST Tax Statement for selected month (PDF)", "success")}
                 className="bg-primary hover:bg-primary-dark text-white text-xs font-bold px-4 py-2 rounded-xl shadow flex items-center gap-1.5 cursor-pointer border-none"
               >
                 <Download size={14} /> Download Tax Statement (PDF)

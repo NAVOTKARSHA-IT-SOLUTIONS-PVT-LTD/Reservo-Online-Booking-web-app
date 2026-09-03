@@ -18,7 +18,11 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BookingService {
+    private static final BigDecimal SERVICE_FEE = BigDecimal.valueOf(1200);
+    private static final BigDecimal GST_RATE = BigDecimal.valueOf(0.18);
+
     private final BookingRepository bookingRepository;
+    private final AvailabilityBlockRepository availabilityBlockRepository;
     private final UserRepository userRepository;
     private final ResortRepository resortRepository;
     private final RoomRepository roomRepository;
@@ -28,6 +32,37 @@ public class BookingService {
     private final LoyaltyService loyaltyService;
     private final NotificationService notificationService;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
+
+    /**
+     * Canonical pre-discount booking price used by both the UI and checkout.
+     * The resort's published nightly price is the single price source.
+     */
+    public BigDecimal calculateBaseBookingAmount(
+            String resortId, String roomId,
+            LocalDate checkIn, LocalDate checkOut) {
+
+        Resort resort = getResort(resortId);
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+
+        if (room.getResortId() != null && !room.getResortId().equals(resortId)) {
+            throw new IllegalStateException("Room " + roomId + " does not belong to resort " + resortId);
+        }
+        if (room.getStatus() != Room.RoomStatus.AVAILABLE) {
+            throw new IllegalStateException("Room " + room.getRoomNumber() + " is currently not available");
+        }
+
+        validateDatesAndAmount(checkIn, checkOut, BigDecimal.ZERO);
+
+        long nights = java.time.temporal.ChronoUnit.DAYS.between(checkIn, checkOut);
+        BigDecimal nightly = resort.getPricePerNight() != null
+                ? resort.getPricePerNight()
+                : BigDecimal.ZERO;
+        BigDecimal subtotal = nightly.multiply(BigDecimal.valueOf(nights));
+        BigDecimal gst = subtotal.multiply(GST_RATE).setScale(0, java.math.RoundingMode.HALF_UP);
+
+        return subtotal.add(SERVICE_FEE).add(gst);
+    }
 
     public Booking createBooking(
             String userId, String resortId, String roomId,
@@ -43,6 +78,15 @@ public class BookingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
 
         validateDatesAndAmount(checkIn, checkOut, amount);
+
+        // Enforce host calendar blocks at booking creation time as well as
+        // availability lookup, so a customer cannot bypass a blocked date.
+        for (LocalDate date = checkIn; date.isBefore(checkOut); date = date.plusDays(1)) {
+            if (availabilityBlockRepository.isBlocked(resortId, date)) {
+                throw new IllegalStateException(
+                        "This property is not available for " + date + ". Please choose different dates.");
+            }
+        }
 
         if (room.getStatus() != Room.RoomStatus.AVAILABLE) {
             throw new IllegalStateException("Room " + room.getRoomNumber() + " is currently not available");
@@ -143,55 +187,141 @@ public class BookingService {
         return booking;
     }
 
-    public Booking cancelAndRefundBooking(String bookingId) {
-        Booking booking = getBookingById(bookingId);
+    /**
+     * Cancel a booking owned by the authenticated user.
+     * Zero-total/mock bookings do not have a Stripe payment record, so they
+     * are cancelled directly. Real paid bookings are refunded before the
+     * cancellation is persisted.
+     */
+    public Booking cancelBookingForUser(String bookingId, String userId) {
+        Booking booking = bookingRepository.findById(bookingId).orElse(null);
 
-        if (booking.getStatus() == Booking.BookingStatus.CANCELLED) {
-            throw new IllegalStateException("Booking is already cancelled");
+        // Some older frontend versions sent the reservation/booking code
+        // instead of the Firestore document id. Support both identifiers.
+        if (booking == null) {
+            booking = bookingRepository.findByBookingCode(bookingId).orElse(null);
         }
 
-        Payment payment = paymentRepository.findByBookingId(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "No successful payment record found for this booking"));
+        if (booking == null) {
+            throw new ResourceNotFoundException("Booking not found with ID or code: " + bookingId);
+        }
 
+        if (!java.util.Objects.equals(booking.getUserId(), userId)) {
+            throw new com.reservo.backend.exception.UnauthorizedException(
+                    "You are not allowed to cancel this booking");
+        }
+
+        if (booking.getStatus() == Booking.BookingStatus.CANCELLED) {
+            return booking;
+        }
+
+        // Persist cancellation first so a bad/legacy payment document can
+        // never prevent the customer's booking from being cancelled.
+        booking.setStatus(Booking.BookingStatus.CANCELLED);
+        Booking cancelled = bookingRepository.save(booking);
+
+        Payment payment = null;
         try {
-            stripeService.refundPayment(payment.getTransactionId(), payment.getAmount());
-            payment.setStatus(Payment.PaymentStatus.REFUNDED);
-            paymentRepository.save(payment);
+            payment = paymentRepository.findByBookingId(booking.getId()).orElse(null);
+        } catch (Exception paymentLookupError) {
+            // Legacy payment records are not required for cancellation.
+            log.warn("Could not load payment for cancelled booking {}: {}",
+                    booking.getId(), paymentLookupError.getMessage());
+        }
 
-            booking.setStatus(Booking.BookingStatus.CANCELLED);
-            booking = bookingRepository.save(booking);
+        // Refund a real Stripe payment when possible. A mock/free booking has
+        // no real charge and therefore needs no payment operation.
+        if (payment != null
+                && payment.getStatus() == Payment.PaymentStatus.SUCCESS
+                && payment.getAmount() != null
+                && payment.getAmount().compareTo(BigDecimal.ZERO) > 0
+                && !stripeService.isPlaceholderKey()
+                && payment.getTransactionId() != null
+                && !payment.getTransactionId().isBlank()
+                && !payment.getTransactionId().startsWith("ch_mock_")
+                && !payment.getTransactionId().startsWith("ch_direct_")
+                && !payment.getTransactionId().startsWith("FREE_")) {
+            try {
+                stripeService.refundPayment(payment.getTransactionId(), payment.getAmount());
+                payment.setStatus(Payment.PaymentStatus.REFUNDED);
+                paymentRepository.save(payment);
+            } catch (Exception refundError) {
+                // Cancellation remains successful. Log the refund problem so
+                // it can be handled separately without breaking the booking UI.
+                log.error("Refund failed for cancelled booking {}: {}",
+                        booking.getId(), refundError.getMessage(), refundError);
+            }
+        } else if (payment != null
+                && payment.getStatus() == Payment.PaymentStatus.SUCCESS
+                && (payment.getAmount() == null
+                    || payment.getAmount().compareTo(BigDecimal.ZERO) == 0)) {
+            try {
+                payment.setStatus(Payment.PaymentStatus.REFUNDED);
+                paymentRepository.save(payment);
+            } catch (Exception ignored) {
+                log.warn("Could not mark zero-value payment as refunded for booking {}", booking.getId());
+            }
+        }
 
+        // Restore redeemed reward points. This is also best-effort and must
+        // not turn a successful cancellation into a 500 response.
+        try {
             User user = getUser(booking.getUserId());
+            if (booking.getRewardPointsUsed() != null && booking.getRewardPointsUsed() > 0) {
+                user.setRewardPoints((user.getRewardPoints() == null ? 0 : user.getRewardPoints())
+                        + booking.getRewardPointsUsed());
+                userRepository.save(user);
+            }
+
             Resort resort = getResort(booking.getResortId());
-
-            loyaltyService.revokePoints(user, booking.getTotalAmount());
-
-            String message = "Your booking " + booking.getBookingCode() + " at " +
-                    resort.getName() + " has been cancelled successfully. Your refund amount is ₹" +
-                    payment.getAmount() + ".";
+            BigDecimal refundAmount = payment != null && payment.getAmount() != null
+                    ? payment.getAmount() : BigDecimal.ZERO;
 
             try {
                 emailService.sendBookingCancellationEmail(
                         user.getEmail(), user.getName(), booking.getBookingCode(),
-                        resort.getName(), payment.getAmount().toString());
+                        resort.getName(), refundAmount.toString());
             } catch (Exception e) {
-                log.error("Failed to send cancellation email: {}", e.getMessage());
+                log.warn("Cancellation email failed for booking {}: {}",
+                        booking.getId(), e.getMessage());
             }
 
             try {
                 notificationService.createNotification(
                         user, booking, Notification.NotificationType.BOOKING_CANCELLED,
-                        Notification.NotificationChannel.EMAIL, user.getEmail(), message);
+                        Notification.NotificationChannel.EMAIL, user.getEmail(),
+                        "Your booking " + booking.getBookingCode() + " at " +
+                                resort.getName() + " has been cancelled.");
             } catch (Exception e) {
-                log.error("Failed to create cancellation notification: {}", e.getMessage());
+                log.warn("Cancellation notification failed for booking {}: {}",
+                        booking.getId(), e.getMessage());
             }
-
-            return booking;
-        } catch (Exception e) {
-            log.error("Refund failed for booking {}: {}", bookingId, e.getMessage());
-            throw new RuntimeException("Refund processing failed: " + e.getMessage(), e);
+        } catch (Exception ancillaryError) {
+            log.warn("Ancillary cancellation processing failed for booking {}: {}",
+                    booking.getId(), ancillaryError.getMessage());
         }
+
+        return cancelled;
+    }
+
+
+    /**
+     * Backwards-compatible cancellation entry point used by the legacy
+     * /api/v1/payments/refund/{bookingId} endpoint.
+     *
+     * The authenticated BookingController uses cancelBookingForUser().
+     * This method resolves the booking owner and delegates to the same
+     * cancellation/refund workflow so there is only one source of truth.
+     */
+    public Booking cancelAndRefundBooking(String bookingId) {
+        Booking booking = bookingRepository.findById(bookingId).orElse(null);
+        if (booking == null) {
+            booking = bookingRepository.findByBookingCode(bookingId).orElse(null);
+        }
+        if (booking == null) {
+            throw new ResourceNotFoundException("Booking not found with ID or code: " + bookingId);
+        }
+        return cancelBookingForUser(booking.getId(), booking.getUserId());
     }
 
     public List<Booking> getUserBookings(String userId) {

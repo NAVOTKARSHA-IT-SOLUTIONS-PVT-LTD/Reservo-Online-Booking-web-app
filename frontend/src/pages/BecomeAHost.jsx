@@ -314,11 +314,9 @@ export default function BecomeAHost() {
         return;
       }
 
-      const role = String(currentUser.role || "").toUpperCase();
-      if (!role.includes("OWNER") && !role.includes("ADMIN")) {
-        toast("Only an owner account can submit a property.", "error");
-        return;
-      }
+      // Any authenticated customer may submit a property application.
+      // The backend stores it as PENDING_APPROVAL. Admin approval promotes
+      // the submitting user to ROLE_OWNER and publishes the property.
 
       const finalTitle = formData.title || `Luxury ${formData.category || "Villa"} in ${formData.location.city || "Goa"}`;
       const description = formData.description || `Exquisite luxury ${formData.category ? formData.category.toLowerCase() : "villa"} designed for unforgettable stays.`;

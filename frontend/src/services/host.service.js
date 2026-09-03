@@ -1,3 +1,4 @@
+import { apiClient } from "./apiClient";
 // Host Service for Reservo Web App
 
 const HOST_STORAGE_KEY = "reservo_host_data_v2";
@@ -167,12 +168,21 @@ export const hostService = {
     return data.reservations;
   },
 
-  toggleDateBlock: (listingId, dateStr) => {
+  toggleDateBlock: async (listingId, dateStr) => {
     const data = hostService.getData();
-    if (!data.blockedDates[listingId]) {
-      data.blockedDates[listingId] = [];
-    }
+    if (!data.blockedDates[listingId]) data.blockedDates[listingId] = [];
     const exists = data.blockedDates[listingId].includes(dateStr);
+    const blocked = !exists;
+
+    // Persist the block in the backend. The customer booking API also checks
+    // this collection, so a host block cannot be bypassed by the public UI.
+    const result = await apiClient.post(
+      `/api/v1/availability/block?resortId=${encodeURIComponent(listingId)}&date=${encodeURIComponent(dateStr)}&blocked=${blocked}`
+    );
+    if (!result?.success) {
+      throw new Error(result?.message || "Could not update availability.");
+    }
+
     if (exists) {
       data.blockedDates[listingId] = data.blockedDates[listingId].filter(d => d !== dateStr);
     } else {

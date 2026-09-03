@@ -7,6 +7,11 @@ import com.reservo.backend.entity.User;
 import com.reservo.backend.exception.UnauthorizedException;
 import com.reservo.backend.service.AuthService;
 import com.reservo.backend.service.BookingService;
+import com.reservo.backend.repository.UserRepository;
+import com.reservo.backend.repository.ResortRepository;
+import com.reservo.backend.repository.RoomRepository;
+import com.reservo.backend.entity.Resort;
+import com.reservo.backend.entity.Room;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +20,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/bookings")
@@ -23,6 +31,9 @@ public class BookingController {
 
     private final BookingService bookingService;
     private final AuthService authService;
+    private final UserRepository userRepository;
+    private final ResortRepository resortRepository;
+    private final RoomRepository roomRepository;
 
     private String resolveEffectiveUserId(String requestedUserId) {
         Optional<User> authUser = authService.getOptionalAuthenticatedUser();
@@ -87,7 +98,7 @@ public class BookingController {
      * requesting another owner's reservations.
      */
     @GetMapping("/owner-bookings")
-    public ResponseEntity<ApiResponse<List<Booking>>> getOwnerBookings() {
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getOwnerBookings() {
         User user = authService.getOptionalAuthenticatedUser()
                 .orElseThrow(() -> new UnauthorizedException("Authentication required"));
 
@@ -96,8 +107,72 @@ public class BookingController {
             throw new UnauthorizedException("Only property owners can access owner bookings");
         }
 
+        List<Booking> bookings = bookingService.getOwnerBookings(user.getId());
+        List<Map<String, Object>> enriched = new ArrayList<>();
+
+        for (Booking booking : bookings) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", booking.getId());
+            item.put("bookingId", booking.getId());
+            item.put("bookingCode", booking.getBookingCode());
+            item.put("userId", booking.getUserId());
+            item.put("resortId", booking.getResortId());
+            item.put("roomId", booking.getRoomId());
+            item.put("checkInDate", booking.getCheckInDate());
+            item.put("checkOutDate", booking.getCheckOutDate());
+            item.put("guestsCount", booking.getGuestsCount());
+            item.put("roomsCount", booking.getRoomsCount());
+            item.put("totalAmount", booking.getTotalAmount());
+            item.put("guestName", booking.getGuestName());
+            item.put("guestPhone", booking.getGuestPhone());
+            item.put("appliedCouponCode", booking.getAppliedCouponCode());
+            item.put("discountAmount", booking.getDiscountAmount());
+            item.put("rewardPointsUsed", booking.getRewardPointsUsed());
+            item.put("rewardPointsValue", booking.getRewardPointsValue());
+            item.put("status", booking.getStatus());
+            item.put("bookingSource", booking.getBookingSource());
+            item.put("createdAt", booking.getCreatedAt());
+
+            userRepository.findById(booking.getUserId()).ifPresent(guest -> {
+                item.put("guestName", booking.getGuestName() != null && !booking.getGuestName().isBlank()
+                        ? booking.getGuestName() : guest.getName());
+                item.put("guestEmail", guest.getEmail());
+                item.put("guestPhone", booking.getGuestPhone() != null && !booking.getGuestPhone().isBlank()
+                        ? booking.getGuestPhone() : guest.getPhone());
+                item.put("guestCountry", "India");
+                item.put("guestAvatar", guest.getAvatarUrl());
+            });
+
+            resortRepository.findById(booking.getResortId()).ifPresent(resort -> {
+                item.put("resortName", resort.getName());
+                item.put("resortLocation", resort.getLocation());
+                item.put("resortImage", resort.getImageUrl());
+            });
+
+            roomRepository.findById(booking.getRoomId()).ifPresent(room -> {
+                item.put("roomType", room.getRoomType());
+                item.put("roomNumber", room.getRoomNumber());
+            });
+
+            enriched.add(item);
+        }
+
         return ResponseEntity.ok(
-                ApiResponse.success(bookingService.getOwnerBookings(user.getId()))
+                ApiResponse.success(enriched, "Owner bookings retrieved successfully")
+        );
+    }
+
+    @PatchMapping("/{bookingId}/cancel")
+    public ResponseEntity<ApiResponse<Booking>> cancelBooking(
+            @PathVariable String bookingId) {
+
+        User user = authService.getOptionalAuthenticatedUser()
+                .orElseThrow(() -> new UnauthorizedException("Authentication required"));
+
+        Booking cancelled = bookingService.cancelBookingForUser(bookingId, user.getId());
+
+        return ResponseEntity.ok(
+                ApiResponse.success(cancelled, "Booking cancelled successfully")
         );
     }
 

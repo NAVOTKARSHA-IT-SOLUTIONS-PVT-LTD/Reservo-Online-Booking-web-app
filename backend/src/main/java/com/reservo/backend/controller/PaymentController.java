@@ -76,19 +76,24 @@ public class PaymentController {
             User user = resolveEffectiveUser(userId);
             String effectiveUserId = user.getId();
 
+            // Never trust the amount calculated by the browser. Recalculate the
+            // canonical pre-discount price from the Firestore resort + dates.
+            BigDecimal calculatedAmount = bookingService.calculateBaseBookingAmount(
+                    resortId, roomId, LocalDate.parse(checkIn), LocalDate.parse(checkOut));
+
             // KYC validation rule: > ₹50,000 amount requires verified status
-            if (amount.compareTo(BigDecimal.valueOf(50000)) > 0 && user.getKycStatus() != User.KycStatus.VERIFIED) {
+            if (calculatedAmount.compareTo(BigDecimal.valueOf(50000)) > 0 && user.getKycStatus() != User.KycStatus.VERIFIED) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(ApiResponse.error("Identity verification (KYC) required for bookings over ₹50,000.", 400));
             }
 
             BigDecimal discountAmount = BigDecimal.ZERO;
             if (couponCode != null && !couponCode.trim().isEmpty()) {
-                Coupon coupon = couponService.getAndValidateCoupon(couponCode.trim(), effectiveUserId, resortId, amount);
+                Coupon coupon = couponService.getAndValidateCoupon(couponCode.trim(), effectiveUserId, resortId, calculatedAmount);
                 if (coupon.getDiscountType() == Coupon.DiscountType.PERCENTAGE) {
-                    discountAmount = amount.multiply(coupon.getDiscountValue().divide(BigDecimal.valueOf(100)));
+                    discountAmount = calculatedAmount.multiply(coupon.getDiscountValue().divide(BigDecimal.valueOf(100)));
                 } else {
-                    discountAmount = coupon.getDiscountValue().min(amount);
+                    discountAmount = coupon.getDiscountValue().min(calculatedAmount);
                 }
                 log.info("Applied coupon {} for discount: {}", couponCode, discountAmount);
             }
@@ -100,7 +105,7 @@ public class PaymentController {
                     throw new IllegalArgumentException("Insufficient points balance.");
                 }
                 BigDecimal pointsValue = BigDecimal.valueOf(pointsToRedeem).divide(BigDecimal.valueOf(10), 2, java.math.RoundingMode.HALF_UP);
-                BigDecimal remainingAmount = amount.subtract(discountAmount);
+                BigDecimal remainingAmount = calculatedAmount.subtract(discountAmount);
                 BigDecimal maxPointsValueAllowed = remainingAmount.multiply(BigDecimal.valueOf(0.5));
                 if (pointsValue.compareTo(maxPointsValueAllowed) > 0) {
                     pointsValue = maxPointsValueAllowed;
@@ -112,7 +117,7 @@ public class PaymentController {
                 log.info("Applied reward points discount: {} (Redeemed: {} points)", pointsDiscount, redeemedPoints);
             }
 
-            BigDecimal finalAmount = amount.subtract(discountAmount).subtract(pointsDiscount).max(BigDecimal.ZERO);
+            BigDecimal finalAmount = calculatedAmount.subtract(discountAmount).subtract(pointsDiscount).max(BigDecimal.ZERO);
 
             // Create pending booking
             Booking booking = bookingService.createBooking(

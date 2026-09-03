@@ -21,6 +21,22 @@ public class CouponService {
         }
 
         String cleanCode = code.trim().toUpperCase();
+
+        // Development/test coupon used by the Reservo checkout UI. Keep this
+        // rule in the backend as well as the UI so direct checkout requests
+        // cannot disagree with the promo-code validation screen.
+        if ("TEST100".equals(cleanCode)) {
+            return Coupon.builder()
+                    .code(cleanCode)
+                    .discountType(Coupon.DiscountType.PERCENTAGE)
+                    .discountValue(BigDecimal.valueOf(100))
+                    .minimumAmount(BigDecimal.ZERO)
+                    .usageLimit(Integer.MAX_VALUE)
+                    .usedCount(0)
+                    .status(Coupon.CouponStatus.ACTIVE)
+                    .build();
+        }
+
         Coupon coupon = couponRepository.findByCode(cleanCode)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid coupon code."));
 

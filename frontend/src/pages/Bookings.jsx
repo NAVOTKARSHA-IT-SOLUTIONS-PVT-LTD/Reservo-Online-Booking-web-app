@@ -36,8 +36,10 @@ export default function Bookings() {
   const handleCancel = async (id) => {
     if (window.confirm("Are you sure you want to cancel this booking?")) {
       try {
-        await bookingService.cancelBooking(id);
-        setBookings(prev => prev.filter(b => b.id !== id));
+        const result = await bookingService.cancelBooking(id);
+        alert(result?.message || "Booking canceled successfully. Refund initiated.");
+        // Re-read from Firestore so the UI cannot keep stale local booking data.
+        await fetchBookings();
       } catch (err) {
         alert(err.message || "Could not cancel booking.");
       }

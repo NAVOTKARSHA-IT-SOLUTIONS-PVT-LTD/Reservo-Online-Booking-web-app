@@ -109,6 +109,7 @@ function Hero() {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
   const [showCalendarDropdown, setShowCalendarDropdown] = useState(false);
+  const [calendarSelectionMode, setCalendarSelectionMode] = useState("checkIn");
   const [locationSearch, setLocationSearch] = useState("");
 
   // Refs for outside-click detection
@@ -206,8 +207,8 @@ function Hero() {
     
     const searchPayload = {
       location,
-      checkInDate: checkInDate || "2026-05-12",
-      checkOutDate: checkOutDate || "2026-05-15",
+      checkInDate: checkInDate || new Date(Date.now() + 86400000).toISOString().split("T")[0],
+      checkOutDate: checkOutDate || new Date(Date.now() + 4 * 86400000).toISOString().split("T")[0],
       checkIn,
       checkOut,
       guestCount,
@@ -553,7 +554,7 @@ function Hero() {
             
             {/* Check In */}
             <div 
-              onClick={() => { setShowCalendarDropdown(true); setShowLocationDropdown(false); setShowGuestsDropdown(false); }}
+              onClick={() => { setCalendarSelectionMode("checkIn"); setShowCalendarDropdown(true); setShowLocationDropdown(false); setShowGuestsDropdown(false); }}
               className="flex-1 flex items-center gap-3 px-6 py-2 md:py-0 cursor-pointer group"
             >
               <Calendar size={20} className={`transition-colors ${showCalendarDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
@@ -568,7 +569,7 @@ function Hero() {
 
             {/* Check Out */}
             <div 
-              onClick={() => { setShowCalendarDropdown(true); setShowLocationDropdown(false); setShowGuestsDropdown(false); }}
+              onClick={() => { setCalendarSelectionMode("checkOut"); setShowCalendarDropdown(true); setShowLocationDropdown(false); setShowGuestsDropdown(false); }}
               className="flex-1 flex items-center gap-3 px-6 py-2 md:py-0 cursor-pointer group"
             >
               <Calendar size={20} className={`transition-colors ${showCalendarDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
@@ -587,6 +588,7 @@ function Hero() {
                 <CustomCalendar
                   checkInDate={checkInDate}
                   checkOutDate={checkOutDate}
+                  selectionMode={calendarSelectionMode}
                   onDateChange={(ci, co) => {
                     setCheckInDate(ci);
                     setCheckOutDate(co);

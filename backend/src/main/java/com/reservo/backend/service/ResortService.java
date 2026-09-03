@@ -163,10 +163,19 @@ public class ResortService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User not found for authenticated account: " + email));
 
-        // The authenticated account is always the owner of the submitted property.
+        // Any authenticated user may submit a property application. The
+        // submitting user's id becomes the eventual owner of the property.
+        // Admin approval below will promote a customer account to OWNER.
         resort.setOwnerId(user.getId());
 
-        // NEVER publish directly from the owner submission endpoint.
+        if (user.getRole() == User.Role.ROLE_CUSTOMER
+                && user.getKycStatus() != User.KycStatus.PENDING_VERIFICATION
+                && user.getKycStatus() != User.KycStatus.VERIFIED) {
+            user.setKycStatus(User.KycStatus.PENDING_VERIFICATION);
+            userRepository.save(user);
+        }
+
+        // NEVER publish directly from the user submission endpoint.
         // Every property must be reviewed by an Admin first.
         resort.setStatus(Resort.ResortStatus.PENDING_APPROVAL);
 

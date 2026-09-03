@@ -4,6 +4,7 @@ import com.reservo.backend.entity.Booking;
 import com.reservo.backend.entity.Room;
 import com.reservo.backend.repository.BookingRepository;
 import com.reservo.backend.repository.RoomRepository;
+import com.reservo.backend.repository.AvailabilityBlockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +18,26 @@ import java.util.stream.Collectors;
 public class AvailabilityService {
     private final RoomRepository roomRepository;
     private final BookingRepository bookingRepository;
+    private final RoomService roomService;
+    private final AvailabilityBlockRepository availabilityBlockRepository;
 
     public List<Room> checkAvailability(String resortId, LocalDate checkIn, LocalDate checkOut) {
-        List<Room> allRooms = roomRepository.findByResortId(resortId);
+        // Use the same room-loading path as the booking flow so legacy/demo
+        // resorts without a room document are provisioned with one default
+        // AVAILABLE room instead of appearing unavailable.
+        List<Room> allRooms = roomService.getRoomsByResort(resortId);
+        if (checkIn == null || checkOut == null || !checkIn.isBefore(checkOut)) {
+            throw new IllegalArgumentException("Check-in must be before check-out");
+        }
+
+        // A host block makes every room in the property unavailable for the
+        // affected night(s). Check every night in the requested stay.
+        for (LocalDate date = checkIn; date.isBefore(checkOut); date = date.plusDays(1)) {
+            if (availabilityBlockRepository.isBlocked(resortId, date)) {
+                return List.of();
+            }
+        }
+
         List<Booking> overlapping = bookingRepository.findOverlappingBookings(resortId, checkIn, checkOut);
 
         Set<String> occupiedRoomIds = overlapping.stream()
@@ -31,5 +49,14 @@ public class AvailabilityService {
                 .filter(r -> !occupiedRoomIds.contains(r.getId()))
                 .filter(r -> r.getStatus() == Room.RoomStatus.AVAILABLE)
                 .toList();
+    }
+
+    public void setDateBlocked(String resortId, LocalDate date, boolean blocked) {
+        if (blocked) availabilityBlockRepository.block(resortId, date);
+        else availabilityBlockRepository.unblock(resortId, date);
+    }
+
+    public boolean isDateBlocked(String resortId, LocalDate date) {
+        return availabilityBlockRepository.isBlocked(resortId, date);
     }
 }
