@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useWishlist } from "../context/WishlistContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon } from "lucide-react";
@@ -26,16 +26,41 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
     }
   };
 
+  const calendarRef = useRef(null);
+  const guestPickerRef = useRef(null);
+
+  const getTodayStr = () => new Date().toISOString().split("T")[0];
+
+  const getFutureDateStr = (baseDateStr, addDays = 3) => {
+    try {
+      const d = baseDateStr ? new Date(baseDateStr + "T00:00:00") : new Date();
+      d.setDate(d.getDate() + addDays);
+      return d.toISOString().split("T")[0];
+    } catch (e) {
+      const d = new Date();
+      d.setDate(d.getDate() + addDays);
+      return d.toISOString().split("T")[0];
+    }
+  };
+
   // Retrieve saved search state from location or sessionStorage
   const getSearchState = () => {
     try {
+      const todayStr = getTodayStr();
       if (locationState?.state?.guestsLabel || locationState?.state?.checkInDate) {
-        return locationState.state;
+        const state = { ...locationState.state };
+        if (!state.checkInDate || state.checkInDate < todayStr) {
+          state.checkInDate = todayStr;
+          state.checkOutDate = getFutureDateStr(todayStr, 3);
+        }
+        return state;
       }
       if (locationState?.state?.guests || locationState?.state?.checkIn) {
+        const cIn = (locationState.state.checkInDate && locationState.state.checkInDate >= todayStr) ? locationState.state.checkInDate : todayStr;
+        const cOut = (locationState.state.checkOutDate && locationState.state.checkOutDate > cIn) ? locationState.state.checkOutDate : getFutureDateStr(cIn, 3);
         return {
-          checkInDate: locationState.state.checkInDate || "2026-05-12",
-          checkOutDate: locationState.state.checkOutDate || "2026-05-15",
+          checkInDate: cIn,
+          checkOutDate: cOut,
           guestsLabel: locationState.state.guests || "2 Guests, 1 Room",
           guestCount: locationState.state.guestCount || 2,
           childCount: locationState.state.childCount || 0,
@@ -43,16 +68,51 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
         };
       }
       const saved = sessionStorage.getItem("reservo_search_state");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.checkInDate && parsed.checkInDate < todayStr) {
+          parsed.checkInDate = todayStr;
+          parsed.checkOutDate = getFutureDateStr(todayStr, 3);
+        }
+        return parsed;
+      }
     } catch (e) {}
     return null;
   };
 
   const initialSearch = getSearchState();
 
-  const [checkIn, setCheckIn] = useState(() => initialSearch?.checkInDate || "2026-05-12");
-  const [checkOut, setCheckOut] = useState(() => initialSearch?.checkOutDate || "2026-05-15");
+  const [checkIn, setCheckIn] = useState(() => {
+    const todayStr = getTodayStr();
+    if (initialSearch?.checkInDate && initialSearch.checkInDate >= todayStr) {
+      return initialSearch.checkInDate;
+    }
+    return todayStr;
+  });
+
+  const [checkOut, setCheckOut] = useState(() => {
+    const todayStr = getTodayStr();
+    const cIn = (initialSearch?.checkInDate && initialSearch.checkInDate >= todayStr) ? initialSearch.checkInDate : todayStr;
+    if (initialSearch?.checkOutDate && initialSearch.checkOutDate > cIn) {
+      return initialSearch.checkOutDate;
+    }
+    return getFutureDateStr(cIn, 3);
+  });
   const [showCalendarPopover, setShowCalendarPopover] = useState(false);
+  const [activeDateField, setActiveDateField] = useState("checkIn");
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+        setShowCalendarPopover(false);
+      }
+      if (guestPickerRef.current && !guestPickerRef.current.contains(event.target)) {
+        setShowGuestPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const formatDisplayDate = (dateStr) => {
     if (!dateStr) return "Select Date";
@@ -256,11 +316,11 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
           
           {/* Main Hero Card */}
           <div 
-            className="relative rounded-[32px] overflow-hidden min-h-[480px] flex flex-col justify-between p-6 sm:p-8 bg-cover bg-center shadow-lg border border-border-color transition-all duration-500"
+            className="relative rounded-[32px] overflow-hidden min-h-[360px] sm:min-h-[440px] flex flex-col justify-between p-6 sm:p-8 bg-cover bg-center shadow-lg border border-border-color transition-all duration-500"
             style={{ backgroundImage: `url(${activePhoto || resort.heroImage || (finalGallery && finalGallery[0]) || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"})` }}
           >
-            {/* Dark Overlay for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20 z-0"></div>
+            {/* Subtle Gradient at top for button visibility */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent z-0"></div>
 
             {/* Top Bar (Back & Action Buttons) */}
             <div className="relative z-10 flex justify-between items-center w-full">
@@ -300,67 +360,6 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                 </button>
               </div>
             </div>
-
-            {/* Bottom Info Specs */}
-            <div className="relative z-10 space-y-4 text-white mt-auto">
-              
-              {/* Rating area */}
-              <div className="flex items-center gap-3">
-                <div 
-                  onClick={() => setShowRateModal(true)}
-                  className="bg-primary/95 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-xl flex items-center gap-1 font-bold text-sm shadow-md border border-white/10 cursor-pointer hover:scale-105 transition"
-                >
-                  <Star size={14} className="fill-yellow-400 text-yellow-400" /> {currentRating}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold">Excellent</span>
-                  <span className="text-[10px] text-white/80">{reviewsCount} reviews</span>
-                </div>
-              </div>
-
-              {/* Title */}
-              <h1 className="text-3xl sm:text-5xl font-extrabold font-serif tracking-tight text-white leading-tight">
-                {resort.name}
-              </h1>
-
-              {/* Location & Tag */}
-              <div className="flex flex-wrap items-center gap-2.5">
-                <div className="flex items-center gap-1 text-xs font-medium text-white/90">
-                  <MapPin size={14} className="text-primary" /> {resort.location}
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/20 backdrop-blur-md text-white border border-primary/30 px-3 py-1 rounded-full">
-                  {resort.categoryLabel || "Beachfront Resort"}
-                </span>
-              </div>
-
-              {/* Description */}
-              <p className="text-white/85 text-xs sm:text-sm leading-relaxed max-w-[620px]">
-                {resort.description || "Experience the perfect blend of luxury and nature. Relax by the beach, indulge in world-class amenities, and create unforgettable memories."}
-              </p>
-
-              {/* Amenities horizontal list */}
-              <div className="flex flex-wrap items-center gap-y-3 gap-x-5 pt-2 border-t border-white/10 text-white/90">
-                <div className="flex items-center gap-1.5 text-xs font-medium">
-                  <Waves size={14} className="text-primary" /> Beachfront
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-medium">
-                  <Waves size={14} className="text-primary" /> Pool
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-medium">
-                  <Sparkles size={14} className="text-primary" /> Spa
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-medium">
-                  <Wifi size={14} className="text-primary" /> Free Wi-Fi
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-medium">
-                  <Utensils size={14} className="text-primary" /> Restaurant
-                </div>
-                <span className="text-[10px] font-bold bg-white/10 border border-white/20 px-2 py-0.5 rounded-full">
-                  +12 more
-                </span>
-              </div>
-
-            </div>
           </div>
 
           {/* Gallery Thumbnails row */}
@@ -397,6 +396,67 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             ))}
           </div>
 
+          {/* Resort Header & Details Section (Moved Below Gallery) */}
+          <div className="space-y-4 text-left pt-2">
+            
+            {/* Rating area */}
+            <div className="flex items-center gap-3">
+              <div 
+                onClick={() => setShowRateModal(true)}
+                className="bg-primary text-white px-3 py-1.5 rounded-xl flex items-center gap-1 font-bold text-xs shadow-sm cursor-pointer hover:scale-105 transition"
+              >
+                <Star size={14} className="fill-yellow-400 text-yellow-400" /> {currentRating}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-text-dark">Excellent</span>
+                <span className="text-[10px] text-text-gray font-medium">{reviewsCount} reviews</span>
+              </div>
+            </div>
+
+            {/* Title */}
+            <h1 className="text-3xl sm:text-4xl font-extrabold font-serif tracking-tight text-text-dark leading-tight">
+              {resort.name}
+            </h1>
+
+            {/* Location & Tag */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-1 text-xs font-semibold text-text-gray">
+                <MapPin size={14} className="text-primary" /> {resort.location}
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full">
+                {resort.categoryLabel || "Beachfront Resort"}
+              </span>
+            </div>
+
+            {/* Description */}
+            <p className="text-text-gray text-xs sm:text-sm leading-relaxed max-w-[680px]">
+              {resort.description || "Experience the perfect blend of luxury and nature. Relax by the beach, indulge in world-class amenities, and create unforgettable memories."}
+            </p>
+
+            {/* Amenities horizontal list */}
+            <div className="flex flex-wrap items-center gap-y-2 gap-x-5 pt-3 border-t border-border-color text-text-dark">
+              <div className="flex items-center gap-1.5 text-xs font-semibold">
+                <Waves size={14} className="text-primary" /> Beachfront
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold">
+                <Waves size={14} className="text-primary" /> Pool
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold">
+                <Sparkles size={14} className="text-primary" /> Spa
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold">
+                <Wifi size={14} className="text-primary" /> Free Wi-Fi
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold">
+                <Utensils size={14} className="text-primary" /> Restaurant
+              </div>
+              <span className="text-[10px] font-bold bg-bg-light border border-border-color px-2.5 py-0.5 rounded-full text-text-gray">
+                +12 more
+              </span>
+            </div>
+
+          </div>
+
           {/* Tabs bar */}
           <div className="flex border-b border-border-color gap-6 mt-6 shrink-0 overflow-x-auto pb-1 text-left">
             {[
@@ -422,10 +482,6 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
           <div className="mt-4">
             {activeDetailTab === "overview" && (
               <div className="space-y-4 text-left animate-in fade-in duration-200">
-                <p className="text-text-dark text-xs sm:text-sm leading-relaxed">
-                  {resort.description || "Experience the perfect blend of luxury and nature. Relax by the beach, indulge in world-class amenities, and create unforgettable memories."}
-                </p>
-                
                 {/* Amenities list */}
                 <h4 className="text-xs font-bold uppercase text-text-dark tracking-wide pt-2">Featured Amenities</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -525,17 +581,24 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             </div>
 
             {/* Date Pickers - Custom Stylish Calendar */}
-            <div className="grid grid-cols-2 gap-3.5 relative">
+            <div className="grid grid-cols-2 gap-3.5 relative" ref={calendarRef}>
               
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Check-in</label>
                 <button 
                   type="button"
                   onClick={() => {
-                    setShowCalendarPopover(!showCalendarPopover);
-                    setShowGuestPicker(false);
+                    if (showCalendarPopover && activeDateField === "checkIn") {
+                      setShowCalendarPopover(false);
+                    } else {
+                      setActiveDateField("checkIn");
+                      setShowCalendarPopover(true);
+                      setShowGuestPicker(false);
+                    }
                   }}
-                  className="w-full border border-border-color rounded-xl px-3 py-2.5 text-xs font-bold bg-bg-light text-text-dark focus:border-primary outline-none transition-colors text-left flex items-center justify-between cursor-pointer shadow-xs"
+                  className={`w-full border rounded-xl px-3 py-2.5 text-xs font-bold bg-bg-light text-text-dark outline-none transition-colors text-left flex items-center justify-between cursor-pointer shadow-xs ${
+                    showCalendarPopover && activeDateField === "checkIn" ? "border-primary ring-2 ring-primary/20" : "border-border-color focus:border-primary"
+                  }`}
                 >
                   <span>{formatDisplayDate(checkIn)}</span>
                   <CalendarIcon size={14} className="text-primary" />
@@ -547,10 +610,17 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                 <button 
                   type="button"
                   onClick={() => {
-                    setShowCalendarPopover(!showCalendarPopover);
-                    setShowGuestPicker(false);
+                    if (showCalendarPopover && activeDateField === "checkOut") {
+                      setShowCalendarPopover(false);
+                    } else {
+                      setActiveDateField("checkOut");
+                      setShowCalendarPopover(true);
+                      setShowGuestPicker(false);
+                    }
                   }}
-                  className="w-full border border-border-color rounded-xl px-3 py-2.5 text-xs font-bold bg-bg-light text-text-dark focus:border-primary outline-none transition-colors text-left flex items-center justify-between cursor-pointer shadow-xs"
+                  className={`w-full border rounded-xl px-3 py-2.5 text-xs font-bold bg-bg-light text-text-dark outline-none transition-colors text-left flex items-center justify-between cursor-pointer shadow-xs ${
+                    showCalendarPopover && activeDateField === "checkOut" ? "border-primary ring-2 ring-primary/20" : "border-border-color focus:border-primary"
+                  }`}
                 >
                   <span>{formatDisplayDate(checkOut)}</span>
                   <CalendarIcon size={14} className="text-primary" />
@@ -563,17 +633,21 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                   <CustomCalendar
                     checkInDate={checkIn}
                     checkOutDate={checkOut}
+                    activeField={activeDateField}
+                    onActiveFieldChange={(field) => setActiveDateField(field)}
                     isDarkMode={isDarkMode}
-                    onDateChange={(start, end) => {
-                      if (start) setCheckIn(start);
-                      if (end) {
-                        setCheckOut(end);
+                    onDateChange={(start, end, nextField) => {
+                      setCheckIn(start || "");
+                      setCheckOut(end || "");
+                      if (nextField === "done" || (start && end)) {
                         setShowCalendarPopover(false);
                       }
                     }}
                   />
                   <div className="flex justify-between items-center px-3 pb-2 pt-1 border-t border-border-color/60 mt-1">
-                    <span className="text-[10px] font-bold text-text-gray">Select Check-in then Check-out</span>
+                    <span className="text-[10px] font-bold text-text-gray">
+                      {activeDateField === "checkIn" ? "Selecting Check-in date" : "Selecting Check-out date"}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setShowCalendarPopover(false)}
@@ -588,7 +662,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             </div>
 
             {/* Guests & Rooms Interactive Modifier Card */}
-            <div className="flex flex-col gap-1.5 relative">
+            <div className="flex flex-col gap-1.5 relative" ref={guestPickerRef}>
               <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Guests & Rooms</label>
               <button
                 type="button"

@@ -44,61 +44,22 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
     };
   }, []);
 
-  // Search Stays Modal states
+  // Search Stays Modal states (Image 2 design)
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [searchLocation, setSearchLocation] = useState("");
-  const [searchLocationQuery, setSearchLocationQuery] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
-  const [guestCount, setGuestCount] = useState(2);
-  const [childCount, setChildCount] = useState(0);
-  const [roomCount, setRoomCount] = useState(1);
+  const [showCalendar, setShowCalendar] = useState(false);
 
-  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
-  const [showCalendarDropdown, setShowCalendarDropdown] = useState(false);
-  const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
-
-  const searchLocationRef = useRef(null);
-  const searchCalendarRef = useRef(null);
-  const searchGuestsRef = useRef(null);
-
-  const DESTINATIONS_LIST = [
-    { group: "🏖️ Beach", places: ["Goa", "Kovalam", "Andaman Islands", "Gokarna", "Pondicherry", "Lakshadweep"] },
-    { group: "🏔️ Mountain", places: ["Manali", "Shimla", "Mussoorie", "Darjeeling", "Munnar", "Nainital", "Srinagar"] },
-    { group: "🏛️ Heritage & Culture", places: ["Udaipur", "Jaipur", "Varanasi", "Jodhpur", "Mysuru"] },
-    { group: "🌴 Backwaters & Nature", places: ["Alleppey", "Coorg", "Ooty", "Wayanad", "Meghalaya", "Rishikesh"] }
-  ];
-
-  const handlePerformSearch = () => {
+  const handleExecuteSearch = (queryStr) => {
     setShowSearchModal(false);
-    setShowLocationDropdown(false);
-    setShowCalendarDropdown(false);
-    setShowGuestsDropdown(false);
-
+    setShowCalendar(false);
     const queryParams = new URLSearchParams();
-    if (searchLocation) queryParams.set("destination", searchLocation);
+    if (queryStr) queryParams.set("destination", queryStr);
     if (checkInDate) queryParams.set("checkIn", checkInDate);
     if (checkOutDate) queryParams.set("checkOut", checkOutDate);
-    if (guestCount) queryParams.set("guests", String(guestCount));
-
     navigate(`/search?${queryParams.toString()}`);
   };
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (searchLocationRef.current && !searchLocationRef.current.contains(e.target)) {
-        setShowLocationDropdown(false);
-      }
-      if (searchGuestsRef.current && !searchGuestsRef.current.contains(e.target)) {
-        setShowGuestsDropdown(false);
-      }
-      if (searchCalendarRef.current && !searchCalendarRef.current.contains(e.target)) {
-        setShowCalendarDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const clickOutside = (e) => {
@@ -492,7 +453,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
         </ul>
       </div>
 
-      {/* Search Stays Pill Modal (Matching Image 2) */}
+      {/* Search Stays Modal Overlay (Matching Image 2) */}
       <AnimatePresence>
         {showSearchModal && (
           <motion.div
@@ -502,259 +463,133 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
             className="fixed inset-0 bg-black/65 backdrop-blur-md z-[10005] flex items-center justify-center p-4 pointer-events-auto"
             onClick={() => {
               setShowSearchModal(false);
-              setShowLocationDropdown(false);
-              setShowCalendarDropdown(false);
-              setShowGuestsDropdown(false);
+              setSearchText("");
             }}
           >
             <motion.div
-              initial={{ scale: 0.92, opacity: 0, y: 20 }}
+              initial={{ scale: 0.94, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.92, opacity: 0, y: 20 }}
+              exit={{ scale: 0.94, opacity: 0, y: 20 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="bg-bg-white border border-border-color rounded-3xl p-6 sm:p-8 shadow-2xl max-w-[1100px] w-full relative space-y-6 text-left font-sans"
+              className="bg-blue-50/90 dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-7 shadow-2xl max-w-2xl w-full relative space-y-4 text-left font-sans"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header Bar */}
-              <div className="flex items-center justify-between border-b border-border-color pb-4">
-                <div>
-                  <h3 className="text-xl font-bold font-serif text-text-dark flex items-center gap-2">
-                    <Search className="w-5 h-5 text-primary" /> Search Luxury Stays
-                  </h3>
-                  <p className="text-xs text-text-gray font-medium mt-0.5">
-                    Select destination, dates, and guests to explore exclusive resorts
-                  </p>
+              {/* Top Bar Header (Image 2 style with interactive Calendar) */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+                    <Search size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold font-serif text-text-dark leading-tight">
+                      {searchText.trim() ? `Search results for "${searchText}"` : 'Search results'}
+                    </h3>
+                    <div className="mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowCalendar(!showCalendar)}
+                        className="text-xs font-semibold text-text-dark hover:text-primary flex items-center gap-1.5 bg-white dark:bg-slate-800 hover:bg-gray-50 border border-border-color px-2.5 py-1 rounded-xl cursor-pointer transition-all shadow-2xs"
+                      >
+                        <Calendar size={13} className="text-primary" />
+                        <span>
+                          {checkInDate && checkOutDate 
+                            ? `${checkInDate} → ${checkOutDate}` 
+                            : checkInDate 
+                              ? `${checkInDate} → Select Date` 
+                              : "Select Date → Select Date"}
+                        </span>
+                        <ChevronDown size={12} className={`transition-transform text-text-gray ${showCalendar ? 'rotate-180' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Top Right Action Button: Clear Search / Close */}
                 <button
                   type="button"
                   onClick={() => {
-                    setShowSearchModal(false);
-                    setShowLocationDropdown(false);
-                    setShowCalendarDropdown(false);
-                    setShowGuestsDropdown(false);
+                    if (searchText.trim() || checkInDate || checkOutDate) {
+                      setSearchText("");
+                      setCheckInDate("");
+                      setCheckOutDate("");
+                      setShowCalendar(false);
+                    } else {
+                      setShowSearchModal(false);
+                    }
                   }}
-                  className="bg-bg-light hover:bg-slate-200 dark:hover:bg-slate-800 text-text-gray hover:text-text-dark border-none cursor-pointer p-2 rounded-full transition-colors"
+                  className="bg-white dark:bg-slate-800 border border-border-color shadow-xs hover:bg-gray-50 dark:hover:bg-slate-700 text-text-dark px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
                 >
-                  <X size={20} />
+                  <X size={14} />
+                  <span>{(searchText.trim() || checkInDate || checkOutDate) ? "Clear Search" : "Close"}</span>
                 </button>
               </div>
 
-              {/* Search Pill Bar (Matching Image 2) */}
-              <div className="bg-bg-light border border-border-color rounded-3xl md:rounded-full p-3 shadow-md flex flex-col md:flex-row items-center justify-between gap-3">
-                <div className="flex-1 flex flex-col md:flex-row items-center w-full divide-y md:divide-y-0 md:divide-x divide-border-color relative">
-                  
-                  {/* 1. WHERE TO? */}
-                  <div className="flex-1 relative w-full" ref={searchLocationRef}>
-                    <div
-                      onClick={() => {
-                        setShowLocationDropdown(!showLocationDropdown);
-                        setShowCalendarDropdown(false);
-                        setShowGuestsDropdown(false);
-                      }}
-                      className="flex items-center gap-3 px-5 py-3 md:py-1 cursor-pointer group"
-                    >
-                      <MapPin size={20} className={`shrink-0 transition-colors ${showLocationDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
-                      <div className="flex flex-col text-left">
-                        <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-0.5">WHERE TO?</label>
-                        <span className="text-[14px] font-extrabold text-text-dark line-clamp-1">
-                          {searchLocation || "Select Destination"}
-                        </span>
-                        <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                          {searchLocation ? "Selected" : "All Destinations"} <ChevronDown size={12} className={`transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} />
-                        </span>
-                      </div>
+              {/* Interactive Calendar Popover (Matching Home Page Hero Calendar) */}
+              <AnimatePresence>
+                {showCalendar && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="bg-white dark:bg-slate-800 border border-border-color rounded-2xl p-4 shadow-xl space-y-3 z-50"
+                  >
+                    <div className="flex items-center justify-between border-b border-border-color pb-2">
+                      <span className="text-xs font-bold text-text-dark flex items-center gap-1.5">
+                        <Calendar size={14} className="text-primary" /> Select Stay Dates
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowCalendar(false)}
+                        className="text-xs font-bold text-primary hover:text-primary-dark border-none bg-transparent cursor-pointer"
+                      >
+                        Done ✓
+                      </button>
                     </div>
-
-                    {/* Location Dropdown */}
-                    {showLocationDropdown && (
-                      <div className="absolute top-full left-0 w-full md:w-[320px] mt-3 bg-bg-white rounded-2xl shadow-2xl border border-border-color overflow-hidden z-50 p-2 space-y-2">
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bg-light border border-border-color">
-                          <Search size={14} className="text-gray-400" />
-                          <input
-                            type="text"
-                            value={searchLocationQuery}
-                            onChange={(e) => setSearchLocationQuery(e.target.value)}
-                            placeholder="Type a city or resort..."
-                            className="w-full text-xs font-semibold bg-transparent outline-none text-text-dark"
-                            autoFocus
-                          />
-                        </div>
-                        <div className="max-h-[220px] overflow-y-auto space-y-1">
-                          {DESTINATIONS_LIST.map((group, idx) => (
-                            <div key={idx} className="text-left">
-                              <div className="text-[10px] uppercase font-bold text-text-gray px-3 py-1 bg-bg-light rounded-md">
-                                {group.group}
-                              </div>
-                              {group.places
-                                .filter((p) => !searchLocationQuery.trim() || p.toLowerCase().includes(searchLocationQuery.toLowerCase()))
-                                .map((place) => (
-                                  <button
-                                    key={place}
-                                    onClick={() => {
-                                      setSearchLocation(place);
-                                      setShowLocationDropdown(false);
-                                      setSearchLocationQuery("");
-                                    }}
-                                    className="w-full text-left px-3 py-1.5 rounded-lg text-xs font-semibold text-text-dark hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-between border-none cursor-pointer bg-transparent"
-                                  >
-                                    <span>{place}</span>
-                                    {searchLocation === place && <Check size={14} className="text-primary" />}
-                                  </button>
-                                ))}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 2. CHECK IN */}
-                  <div className="flex-1 relative w-full" ref={searchCalendarRef}>
-                    <div
-                      onClick={() => {
-                        setShowCalendarDropdown(!showCalendarDropdown);
-                        setShowLocationDropdown(false);
-                        setShowGuestsDropdown(false);
-                      }}
-                      className="flex items-center gap-3 px-5 py-3 md:py-1 cursor-pointer group"
-                    >
-                      <Calendar size={20} className={`shrink-0 transition-colors ${showCalendarDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
-                      <div className="flex flex-col text-left">
-                        <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-0.5">CHECK IN</label>
-                        <span className="text-[14px] font-extrabold text-text-dark">
-                          {checkInDate ? checkInDate : "Select Date"}
-                        </span>
-                        <span className="text-[11px] text-gray-400">{checkInDate ? "Check-in Date" : "Select date"}</span>
-                      </div>
+                    <div className="flex justify-center">
+                      <CustomCalendar
+                        checkInDate={checkInDate}
+                        checkOutDate={checkOutDate}
+                        onDateChange={(ci, co) => {
+                          setCheckInDate(ci);
+                          setCheckOutDate(co);
+                          if (ci && co) {
+                            setTimeout(() => setShowCalendar(false), 300);
+                          }
+                        }}
+                        isDarkMode={isDark}
+                      />
                     </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                    {showCalendarDropdown && (
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-bg-white rounded-2xl shadow-2xl border border-border-color overflow-hidden z-50 p-2">
-                        <CustomCalendar
-                          checkInDate={checkInDate}
-                          checkOutDate={checkOutDate}
-                          onDateChange={(ci, co) => {
-                            setCheckInDate(ci);
-                            setCheckOutDate(co);
-                            if (ci && co) setShowCalendarDropdown(false);
-                          }}
-                          isDarkMode={isDark}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 3. CHECK OUT */}
-                  <div className="flex-1 relative w-full">
-                    <div
-                      onClick={() => {
-                        setShowCalendarDropdown(!showCalendarDropdown);
-                        setShowLocationDropdown(false);
-                        setShowGuestsDropdown(false);
-                      }}
-                      className="flex items-center gap-3 px-5 py-3 md:py-1 cursor-pointer group"
-                    >
-                      <Calendar size={20} className={`shrink-0 transition-colors ${showCalendarDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
-                      <div className="flex flex-col text-left">
-                        <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-0.5">CHECK OUT</label>
-                        <span className="text-[14px] font-extrabold text-text-dark">
-                          {checkOutDate ? checkOutDate : "Select Date"}
-                        </span>
-                        <span className="text-[11px] text-gray-400">{checkOutDate ? "Check-out Date" : "Select date"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 4. GUESTS & ROOMS */}
-                  <div className="flex-1 relative w-full" ref={searchGuestsRef}>
-                    <div
-                      onClick={() => {
-                        setShowGuestsDropdown(!showGuestsDropdown);
-                        setShowLocationDropdown(false);
-                        setShowCalendarDropdown(false);
-                      }}
-                      className="flex items-center gap-3 px-5 py-3 md:py-1 cursor-pointer group"
-                    >
-                      <Users size={20} className={`shrink-0 transition-colors ${showGuestsDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
-                      <div className="flex flex-col text-left">
-                        <label className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mb-0.5">GUESTS & ROOMS</label>
-                        <span className="text-[14px] font-extrabold text-text-dark">
-                          {guestCount} Guest{guestCount > 1 ? 's' : ''}, {roomCount} Room{roomCount > 1 ? 's' : ''}
-                        </span>
-                        <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                          Rooms <ChevronDown size={12} className={`transition-transform ${showGuestsDropdown ? 'rotate-180' : ''}`} />
-                        </span>
-                      </div>
-                    </div>
-
-                    {showGuestsDropdown && (
-                      <div className="absolute top-full right-0 w-full md:w-[280px] mt-3 bg-bg-white rounded-2xl shadow-2xl border border-border-color overflow-hidden z-50 p-4 space-y-4 text-left">
-                        {/* Adults */}
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-xs font-bold text-text-dark">Adults</p>
-                            <p className="text-[10px] text-gray-400">Ages 13+</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => setGuestCount(Math.max(1, guestCount - 1))} className="w-7 h-7 rounded-full border border-border-color flex items-center justify-center font-bold bg-transparent cursor-pointer text-text-dark hover:border-primary">
-                              <Minus size={12} />
-                            </button>
-                            <span className="text-xs font-bold text-text-dark w-4 text-center">{guestCount}</span>
-                            <button onClick={() => setGuestCount(Math.min(10, guestCount + 1))} className="w-7 h-7 rounded-full border border-border-color flex items-center justify-center font-bold bg-transparent cursor-pointer text-text-dark hover:border-primary">
-                              <Plus size={12} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Children */}
-                        <div className="flex items-center justify-between border-t border-border-color pt-3">
-                          <div>
-                            <p className="text-xs font-bold text-text-dark">Children</p>
-                            <p className="text-[10px] text-gray-400">Ages 2–12</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => setChildCount(Math.max(0, childCount - 1))} className="w-7 h-7 rounded-full border border-border-color flex items-center justify-center font-bold bg-transparent cursor-pointer text-text-dark hover:border-primary">
-                              <Minus size={12} />
-                            </button>
-                            <span className="text-xs font-bold text-text-dark w-4 text-center">{childCount}</span>
-                            <button onClick={() => setChildCount(Math.min(6, childCount + 1))} className="w-7 h-7 rounded-full border border-border-color flex items-center justify-center font-bold bg-transparent cursor-pointer text-text-dark hover:border-primary">
-                              <Plus size={12} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Rooms */}
-                        <div className="flex items-center justify-between border-t border-border-color pt-3">
-                          <div>
-                            <p className="text-xs font-bold text-text-dark">Rooms</p>
-                            <p className="text-[10px] text-gray-400">Total rooms</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => setRoomCount(Math.max(1, roomCount - 1))} className="w-7 h-7 rounded-full border border-border-color flex items-center justify-center font-bold bg-transparent cursor-pointer text-text-dark hover:border-primary">
-                              <Minus size={12} />
-                            </button>
-                            <span className="text-xs font-bold text-text-dark w-4 text-center">{roomCount}</span>
-                            <button onClick={() => setRoomCount(Math.min(5, roomCount + 1))} className="w-7 h-7 rounded-full border border-border-color flex items-center justify-center font-bold bg-transparent cursor-pointer text-text-dark hover:border-primary">
-                              <Plus size={12} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-
-                {/* 5. SEARCH STAYS BUTTON */}
-                <button
-                  onClick={handlePerformSearch}
-                  className="bg-[#1053b8] hover:bg-[#0c4499] text-white font-extrabold px-7 py-3.5 rounded-full shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-none cursor-pointer transition-all duration-300 w-full md:w-auto shrink-0 text-sm"
-                >
-                  <Search size={18} />
-                  <span>Search Stays</span>
-                </button>
+              {/* Main White Search Input Box with Magnifying Glass Symbol */}
+              <div className="bg-white dark:bg-slate-800 border border-border-color shadow-xs rounded-2xl p-3.5 flex items-center gap-3">
+                <Search size={18} className="text-primary shrink-0" />
+                <input
+                  type="text"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && searchText.trim()) {
+                      handleExecuteSearch(searchText.trim());
+                    }
+                  }}
+                  placeholder="Search by destination, resort name, or city..."
+                  className="w-full text-sm font-semibold bg-transparent outline-none text-text-dark placeholder:text-text-gray"
+                  autoFocus
+                />
+                {searchText && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchText("")}
+                    className="text-text-gray hover:text-text-dark border-none bg-transparent cursor-pointer p-1 rounded-full transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
-
             </motion.div>
           </motion.div>
         )}

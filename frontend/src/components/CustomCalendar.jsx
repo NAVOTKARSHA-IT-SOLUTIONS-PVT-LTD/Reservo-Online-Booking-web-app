@@ -1,39 +1,51 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function CustomCalendar({
   checkInDate,
   checkOutDate,
+  activeField = "checkIn",
+  onActiveFieldChange,
   onDateChange,
   isDarkMode
 }) {
   const todayStr = new Date().toISOString().split("T")[0];
-  const [currentDate, setCurrentDate] = useState(
-    checkInDate ? new Date(checkInDate + "T00:00:00") : new Date()
-  );
+  const targetDateForMonth = activeField === "checkOut" && checkOutDate ? checkOutDate : checkInDate;
+
+  const getInitialDate = () => {
+    if (targetDateForMonth && targetDateForMonth >= todayStr) {
+      const parsed = new Date(targetDateForMonth + "T00:00:00");
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    return new Date();
+  };
+
+  const [currentDate, setCurrentDate] = useState(getInitialDate);
+
+  useEffect(() => {
+    if (targetDateForMonth && targetDateForMonth >= todayStr) {
+      const parsed = new Date(targetDateForMonth + "T00:00:00");
+      if (!isNaN(parsed.getTime())) {
+        setCurrentDate(parsed);
+      }
+    }
+  }, [targetDateForMonth]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  // Get name of the month
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
 
-  // Number of days in current month
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  // First day of the month (0 = Sunday, 1 = Monday, etc.)
   const firstDayIndex = new Date(year, month, 1).getDay();
 
-  // Generate days array
   const days = [];
-  // Fill empty slots for previous month's days offset
   for (let i = 0; i < firstDayIndex; i++) {
     days.push(null);
   }
-  // Fill current month days
   for (let i = 1; i <= daysInMonth; i++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`;
     days.push(dateStr);
@@ -51,19 +63,27 @@ export default function CustomCalendar({
 
   const handleDateClick = (dateStr, e) => {
     e.stopPropagation();
-    if (dateStr < todayStr) return; // Prevent selecting past dates
+    if (dateStr < todayStr) return;
 
-    if (!checkInDate || (checkInDate && checkOutDate)) {
-      // First click: select check-in, reset check-out
-      onDateChange(dateStr, "");
-    } else if (checkInDate && !checkOutDate) {
-      if (dateStr > checkInDate) {
-        // Second click: select check-out
-        onDateChange(checkInDate, dateStr);
-      } else {
-        // Clicked a date before or equal to check-in: reset check-in to new date
-        onDateChange(dateStr, "");
+    if (activeField === "checkIn") {
+      const newIn = dateStr;
+      let newOut = checkOutDate;
+      if (!newOut || newOut <= newIn) {
+        const d = new Date(newIn + "T00:00:00");
+        d.setDate(d.getDate() + 1);
+        newOut = d.toISOString().split("T")[0];
       }
+      onDateChange(newIn, newOut, "done");
+    } else {
+      const newOut = dateStr;
+      let newIn = checkInDate;
+      if (!newIn || newIn >= newOut) {
+        const d = new Date(newOut + "T00:00:00");
+        d.setDate(d.getDate() - 1);
+        const prevStr = d.toISOString().split("T")[0];
+        newIn = prevStr >= todayStr ? prevStr : todayStr;
+      }
+      onDateChange(newIn, newOut, "done");
     }
   };
 
@@ -77,13 +97,14 @@ export default function CustomCalendar({
   const isToday = (dateStr) => dateStr === todayStr;
 
   return (
-    <div className={`p-4 font-sans select-none ${isDarkMode ? "text-white" : "text-[#0F172A]"}`}>
+    <div className={`p-3 font-sans select-none ${isDarkMode ? "text-white" : "text-[#0F172A]"}`}>
+
       {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3 px-1">
         <button
           onClick={handlePrevMonth}
           disabled={year <= new Date().getFullYear() && month <= new Date().getMonth()}
-          className={`p-1.5 rounded-lg border transition ${
+          className={`p-1.5 rounded-lg border transition cursor-pointer ${
             isDarkMode
               ? "border-[#334155] hover:bg-[#334155] disabled:opacity-30 disabled:hover:bg-transparent"
               : "border-[#E2E8F0] hover:bg-stone-100 disabled:opacity-30 disabled:hover:bg-transparent"
@@ -92,13 +113,13 @@ export default function CustomCalendar({
           <ChevronLeft size={16} />
         </button>
 
-        <span className="text-sm font-bold uppercase tracking-wider">
+        <span className="text-xs font-bold uppercase tracking-wider">
           {monthNames[month]} {year}
         </span>
 
         <button
           onClick={handleNextMonth}
-          className={`p-1.5 rounded-lg border transition ${
+          className={`p-1.5 rounded-lg border transition cursor-pointer ${
             isDarkMode
               ? "border-[#334155] hover:bg-[#334155]"
               : "border-[#E2E8F0] hover:bg-stone-100"
@@ -132,23 +153,24 @@ export default function CustomCalendar({
           const end = isSelectedEnd(dateStr);
           const middle = isBetween(dateStr);
 
-          let btnClass = "w-9 h-9 text-xs font-bold rounded-lg flex items-center justify-center transition ";
+          let btnClass = "w-9 h-9 text-xs font-bold rounded-lg flex items-center justify-center transition cursor-pointer ";
 
           if (disabled) {
             btnClass += isDarkMode ? "text-gray-600 cursor-not-allowed" : "text-gray-300 cursor-not-allowed";
           } else if (start || end) {
-            btnClass += "bg-[#1B5CF8] text-white shadow-lg scale-105 z-10";
+            btnClass += "bg-[#1B5CF8] text-white shadow-md scale-105 z-10";
           } else if (middle) {
             btnClass += isDarkMode ? "bg-[#1B5CF8]/20 text-[#60A5FA]" : "bg-[#1B5CF8]/10 text-[#1B5CF8]";
           } else {
             btnClass += isDarkMode 
               ? "hover:bg-[#334155] text-white" 
-              : "hover:bg-[#1B5CF8]/5 text-[#475569]";
+              : "hover:bg-[#1B5CF8]/10 text-[#475569]";
           }
 
           return (
             <button
               key={dateStr}
+              type="button"
               onClick={(e) => handleDateClick(dateStr, e)}
               disabled={disabled}
               className={`${btnClass} relative`}
@@ -163,7 +185,7 @@ export default function CustomCalendar({
       </div>
 
       {/* Legend / Info */}
-      <div className="mt-4 flex items-center justify-between text-[10px] text-gray-400 font-semibold border-t pt-3 border-border-color">
+      <div className="mt-3 flex items-center justify-between text-[10px] text-gray-400 font-semibold border-t pt-2.5 border-border-color">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded bg-[#1B5CF8]" />
           <span>Selected</span>

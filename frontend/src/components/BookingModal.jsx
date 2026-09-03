@@ -10,9 +10,63 @@ import { apiClient } from '../services/apiClient';
 import { secureStorage } from '../services/secureStorage';
 import rivoConfirmed from '../assets/images/rivo_confirmed.png';
 
-export default function BookingModal({ resort, room, isDarkMode, onClose, onAskRivo }) {
+export default function BookingModal({ resort, room, checkInDate: propCheckIn, checkOutDate: propCheckOut, isDarkMode, onClose, onAskRivo }) {
   const toast = useToast();
   const navigate = useNavigate();
+
+  // Retrieve dates from props or saved search state
+  const getModalDates = () => {
+    try {
+      if (propCheckIn && propCheckOut) {
+        return { checkIn: propCheckIn, checkOut: propCheckOut };
+      }
+      const saved = sessionStorage.getItem("reservo_search_state");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.checkInDate && parsed.checkOutDate) {
+          return { checkIn: parsed.checkInDate, checkOut: parsed.checkOutDate };
+        }
+      }
+    } catch (e) {}
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+    const d3 = new Date();
+    d3.setDate(d3.getDate() + 3);
+    const d3Str = d3.toISOString().split("T")[0];
+    return { checkIn: todayStr, checkOut: d3Str };
+  };
+
+  const { checkIn: modalCheckIn, checkOut: modalCheckOut } = getModalDates();
+
+  const calculateNights = (startStr, endStr) => {
+    try {
+      const d1 = new Date(startStr + "T00:00:00");
+      const d2 = new Date(endStr + "T00:00:00");
+      const diffTime = d2.getTime() - d1.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 1;
+    } catch (e) {
+      return 3;
+    }
+  };
+
+  const nights = calculateNights(modalCheckIn, modalCheckOut);
+
+  const formatDateRangeLabel = (startStr, endStr) => {
+    try {
+      const parseDate = (str) => {
+        const parts = str.split("-");
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      };
+      const d1 = parseDate(startStr);
+      const d2 = parseDate(endStr);
+      const f1 = d1.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
+      const f2 = d2.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
+      return `${f1} - ${f2} (${nights} Night${nights !== 1 ? "s" : ""})`;
+    } catch (e) {
+      return `${startStr} - ${endStr} (${nights} Nights)`;
+    }
+  };
 
   // Wizard Steps:
   // 1: Guest Info (Booking for self vs other)
@@ -89,7 +143,6 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
 
   // Price calculations
   const basePrice = room ? room.price : resort.price;
-  const nights = 3;
   const subtotal = basePrice * nights;
   const taxes = Math.round(subtotal * 0.12);
   const totalBeforeDiscount = subtotal + taxes;
@@ -211,8 +264,8 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
       const bookingDetails = {
         resortId: resort.id,
         roomId: room ? room.id : (resort.roomTypes && resort.roomTypes[0] ? resort.roomTypes[0].id : null),
-        checkin: "2026-09-12",
-        checkout: "2026-09-15",
+        checkin: modalCheckIn,
+        checkout: modalCheckOut,
         total: totalBeforeDiscount,
         couponCode: couponApplied ? couponCode.trim().toUpperCase() : undefined,
         pointsToRedeem: redeemPointsChecked ? pointsToRedeem : undefined,
@@ -367,7 +420,7 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
                   <div className="text-[10px] text-primary font-bold uppercase">Suite selection</div>
                   <div className="text-xs font-bold">{room ? room.title : "Luxury Suite"}</div>
                   <div className="text-[10px] text-stone-400 flex items-center gap-1.5">
-                    <Calendar size={12} /> Sep 12 - Sep 15 (3 Nights)
+                    <Calendar size={12} /> {formatDateRangeLabel(modalCheckIn, modalCheckOut)}
                   </div>
                 </div>
                 <div className="text-right">
@@ -566,7 +619,7 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
               {/* Itemized pricing breakdown */}
               <div className={`p-4 rounded-2xl border space-y-3 text-xs ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
                 <div className="flex justify-between">
-                  <span className="text-stone-400">Stay Duration (3 nights):</span>
+                  <span className="text-stone-400">Stay Duration ({nights} night{nights !== 1 ? "s" : ""}):</span>
                   <span className="font-bold">{currencySymbol}{(Math.round(subtotal * exchangeRate)).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
@@ -650,7 +703,7 @@ export default function BookingModal({ resort, room, isDarkMode, onClose, onAskR
                   </div>
                   <div>
                     <span className="text-slate-400 text-[10px] uppercase block">DATES</span>
-                    <span className="font-bold">Sep 12 - Sep 15 (3 Nights)</span>
+                    <span className="font-bold">{formatDateRangeLabel(modalCheckIn, modalCheckOut)}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 text-[10px] uppercase block">ROOM SELECTION</span>
