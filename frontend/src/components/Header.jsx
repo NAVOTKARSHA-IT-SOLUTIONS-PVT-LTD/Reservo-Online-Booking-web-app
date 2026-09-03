@@ -58,7 +58,13 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
     if (queryStr) queryParams.set("destination", queryStr);
     if (checkInDate) queryParams.set("checkIn", checkInDate);
     if (checkOutDate) queryParams.set("checkOut", checkOutDate);
-    navigate(`/search?${queryParams.toString()}`);
+    navigate(`/search?${queryParams.toString()}`, {
+      state: {
+        location: queryStr,
+        checkIn: checkInDate,
+        checkOut: checkOutDate
+      }
+    });
   };
 
   useEffect(() => {
@@ -565,14 +571,14 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
               </AnimatePresence>
 
               {/* Main White Search Input Box with Magnifying Glass Symbol */}
-              <div className="bg-white dark:bg-slate-800 border border-border-color shadow-xs rounded-2xl p-3.5 flex items-center gap-3">
-                <Search size={18} className="text-primary shrink-0" />
+              <div className="bg-white dark:bg-slate-800 border border-border-color shadow-xs rounded-2xl p-2 sm:p-2.5 flex items-center gap-2.5">
+                <Search size={18} className="text-primary shrink-0 ml-1.5" />
                 <input
                   type="text"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && searchText.trim()) {
+                    if (e.key === "Enter") {
                       handleExecuteSearch(searchText.trim());
                     }
                   }}
@@ -584,11 +590,18 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                   <button
                     type="button"
                     onClick={() => setSearchText("")}
-                    className="text-text-gray hover:text-text-dark border-none bg-transparent cursor-pointer p-1 rounded-full transition-colors"
+                    className="text-text-gray hover:text-text-dark border-none bg-transparent cursor-pointer p-1 rounded-full transition-colors shrink-0"
                   >
                     <X size={14} />
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => handleExecuteSearch(searchText.trim())}
+                  className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl text-xs font-bold border-none cursor-pointer transition-all shrink-0 flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>Search</span>
+                </button>
               </div>
             </motion.div>
           </motion.div>

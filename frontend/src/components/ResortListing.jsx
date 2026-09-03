@@ -17,12 +17,41 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
   const activeCategory = propSetActiveCategory ? propActiveCategory : internalCategory;
   const setActiveCategory = propSetActiveCategory || setInternalCategory;
 
-  const [searchQuery, setSearchQuery] = useState(searchState.location || '');
-  const [searchInput, setSearchInput] = useState(searchState.location || '');
-  const [searchCheckIn, setSearchCheckIn] = useState(searchState.checkIn || '');
-  const [searchCheckOut, setSearchCheckOut] = useState(searchState.checkOut || '');
-  const [searchGuests, setSearchGuests] = useState(searchState.guests || '');
+  const getInitialQuery = () => {
+    const params = new URLSearchParams(routerLocation.search);
+    return params.get("destination") || params.get("location") || params.get("q") || searchState.location || "";
+  };
+
+  const [searchQuery, setSearchQuery] = useState(getInitialQuery);
+  const [searchInput, setSearchInput] = useState(getInitialQuery);
+  const [searchCheckIn, setSearchCheckIn] = useState(() => {
+    const params = new URLSearchParams(routerLocation.search);
+    return params.get("checkIn") || params.get("checkin") || searchState.checkIn || "";
+  });
+  const [searchCheckOut, setSearchCheckOut] = useState(() => {
+    const params = new URLSearchParams(routerLocation.search);
+    return params.get("checkOut") || params.get("checkout") || searchState.checkOut || "";
+  });
+  const [searchGuests, setSearchGuests] = useState(() => {
+    const params = new URLSearchParams(routerLocation.search);
+    return params.get("guests") || searchState.guests || "";
+  });
+
   const isSearchActive = searchQuery.trim().length > 0;
+
+  useEffect(() => {
+    const params = new URLSearchParams(routerLocation.search);
+    const dest = params.get("destination") || params.get("location") || params.get("q") || searchState.location || "";
+    const ci = params.get("checkIn") || params.get("checkin") || searchState.checkIn || "";
+    const co = params.get("checkOut") || params.get("checkout") || searchState.checkOut || "";
+    const g = params.get("guests") || searchState.guests || "";
+
+    setSearchQuery(dest);
+    setSearchInput(dest);
+    if (ci) setSearchCheckIn(ci);
+    if (co) setSearchCheckOut(co);
+    if (g) setSearchGuests(g);
+  }, [routerLocation.search, routerLocation.state]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -173,27 +202,32 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     return () => window.removeEventListener("rivo-mode", handleRivoMode);
   }, []);
 
-  // Search text matching logic
+  // Search text matching logic (City, Resort Name, Description, Category)
   const matchesSearch = (resort) => {
     if (!isSearchActive) return true;
     const q = searchQuery.toLowerCase().trim();
-    const searchTerms = q.split(/[,\s]+/).filter(Boolean);
-    return searchTerms.some(term => {
-      const t = term.toLowerCase();
-      const locationStr = typeof resort.location === 'string' 
-        ? resort.location 
-        : `${resort.location?.address || ''} ${resort.location?.city || ''} ${resort.location?.state || ''} ${resort.location?.country || ''}`;
+    if (!q) return true;
 
-      return (
-        (resort.name || '').toLowerCase().includes(t) ||
-        locationStr.toLowerCase().includes(t) ||
-        (resort.region || '').toLowerCase().includes(t) ||
-        (resort.description || '').toLowerCase().includes(t) ||
-        (resort.category || '').toLowerCase().includes(t) ||
-        (resort.categoryLabel || '').toLowerCase().includes(t) ||
-        (resort.badge || '').toLowerCase().includes(t)
-      );
-    });
+    const locationStr = typeof resort.location === 'string' 
+      ? resort.location 
+      : `${resort.location?.address || ''} ${resort.location?.city || ''} ${resort.location?.state || ''} ${resort.location?.country || ''}`;
+
+    const textToSearch = [
+      resort.name,
+      resort.title,
+      locationStr,
+      resort.city,
+      resort.region,
+      resort.description,
+      resort.category,
+      resort.categoryLabel,
+      resort.badge
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    if (textToSearch.includes(q)) return true;
+
+    const words = q.split(/\s+/).filter(Boolean);
+    return words.every(word => textToSearch.includes(word));
   };
 
   // Filter Logic
@@ -439,34 +473,34 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
       {/* REGULAR RESORT LISTING VIEW (Hidden on Mobile when Mobile Filter View is active) */}
       <div className={isFilterOpen ? 'hidden lg:block space-y-12' : 'space-y-12'}>
 
-        {/* Search Results Banner (shown when arriving from Hero search) */}
+        {/* Search Results Banner */}
         {isSearchActive && (
-          <div className={`rounded-2xl border p-4 sm:p-6 space-y-3 animate-fade-in ${
+          <div className={`rounded-2xl border p-4 sm:p-5 animate-fade-in ${
             isDarkMode ? 'bg-[#1E293B] border-[#334155]' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-[#DBEAFE]'
           }`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                   isDarkMode ? 'bg-[#2563EB]/20' : 'bg-[#2563EB]/10'
                 }`}>
                   <Search className="w-5 h-5 text-[#2563EB]" />
                 </div>
                 <div>
-                  <h2 className={`text-lg font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
+                  <h2 className={`text-base sm:text-lg font-bold ${isDarkMode ? 'text-[#F8FAFC]' : 'text-[#0F172A]'}`}>
                     Search results for "{searchQuery}"
                   </h2>
                   <div className={`flex flex-wrap items-center gap-3 mt-1 text-xs ${isDarkMode ? 'text-[#CBD5E1]' : 'text-[#64748B]'}`}>
                     {searchCheckIn && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" /> {searchCheckIn} → {searchCheckOut}
+                      <span className="flex items-center gap-1 font-semibold">
+                        <Calendar className="w-3.5 h-3.5 text-[#2563EB]" /> {searchCheckIn} {searchCheckOut ? `→ ${searchCheckOut}` : ''}
                       </span>
                     )}
                     {searchGuests && (
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5" /> {searchGuests}
+                      <span className="flex items-center gap-1 font-semibold">
+                        <Users className="w-3.5 h-3.5 text-[#2563EB]" /> {searchGuests}
                       </span>
                     )}
-                    <span className="font-semibold text-[#2563EB]">
+                    <span className="font-bold text-[#2563EB]">
                       {sortedResorts.length} {sortedResorts.length === 1 ? 'stay' : 'stays'} found
                     </span>
                   </div>
@@ -474,40 +508,14 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
               </div>
               <button
                 onClick={clearSearch}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
                   isDarkMode
                     ? 'bg-[#334155] text-[#CBD5E1] hover:bg-[#475569]'
-                    : 'bg-white text-[#475569] hover:bg-[#F1F5F9] border border-[#E2E8F0]'
+                    : 'bg-white text-[#475569] hover:bg-[#F1F5F9] border border-[#E2E8F0] shadow-xs'
                 }`}
               >
                 <X className="w-3.5 h-3.5" /> Clear Search
               </button>
-            </div>
-
-            {/* Inline search edit bar */}
-            <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2 rounded-xl border ${
-              isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-white border-[#E2E8F0]'
-            }`}>
-              <div className="flex items-center gap-2 flex-1 px-3">
-                <MapPin className="w-4 h-4 text-[#2563EB] shrink-0" />
-                <input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Search destination, region, resort..."
-                  className={`w-full text-sm font-medium bg-transparent outline-none ${
-                    isDarkMode ? 'text-white placeholder:text-[#64748B]' : 'text-[#0F172A] placeholder:text-[#94A3B8]'
-                  }`}
-                />
-              </div>
-              {searchInput && (
-                <button
-                  onClick={() => { setSearchInput(''); setSearchQuery(''); }}
-                  className="px-3 py-2 text-xs text-[#64748B] hover:text-[#0F172A] transition"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
             </div>
           </div>
         )}
