@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { Star, Heart, MapPin, Sparkles, ChevronRight, SlidersHorizontal, ArrowUpDown, RotateCcw, Check, X, ArrowLeft, Search, Calendar, Users } from 'lucide-react';
 import { CATEGORIES } from '../data/resortsData';
-import { ALL_RESORTS } from '../data/resorts';
 import { resortService } from '../services/resort.service';
 import { ResortCardSkeleton } from './Skeleton';
 import EmptyState from './EmptyState';
@@ -230,10 +229,8 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     return 0;
   });
 
-  const getImageFallback = (resort) => {
-    const staticMatch = ALL_RESORTS.find(r => String(r.id) === String(resort?.id));
-    return staticMatch?.image || 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80';
-  };
+  const getImageFallback = () =>
+    'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80';
 
   const activeFilterCount = (activeCategory !== 'all' ? 1 : 0) +
     (maxPrice < 150000 ? 1 : 0) +

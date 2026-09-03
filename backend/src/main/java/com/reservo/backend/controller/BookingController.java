@@ -81,6 +81,26 @@ public class BookingController {
         return ResponseEntity.ok(ApiResponse.success(bookingService.getAllBookings()));
     }
 
+    /**
+     * Bookings for properties owned by the currently authenticated owner.
+     * No ownerId is accepted from the client, preventing one owner from
+     * requesting another owner's reservations.
+     */
+    @GetMapping("/owner-bookings")
+    public ResponseEntity<ApiResponse<List<Booking>>> getOwnerBookings() {
+        User user = authService.getOptionalAuthenticatedUser()
+                .orElseThrow(() -> new UnauthorizedException("Authentication required"));
+
+        if (user.getRole() != User.Role.ROLE_OWNER
+                && user.getRole() != User.Role.ROLE_ADMIN) {
+            throw new UnauthorizedException("Only property owners can access owner bookings");
+        }
+
+        return ResponseEntity.ok(
+                ApiResponse.success(bookingService.getOwnerBookings(user.getId()))
+        );
+    }
+
     @PostMapping("/update-status")
     public ResponseEntity<ApiResponse<Booking>> updateBookingStatus(
             @RequestParam String bookingId,

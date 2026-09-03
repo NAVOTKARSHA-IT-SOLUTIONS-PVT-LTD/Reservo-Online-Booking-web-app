@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -47,6 +49,28 @@ public class AdminController {
             @RequestParam(required = false, defaultValue = "Admin") String adminName) {
         Resort updated = adminService.updateResortStatus(id, status, adminName);
         return ResponseEntity.ok(ApiResponse.success(updated, "Resort status updated successfully"));
+    }
+
+
+    @GetMapping("/coupons")
+    public ResponseEntity<ApiResponse<List<Coupon>>> getAllCoupons() {
+        return ResponseEntity.ok(ApiResponse.success(adminService.getAllCoupons()));
+    }
+
+    @PostMapping("/coupons")
+    public ResponseEntity<ApiResponse<Coupon>> createCoupon(@RequestBody Coupon coupon) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String adminName = auth != null ? auth.getName() : "SYSTEM_ADMIN";
+        Coupon created = adminService.createPlatformCoupon(coupon, adminName);
+        return ResponseEntity.ok(ApiResponse.success(created, "Coupon created successfully"));
+    }
+
+    @DeleteMapping("/coupons/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteCoupon(@PathVariable String id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String adminName = auth != null ? auth.getName() : "SYSTEM_ADMIN";
+        adminService.deleteCoupon(id, adminName);
+        return ResponseEntity.ok(ApiResponse.success(null, "Coupon deleted successfully"));
     }
 
     @GetMapping("/bookings")

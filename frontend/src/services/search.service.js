@@ -1,37 +1,34 @@
-import { ALL_RESORTS } from "../data/resorts";
 import { apiClient } from "./apiClient";
+
+const mapSearchResort = (r) => ({
+  id: r.id,
+  name: r.name || "Luxury Stay",
+  location: r.location || "India",
+  price: Number(r.pricePerNight ?? r.price ?? 0),
+  rating: Number(r.rating ?? 4.5),
+  image: r.imageUrl || r.image || "",
+  amenities: Array.isArray(r.amenities) ? r.amenities : [],
+  tag: r.featuredTag || r.tag || "Verified",
+  category: r.category || "",
+  description: r.description || ""
+});
+
+const fetchResorts = async () => {
+  const result = await apiClient.get("/api/v1/resorts");
+  if (!result?.success) {
+    throw new Error(result?.message || "Failed to load resorts from backend");
+  }
+  return Array.isArray(result.data) ? result.data : [];
+};
 
 export const searchService = {
   async searchDestinations(query, filters = {}) {
-    let results = [];
-    try {
-      const result = await apiClient.get("/api/v1/resorts");
-      if (result && result.success && result.data && result.data.length > 0) {
-        results = result.data.map(r => ({
-          id: r.id,
-          name: r.name,
-          location: r.location,
-          price: r.pricePerNight || 8000,
-          rating: r.rating || 4.5,
-          image: r.imageUrl || r.image || "",
-          amenities: r.amenities || ["Pool", "Wifi"],
-          tag: r.tag || "Luxury",
-          category: r.category || "beach",
-          description: r.description || ""
-        }));
-      }
-    } catch (e) {
-      console.warn("Failed to fetch live search items, using mock list fallback:", e);
-    }
+    let results = (await fetchResorts()).map(mapSearchResort);
 
-    if (results.length === 0) {
-      results = [...ALL_RESORTS];
-    }
-    
     if (query && query.trim() !== "") {
       const q = query.toLowerCase().trim();
-      results = results.filter(r => 
-        r.name.toLowerCase().includes(q) || 
+      results = results.filter(r =>
+        r.name.toLowerCase().includes(q) ||
         r.location.toLowerCase().includes(q) ||
         (r.region && r.region.toLowerCase().includes(q))
       );
@@ -49,25 +46,16 @@ export const searchService = {
   },
 
   async getSuggestions(query) {
-    if (!query || query.trim().length < 2) {
-      return [];
-    }
+    if (!query || query.trim().length < 2) return [];
+
     const q = query.toLowerCase().trim();
+    const resortsList = await fetchResorts();
 
-    let resortsList = [];
-    try {
-      const result = await apiClient.get("/api/v1/resorts");
-      if (result && result.success && result.data && result.data.length > 0) {
-        resortsList = result.data;
-      }
-    } catch (e) {}
-
-    if (resortsList.length === 0) {
-      resortsList = [...ALL_RESORTS];
-    }
-
-    const suggestions = resortsList
-      .filter(r => r.name.toLowerCase().includes(q) || r.location.toLowerCase().includes(q))
+    return resortsList
+      .filter(r =>
+        String(r.name || "").toLowerCase().includes(q) ||
+        String(r.location || "").toLowerCase().includes(q)
+      )
       .map(r => ({
         id: r.id,
         name: r.name,
@@ -75,7 +63,5 @@ export const searchService = {
         type: "resort"
       }))
       .slice(0, 5);
-      
-    return suggestions;
   }
 };

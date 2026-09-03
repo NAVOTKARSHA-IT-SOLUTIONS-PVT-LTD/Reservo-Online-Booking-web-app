@@ -42,7 +42,7 @@ public class RoomRepository {
             firestore
                     .collection(COLLECTION)
                     .document(String.valueOf(room.getId()))
-                    .set(room)
+                    .set(toFirestoreMap(room))
                     .get();
 
             return room;
@@ -81,12 +81,7 @@ public class RoomRepository {
                 return java.util.Optional.empty();
             }
 
-            Room room = document.toObject(Room.class);
-            if (room != null && room.getId() == null) {
-                room.setId(document.getId());
-            }
-
-            return java.util.Optional.ofNullable(room);
+            return java.util.Optional.ofNullable(fromDocument(document));
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -277,7 +272,7 @@ public class RoomRepository {
                 documents) {
 
             Room room =
-                    document.toObject(Room.class);
+                    fromDocument(document);
 
             if (room != null) {
 
@@ -303,6 +298,79 @@ public class RoomRepository {
         }
 
         return rooms;
+    }
+
+    private java.util.Map<String, Object> toFirestoreMap(Room room) {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("resortId", room.getResortId());
+        data.put("roomNumber", room.getRoomNumber());
+        data.put("roomType", room.getRoomType());
+        data.put("description", room.getDescription());
+        data.put("pricePerNight", room.getPricePerNight() != null ? room.getPricePerNight().doubleValue() : 0d);
+        data.put("capacity", room.getCapacity());
+        data.put("bedCount", room.getBedCount());
+        data.put("bedType", room.getBedType());
+        data.put("imageUrl", room.getImageUrl());
+        data.put("status", room.getStatus() != null ? room.getStatus().name() : Room.RoomStatus.AVAILABLE.name());
+        data.put("cleaningStatus", room.getCleaningStatus() != null ? room.getCleaningStatus().name() : Room.CleaningStatus.CLEAN.name());
+        if (room.getCreatedAt() != null) {
+            java.time.Instant i = room.getCreatedAt();
+            data.put("createdAt", com.google.cloud.Timestamp.ofTimeSecondsAndNanos(i.getEpochSecond(), i.getNano()));
+        }
+        if (room.getUpdatedAt() != null) {
+            java.time.Instant i = room.getUpdatedAt();
+            data.put("updatedAt", com.google.cloud.Timestamp.ofTimeSecondsAndNanos(i.getEpochSecond(), i.getNano()));
+        }
+        return data;
+    }
+
+    private Room fromDocument(com.google.cloud.firestore.DocumentSnapshot document) {
+        java.util.Map<String, Object> d = document.getData();
+        if (d == null) return null;
+        Room room = new Room();
+        room.setId(document.getId());
+        room.setResortId(asString(d.get("resortId")));
+        room.setRoomNumber(asString(d.get("roomNumber")));
+        String roomType = asString(d.get("roomType"));
+        if (roomType == null) roomType = asString(d.get("type"));
+        room.setRoomType(roomType);
+        room.setDescription(asString(d.get("description")));
+        room.setPricePerNight(asBigDecimal(d.get("pricePerNight")));
+        room.setCapacity(asInteger(d.get("capacity")));
+        room.setBedCount(asInteger(d.get("bedCount")));
+        room.setBedType(asString(d.get("bedType")));
+        room.setImageUrl(asString(d.get("imageUrl")));
+        String status = asString(d.get("status"));
+        if (status != null) { try { room.setStatus(Room.RoomStatus.valueOf(status)); } catch (Exception ignored) {} }
+        String cleaning = asString(d.get("cleaningStatus"));
+        if (cleaning != null) { try { room.setCleaningStatus(Room.CleaningStatus.valueOf(cleaning)); } catch (Exception ignored) {} }
+        room.setCreatedAt(asInstant(d.get("createdAt")));
+        room.setUpdatedAt(asInstant(d.get("updatedAt")));
+        if (room.getCreatedAt() == null) room.setCreatedAt(java.time.Instant.now());
+        if (room.getUpdatedAt() == null) room.setUpdatedAt(room.getCreatedAt());
+        return room;
+    }
+
+    private String asString(Object value) { return value == null ? null : String.valueOf(value); }
+    private Integer asInteger(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number n) return n.intValue();
+        try { return Integer.parseInt(String.valueOf(value)); } catch (Exception e) { return null; }
+    }
+    private java.math.BigDecimal asBigDecimal(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.math.BigDecimal bd) return bd;
+        if (value instanceof Number n) return new java.math.BigDecimal(n.toString());
+        try { return new java.math.BigDecimal(String.valueOf(value)); } catch (Exception e) { return null; }
+    }
+    private java.time.Instant asInstant(Object value) {
+        if (value == null) return null;
+        if (value instanceof com.google.cloud.Timestamp ts) return ts.toDate().toInstant();
+        if (value instanceof java.util.Date date) return date.toInstant();
+        String text = String.valueOf(value).trim();
+        try { return java.time.Instant.parse(text); } catch (Exception ignored) {}
+        try { return java.time.LocalDateTime.parse(text, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).toInstant(java.time.ZoneOffset.UTC); } catch (Exception ignored) {}
+        return null;
     }
 
     // =========================================================

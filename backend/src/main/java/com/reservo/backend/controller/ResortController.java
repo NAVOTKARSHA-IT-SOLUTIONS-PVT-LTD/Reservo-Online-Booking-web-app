@@ -89,6 +89,21 @@ public class ResortController {
         return ResponseEntity.ok(ApiResponse.success(updated, "Changes requested successfully"));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Resort>> updateResort(
+            @PathVariable String id,
+            @RequestBody Resort resort) {
+
+        Resort updated = resortService.updateResortByOwner(id, resort);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        updated,
+                        "Property updated and submitted for Admin approval"
+                )
+        );
+    }
+
     @GetMapping("/my-properties")
     public ResponseEntity<ApiResponse<List<Resort>>> getMyProperties() {
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();

@@ -16,7 +16,6 @@ import RecentlyViewed from "./components/RecentlyViewed";
 import { secureStorage } from "./services/secureStorage";
 import { useToast } from "./context/ToastContext";
 import { useWishlist } from "./context/WishlistContext";
-import { RESORTS } from "./data/resortsData";
 import { resortService } from "./services/resort.service";
 
 // Lazy-loaded pages
@@ -390,13 +389,23 @@ function App() {
       if (lastProcessedKeyRef.current !== key) {
         lastProcessedKeyRef.current = key;
         const resortId = location.state.checkAvailabilityFor;
-        const resort = RESORTS.find((r) => r.id === resortId) || RESORTS[0];
-        if (resort) {
-          setBookingResort(resort);
-          setBookingRoom(null);
-          setIsCheckingAvailability(true);
-        }
-        navigate(location.pathname, { replace: true, state: {} });
+
+        // Resolve the selected property from the backend only.
+        resortService.getResortById(resortId)
+          .then((resort) => {
+            if (resort) {
+              setBookingResort(resort);
+              setBookingRoom(null);
+              setIsCheckingAvailability(true);
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to load booking property:", err);
+            toast("This property is no longer available.", "error");
+          })
+          .finally(() => {
+            navigate(location.pathname, { replace: true, state: {} });
+          });
       }
     }
   }, [location, navigate]);

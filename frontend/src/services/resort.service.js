@@ -1,63 +1,55 @@
 import { apiClient } from "./apiClient";
-import { RESORTS } from "../data/resortsData";
-import { ALL_RESORTS } from "../data/resorts";
-import { hostService } from "./host.service";
 
-const findStaticResort = (idOrName) => {
-  const key = String(idOrName ?? '').trim();
-  if (!key) return null;
-  return ALL_RESORTS.find(r => String(r.id) === key)
-    || ALL_RESORTS.find(r => String(r.name).toLowerCase() === key.toLowerCase())
-    || null;
-};
-
-const normalizeStaticResort = (r) => {
-  if (!r) return null;
-  return {
-    ...r,
-    heroImage: r.heroImage || r.image,
-    gallery: Array.isArray(r.gallery) && r.gallery.length ? r.gallery : (r.image ? [r.image] : []),
-    highlights: Array.isArray(r.highlights) ? r.highlights : (Array.isArray(r.amenities) ? r.amenities.slice(0, 5) : []),
-    amenities: Array.isArray(r.amenities) ? r.amenities.map(a => typeof a === 'string' ? { name: a, icon: 'Sparkles' } : a) : [],
-    reviewsCount: Number(r.reviewsCount ?? r.reviewCount ?? 0),
-    reviewCount: Number(r.reviewCount ?? r.reviewsCount ?? 0),
-    pricePerNight: Number(r.pricePerNight ?? r.price ?? 0),
-    categoryLabel: r.categoryLabel || r.type || 'Stay'
-  };
-};
 
 export const resortService = {
+  async updateResort(id, changes) {
+    const result = await apiClient.put(
+      `/api/v1/resorts/${encodeURIComponent(id)}`,
+      changes
+    );
+
+    if (!result?.success || !result.data) {
+      throw new Error(result?.message || "Failed to update property");
+    }
+
+    return result.data;
+  },
+
+  async uploadMedia(file) {
+    if (!file) throw new Error("Please select a file");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const result = await apiClient.post("/api/v1/media/upload", formData);
+
+    if (!result?.success || !result.data?.fileUrl) {
+      throw new Error(result?.message || "Failed to upload media");
+    }
+
+    return result.data.fileUrl;
+  },
+
   async getAllResorts() {
-    let resortsList = [];
-    try {
-      const result = await apiClient.get("/api/v1/resorts");
-      if (result && result.success && result.data && result.data.length > 0) {
-        resortsList = result.data.map(item => this.mapBackendResort(item));
-      }
-    } catch (e) {
-      console.warn("Backend resorts endpoint not reachable, using static resorts", e);
+    const result = await apiClient.get("/api/v1/resorts");
+    if (!result?.success) {
+      throw new Error(result?.message || "Failed to load approved resorts");
     }
 
-    if (!resortsList.length) {
-      resortsList = Array.isArray(ALL_RESORTS) ? [...ALL_RESORTS] : [];
-    }
+    const items = Array.isArray(result.data) ? result.data : [];
 
-    // Merge user-published listings from hostService so new listings immediately show on the Resort Listing page
-    try {
-      const hostListings = hostService.getListings() || [];
-      const userListingsMapped = hostListings.map(listing => this.mapHostListingToResort(listing));
-      
-      const existingIds = new Set(resortsList.map(r => String(r.id)));
-      userListingsMapped.forEach(ul => {
-        if (!existingIds.has(String(ul.id))) {
-          resortsList.unshift(ul); // Put user published listing right at top!
-        }
-      });
-    } catch (err) {
-      console.warn("Error merging user host listings into resort list", err);
-    }
-
-    return resortsList;
+    // Public listings are database-only.
+    // Ignore malformed legacy records with no property name/location.
+    return items
+      .filter(item =>
+        item &&
+        typeof item.name === "string" &&
+        item.name.trim() !== "" &&
+        typeof item.location === "string" &&
+        item.location.trim() !== "" &&
+        String(item.status || "").toUpperCase() === "APPROVED"
+      )
+      .map(item => this.mapBackendResort(item));
   },
 
   async getSearchResorts() {
@@ -119,34 +111,28 @@ export const resortService = {
   },
 
   async getResortById(id) {
-    try {
-      const result = await apiClient.get(`/api/v1/resorts/${encodeURIComponent(id)}`);
-      if (result && result.success && result.data) {
-        const mapped = this.mapBackendResort(result.data);
-        const staticResort = findStaticResort(id);
+    const result = await apiClient.get(
+      `/api/v1/resorts/${encodeURIComponent(id)}`
+    );
 
-        // Numeric IDs 1..12 belong to the frontend catalog. If Firestore
-        // contains a different document under the same numeric ID, never
-        // show that unrelated document when opening a catalog card directly.
-        if (staticResort && String(id).match(/^\d+$/) &&
-            String(mapped.name || '').toLowerCase() !== String(staticResort.name || '').toLowerCase()) {
-          return normalizeStaticResort(staticResort);
-        }
-
-        return mapped;
-      }
+    if (!result?.success || !result.data) {
       throw new Error("Resort not found");
-    } catch (e) {
-      console.warn("Falling back to local resort details for ID:", id, e);
-
-      // IMPORTANT: use the same ID the listing uses.
-      // Never map unrelated IDs (e.g. 2 -> Kerala) because that causes
-      // a clicked resort to open a completely different property.
-      const staticResort = findStaticResort(id);
-      if (staticResort) return normalizeStaticResort(staticResort);
-
-      return null;
     }
+
+    const item = result.data;
+
+    // Never fall back to frontend demo/static resort data.
+    // A property must come from the backend database.
+    if (
+      typeof item.name !== "string" ||
+      !item.name.trim() ||
+      typeof item.location !== "string" ||
+      !item.location.trim()
+    ) {
+      throw new Error("Invalid property data");
+    }
+
+    return this.mapBackendResort(item);
   },
 
   async getCategories() {
@@ -202,8 +188,7 @@ export const resortService = {
       return String(value).split(",").map(v => v.trim()).filter(Boolean);
     };
     const category = item.category || this.getCategoryForResort(safeName, safeLocation);
-    const staticMatch = ALL_RESORTS.find(r => String(r.name).toLowerCase() === safeName.toLowerCase()) || null;
-    const fallbackImage = staticMatch?.image || 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80';
+    const fallbackImage = '';
     const backendImage = typeof item.imageUrl === 'string' ? item.imageUrl.trim() : '';
     return {
       id: item.id ?? `resort-${Math.random().toString(36).slice(2)}`,

@@ -16,8 +16,8 @@ import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
 import rivoWaving from "../assets/images/rivo_waving.png";
 import mascotWebp from "../assets/images/mascot_transparent.webp";
-import { ALL_RESORTS } from "../data/resorts";
 import { authService } from "../services/auth.service";
+import { resortService } from "../services/resort.service";
 import Footer from "./Footer";
 
 const COMPANION_MODES = [
@@ -48,7 +48,7 @@ const getAvatarForText = (text) => {
   return null;
 };
 
-const generateAIResponse = (text) => {
+const generateAIResponse = (text, availableResorts = []) => {
   const lower = text.toLowerCase();
   
   const locations = ["bali", "maldives", "manali", "dubai", "coorg", "kerala", "santorini", "greece"];
@@ -63,7 +63,7 @@ const generateAIResponse = (text) => {
     maxBudget = parseInt(budgetMatch[1], 10);
   }
 
-  let matches = ALL_RESORTS;
+  let matches = Array.isArray(availableResorts) ? availableResorts : [];
   
   if (matchedLocation) {
     const locKey = matchedLocation === "greece" ? "santorini" : matchedLocation;
@@ -74,7 +74,7 @@ const generateAIResponse = (text) => {
     matches = matches.filter(r => {
       return matchedAmenities.every(am => {
         return r.amenities.some(item => {
-          const itemLower = item.toLowerCase();
+          const itemLower = String(typeof item === "string" ? item : item?.name || "").toLowerCase();
           if (am === "wifi") return itemLower.includes("wifi");
           if (am === "ski") return itemLower.includes("ski");
           return itemLower.includes(am);
@@ -105,7 +105,7 @@ const generateAIResponse = (text) => {
   }
 
   if (lower.includes("price") || lower.includes("cost") || lower.includes("cheap") || lower.includes("expensive")) {
-    return "Stays at Reservo range from $165/night (like Snow Peaks Lodge in Manali) to $640/night (like Atlantis Towers in Dubai). Let me know your destination or budget and I'll find the best match!";
+    return "I can check the current live resort inventory for your destination and budget. Tell me where you want to go or your maximum nightly budget.";
   }
 
   return "I'm always learning! Let me know where you want to travel (e.g. Bali, Maldives, Dubai) and what amenities you want (e.g. Spa, Pool, Fireplace), and I'll search our luxury collection for you.";
@@ -160,6 +160,15 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [isMascotHovered, setIsMascotHovered] = useState(false);
   const navigate = useNavigate();
+  const [liveResorts, setLiveResorts] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    resortService.getAllResorts()
+      .then(data => { if (active) setLiveResorts(Array.isArray(data) ? data : []); })
+      .catch(err => console.warn("Failed to load live resorts for Rivo:", err));
+    return () => { active = false; };
+  }, []);
   const location = useLocation();
   const scrollContainerRef = useRef(null);
 
@@ -230,7 +239,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
 
   const toggleWishlistHandler = (resort) => {
     toggleWishlist({
-      id: `mobile-${resort.id}`,
+      id: String(resort.id),
       name: resort.name,
       location: resort.location,
       price: resort.price,
@@ -305,7 +314,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
     }
 
     setTimeout(() => {
-      const reply = generateAIResponse(text);
+      const reply = generateAIResponse(text, liveResorts);
 
       const replyReactAvatar = getAvatarForText(reply);
       if (replyReactAvatar) {

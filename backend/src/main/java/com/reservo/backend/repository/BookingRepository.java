@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.springframework.stereotype.Repository;
 
+import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
@@ -48,10 +49,14 @@ public class BookingRepository {
                         .toInstant(java.time.ZoneOffset.UTC));
             }
 
+            // Do NOT pass Booking directly to Firestore. Booking contains
+            // java.time.LocalDate fields; Firestore's bean mapper treats
+            // LocalDate as a bean and can fail with "conflicting getters
+            // for name getEra". Persist explicit Firestore-safe values.
             firestore
                     .collection(COLLECTION)
                     .document(booking.getId())
-                    .set(booking)
+                    .set(toFirestoreMap(booking))
                     .get();
 
             return booking;
@@ -93,14 +98,7 @@ public class BookingRepository {
                 return Optional.empty();
             }
 
-            Booking booking =
-                    document.toObject(Booking.class);
-
-            if (booking != null) {
-                booking.setId(document.getId());
-            }
-
-            return Optional.ofNullable(booking);
+            return Optional.ofNullable(fromDocument(document));
 
         } catch (InterruptedException e) {
 
@@ -149,14 +147,7 @@ public class BookingRepository {
             QueryDocumentSnapshot document =
                     documents.get(0);
 
-            Booking booking =
-                    document.toObject(Booking.class);
-
-            if (booking != null) {
-                booking.setId(document.getId());
-            }
-
-            return Optional.ofNullable(booking);
+            return Optional.ofNullable(fromDocument(document));
 
         } catch (InterruptedException e) {
 
@@ -458,19 +449,151 @@ public class BookingRepository {
         for (QueryDocumentSnapshot document :
                 documents) {
 
-            Booking booking =
-                    document.toObject(Booking.class);
+            Booking booking = fromDocument(document);
 
             if (booking != null) {
-
-                booking.setId(
-                        document.getId()
-                );
-
                 bookings.add(booking);
             }
         }
 
         return bookings;
     }
+    private java.util.Map<String, Object> toFirestoreMap(Booking booking) {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("bookingCode", booking.getBookingCode());
+        data.put("userId", booking.getUserId());
+        data.put("resortId", booking.getResortId());
+        data.put("roomId", booking.getRoomId());
+        data.put("checkInDate", booking.getCheckInDate() != null ? booking.getCheckInDate().toString() : null);
+        data.put("checkOutDate", booking.getCheckOutDate() != null ? booking.getCheckOutDate().toString() : null);
+        data.put("guestsCount", booking.getGuestsCount());
+        data.put("roomsCount", booking.getRoomsCount());
+        data.put("totalAmount", booking.getTotalAmount() != null ? booking.getTotalAmount().doubleValue() : 0d);
+        data.put("guestName", booking.getGuestName());
+        data.put("guestPhone", booking.getGuestPhone());
+        data.put("appliedCouponCode", booking.getAppliedCouponCode());
+        data.put("discountAmount", booking.getDiscountAmount() != null ? booking.getDiscountAmount().doubleValue() : 0d);
+        data.put("rewardPointsUsed", booking.getRewardPointsUsed());
+        data.put("rewardPointsValue", booking.getRewardPointsValue() != null ? booking.getRewardPointsValue().doubleValue() : 0d);
+        data.put("status", booking.getStatus() != null ? booking.getStatus().name() : Booking.BookingStatus.PENDING.name());
+        data.put("bookingSource", booking.getBookingSource() != null ? booking.getBookingSource().name() : Booking.BookingSource.DIRECT.name());
+        if (booking.getCreatedAt() != null) {
+            java.time.Instant i = booking.getCreatedAt();
+            data.put("createdAt", Timestamp.ofTimeSecondsAndNanos(i.getEpochSecond(), i.getNano()));
+        }
+        return data;
+    }
+
+    // =========================================================
+    // SAFE FIRESTORE -> BOOKING MAPPING
+    // =========================================================
+    // Older documents may contain createdAt as a String while newer
+    // documents may contain a Firestore Timestamp. Never use
+    // document.toObject(Booking.class) here because that mapper cannot
+    // safely handle both representations.
+    private Booking fromDocument(DocumentSnapshot document) {
+        java.util.Map<String, Object> d = document.getData();
+        if (d == null) return null;
+
+        Booking booking = new Booking();
+        booking.setId(document.getId());
+        booking.setBookingCode(asString(d.get("bookingCode")));
+        booking.setUserId(asString(d.get("userId")));
+        booking.setResortId(asString(d.get("resortId")));
+        booking.setRoomId(asString(d.get("roomId")));
+        booking.setCheckInDate(asLocalDate(d.get("checkInDate")));
+        booking.setCheckOutDate(asLocalDate(d.get("checkOutDate")));
+        booking.setGuestsCount(asInteger(d.get("guestsCount"), 2));
+        booking.setRoomsCount(asInteger(d.get("roomsCount"), 1));
+        booking.setTotalAmount(asBigDecimal(d.get("totalAmount")));
+        booking.setGuestName(asString(d.get("guestName")));
+        booking.setGuestPhone(asString(d.get("guestPhone")));
+        booking.setAppliedCouponCode(asString(d.get("appliedCouponCode")));
+        booking.setDiscountAmount(defaultZero(d.get("discountAmount")));
+        booking.setRewardPointsUsed(asInteger(d.get("rewardPointsUsed"), 0));
+        booking.setRewardPointsValue(defaultZero(d.get("rewardPointsValue")));
+
+        String status = asString(d.get("status"));
+        if (status != null && !status.isBlank()) {
+            try {
+                booking.setStatus(Booking.BookingStatus.valueOf(status));
+            } catch (IllegalArgumentException ignored) {
+                booking.setStatus(Booking.BookingStatus.PENDING);
+            }
+        }
+
+        String source = asString(d.get("bookingSource"));
+        if (source != null && !source.isBlank()) {
+            try {
+                booking.setBookingSource(Booking.BookingSource.valueOf(source));
+            } catch (IllegalArgumentException ignored) {
+                booking.setBookingSource(Booking.BookingSource.DIRECT);
+            }
+        }
+
+        booking.setCreatedAt(asInstant(d.get("createdAt")));
+        if (booking.getCreatedAt() == null) {
+            booking.setCreatedAt(java.time.Instant.now());
+        }
+
+        return booking;
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private Integer asInteger(Object value, int defaultValue) {
+        if (value == null) return defaultValue;
+        if (value instanceof Number n) return n.intValue();
+        try { return Integer.parseInt(String.valueOf(value)); }
+        catch (Exception e) { return defaultValue; }
+    }
+
+    private java.math.BigDecimal asBigDecimal(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.math.BigDecimal bd) return bd;
+        if (value instanceof Number n) return new java.math.BigDecimal(n.toString());
+        try { return new java.math.BigDecimal(String.valueOf(value)); }
+        catch (Exception e) { return null; }
+    }
+
+    private java.math.BigDecimal defaultZero(Object value) {
+        java.math.BigDecimal result = asBigDecimal(value);
+        return result != null ? result : java.math.BigDecimal.ZERO;
+    }
+
+    private LocalDate asLocalDate(Object value) {
+        if (value == null) return null;
+        if (value instanceof Timestamp ts) {
+            return ts.toDate().toInstant().atZone(java.time.ZoneOffset.UTC).toLocalDate();
+        }
+        if (value instanceof java.util.Date date) {
+            return date.toInstant().atZone(java.time.ZoneOffset.UTC).toLocalDate();
+        }
+        String text = String.valueOf(value);
+        try { return LocalDate.parse(text); }
+        catch (Exception ignored) {
+            try {
+                return java.time.Instant.parse(text).atZone(java.time.ZoneOffset.UTC).toLocalDate();
+            } catch (Exception ignoredAgain) { return null; }
+        }
+    }
+
+    private java.time.Instant asInstant(Object value) {
+        if (value == null) return null;
+        if (value instanceof Timestamp ts) return ts.toDate().toInstant();
+        if (value instanceof java.util.Date date) return date.toInstant();
+        String text = String.valueOf(value).trim();
+        try { return java.time.Instant.parse(text); }
+        catch (Exception ignored) {
+            try {
+                return java.time.LocalDateTime.parse(text)
+                        .toInstant(java.time.ZoneOffset.UTC);
+            } catch (Exception ignoredAgain) {
+                return null;
+            }
+        }
+    }
+
 }

@@ -305,80 +305,92 @@ export default function BecomeAHost() {
 
   const handlePublishListing = async () => {
     try {
-      const finalTitle = formData.title || `Luxury ${formData.category || "Villa"} in ${formData.location.city || "Goa"}`;
-      const cover = formData.coverImage || formData.images?.[0] || "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80";
+      const currentUser = authService.getCurrentUser();
+      const token = authService.getAuthToken();
 
-      const newListing = {
-        id: `published-prop-${Date.now()}`,
-        ...formData,
-        title: finalTitle,
-        coverImage: cover,
-        images: formData.images.length ? formData.images : [cover],
-        description: formData.description || `Exquisite luxury ${formData.category ? formData.category.toLowerCase() : "villa"} designed for unforgettable stays.`,
-        status: "Active",
-        createdAt: new Date().toISOString().split("T")[0]
-      };
+      if (!token || !currentUser) {
+        toast("Please log in before submitting a property.", "error");
+        navigate("/login");
+        return;
+      }
+
+      const role = String(currentUser.role || "").toUpperCase();
+      if (!role.includes("OWNER") && !role.includes("ADMIN")) {
+        toast("Only an owner account can submit a property.", "error");
+        return;
+      }
+
+      const finalTitle = formData.title || `Luxury ${formData.category || "Villa"} in ${formData.location.city || "Goa"}`;
+      const description = formData.description || `Exquisite luxury ${formData.category ? formData.category.toLowerCase() : "villa"} designed for unforgettable stays.`;
+
+      // Browser blob/data URLs are temporary and must never be stored as the
+      // public property's permanent image URL. Use an empty image when no
+      // persistent URL was supplied; media upload can be added separately.
+      const persistentImages = (formData.images || []).filter(
+        url => typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/api/"))
+      );
+      const persistentVideos = (formData.videos || []).filter(
+        url => typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/api/"))
+      );
 
       const resortData = {
         name: finalTitle,
-        location: `${formData.location.city || "Goa"}, ${formData.location.state || "India"}, India`,
-        description: formData.description || `Exquisite luxury ${formData.category ? formData.category.toLowerCase() : "villa"} designed for unforgettable stays.`,
-        imageUrl: cover,
-        pricePerNight: formData.pricePerNight || 24500,
-        status: "ACTIVE",
+        location: `${formData.location.city || "Goa"}, ${formData.location.state || "Goa"}, ${formData.location.country || "India"}`,
+        description,
+        imageUrl: persistentImages[0] || "",
+        pricePerNight: Number(formData.pricePerNight || 0),
+        // A submitted owner property ALWAYS waits for admin approval.
+        status: "PENDING_APPROVAL",
         rating: 5.0,
         reviewCount: 0,
-        category: formData.category.toLowerCase(),
-        galleryUrls: (formData.images || []).join("|"),
-        videoUrls: (formData.videos || []).join("|"),
+        category: String(formData.category || "Villa").toLowerCase(),
+        galleryUrls: persistentImages.join("|"),
+        videoUrls: persistentVideos.join("|"),
         highlights: (formData.amenities || []).slice(0, 5).join(","),
         amenities: (formData.amenities || []).join(","),
-        guests: formData.specs.guests,
-        bedrooms: formData.specs.bedrooms,
-        beds: formData.specs.beds,
-        bathrooms: formData.specs.bathrooms
+        guests: Number(formData.specs?.guests || 0),
+        bedrooms: Number(formData.specs?.bedrooms || 0),
+        beds: Number(formData.specs?.beds || 0),
+        bathrooms: Number(formData.specs?.bathrooms || 0)
       };
 
+      // Do NOT create a fake/local listing before the backend succeeds.
+      // The backend is the single source of truth.
+      const created = await resortService.createResort(resortData);
+
+      // Keep only a lightweight local reference for the owner's portal UI.
+      // This is not used by the public resort listing.
       try {
-        await resortService.createResort(resortData);
-      } catch (apiErr) {
-        console.warn("API failed, using local storage fallback", apiErr);
+        hostService.saveData({
+          ...hostService.getData(),
+          listings: [
+            {
+              id: created?.id,
+              backendResortId: created?.id,
+              title: finalTitle,
+              name: finalTitle,
+              location: formData.location,
+              status: "Pending Approval",
+              pricePerNight: resortData.pricePerNight,
+              image: persistentImages[0] || "",
+              createdAt: new Date().toISOString()
+            },
+            ...(hostService.getData().listings || []).filter(item => String(item.id) !== String(created?.id))
+          ]
+        });
+      } catch (localError) {
+        console.warn("Could not update local host portal cache:", localError);
       }
 
-      hostService.addListing(newListing);
-      localStorage.setItem("reservo_user_has_published", "true");
+      secureStorage.setItem("reservo_user_has_published", "true");
       window.dispatchEvent(new Event("storage"));
       window.dispatchEvent(new Event("reservo-host-data-updated"));
 
-      try {
-        await apiClient.post("/api/v1/user/apply-host", {
-          documentType: "Aadhaar / GST / Passport Scan",
-          documentUrl: formData.kycDocumentBase64 || "mock://host-kyc-submitted"
-        });
-      } catch (e) {
-        console.warn("Backend apply-host call failed:", e);
-      }
-
-      let currentUser = authService.getCurrentUser();
-      if (!currentUser) {
-        currentUser = {
-          id: `host-${Date.now()}`,
-          name: formData.hostName || "Host User",
-          email: formData.hostEmail || "host@reservo.com",
-          role: "ROLE_USER",
-          kycStatus: "PENDING_VERIFICATION"
-        };
-      } else {
-        currentUser.kycStatus = "PENDING_VERIFICATION";
-      }
-      secureStorage.setItem("reservo_user", currentUser);
-
-      toast("🎉 Congratulations! Your host application has been submitted for Admin approval.", "success");
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 600);
+      toast("Property submitted successfully. It is now waiting for Admin approval.", "success");
+      setTimeout(() => navigate("/dashboard"), 700);
     } catch (err) {
-      toast("Failed to publish listing: " + err.message, "error");
+      console.error("Publish listing failed:", err);
+      toast(`Failed to submit property: ${err?.message || "Unknown error"}`, "error");
     }
   };
 

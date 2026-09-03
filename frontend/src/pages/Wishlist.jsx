@@ -4,7 +4,6 @@ import { Trash2, Calendar, MapPin, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWishlist } from "../context/WishlistContext";
 import { useToast } from "../context/ToastContext";
-import { RESORTS } from "../data/resortsData";
 import EmptyState from "../components/EmptyState";
 import rivoSearching from "../assets/images/rivo_searching.png";
 
@@ -39,14 +38,8 @@ export default function Wishlist({ onBook }) {
   };
 
   const bookStay = (resort) => {
-    // Resolve clean ID
-    const cleanId = typeof resort.id === 'string' 
-      ? resort.id.replace('home-', '').replace('mobile-', '') 
-      : resort.id;
-      
-    const fullResort = RESORTS.find(r => r.id === cleanId || r.id === resort.id) || resort;
     if (onBook) {
-      onBook(fullResort);
+      onBook(resort);
     } else {
       toast("Checkout is currently processing...", "info");
     }

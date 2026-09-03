@@ -1,5 +1,6 @@
 import { secureStorage } from "./secureStorage";
 import { apiClient } from "./apiClient";
+import { resortService } from "./resort.service";
 
 const BOOKINGS_KEY = "reservo-bookings";
 
@@ -11,15 +12,18 @@ const resortStringToIdMap = {
   "maldives-overwater": 10
 };
 
-const mapBackendBooking = (b) => ({
-  id: b.id,
-  resortName: b.resort ? b.resort.name : "Luxury Resort",
-  location: b.resort ? b.resort.location : "India",
-  resortImage: b.resort ? (b.resort.imageUrl || b.resort.image) : "",
+const mapBackendBooking = (b, resort = null) => ({
+  // IMPORTANT: booking ID and resort ID are different things.
+  // The booking ID identifies the reservation; resortId identifies the property.
+  id: b.id || b.bookingId,
+  resortId: b.resortId,
+  resortName: resort?.name || b.resort?.name || b.resortName || "Luxury Resort",
+  location: resort?.location || b.resort?.location || b.resortLocation || "India",
+  resortImage: resort?.image || resort?.heroImage || b.resort?.imageUrl || b.resortImage || "",
   checkin: b.checkInDate,
   checkout: b.checkOutDate,
   guests: b.guestsCount || 2,
-  roomTitle: b.room ? b.room.type.replace(/_/g, " ") : "Luxury Room",
+  roomTitle: b.room ? b.room.type.replace(/_/g, " ") : (b.roomType || "Luxury Room"),
   total: b.totalAmount,
   status: b.status === "CONFIRMED" ? "Confirmed" : b.status === "CANCELLED" ? "Cancelled" : b.status,
   code: b.bookingCode,
@@ -51,8 +55,23 @@ export const bookingService = {
 
     try {
       const result = await apiClient.get(`/api/v1/bookings/my-bookings?userId=${user.id}`);
-      if (result && result.success && result.data) {
-        const mapped = result.data.map(mapBackendBooking);
+      if (result && result.success && Array.isArray(result.data)) {
+        // The /my-bookings endpoint returns Booking objects, not nested resort
+        // objects. Resolve the actual Firestore resort using resortId so the
+        // booking card always shows the real property name/image.
+        const mapped = await Promise.all(
+          result.data.map(async (booking) => {
+            let resort = null;
+            if (booking?.resortId) {
+              try {
+                resort = await resortService.getResortById(booking.resortId);
+              } catch (e) {
+                console.warn(`Could not load resort ${booking.resortId} for booking ${booking.id}:`, e);
+              }
+            }
+            return mapBackendBooking(booking, resort);
+          })
+        );
         return mapped;
       }
     } catch (e) {

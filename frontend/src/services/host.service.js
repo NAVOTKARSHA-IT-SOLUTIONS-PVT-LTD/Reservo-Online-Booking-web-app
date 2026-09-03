@@ -86,17 +86,14 @@ export const hostService = {
     }
   },
 
-  addListing: (newListing) => {
+  addListing: (listing) => {
     const data = hostService.getData();
     const listingWithId = {
-      ...newListing,
-      id: `host-prop-${Date.now()}`,
-      status: "Active",
-      rating: 5.0,
-      reviewsCount: 0,
-      createdAt: new Date().toISOString().split("T")[0]
+      ...listing,
+      id: String(listing.id),
+      status: listing.status || "PENDING_APPROVAL"
     };
-    data.listings = [listingWithId, ...data.listings];
+    data.listings = [listingWithId, ...(data.listings || []).filter(item => String(item.id) !== String(listingWithId.id))];
     hostService.saveData(data);
     return listingWithId;
   },

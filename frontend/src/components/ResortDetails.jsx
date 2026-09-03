@@ -12,7 +12,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const locationState = useLocation();
   const { t } = useTranslation();
   const { wishlist, toggleWishlist } = useWishlist();
-  const targetId = urlId ? (isNaN(urlId) ? urlId : `home-${urlId}`) : resort.id;
+  const targetId = urlId || resort.id;
   const isFavorited = wishlist.some((item) => item.id === targetId);
 
   const toggleFavorite = () => {

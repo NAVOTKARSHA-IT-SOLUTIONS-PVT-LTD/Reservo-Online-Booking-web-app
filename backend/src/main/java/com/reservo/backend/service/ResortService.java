@@ -1,6 +1,7 @@
 package com.reservo.backend.service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.security.core.Authentication;
@@ -29,9 +30,21 @@ public class ResortService {
     // ============================================================
 
     public List<Resort> getAllApprovedResorts() {
+        // Public listings must be real, complete, database-backed
+        // properties that have been approved by Admin.
         return resortRepository.findByStatus(
                 Resort.ResortStatus.APPROVED
-        );
+        ).stream()
+                .filter(this::isValidPublicResort)
+                .toList();
+    }
+
+    private boolean isValidPublicResort(Resort resort) {
+        return resort != null
+                && resort.getName() != null
+                && !resort.getName().isBlank()
+                && resort.getLocation() != null
+                && !resort.getLocation().isBlank();
     }
 
     // ============================================================
@@ -125,6 +138,7 @@ public class ResortService {
                         resort.getStatus() ==
                                 Resort.ResortStatus.APPROVED
                 )
+                .filter(this::isValidPublicResort)
                 .toList();
     }
 
@@ -134,59 +148,99 @@ public class ResortService {
 
     public Resort createResort(Resort resort) {
 
-        Authentication auth =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
 
-        if (auth != null
-                && auth.isAuthenticated()
-                && !"anonymousUser".equals(auth.getPrincipal())) {
-
-            String email = auth.getName();
-
-            User user =
-                    userRepository
-                            .findByEmail(email)
-                            .orElse(null);
-
-            if (user != null) {
-
-                /*
-                 * Firestore uses an ownerId instead
-                 * of a JPA User relationship.
-                 */
-                resort.setOwnerId(user.getId());
-
-                /*
-                 * Automatically approve partner resorts.
-                 */
-                if ("reservo2mail.in".equals(email)
-                        || "reservo2@mail.in".equals(email)) {
-
-                    resort.setStatus(
-                            Resort.ResortStatus.APPROVED
-                    );
-
-                    log.info(
-                            "Auto-approved resort '{}' for partner: {}",
-                            resort.getName(),
-                            email
-                    );
-
-                    return resortRepository.save(resort);
-                }
-            }
+        if (auth == null || !auth.isAuthenticated()
+                || "anonymousUser".equals(auth.getPrincipal())) {
+            throw new SecurityException("Authentication is required to submit a property");
         }
 
-        /*
-         * Normal resorts require admin approval.
-         */
-        resort.setStatus(
-                Resort.ResortStatus.PENDING_APPROVAL
-        );
+        String email = auth.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found for authenticated account: " + email));
+
+        // The authenticated account is always the owner of the submitted property.
+        resort.setOwnerId(user.getId());
+
+        // NEVER publish directly from the owner submission endpoint.
+        // Every property must be reviewed by an Admin first.
+        resort.setStatus(Resort.ResortStatus.PENDING_APPROVAL);
+
+        if (resort.getRating() == null) {
+            resort.setRating(5.0);
+        }
+        if (resort.getReviewCount() == null) {
+            resort.setReviewCount(0);
+        }
+        if (resort.getCreatedAt() == null) {
+            resort.setCreatedAt(Instant.now());
+        }
 
         return resortRepository.save(resort);
+    }
+
+    // ============================================================
+    // UPDATE RESORT BY OWNER
+    // ============================================================
+
+    /**
+     * Updates a property owned by the currently authenticated owner.
+     *
+     * Every owner edit goes back through Admin approval. The submitted
+     * values are stored on the same Firestore document and the public
+     * listing remains hidden until an Admin changes the status to APPROVED.
+     */
+    public Resort updateResortByOwner(String resortId, Resort changes) {
+
+        Authentication auth = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated()
+                || "anonymousUser".equals(auth.getPrincipal())) {
+            throw new SecurityException("Authentication is required to edit a property");
+        }
+
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found for authenticated account: " + auth.getName()));
+
+        Resort existing = resortRepository.findById(resortId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Resort not found with ID: " + resortId));
+
+        // Never allow an owner to edit somebody else's property.
+        if (existing.getOwnerId() == null
+                || !existing.getOwnerId().equals(user.getId())) {
+            throw new SecurityException("You are not allowed to edit this property");
+        }
+
+        // Never allow the client to change identity/ownership/status.
+        existing.setName(changes.getName());
+        existing.setLocation(changes.getLocation());
+        existing.setDescription(changes.getDescription());
+        existing.setImageUrl(changes.getImageUrl());
+        existing.setPricePerNight(changes.getPricePerNight());
+        existing.setFeaturedTag(changes.getFeaturedTag());
+        existing.setDiscountPercentage(changes.getDiscountPercentage());
+        existing.setCategory(changes.getCategory());
+        existing.setGalleryUrls(changes.getGalleryUrls());
+        existing.setVideoUrls(changes.getVideoUrls());
+        existing.setHighlights(changes.getHighlights());
+        existing.setAmenities(changes.getAmenities());
+        existing.setGuests(changes.getGuests());
+        existing.setBedrooms(changes.getBedrooms());
+        existing.setBeds(changes.getBeds());
+        existing.setBathrooms(changes.getBathrooms());
+
+        // Owner edits always require a fresh admin approval.
+        existing.setStatus(Resort.ResortStatus.PENDING_APPROVAL);
+
+        return resortRepository.save(existing);
     }
 
     // ============================================================

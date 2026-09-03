@@ -6,9 +6,11 @@ import {
   MessageSquare, BarChart3, Check, X, ShieldCheck, 
   ChevronRight, Clock, Star, Lock, Send, Download, 
   TrendingUp, Award, CheckCircle2, Plus, Info, MapPin, FileText, Sparkles, Settings,
-  Mail, MailCheck, Bell, Key, Copy, ExternalLink, CheckCheck, Eye, Smartphone, Trash2
+  Mail, MailCheck, Bell, Key, Copy, ExternalLink, CheckCheck, Eye, Smartphone, Trash2,
+  Edit, Save, Upload, Image as ImageIcon, Loader2
 } from "lucide-react";
 import { hostService } from "../services/host.service";
+import { resortService } from "../services/resort.service";
 import { authService } from "../services/auth.service";
 import { useToast } from "../context/ToastContext";
 import { apiClient } from "../services/apiClient";
@@ -44,9 +46,10 @@ export default function HostAdminPortal() {
   const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
 
   useEffect(() => {
-    if (!hostService.hasPublishedListing()) {
-      toast("Please list at least one resort to access the Host Administration Dashboard.", "info");
-      navigate("/become-a-host", { replace: true });
+    const role = authService.getUserRole();
+    if (role !== "ROLE_OWNER" && role !== "ROLE_ADMIN") {
+      toast("Only approved property owners can access the Host Administration Dashboard.", "info");
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate, toast]);
 
@@ -66,6 +69,29 @@ export default function HostAdminPortal() {
   const [hostData, setHostData] = useState(() => hostService.getData());
   const [myProperties, setMyProperties] = useState([]);
   const [loadingProperties, setLoadingProperties] = useState(false);
+
+  // Property editing / re-approval state
+  const [editingProperty, setEditingProperty] = useState(null);
+  const [savingProperty, setSavingProperty] = useState(false);
+  const [uploadingPropertyImages, setUploadingPropertyImages] = useState(false);
+  const [propertyEditForm, setPropertyEditForm] = useState({
+    name: "",
+    location: "",
+    description: "",
+    pricePerNight: "",
+    category: "",
+    guests: "",
+    bedrooms: "",
+    beds: "",
+    bathrooms: "",
+    featuredTag: "",
+    discountPercentage: "",
+    galleryUrls: [],
+    imageUrl: "",
+    highlights: "",
+    amenities: "",
+    videoUrls: ""
+  });
 
   // States for new Host Panel Tabs
   const [selectedPropertyId, setSelectedPropertyId] = useState("");
@@ -200,6 +226,135 @@ export default function HostAdminPortal() {
     }));
   };
 
+  const openPropertyEditor = (property) => {
+    const gallery = splitUrls(property.galleryUrls || property.imageUrl);
+    setEditingProperty(property);
+    setPropertyEditForm({
+      name: property.name || "",
+      location: property.location || "",
+      description: property.description || "",
+      pricePerNight: property.pricePerNight ?? "",
+      category: property.category || "",
+      guests: property.guests ?? "",
+      bedrooms: property.bedrooms ?? "",
+      beds: property.beds ?? "",
+      bathrooms: property.bathrooms ?? "",
+      featuredTag: property.featuredTag || "",
+      discountPercentage: property.discountPercentage ?? "",
+      galleryUrls: gallery,
+      imageUrl: property.imageUrl || gallery[0] || "",
+      highlights: Array.isArray(property.highlights)
+        ? property.highlights.join(", ")
+        : (property.highlights || ""),
+      amenities: Array.isArray(property.amenities)
+        ? property.amenities.map(a => typeof a === "string" ? a : a?.name).filter(Boolean).join(", ")
+        : (property.amenities || ""),
+      videoUrls: property.videoUrls || ""
+    });
+  };
+
+  const closePropertyEditor = () => {
+    if (!savingProperty && !uploadingPropertyImages) {
+      setEditingProperty(null);
+    }
+  };
+
+  const handlePropertyEditField = (field, value) => {
+    setPropertyEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePropertyImageUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    setUploadingPropertyImages(true);
+    try {
+      const uploadedUrls = [];
+      for (const file of files) {
+        if (!file.type.startsWith("image/")) {
+          throw new Error(`${file.name} is not an image`);
+        }
+        uploadedUrls.push(await resortService.uploadMedia(file));
+      }
+
+      setPropertyEditForm(prev => ({
+        ...prev,
+        galleryUrls: [...prev.galleryUrls, ...uploadedUrls],
+        imageUrl: prev.imageUrl || uploadedUrls[0] || ""
+      }));
+
+      toast(`${uploadedUrls.length} photo${uploadedUrls.length > 1 ? "s" : ""} uploaded`, "success");
+    } catch (err) {
+      toast("Photo upload failed: " + err.message, "error");
+    } finally {
+      setUploadingPropertyImages(false);
+      event.target.value = "";
+    }
+  };
+
+  const removePropertyImage = (url) => {
+    setPropertyEditForm(prev => {
+      const gallery = prev.galleryUrls.filter(item => item !== url);
+      return {
+        ...prev,
+        galleryUrls: gallery,
+        imageUrl: prev.imageUrl === url ? (gallery[0] || "") : prev.imageUrl
+      };
+    });
+  };
+
+  const handleSavePropertyEdit = async (event) => {
+    event.preventDefault();
+    if (!editingProperty?.id) return;
+
+    if (!propertyEditForm.name.trim()) {
+      toast("Property name is required", "error");
+      return;
+    }
+    if (!propertyEditForm.location.trim()) {
+      toast("Property location is required", "error");
+      return;
+    }
+
+    setSavingProperty(true);
+    try {
+      const payload = {
+        name: propertyEditForm.name.trim(),
+        location: propertyEditForm.location.trim(),
+        description: propertyEditForm.description.trim(),
+        imageUrl: propertyEditForm.imageUrl || null,
+        galleryUrls: propertyEditForm.galleryUrls.join("|"),
+        videoUrls: propertyEditForm.videoUrls.trim() || null,
+        highlights: propertyEditForm.highlights.trim() || null,
+        amenities: propertyEditForm.amenities.trim() || null,
+        pricePerNight: propertyEditForm.pricePerNight === "" ? null : Number(propertyEditForm.pricePerNight),
+        category: propertyEditForm.category.trim() || null,
+        guests: propertyEditForm.guests === "" ? null : Number(propertyEditForm.guests),
+        bedrooms: propertyEditForm.bedrooms === "" ? null : Number(propertyEditForm.bedrooms),
+        beds: propertyEditForm.beds === "" ? null : Number(propertyEditForm.beds),
+        bathrooms: propertyEditForm.bathrooms === "" ? null : Number(propertyEditForm.bathrooms),
+        featuredTag: propertyEditForm.featuredTag.trim() || null,
+        discountPercentage: propertyEditForm.discountPercentage === "" ? null : Number(propertyEditForm.discountPercentage)
+      };
+
+      const updated = await resortService.updateResort(editingProperty.id, payload);
+
+      setMyProperties(prev => prev.map(p =>
+        String(p.id) === String(editingProperty.id)
+          ? { ...updated, activePhoto: propertyEditForm.imageUrl || p.activePhoto }
+          : p
+      ));
+
+      setEditingProperty(null);
+      toast("Property changes submitted for Admin approval.", "success");
+      await fetchMyProperties();
+    } catch (err) {
+      toast("Failed to update property: " + err.message, "error");
+    } finally {
+      setSavingProperty(false);
+    }
+  };
+
   useEffect(() => {
     if (currentUser) {
       fetchMyProperties();
@@ -261,6 +416,90 @@ export default function HostAdminPortal() {
       toast("Failed to reject host: " + e.message, "error");
     }
   };
+
+  // Load real Firestore bookings for the authenticated owner.
+  // Host reservations must never come from the demo/localStorage reservation list.
+  useEffect(() => {
+    const loadOwnerBookings = async () => {
+      if (!currentUser || (currentUser.role !== "ROLE_OWNER" && currentUser.role !== "ROLE_ADMIN")) {
+        return;
+      }
+
+      try {
+        const res = await apiClient.get("/api/v1/bookings/owner-bookings");
+        if (!res?.success) {
+          throw new Error(res?.message || "Could not load owner bookings");
+        }
+
+        const backendBookings = Array.isArray(res.data) ? res.data : [];
+
+        const realReservations = backendBookings.map((booking) => {
+          const checkIn = booking.checkInDate || "";
+          const checkOut = booking.checkOutDate || "";
+          const start = checkIn ? new Date(`${checkIn}T00:00:00`) : null;
+          const end = checkOut ? new Date(`${checkOut}T00:00:00`) : null;
+          const nights = start && end && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())
+            ? Math.max(1, Math.round((end - start) / 86400000))
+            : 1;
+
+          const statusMap = {
+            PENDING: "Pending Approval",
+            CONFIRMED: "Upcoming",
+            CANCELLED: "Cancelled",
+            COMPLETED: "Completed"
+          };
+
+          return {
+            id: booking.id,
+            bookingId: booking.id,
+            bookingCode: booking.bookingCode,
+            resortId: booking.resortId,
+            roomId: booking.roomId,
+            listingTitle: booking.resort?.name || booking.resortName || "Property",
+            status: statusMap[booking.status] || booking.status || "Pending Approval",
+            paymentStatus: Number(booking.totalAmount || 0) === 0
+              ? "Fully Comped / ₹0 Paid"
+              : (booking.status === "CONFIRMED" ? "Payment Confirmed" : "Payment Pending"),
+            payoutAmount: Number(booking.totalAmount || 0),
+            guest: {
+              name: booking.guestName || booking.user?.name || "Guest",
+              email: booking.user?.email || booking.guestEmail || "",
+              phone: booking.guestPhone || booking.user?.phone || "",
+              country: booking.user?.country || "India",
+              avatar: booking.user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+              verified: true
+            },
+            dates: {
+              checkIn,
+              checkOut,
+              nights
+            },
+            guestsCount: {
+              adults: Number(booking.guestsCount || 2),
+              children: 0
+            },
+            specialRequest: booking.specialRequest || "",
+            accessCode: booking.accessCode || "",
+            confirmationSent: booking.confirmationSent || {}
+          };
+        });
+
+        setHostData((previous) => ({
+          ...previous,
+          reservations: realReservations
+        }));
+      } catch (error) {
+        console.error("Failed to load owner bookings:", error);
+        // Do not replace the real booking list with demo reservations.
+        setHostData((previous) => ({
+          ...previous,
+          reservations: []
+        }));
+      }
+    };
+
+    loadOwnerBookings();
+  }, [currentUser]);
 
   // Filter States
   const [resStatusFilter, setResStatusFilter] = useState("all");
@@ -1119,6 +1358,19 @@ export default function HostAdminPortal() {
                           </div>
                         </div>
 
+                        <div className="pt-2 flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openPropertyEditor(prop)}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2563EB] text-white text-xs font-extrabold border-none cursor-pointer hover:bg-[#1D4ED8] transition-colors"
+                          >
+                            <Edit size={14} /> Edit Property
+                          </button>
+                          <span className="text-[10px] text-slate-400">
+                            Editing any property information or photos sends it back for Admin approval.
+                          </span>
+                        </div>
+
                       </div>
                     </div>
 
@@ -1652,7 +1904,7 @@ export default function HostAdminPortal() {
         )}
 
         {/* TAB 3: RESERVATIONS & GUEST STAYS */}
-        {activeTab === "reservations" && (
+        {activeTab === "bookings" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -2961,6 +3213,197 @@ export default function HostAdminPortal() {
             </div>
           );
         })()}
+      </AnimatePresence>
+
+
+      {/* PROPERTY EDITOR */}
+      <AnimatePresence>
+        {editingProperty && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.form
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.98 }}
+              onSubmit={handleSavePropertyEdit}
+              className="w-full max-w-4xl max-h-[92vh] overflow-y-auto bg-white dark:bg-[#0F172A] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700"
+            >
+              <div className="sticky top-0 z-10 bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-extrabold font-serif text-slate-900 dark:text-white">
+                    Edit Property
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Changes will be submitted for Admin approval before becoming public.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closePropertyEditor}
+                  disabled={savingProperty || uploadingPropertyImages}
+                  className="w-9 h-9 rounded-full border border-slate-200 bg-white text-slate-600 cursor-pointer flex items-center justify-center disabled:opacity-50"
+                >
+                  <X size={17} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    ["name", "Property Name", "text"],
+                    ["location", "Location", "text"],
+                    ["pricePerNight", "Price / Night", "number"],
+                    ["category", "Category", "text"],
+                    ["guests", "Guests", "number"],
+                    ["bedrooms", "Bedrooms", "number"],
+                    ["beds", "Beds", "number"],
+                    ["bathrooms", "Bathrooms", "number"],
+                    ["featuredTag", "Featured Tag", "text"],
+                    ["discountPercentage", "Discount %", "number"]
+                  ].map(([field, label, type]) => (
+                    <label key={field} className="space-y-1.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                        {label}
+                      </span>
+                      <input
+                        type={type}
+                        value={propertyEditForm[field]}
+                        onChange={(e) => handlePropertyEditField(field, e.target.value)}
+                        min={type === "number" ? "0" : undefined}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20"
+                      />
+                    </label>
+                  ))}
+                </div>
+
+                <label className="space-y-1.5 block">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                    Description
+                  </span>
+                  <textarea
+                    rows={4}
+                    value={propertyEditForm.description}
+                    onChange={(e) => handlePropertyEditField("description", e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-white outline-none resize-y"
+                  />
+                </label>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                        Property Photos
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        Add new photos or remove existing ones.
+                      </span>
+                    </div>
+                    <label className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold cursor-pointer ${uploadingPropertyImages ? "bg-slate-200 text-slate-500" : "bg-blue-600 text-white hover:bg-blue-700"}`}>
+                      {uploadingPropertyImages ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                      {uploadingPropertyImages ? "Uploading..." : "Add Photos"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        disabled={uploadingPropertyImages}
+                        onChange={handlePropertyImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {propertyEditForm.galleryUrls.length === 0 ? (
+                    <div className="border border-dashed border-slate-300 rounded-2xl p-8 text-center text-xs text-slate-400">
+                      No photos uploaded. Add at least one photo.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {propertyEditForm.galleryUrls.map((url, index) => (
+                        <div key={`${url}-${index}`} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 group">
+                          <img src={url} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
+                          {propertyEditForm.imageUrl === url && (
+                            <span className="absolute left-2 top-2 px-2 py-1 rounded-full bg-blue-600 text-white text-[9px] font-black">
+                              COVER
+                            </span>
+                          )}
+                          <div className="absolute inset-x-2 bottom-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {propertyEditForm.imageUrl !== url && (
+                              <button
+                                type="button"
+                                onClick={() => handlePropertyEditField("imageUrl", url)}
+                                className="flex-1 py-1.5 rounded-lg bg-white text-slate-800 text-[9px] font-extrabold border-none cursor-pointer shadow"
+                              >
+                                Make Cover
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removePropertyImage(url)}
+                              className="px-2 py-1.5 rounded-lg bg-rose-600 text-white text-[9px] font-extrabold border-none cursor-pointer shadow"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="space-y-1.5">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Highlights</span>
+                    <textarea
+                      rows={3}
+                      value={propertyEditForm.highlights}
+                      onChange={(e) => handlePropertyEditField("highlights", e.target.value)}
+                      placeholder="Pool, Spa, Mountain View"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white dark:bg-slate-900 text-sm outline-none resize-y"
+                    />
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Amenities</span>
+                    <textarea
+                      rows={3}
+                      value={propertyEditForm.amenities}
+                      onChange={(e) => handlePropertyEditField("amenities", e.target.value)}
+                      placeholder="Wi-Fi, Pool, Parking, Breakfast"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white dark:bg-slate-900 text-sm outline-none resize-y"
+                    />
+                  </label>
+                </div>
+
+                <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-xs text-amber-800">
+                  <strong>Approval required:</strong> Saving any change will set this property back to
+                  <strong> PENDING_APPROVAL</strong>. It will not be publicly listed until an Admin approves the changes.
+                </div>
+              </div>
+
+              <div className="sticky bottom-0 bg-white/95 dark:bg-[#0F172A]/95 backdrop-blur border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closePropertyEditor}
+                  disabled={savingProperty || uploadingPropertyImages}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-extrabold cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingProperty || uploadingPropertyImages}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-extrabold border-none cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                >
+                  {savingProperty ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {savingProperty ? "Submitting..." : "Save & Request Approval"}
+                </button>
+              </div>
+            </motion.form>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       </main>

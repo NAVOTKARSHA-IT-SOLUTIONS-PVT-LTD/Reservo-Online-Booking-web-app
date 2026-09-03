@@ -123,17 +123,59 @@ public class PaymentController {
                     discountAmount, redeemedPoints, pointsDiscount
             );
 
-            // Check for placeholder key simulation fallback (always falls back to mock payments in development)
-            if (stripeService.isPlaceholderKey()) {
-                log.warn("Stripe API key is a placeholder. Falling back to local mock payment simulation.");
-                bookingService.confirmBooking(booking.getBookingCode(), "ch_mock_" + System.currentTimeMillis(), "MOCK_UPI");
-                
+            // ============================================================
+            // ZERO-TOTAL BOOKING
+            // ============================================================
+            // A 100% coupon (or other combination of discounts) can make
+            // the final amount exactly zero. In that case NO payment
+            // gateway should be called. The reservation is confirmed
+            // immediately as a fully-comped/mock booking.
+            if (finalAmount.compareTo(BigDecimal.ZERO) == 0) {
+                log.info("Zero-total booking {}. Completing reservation without payment gateway.",
+                        booking.getBookingCode());
+
+                bookingService.confirmBooking(
+                        booking.getBookingCode(),
+                        "FREE_" + System.currentTimeMillis(),
+                        "ZERO_TOTAL_COUPON"
+                );
+
                 if (couponCode != null && !couponCode.trim().isEmpty()) {
                     couponService.incrementCouponUsage(couponCode.trim());
                 }
 
-                String mockSuccessUrl = successUrl + "?bookingCode=" + booking.getBookingCode();
-                return ResponseEntity.ok(ApiResponse.success(mockSuccessUrl, "Mock payment link generated successfully"));
+                String zeroTotalSuccessUrl = appendBookingCode(successUrl, booking.getBookingCode());
+                return ResponseEntity.ok(
+                        ApiResponse.success(
+                                zeroTotalSuccessUrl,
+                                "Reservation completed successfully. No payment was required."
+                        )
+                );
+            }
+
+            // ============================================================
+            // DEVELOPMENT MOCK PAYMENT
+            // ============================================================
+            if (stripeService.isPlaceholderKey()) {
+                log.warn("Stripe API key is a placeholder. Falling back to local mock payment simulation.");
+
+                bookingService.confirmBooking(
+                        booking.getBookingCode(),
+                        "ch_mock_" + System.currentTimeMillis(),
+                        "MOCK_UPI"
+                );
+
+                if (couponCode != null && !couponCode.trim().isEmpty()) {
+                    couponService.incrementCouponUsage(couponCode.trim());
+                }
+
+                String mockSuccessUrl = appendBookingCode(successUrl, booking.getBookingCode());
+                return ResponseEntity.ok(
+                        ApiResponse.success(
+                                mockSuccessUrl,
+                                "Mock payment completed successfully"
+                        )
+                );
             }
 
             // Create Stripe Checkout session
@@ -144,6 +186,12 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to generate payment link: " + e.getMessage(), 500));
         }
+    }
+
+    private String appendBookingCode(String successUrl, String bookingCode) {
+        String separator = successUrl.contains("?") ? "&" : "?";
+        return successUrl + separator + "bookingCode=" +
+                java.net.URLEncoder.encode(bookingCode, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     @PostMapping("/refund/{bookingId}")

@@ -169,7 +169,15 @@ export default function Bookings() {
                     </button>
                   )}
                   <button 
-                    onClick={() => navigate(`/resort/${b.id.toString().includes('mock') ? 'goa-coastline' : b.id}`)}
+                    onClick={() => {
+                      // A booking ID is NOT a resort ID. Always navigate using
+                      // the resortId stored on the booking.
+                      if (b.resortId) {
+                        navigate(`/resort/${encodeURIComponent(b.resortId)}`);
+                      } else {
+                        alert("This booking does not contain a valid resort ID.");
+                      }
+                    }}
                     className="py-1.5 px-3 bg-bg-light border border-border-color text-text-dark text-[10px] font-bold rounded-lg hover:border-primary hover:text-primary transition-all cursor-pointer flex items-center gap-1"
                   >
                     View resort <ChevronRight className="w-3 h-3" />

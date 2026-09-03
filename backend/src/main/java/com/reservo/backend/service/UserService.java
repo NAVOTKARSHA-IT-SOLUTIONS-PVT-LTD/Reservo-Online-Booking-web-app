@@ -32,14 +32,6 @@ public class UserService {
         return userRepository.findByKycStatus(User.KycStatus.PENDING_VERIFICATION);
     }
 
-    public void approveResortsForUser(User user) {
-        if (user == null || user.getId() == null) return;
-        for (Resort resort : resortRepository.findByOwnerId(user.getId())) {
-            resort.setStatus(Resort.ResortStatus.APPROVED);
-            resortRepository.save(resort);
-        }
-    }
-
     public User updateProfile(String email, String name, String phone) {
         User user = getUserByEmail(email);
         user.setName(name);

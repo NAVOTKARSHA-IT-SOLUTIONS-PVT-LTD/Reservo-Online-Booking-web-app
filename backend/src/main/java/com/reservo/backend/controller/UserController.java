@@ -86,7 +86,6 @@ public class UserController {
         user.setMembershipLevel("Host Approved"); 
 
         User updated = userService.saveUser(user);
-        userService.approveResortsForUser(user);
         return ResponseEntity.ok(ApiResponse.success(updated, "Host approved successfully"));
     }
 

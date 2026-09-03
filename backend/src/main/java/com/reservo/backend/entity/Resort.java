@@ -3,6 +3,8 @@ package com.reservo.backend.entity;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import com.google.cloud.firestore.annotation.Exclude;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +20,12 @@ import lombok.ToString;
 @ToString
 public class Resort {
 
-    /** Firestore document ID. */
+    /**
+     * Firestore document ID.
+     *
+     * This is NOT stored/read as a Firestore document field.
+     * The repository gets it from document.getId().
+     */
     private String id;
 
     private String name;
@@ -44,13 +51,28 @@ public class Resort {
     private Integer bedrooms;
     private Integer beds;
     private Integer bathrooms;
+
     private ResortStatus status;
 
-    /** Firestore document ID of the owner user. */
+    /**
+     * Firestore document ID of the owner user.
+     */
     private String ownerId;
 
     @Builder.Default
     private Instant createdAt = Instant.now();
+
+    /**
+     * IMPORTANT:
+     * Firestore must ignore the Resort.id property.
+     *
+     * The actual ID is taken from:
+     * document.getId()
+     */
+    @Exclude
+    public String getId() {
+        return id;
+    }
 
     public enum ResortStatus {
         PENDING_APPROVAL,

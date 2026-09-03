@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../hooks/useTranslation';
 import { Sparkles, X, MessageSquare, ChevronRight, Check, Star, MapPin, Phone, PhoneOff, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RESORTS } from '../data/resortsData';
 import rivoSearching from '../assets/images/rivo_searching.png';
 import { apiClient } from '../services/apiClient';
+import { resortService } from '../services/resort.service';
 
 export default function FloatingAIAssistant() {
   const navigate = useNavigate();
@@ -34,6 +34,15 @@ export default function FloatingAIAssistant() {
   };
 
   const [isOpen, setIsOpen] = useState(false);
+  const [liveResorts, setLiveResorts] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    resortService.getAllResorts()
+      .then(data => { if (active) setLiveResorts(Array.isArray(data) ? data : []); })
+      .catch(err => console.warn("Failed to load live resorts for Rivo assistant:", err));
+    return () => { active = false; };
+  }, []);
   const [selectedMood, setSelectedMood] = useState(null);
   const [messages, setMessages] = useState([
     {
@@ -93,7 +102,17 @@ export default function FloatingAIAssistant() {
 
     setTimeout(() => {
       setIsTyping(false);
-      const matchedResort = RESORTS.find(r => r.id === mood.resortId) || RESORTS[0];
+      const matchedResort = liveResorts.find(r => String(r.category || "").toLowerCase().includes(mood.category))
+        || liveResorts[0];
+
+      if (!matchedResort) {
+        setMessages(prev => [...prev, {
+          id: "msg-rivo-" + Date.now(),
+          sender: "rivo",
+          text: "I couldn't find an approved stay matching that mood in the live inventory yet."
+        }]);
+        return;
+      }
       
       const rivoReply = {
         id: "msg-rivo-" + Date.now(),
@@ -160,9 +179,9 @@ export default function FloatingAIAssistant() {
       console.warn("Backend unavailable, using dynamic mock generator:", err);
       setTimeout(() => {
         const msg = userText.toLowerCase();
-        let reply = "I've processed your travel preferences! I suggest checking out our partner stays like the Ocean Bliss Resort or Royal Palm Retreat for an amazing luxury holiday.";
+        let reply = "I couldn't reach the live resort inventory right now. Please try again in a moment.";
         if (msg.includes("available") || msg.includes("resort") || msg.includes("list")) {
-          reply = "Here are our available luxury resorts:\n\n🌴 **Ocean Bliss Resort** - Goa, India\n🌴 **Royal Palm Retreat** - Bali, Indonesia\n🌴 **Sunset Lagoon Resort** - Maldives\n🌴 **Hill View Escape** - Udaipur, India\n\nLet me know if you'd like to learn more about any of these retreats!";
+          reply = "I couldn't reach the live resort inventory right now. Please open the Search Stays page after the backend is available to see the current approved resorts.";
         } else if (msg.includes("hello") || msg.includes("hi ")) {
           reply = "Greetings! I'm Rivo, your luxury travel companion. How can I assist you with your booking today?";
         }

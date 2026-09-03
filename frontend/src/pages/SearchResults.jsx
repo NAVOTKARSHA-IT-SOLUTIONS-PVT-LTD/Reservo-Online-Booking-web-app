@@ -6,7 +6,6 @@ import {
   Sun, Coffee, Waves, Dumbbell, ArrowRight, ChevronLeft, ChevronRight, CheckCircle2
 } from "lucide-react";
 import rivoSearching from "../assets/images/rivo_searching.png";
-import { ALL_RESORTS } from "../data/resorts";
 import { resortService } from "../services/resort.service";
 import { authService } from "../services/auth.service";
 
@@ -175,15 +174,13 @@ function SearchResults() {
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [sortKey, setSortKey] = useState("recommended");
   const [activeTopChip, setActiveTopChip] = useState("ai");
-  const [resortsList, setResortsList] = useState(ALL_RESORTS);
+  const [resortsList, setResortsList] = useState([]);
 
   useEffect(() => {
     const loadResorts = async () => {
       try {
         const data = await resortService.getSearchResorts();
-        if (data && data.length > 0) {
-          setResortsList(data);
-        }
+        setResortsList(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error("Failed to load search resorts:", e);
       }

@@ -1,5 +1,7 @@
 package com.reservo.backend.entity;
 
+import com.google.cloud.firestore.annotation.Exclude;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -72,4 +74,13 @@ public class Booking {
         REFERRAL,
         OTHERS
     }
+    /**
+     * The canonical entity ID is the Firestore document ID.
+     * Do not read/write a separate `id` field from/to Firestore.
+     */
+    @Exclude
+    public String getId() {
+        return id;
+    }
+
 }

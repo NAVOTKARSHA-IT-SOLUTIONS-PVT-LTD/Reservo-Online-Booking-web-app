@@ -1,116 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Heart, Star, MapPin, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { useWishlist } from "../context/WishlistContext";
-
-// Import local images from Aditya's assets
-import manaliImg from "../assets/images/manali.jpg";
-import goaImg from "../assets/images/goa.jpg";
-import keralaImg from "../assets/images/kerala.jpg";
-import udaipurImg from "../assets/images/udaipur.jpg";
-import shimlaImg from "../assets/images/shimla.jpg";
-import coorgImg from "../assets/images/coorg.jpg";
-import andamanImg from "../assets/images/andaman.jpg";
-import jaipurImg from "../assets/images/jaipur.jpg";
-
-const RESORTS = [
-  {
-    id: 1,
-    name: "Mountain Paradise Resort",
-    location: "Manali, Himachal Pradesh",
-    price: 6500,
-    rating: "4.8 (89 reviews)",
-    badge: "Best Seller",
-    image: manaliImg,
-    amenities: ["🔥 Fireplace", "🧖 Spa", "📶 WiFi"],
-    isAIRecommended: false
-  },
-  {
-    id: 2,
-    name: "Ocean Breeze Resort",
-    location: "Goa, India",
-    price: 8200,
-    rating: "4.9 (142 reviews)",
-    badge: "Luxury",
-    image: goaImg,
-    amenities: ["🏖️ Beachfront", "🍽️ Restaurant", "🍸 Bar"],
-    isAIRecommended: true
-  },
-  {
-    id: 3,
-    name: "Green Valley Resort",
-    location: "Kerala, India",
-    price: 5900,
-    rating: "4.7 (76 reviews)",
-    badge: "Top Rated",
-    image: keralaImg,
-    amenities: ["🧘 Spa", "🌲 Nature Trails", "🏊 Pool"],
-    isAIRecommended: false
-  },
-  {
-    id: 4,
-    name: "Royal Lake Palace",
-    location: "Udaipur, Rajasthan",
-    price: 9500,
-    rating: "4.9 (198 reviews)",
-    badge: "Premium Heritage",
-    image: udaipurImg,
-    amenities: ["🌅 Lake View", "⚜️ Luxury Suites", "🏊 Pool"],
-    isAIRecommended: true
-  },
-  {
-    id: 5,
-    name: "Himalayan Bliss Resort",
-    location: "Shimla, India",
-    price: 7300,
-    rating: "4.8 (94 reviews)",
-    badge: "Nature Retreat",
-    image: shimlaImg,
-    amenities: ["🏔️ Mountain View", "🔥 Fireplace", "💆 Spa"],
-    isAIRecommended: false
-  },
-  {
-    id: 6,
-    name: "Coorg Nature Retreat",
-    location: "Coorg, Karnataka",
-    price: 6800,
-    rating: "4.8 (65 reviews)",
-    badge: "Editor's Pick",
-    image: coorgImg,
-    amenities: ["☕ Coffee Estate", "🏊 Pool", "🦜 Bird Watching"],
-    isAIRecommended: false
-  },
-  {
-    id: 7,
-    name: "Sunrise Beach Resort",
-    location: "Andaman Islands, India",
-    price: 10200,
-    rating: "4.9 (120 reviews)",
-    badge: "Beachfront VIP",
-    image: andamanImg,
-    amenities: ["🏝️ Private Beach", "🤿 Scuba Diving", "💆 Spa"],
-    isAIRecommended: true
-  },
-  {
-    id: 8,
-    name: "The Royal Heritage Resort",
-    location: "Jaipur, Rajasthan",
-    price: 8900,
-    rating: "4.7 (104 reviews)",
-    badge: "Heritage Palace",
-    image: jaipurImg,
-    amenities: ["🏰 Palace Tour", "🍽️ Fine Dining", "🏊 Pool"],
-    isAIRecommended: false
-  },
-];
+import { resortService } from "../services/resort.service";
 
 function FeaturedResorts() {
   const { wishlist, toggleWishlist } = useWishlist();
   const [sliderIndex, setSliderIndex] = useState(0);
+  const [resorts, setResorts] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    resortService.getAllResorts()
+      .then(data => {
+        if (active) setResorts(Array.isArray(data) ? data.slice(0, 8) : []);
+      })
+      .catch(err => {
+        console.warn("Failed to load featured resorts:", err);
+        if (active) setResorts([]);
+      });
+    return () => { active = false; };
+  }, []);
 
   const toggleWishlistHandler = (resort, e) => {
     e.stopPropagation();
     toggleWishlist({
-      id: `featured-${resort.id}`,
+      id: String(resort.id),
       name: resort.name,
       location: resort.location,
       price: resort.price,
@@ -141,7 +55,7 @@ function FeaturedResorts() {
   };
 
   const handleNext = () => {
-    if (sliderIndex < RESORTS.length - 3) {
+    if (sliderIndex < resorts.length - 3) {
       setSliderIndex(prev => prev + 1);
     }
   };
@@ -178,7 +92,7 @@ function FeaturedResorts() {
             <button 
               className={`w-11 h-11 rounded-full border border-border-color bg-bg-white text-text-dark flex items-center justify-center transition-all duration-300 hover:border-gold hover:text-gold hover:scale-105 disabled:opacity-40 disabled:pointer-events-none`}
               onClick={handleNext}
-              disabled={sliderIndex >= RESORTS.length - 3}
+              disabled={sliderIndex >= resorts.length - 3}
               aria-label="Next stays"
             >
               <ChevronRight size={20} />
@@ -194,7 +108,7 @@ function FeaturedResorts() {
               "--carousel-transform": `translateX(-${sliderIndex * (100 / 3)}%)`
             }}
           >
-            {RESORTS.map((resort) => (
+            {resorts.map((resort) => (
               <article className="flex-[0_0_85%] md:flex-[0_0_calc((100%-30px)/2)] lg:flex-[0_0_calc((100%-60px)/3)] bg-bg-white border border-border-color rounded-2xl overflow-hidden shadow-custom transition-all duration-400 ease-out flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] group" key={resort.id}>
                 <div className="relative h-60 overflow-hidden bg-border-color">
                   <img src={resort.image} alt={resort.name} className="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105" />
@@ -212,12 +126,12 @@ function FeaturedResorts() {
 
                   <button 
                     className={`absolute top-3.75 right-3.75 bg-white/85 backdrop-blur-[8px] border-none w-9 h-9 rounded-full flex items-center justify-center text-[#121e1b] cursor-pointer transition-all duration-300 z-10 shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:bg-white hover:scale-110 ${
-                      wishlist.some(item => item.id === `featured-${resort.id}`) ? "text-red-500" : ""
+                      wishlist.some(item => item.id === String(resort.id)) ? "text-red-500" : ""
                     }`}
                     aria-label="Add to Wishlist"
                     onClick={(e) => toggleWishlistHandler(resort, e)}
                   >
-                    <Heart size={16} fill={wishlist.some(item => item.id === `featured-${resort.id}`) ? "#EF4444" : "none"} stroke={wishlist.some(item => item.id === `featured-${resort.id}`) ? "#EF4444" : "currentColor"} />
+                    <Heart size={16} fill={wishlist.some(item => item.id === String(resort.id)) ? "#EF4444" : "none"} stroke={wishlist.some(item => item.id === String(resort.id)) ? "#EF4444" : "currentColor"} />
                   </button>
                 </div>
 

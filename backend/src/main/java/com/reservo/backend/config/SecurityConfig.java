@@ -43,13 +43,6 @@ public class SecurityConfig {
     // PASSWORD ENCODER
     // ============================================================
 
-    /**
-     * Password encoder used for local authentication.
-     *
-     * Passwords are stored as Argon2 hashes in Firestore.
-     *
-     * Never store plain-text passwords.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
 
@@ -107,9 +100,9 @@ public class SecurityConfig {
 
         http
 
-                // ------------------------------------------------
+                // ====================================================
                 // CORS
-                // ------------------------------------------------
+                // ====================================================
 
                 .cors(cors ->
                         cors.configurationSource(
@@ -118,18 +111,28 @@ public class SecurityConfig {
                 )
 
 
-                // ------------------------------------------------
+                // ====================================================
                 // CSRF
-                // ------------------------------------------------
+                // ====================================================
 
                 .csrf(AbstractHttpConfigurer::disable)
 
 
-                // ------------------------------------------------
+                // ====================================================
                 // AUTHORIZATION
-                // ------------------------------------------------
+                // ====================================================
 
                 .authorizeHttpRequests(auth -> auth
+
+
+                        // ====================================================
+                        // CORS PREFLIGHT
+                        // ====================================================
+
+                        .requestMatchers(
+                                HttpMethod.OPTIONS,
+                                "/**"
+                        ).permitAll()
 
 
                         // ====================================================
@@ -178,9 +181,6 @@ public class SecurityConfig {
                         ).permitAll()
 
 
-
-
-
                         // ====================================================
                         // ADMIN
                         // ====================================================
@@ -188,6 +188,24 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/admin/**"
                         ).hasRole("ADMIN")
+
+
+                        // ====================================================
+                        // MEDIA FILES
+                        //
+                        // Anyone can VIEW an already uploaded image.
+                        // Only authenticated users can UPLOAD images.
+                        // ====================================================
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/media/files/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/v1/media/upload"
+                        ).authenticated()
 
 
                         // ====================================================
@@ -239,6 +257,7 @@ public class SecurityConfig {
                                 "ADMIN"
                         )
 
+
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/api/v1/resorts/**",
@@ -248,6 +267,7 @@ public class SecurityConfig {
                                 "ADMIN"
                         )
 
+
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/v1/resorts/**",
@@ -256,6 +276,7 @@ public class SecurityConfig {
                                 "OWNER",
                                 "ADMIN"
                         )
+
 
                         .requestMatchers(
                                 HttpMethod.PATCH,
@@ -423,12 +444,38 @@ public class SecurityConfig {
                                 .contentSecurityPolicy(csp ->
                                         csp.policyDirectives(
                                                 "default-src 'self'; " +
-                                                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-                                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; " +
-                                                "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
-                                                "img-src 'self' data: https://images.unsplash.com; " +
-                                                "media-src 'self' https://player.vimeo.com https://*.vimeo.com; " +
-                                                "connect-src 'self'; " +
+
+                                                "script-src 'self' " +
+                                                "'unsafe-inline' " +
+                                                "'unsafe-eval'; " +
+
+                                                "style-src 'self' " +
+                                                "'unsafe-inline' " +
+                                                "https://fonts.googleapis.com " +
+                                                "https://cdnjs.cloudflare.com; " +
+
+                                                "font-src 'self' " +
+                                                "data: " +
+                                                "https://fonts.gstatic.com " +
+                                                "https://cdnjs.cloudflare.com; " +
+
+                                                "img-src 'self' " +
+                                                "data: " +
+                                                "blob: " +
+                                                "http://localhost:8080 " +
+                                                "http://localhost:5173 " +
+                                                "https://images.unsplash.com; " +
+
+                                                "media-src 'self' " +
+                                                "blob: " +
+                                                "http://localhost:8080 " +
+                                                "https://player.vimeo.com " +
+                                                "https://*.vimeo.com; " +
+
+                                                "connect-src 'self' " +
+                                                "http://localhost:8080 " +
+                                                "http://localhost:5173; " +
+
                                                 "frame-ancestors 'none';"
                                         )
                                 )

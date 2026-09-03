@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import { resortService } from "../services/resort.service";
 import { X, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ALL_RESORTS } from "../data/resorts";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
@@ -44,7 +44,7 @@ const getAvatarForText = (text) => {
   return null;
 };
 
-const generateAIResponse = (text) => {
+const generateAIResponse = (text, availableResorts = []) => {
   const lower = text.toLowerCase();
   
   // 1. Check for location queries
@@ -63,7 +63,7 @@ const generateAIResponse = (text) => {
   }
 
   // Filter properties
-  let matches = ALL_RESORTS;
+  let matches = Array.isArray(availableResorts) ? availableResorts : [];
   
   if (matchedLocation) {
     const locKey = matchedLocation === "greece" ? "santorini" : matchedLocation;
@@ -74,7 +74,7 @@ const generateAIResponse = (text) => {
     matches = matches.filter(r => {
       return matchedAmenities.every(am => {
         return r.amenities.some(item => {
-          const itemLower = item.toLowerCase();
+          const itemLower = String(typeof item === "string" ? item : item?.name || "").toLowerCase();
           if (am === "wifi") return itemLower.includes("wifi");
           if (am === "ski") return itemLower.includes("ski");
           return itemLower.includes(am);
@@ -107,7 +107,7 @@ const generateAIResponse = (text) => {
   }
 
   if (lower.includes("price") || lower.includes("cost") || lower.includes("cheap") || lower.includes("expensive")) {
-    return "Stays at Reservo range from $165/night (like Snow Peaks Lodge in Manali) to $640/night (like Atlantis Towers in Dubai). Let me know your destination or budget and I'll find the best match!";
+    return "I can check the current live resort inventory for your destination and budget. Tell me where you want to go or your maximum nightly budget.";
   }
 
   return "I'm always learning! Let me know where you want to travel (e.g. Bali, Maldives, Dubai) and what amenities you want (e.g. Spa, Pool, Fireplace), and I'll search our luxury collection for you.";
@@ -115,6 +115,15 @@ const generateAIResponse = (text) => {
 
 function Mascot({ isDark, setIsDark }) {
   const navigate = useNavigate();
+  const [liveResorts, setLiveResorts] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    resortService.getAllResorts()
+      .then(data => { if (active) setLiveResorts(Array.isArray(data) ? data : []); })
+      .catch(err => console.warn("Failed to load live resorts for Rivo:", err));
+    return () => { active = false; };
+  }, []);
   const [isOpen, setIsOpen] = useState(false);
   const [activeMode, setActiveMode] = useState("support");
   const [rivoAvatar, setRivoAvatar] = useState(rivoSupport);

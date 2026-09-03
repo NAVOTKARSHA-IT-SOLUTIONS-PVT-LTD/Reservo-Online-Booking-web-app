@@ -8,7 +8,6 @@ import {
   ChevronUp, Map, Compass as WandIcon, Smile, ChevronLeft
 } from "lucide-react";
 
-import { RESORTS } from "../data/resortsData";
 import { apiClient } from "../services/apiClient";
 import { resortService } from "../services/resort.service";
 
@@ -352,7 +351,7 @@ export default function AIPlanner() {
       }
     }
 
-    const availableResorts = liveResorts.length > 0 ? liveResorts : RESORTS;
+    const availableResorts = liveResorts;
     const generated = createDynamicOptions(availableResorts, queryLoc, parsedNights, parsedGuests, parsedBudget);
 
     if (generated.length === 0) {

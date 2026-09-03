@@ -4,11 +4,13 @@ import { MapPin, Heart, Star, ChevronLeft, ChevronRight, Waves, Mountain, TreePi
 import { CATEGORIES } from '../data/resortsData';
 import { resortService } from '../services/resort.service';
 import { useTranslation } from "../hooks/useTranslation";
+import { useWishlist } from "../context/WishlistContext";
 import rivoSearching from "../assets/images/rivo_searching.png";
 
-function PopularDestinations({ wishlist = [], toggleWishlist, currencySymbol = "₹", exchangeRate = 1 }) {
+function PopularDestinations({ currencySymbol = "₹", exchangeRate = 1 }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { wishlist, toggleWishlist } = useWishlist();
   const [activeCat, setActiveCat] = useState("all");
   const [resorts, setResorts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -180,7 +182,7 @@ function PopularDestinations({ wishlist = [], toggleWishlist, currencySymbol = "
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 justify-center">
             {filteredDestinations.map((dest) => {
-              const isLiked = wishlist.includes(dest.id);
+              const isLiked = wishlist.some(item => String(item.id) === String(dest.id));
               return (
                 <div 
                   key={dest.id} 
@@ -207,7 +209,7 @@ function PopularDestinations({ wishlist = [], toggleWishlist, currencySymbol = "
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleWishlist(dest.id);
+                        toggleWishlist(dest);
                       }}
                       className="absolute top-4 right-4 w-8.5 h-8.5 rounded-full bg-bg-white text-text-gray flex items-center justify-center shadow-md hover:text-red-500 transition-all border-none cursor-pointer focus:outline-none"
                     >

@@ -1,5 +1,7 @@
 package com.reservo.backend.entity;
 
+import com.google.cloud.firestore.annotation.Exclude;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -70,4 +72,13 @@ public class Room {
     public void setType(String type) {
         this.roomType = type;
     }
+    /**
+     * The canonical entity ID is the Firestore document ID.
+     * Do not read/write a separate `id` field from/to Firestore.
+     */
+    @Exclude
+    public String getId() {
+        return id;
+    }
+
 }

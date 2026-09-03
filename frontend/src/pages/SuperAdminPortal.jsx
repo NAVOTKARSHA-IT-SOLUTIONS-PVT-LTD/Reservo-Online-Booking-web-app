@@ -39,6 +39,7 @@ export default function SuperAdminPortal() {
   const [resortsList, setResortsList] = useState([]);
   const [bookingsList, setBookingsList] = useState([]);
   const [pendingHosts, setPendingHosts] = useState([]);
+  const [pendingResorts, setPendingResorts] = useState([]);
   const [couponsList, setCouponsList] = useState([]);
   const [auditLogs, setAuditLogs] = useState([
     { id: 1, admin: "reservo@mail.in", action: "PLATFORM_INITIALIZED", target: "System", time: "2026-08-24 10:00 AM" },
@@ -99,22 +100,28 @@ export default function SuperAdminPortal() {
   const loadPlatformData = async () => {
     try {
       setLoading(true);
-      const [usersRes, resortsRes, bookingsRes, pendingRes] = await Promise.all([
+      const [usersRes, resortsRes, bookingsRes, pendingRes, couponsRes] = await Promise.all([
         apiClient.get("/api/v1/user/all-users").catch(() => ({ success: false })),
         apiClient.get("/api/v1/resorts/admin-all").catch(() => ({ success: false })),
         apiClient.get("/api/v1/bookings/admin-all").catch(() => ({ success: false })),
-        apiClient.get("/api/v1/user/pending-hosts").catch(() => ({ success: false }))
+        apiClient.get("/api/v1/admin/resorts/pending").catch(() => ({ success: false })),
+        apiClient.get("/api/v1/admin/coupons").catch(() => ({ success: false }))
       ]);
 
       const users = usersRes?.data || [];
       const resorts = resortsRes?.data || [];
       const bookings = bookingsRes?.data || [];
       const pending = pendingRes?.data || [];
+      const coupons = couponsRes?.data || [];
 
       setUsersList(users);
       setResortsList(resorts);
       setBookingsList(bookings);
-      setPendingHosts(pending);
+      setPendingResorts(pending);
+      setCouponsList(coupons);
+      // Keep the legacy host-application list separate. Property approval is now
+      // driven by the Resort PENDING_APPROVAL status, not by host/KYC approval.
+      setPendingHosts([]);
 
       // Extract statistics
       const totalRev = bookings
@@ -224,10 +231,11 @@ export default function SuperAdminPortal() {
   // Change Resort Listing Status (Approved, Suspended, Inactive)
   const handleChangeResortStatus = async (resortId, resortName, status) => {
     try {
-      const res = await apiClient.post(`/api/v1/resorts/update-status?resortId=${resortId}&status=${status}`);
+      const res = await apiClient.patch(`/api/v1/admin/resorts/${encodeURIComponent(resortId)}/status?status=${encodeURIComponent(status)}`);
       if (res && res.success) {
         toast(`Successfully changed status of '${resortName}' to ${status}`, "success");
         addAuditLog("PROPERTY_STATUS_CHANGED", `'${resortName}' listing status set to ${status}`);
+        setPendingResorts(prev => prev.filter(r => String(r.id) !== String(resortId)));
         loadPlatformData();
       }
     } catch (err) {
@@ -258,18 +266,27 @@ export default function SuperAdminPortal() {
     }
     try {
       const payload = {
-        code: newCoupon.code.toUpperCase(),
+        code: newCoupon.code.trim().toUpperCase(),
         discountType: newCoupon.discountType,
         discountValue: parseFloat(newCoupon.discountValue),
         minimumAmount: parseFloat(newCoupon.minimumAmount || 0),
         expiryDate: newCoupon.expiryDate || null,
         usageLimit: parseInt(newCoupon.usageLimit || 100),
-        usedCount: 0
+        usedCount: 0,
+        status: "ACTIVE",
+        userId: null,
+        resortId: null
       };
 
-      setCouponsList(prev => [payload, ...prev]);
-      toast(`Successfully created coupon ${payload.code}!`, "success");
-      addAuditLog("COUPON_CREATED", `Platform coupon ${payload.code} created`);
+      const res = await apiClient.post("/api/v1/admin/coupons", payload);
+      if (!res?.success) {
+        throw new Error(res?.message || "Failed to create coupon.");
+      }
+
+      const created = res.data;
+      setCouponsList(prev => [created, ...prev.filter(c => String(c.id) !== String(created.id))]);
+      toast(`Successfully created coupon ${created.code}!`, "success");
+      addAuditLog("COUPON_CREATED", `Platform coupon ${created.code} created`);
       setNewCoupon({
         code: "",
         discountType: "PERCENTAGE",
@@ -324,7 +341,7 @@ export default function SuperAdminPortal() {
           <nav className="p-4 space-y-1 overflow-y-auto max-h-[60vh] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-slate-200">
             {[
               { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-              { id: "host_requests", label: "Property Requests", icon: Clock, badge: pendingHosts.length > 0 ? pendingHosts.length : null },
+              { id: "host_requests", label: "Property Requests", icon: Clock, badge: pendingResorts.length > 0 ? pendingResorts.length : null },
               { id: "properties", label: "Properties", icon: Building2 },
               { id: "users", label: "Users", icon: Users },
               { id: "bookings", label: "Bookings", icon: Calendar },
@@ -460,62 +477,83 @@ export default function SuperAdminPortal() {
             {/* 2. PROPERTY VERIFICATION REQUESTS */}
             {activeTab === "host_requests" && (
               <div className="space-y-6">
-                {pendingHosts.length === 0 ? (
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-800">Property Requests</h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Review properties submitted by owners. Only approved properties become visible on the public platform.
+                  </p>
+                </div>
+
+                {pendingResorts.length === 0 ? (
                   <div className="text-center py-16 border border-slate-200 bg-white rounded-3xl shadow-xs">
-                    <div className="text-4xl mb-3">🌴</div>
-                    <h3 className="text-sm font-bold text-slate-700">All applications verified!</h3>
-                    <p className="text-xs text-slate-400 mt-1">There are no pending owner requests at the moment.</p>
+                    <div className="text-4xl mb-3">🏡</div>
+                    <h3 className="text-sm font-bold text-slate-700">No pending property requests</h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      New owner submissions with PENDING_APPROVAL status will appear here.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {pendingHosts.map(host => (
-                      <div key={host.id} className="bg-white border border-slate-200 p-6 rounded-3xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-xs">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 border border-blue-200 flex items-center justify-center font-extrabold text-sm">
-                              {host.name?.charAt(0).toUpperCase() || "H"}
-                            </div>
+                    {pendingResorts.map(resort => (
+                      <div
+                        key={resort.id}
+                        className="bg-white border border-slate-200 p-6 rounded-3xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-xs"
+                      >
+                        <div className="flex gap-4 items-start min-w-0">
+                          <img
+                            src={resort.imageUrl || ""}
+                            alt={resort.name || "Property"}
+                            className="w-28 h-20 rounded-xl object-cover bg-slate-100 shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                          <div className="min-w-0 space-y-2">
                             <div>
-                              <h4 className="text-sm font-extrabold text-slate-800">{host.name}</h4>
-                              <p className="text-[11px] text-slate-500">{host.email} • {host.phone || "No phone"}</p>
+                              <h4 className="text-sm font-extrabold text-slate-800">
+                                {resort.name || "Untitled Property"}
+                              </h4>
+                              <p className="text-[11px] text-slate-500 mt-1">
+                                {resort.location || "Location not provided"} • Owner ID: {resort.ownerId || "Unknown"}
+                              </p>
                             </div>
-                          </div>
-                          
-                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1.5">
-                            <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">KYC Document Attachment</span>
-                            <div><strong>Type:</strong> {host.kycDocumentType || "Aadhaar Card / Business Reg"}</div>
-                            {host.kycDocumentUrl && (
-                              <div>
-                                <strong>Scan / Proof Link:</strong>{" "}
-                                <a href={host.kycDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold">
-                                  Inspect Uploaded Scan / Media
-                                </a>
-                              </div>
+
+                            <div className="flex flex-wrap gap-2 text-[10px]">
+                              <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-bold">
+                                PENDING APPROVAL
+                              </span>
+                              {resort.category && (
+                                <span className="px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-200">
+                                  {resort.category}
+                                </span>
+                              )}
+                              {resort.pricePerNight != null && (
+                                <span className="px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-200">
+                                  ₹{Number(resort.pricePerNight).toLocaleString("en-IN")}/night
+                                </span>
+                              )}
+                            </div>
+
+                            {resort.description && (
+                              <p className="text-xs text-slate-600 line-clamp-2 max-w-2xl">
+                                {resort.description}
+                              </p>
                             )}
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2 self-stretch lg:self-auto justify-end">
                           <button
-                            onClick={() => openChangesModal(host.id)}
-                            disabled={actionLoading}
-                            className="flex-1 lg:flex-none text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-200 text-slate-650 bg-white hover:bg-slate-50 cursor-pointer transition-all"
-                          >
-                            Request Changes
-                          </button>
-                          <button
-                            onClick={() => handleRejectHost(host.id, host.name)}
-                            disabled={actionLoading}
-                            className="flex-1 lg:flex-none text-xs font-bold px-4 py-2.5 rounded-xl border border-red-200 text-red-650 bg-red-50 hover:bg-red-100 cursor-pointer transition-all"
+                            onClick={() => handleChangeResortStatus(resort.id, resort.name, "REJECTED")}
+                            className="flex-1 lg:flex-none text-xs font-bold px-4 py-2.5 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 cursor-pointer transition-all"
                           >
                             Reject
                           </button>
                           <button
-                            onClick={() => handleApproveHost(host.id, host.name)}
-                            disabled={actionLoading}
+                            onClick={() => handleChangeResortStatus(resort.id, resort.name, "APPROVED")}
                             className="flex-1 lg:flex-none text-xs font-bold px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer border-none shadow transition-all"
                           >
-                            Approve Host
+                            Approve & Publish
                           </button>
                         </div>
                       </div>
@@ -579,7 +617,7 @@ export default function SuperAdminPortal() {
                               onClick={() => handleChangeResortStatus(resort.id, resort.name, "APPROVED")}
                               className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white border-none cursor-pointer"
                             >
-                              Activate Listing
+                              Approve / Activate Listing
                             </button>
                           )}
                         </div>
@@ -863,9 +901,15 @@ export default function SuperAdminPortal() {
                             </span>
                           </div>
                           <button
-                            onClick={() => {
-                              setCouponsList(prev => prev.filter((_, i) => i !== idx));
-                              toast("Coupon deleted", "info");
+                            onClick={async () => {
+                              try {
+                                if (!coupon.id) throw new Error("Coupon ID is missing.");
+                                await apiClient.delete(`/api/v1/admin/coupons/${encodeURIComponent(coupon.id)}`);
+                                setCouponsList(prev => prev.filter(c => String(c.id) !== String(coupon.id)));
+                                toast("Coupon deleted", "info");
+                              } catch (err) {
+                                toast("Failed to delete coupon: " + err.message, "error");
+                              }
                             }}
                             className="p-1.5 hover:bg-red-50 hover:text-red-500 rounded border border-transparent text-slate-400 transition"
                           >

@@ -91,15 +91,20 @@ public class BookingService {
         booking.setStatus(Booking.BookingStatus.CONFIRMED);
         booking = bookingRepository.save(booking);
 
-        Payment payment = Payment.builder()
-                .transactionId(paymentIntentId)
-                .bookingId(booking.getId())
-                .amount(booking.getTotalAmount())
-                .paymentMethod(paymentMethod != null ? paymentMethod : "STRIPE")
-                .status(Payment.PaymentStatus.SUCCESS)
-                .createdAt(Instant.now())
-                .build();
-        paymentRepository.save(payment);
+        // A zero-total booking is fully comped. It must not create a
+        // payment record or invoke/pretend to invoke a payment gateway.
+        if (booking.getTotalAmount() != null
+                && booking.getTotalAmount().compareTo(BigDecimal.ZERO) > 0) {
+            Payment payment = Payment.builder()
+                    .transactionId(paymentIntentId)
+                    .bookingId(booking.getId())
+                    .amount(booking.getTotalAmount())
+                    .paymentMethod(paymentMethod != null ? paymentMethod : "STRIPE")
+                    .status(Payment.PaymentStatus.SUCCESS)
+                    .createdAt(Instant.now())
+                    .build();
+            paymentRepository.save(payment);
+        }
 
         loyaltyService.awardPoints(user, booking.getTotalAmount());
 
@@ -203,6 +208,38 @@ public class BookingService {
         return bookingRepository.findAll();
     }
 
+    /**
+     * Return bookings belonging to properties owned by the authenticated owner.
+     * We resolve ownership through the resorts collection instead of trusting a
+     * client-supplied ownerId on the booking document.
+     */
+    public List<Booking> getOwnerBookings(String ownerId) {
+        if (ownerId == null || ownerId.isBlank()) {
+            return List.of();
+        }
+
+        java.util.Set<String> ownedResortIds = resortRepository.findByOwnerId(ownerId)
+                .stream()
+                .map(Resort::getId)
+                .filter(id -> id != null && !id.isBlank())
+                .collect(java.util.stream.Collectors.toSet());
+
+        if (ownedResortIds.isEmpty()) {
+            return List.of();
+        }
+
+        return bookingRepository.findAll().stream()
+                .filter(booking -> booking.getResortId() != null)
+                .filter(booking -> ownedResortIds.contains(booking.getResortId()))
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+                    if (a.getCreatedAt() == null) return 1;
+                    if (b.getCreatedAt() == null) return -1;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
+                .toList();
+    }
+
     public Booking getBookingById(String bookingId) {
         return bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -259,7 +296,7 @@ public class BookingService {
             throw new IllegalArgumentException("Check-in and check-out dates are required");
         if (!checkOut.isAfter(checkIn))
             throw new IllegalArgumentException("Check-out date must be after check-in date");
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
-            throw new IllegalArgumentException("Booking amount must be greater than zero");
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0)
+            throw new IllegalArgumentException("Booking amount cannot be negative");
     }
 }

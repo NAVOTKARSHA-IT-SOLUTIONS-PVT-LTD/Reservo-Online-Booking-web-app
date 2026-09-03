@@ -43,7 +43,7 @@ public class PaymentRepository {
             firestore
                     .collection(COLLECTION)
                     .document(String.valueOf(payment.getId()))
-                    .set(payment)
+                    .set(toFirestoreMap(payment))
                     .get();
 
             return payment;
@@ -85,7 +85,7 @@ public class PaymentRepository {
             }
 
             Payment payment =
-                    document.toObject(Payment.class);
+                    fromDocument(document);
 
             return Optional.ofNullable(payment);
 
@@ -133,8 +133,7 @@ public class PaymentRepository {
             }
 
             Payment payment =
-                    documents.get(0)
-                            .toObject(Payment.class);
+                    fromDocument(documents.get(0));
 
             return Optional.ofNullable(payment);
 
@@ -182,8 +181,7 @@ public class PaymentRepository {
             }
 
             Payment payment =
-                    documents.get(0)
-                            .toObject(Payment.class);
+                    fromDocument(documents.get(0));
 
             return Optional.ofNullable(payment);
 
@@ -225,7 +223,7 @@ public class PaymentRepository {
             for (QueryDocumentSnapshot document : documents) {
 
                 Payment payment =
-                        document.toObject(Payment.class);
+                        fromDocument(document);
 
                 if (payment != null) {
                     payments.add(payment);
@@ -250,6 +248,52 @@ public class PaymentRepository {
                     e
             );
         }
+    }
+
+    private java.util.Map<String, Object> toFirestoreMap(Payment payment) {
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("transactionId", payment.getTransactionId());
+        data.put("bookingId", payment.getBookingId());
+        data.put("amount", payment.getAmount() != null ? payment.getAmount().doubleValue() : 0d);
+        data.put("paymentMethod", payment.getPaymentMethod());
+        data.put("status", payment.getStatus() != null ? payment.getStatus().name() : Payment.PaymentStatus.PENDING.name());
+        if (payment.getCreatedAt() != null) {
+            java.time.Instant i = payment.getCreatedAt();
+            data.put("createdAt", com.google.cloud.Timestamp.ofTimeSecondsAndNanos(i.getEpochSecond(), i.getNano()));
+        }
+        return data;
+    }
+
+    private Payment fromDocument(DocumentSnapshot document) {
+        java.util.Map<String, Object> d = document.getData();
+        if (d == null) return null;
+        Payment payment = new Payment();
+        payment.setId(document.getId());
+        payment.setTransactionId(asString(d.get("transactionId")));
+        payment.setBookingId(asString(d.get("bookingId")));
+        payment.setAmount(asBigDecimal(d.get("amount")));
+        payment.setPaymentMethod(asString(d.get("paymentMethod")));
+        String status = asString(d.get("status"));
+        if (status != null) { try { payment.setStatus(Payment.PaymentStatus.valueOf(status)); } catch (Exception ignored) {} }
+        payment.setCreatedAt(asInstant(d.get("createdAt")));
+        if (payment.getCreatedAt() == null) payment.setCreatedAt(java.time.Instant.now());
+        return payment;
+    }
+    private String asString(Object value) { return value == null ? null : String.valueOf(value); }
+    private java.math.BigDecimal asBigDecimal(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.math.BigDecimal bd) return bd;
+        if (value instanceof Number n) return new java.math.BigDecimal(n.toString());
+        try { return new java.math.BigDecimal(String.valueOf(value)); } catch (Exception e) { return null; }
+    }
+    private java.time.Instant asInstant(Object value) {
+        if (value == null) return null;
+        if (value instanceof com.google.cloud.Timestamp ts) return ts.toDate().toInstant();
+        if (value instanceof java.util.Date date) return date.toInstant();
+        String text = String.valueOf(value).trim();
+        try { return java.time.Instant.parse(text); } catch (Exception ignored) {}
+        try { return java.time.LocalDateTime.parse(text, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).toInstant(java.time.ZoneOffset.UTC); } catch (Exception ignored) {}
+        return null;
     }
 
     /**
