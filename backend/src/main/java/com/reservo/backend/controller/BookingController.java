@@ -57,14 +57,29 @@ public class BookingController {
             @RequestParam String roomId,
             @RequestParam String checkIn,
             @RequestParam String checkOut,
-            @RequestParam BigDecimal amount) {
+            @RequestParam BigDecimal amount,
+            @RequestParam(defaultValue = "2") int adults,
+            @RequestParam(defaultValue = "0") int children,
+            @RequestParam(defaultValue = "1") int roomsCount,
+            @RequestParam(required = false) String couponCode,
+            @RequestParam(defaultValue = "0") BigDecimal discountAmount,
+            @RequestParam(defaultValue = "0") int pointsToRedeem,
+            @RequestParam(defaultValue = "0") BigDecimal pointsValue) {
         String effectiveUserId = resolveEffectiveUserId(userId);
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) != 0) {
+            return ResponseEntity.status(501)
+                    .body(ApiResponse.error(
+                            "Payment module not implemented yet. Your booking was not created.",
+                            501));
+        }
+
         Booking booking = bookingService.createBooking(
                 effectiveUserId, resortId, roomId,
                 LocalDate.parse(checkIn), LocalDate.parse(checkOut),
-                amount, null, null, null, BigDecimal.ZERO, 0, BigDecimal.ZERO);
-        // Standard direct booking confirms instantly for backwards-compatibility
-        bookingService.confirmBooking(booking.getBookingCode(), "ch_direct_" + System.currentTimeMillis(), "DIRECT");
+                amount, null, null, couponCode, discountAmount, pointsToRedeem, pointsValue,
+                adults, children, roomsCount);
+        // Only zero-total bookings may be confirmed without payment.
+        bookingService.confirmBooking(booking.getBookingCode(), "FREE_" + System.currentTimeMillis(), "ZERO_TOTAL");
         return ResponseEntity.ok(ApiResponse.success(booking, "Booking created and confirmed successfully"));
     }
 
@@ -171,6 +186,26 @@ public class BookingController {
 
         Booking cancelled = bookingService.cancelBookingForUser(bookingId, user.getId());
 
+        return ResponseEntity.ok(
+                ApiResponse.success(cancelled, "Booking cancelled successfully")
+        );
+    }
+
+    /**
+     * Host-side cancellation. The backend verifies property ownership before
+     * releasing the booking and its room/night availability locks.
+     */
+    @PatchMapping("/owner/{bookingId}/cancel")
+    public ResponseEntity<ApiResponse<Booking>> cancelBookingByOwner(
+            @PathVariable String bookingId) {
+        User user = authService.getOptionalAuthenticatedUser()
+                .orElseThrow(() -> new UnauthorizedException("Authentication required"));
+
+        if (user.getRole() != User.Role.ROLE_OWNER && user.getRole() != User.Role.ROLE_ADMIN) {
+            throw new UnauthorizedException("Only property owners can cancel guest bookings");
+        }
+
+        Booking cancelled = bookingService.cancelBookingForOwner(bookingId, user.getId(), user.getRole() == User.Role.ROLE_ADMIN);
         return ResponseEntity.ok(
                 ApiResponse.success(cancelled, "Booking cancelled successfully")
         );

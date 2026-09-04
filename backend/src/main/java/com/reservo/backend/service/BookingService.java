@@ -18,9 +18,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BookingService {
-    private static final BigDecimal SERVICE_FEE = BigDecimal.valueOf(1200);
-    private static final BigDecimal GST_RATE = BigDecimal.valueOf(0.18);
-
     private final BookingRepository bookingRepository;
     private final AvailabilityBlockRepository availabilityBlockRepository;
     private final UserRepository userRepository;
@@ -40,28 +37,38 @@ public class BookingService {
     public BigDecimal calculateBaseBookingAmount(
             String resortId, String roomId,
             LocalDate checkIn, LocalDate checkOut) {
+        return calculateBaseBookingAmount(resortId, roomId, checkIn, checkOut, 1);
+    }
+
+    public BigDecimal calculateBaseBookingAmount(
+            String resortId, String roomId,
+            LocalDate checkIn, LocalDate checkOut, int roomsCount) {
 
         Resort resort = getResort(resortId);
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
 
         if (room.getResortId() != null && !room.getResortId().equals(resortId)) {
-            throw new IllegalStateException("Room " + roomId + " does not belong to resort " + resortId);
-        }
-        if (room.getStatus() != Room.RoomStatus.AVAILABLE) {
-            throw new IllegalStateException("Room " + room.getRoomNumber() + " is currently not available");
+            throw new IllegalStateException("Room does not belong to the selected resort.");
         }
 
         validateDatesAndAmount(checkIn, checkOut, BigDecimal.ZERO);
 
         long nights = java.time.temporal.ChronoUnit.DAYS.between(checkIn, checkOut);
-        BigDecimal nightly = resort.getPricePerNight() != null
-                ? resort.getPricePerNight()
-                : BigDecimal.ZERO;
-        BigDecimal subtotal = nightly.multiply(BigDecimal.valueOf(nights));
-        BigDecimal gst = subtotal.multiply(GST_RATE).setScale(0, java.math.RoundingMode.HALF_UP);
+        int rooms = Math.max(1, roomsCount);
 
-        return subtotal.add(SERVICE_FEE).add(gst);
+        // One simple customer-facing price: nightly rate × nights × rooms.
+        // No cleaning fee, luxury/service fee, or tax is added here.
+        BigDecimal nightly = resort.getPricePerNight();
+        if (nightly == null || nightly.compareTo(BigDecimal.ZERO) < 0) {
+            nightly = room.getPricePerNight();
+        }
+        if (nightly == null || nightly.compareTo(BigDecimal.ZERO) < 0) {
+            nightly = BigDecimal.ZERO;
+        }
+
+        return nightly.multiply(BigDecimal.valueOf(nights))
+                .multiply(BigDecimal.valueOf(rooms));
     }
 
     public Booking createBooking(
@@ -69,6 +76,17 @@ public class BookingService {
             LocalDate checkIn, LocalDate checkOut, BigDecimal amount,
             String guestName, String guestPhone, String couponCode,
             BigDecimal discountAmount, Integer pointsUsed, BigDecimal pointsValue) {
+        return createBooking(userId, resortId, roomId, checkIn, checkOut, amount,
+                guestName, guestPhone, couponCode, discountAmount, pointsUsed, pointsValue,
+                2, 0, 1);
+    }
+
+    public Booking createBooking(
+            String userId, String resortId, String roomId,
+            LocalDate checkIn, LocalDate checkOut, BigDecimal amount,
+            String guestName, String guestPhone, String couponCode,
+            BigDecimal discountAmount, Integer pointsUsed, BigDecimal pointsValue,
+            int adults, int children, int roomsCount) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
@@ -79,21 +97,60 @@ public class BookingService {
 
         validateDatesAndAmount(checkIn, checkOut, amount);
 
-        // Enforce host calendar blocks at booking creation time as well as
-        // availability lookup, so a customer cannot bypass a blocked date.
-        for (LocalDate date = checkIn; date.isBefore(checkOut); date = date.plusDays(1)) {
-            if (availabilityBlockRepository.isBlocked(resortId, date)) {
-                throw new IllegalStateException(
-                        "This property is not available for " + date + ". Please choose different dates.");
-            }
-        }
-
-        if (room.getStatus() != Room.RoomStatus.AVAILABLE) {
-            throw new IllegalStateException("Room " + room.getRoomNumber() + " is currently not available");
-        }
-
         if (room.getResortId() != null && !room.getResortId().equals(resortId)) {
-            throw new IllegalStateException("Room " + roomId + " does not belong to resort " + resortId);
+            throw new IllegalStateException("Room does not belong to the selected resort.");
+        }
+
+        int safeAdults = Math.max(1, adults);
+        int safeChildren = Math.max(0, children);
+        int requiredRoomsByGuests = Math.max(
+                (int) Math.ceil(safeAdults / 2.0),
+                (int) Math.ceil(safeChildren / 2.0)
+        );
+        int requestedRooms = Math.max(requiredRoomsByGuests, roomsCount);
+
+        // The backend is the final authority for the nightly × nights × rooms
+        // amount. A non-zero amount cannot be booked without a payment module.
+        BigDecimal expectedBase = calculateBaseBookingAmount(
+                resortId, roomId, checkIn, checkOut, requestedRooms);
+
+        BigDecimal safeDiscount = BigDecimal.ZERO;
+        if (couponCode != null && !couponCode.isBlank()) {
+            var coupon = loyaltyService.validateCoupon(
+                    user.getEmail(), couponCode, resortId, expectedBase);
+            safeDiscount = coupon.getCalculatedDiscount() != null
+                    ? coupon.getCalculatedDiscount().max(BigDecimal.ZERO)
+                    : BigDecimal.ZERO;
+        }
+
+        BigDecimal requestedPointsValue = BigDecimal.ZERO;
+        int safePointsUsed = Math.max(0, pointsUsed == null ? 0 : pointsUsed);
+        if (safePointsUsed > 0) {
+            int balance = user.getRewardPoints() == null ? 0 : user.getRewardPoints();
+            if (safePointsUsed > balance) {
+                throw new IllegalStateException("You do not have enough Reservo points.");
+            }
+            BigDecimal remainingAfterCoupon = expectedBase.subtract(safeDiscount).max(BigDecimal.ZERO);
+            BigDecimal maxPointsValue = remainingAfterCoupon.multiply(BigDecimal.valueOf(0.5));
+            requestedPointsValue = BigDecimal.valueOf(safePointsUsed)
+                    .divide(BigDecimal.TEN, 2, java.math.RoundingMode.DOWN)
+                    .min(maxPointsValue);
+        }
+
+        // Ignore client-supplied discount/points values. They are verified
+        // against the same server-side coupon and loyalty rules used by the UI.
+        BigDecimal safePointsValue = requestedPointsValue;
+        BigDecimal expectedFinal = expectedBase.subtract(safeDiscount).subtract(safePointsValue)
+                .max(BigDecimal.ZERO);
+
+        if (amount == null || amount.compareTo(expectedFinal) != 0) {
+            throw new IllegalArgumentException(
+                    "The booking amount is out of date. Please return to the booking summary and try again.");
+        }
+
+        if (amount.compareTo(BigDecimal.ZERO) > 0) {
+            throw new IllegalStateException(
+                    "Payment module not implemented yet. Your booking was not created.");
         }
 
         String code = "RS" + UUID.randomUUID().toString().replace("-", "")
@@ -106,21 +163,29 @@ public class BookingService {
                 .roomId(roomId)
                 .checkInDate(checkIn)
                 .checkOutDate(checkOut)
-                .guestsCount(2)
-                .roomsCount(1)
+                .guestsCount(safeAdults + safeChildren)
+                .roomsCount(requestedRooms)
                 .totalAmount(amount)
                 .guestName(guestName)
                 .guestPhone(guestPhone)
                 .appliedCouponCode(couponCode)
-                .discountAmount(discountAmount != null ? discountAmount : BigDecimal.ZERO)
-                .rewardPointsUsed(pointsUsed != null ? pointsUsed : 0)
-                .rewardPointsValue(pointsValue != null ? pointsValue : BigDecimal.ZERO)
+                .discountAmount(safeDiscount)
+                .rewardPointsUsed(safePointsUsed)
+                .rewardPointsValue(safePointsValue)
                 .status(Booking.BookingStatus.PENDING)
                 .bookingSource(Booking.BookingSource.DIRECT)
                 .createdAt(Instant.now())
                 .build();
 
-        return bookingRepository.save(booking);
+        // Atomically select and lock all requested rooms for every night.
+        return bookingRepository.createIfAvailable(
+                booking,
+                roomRepository.findByResortId(resortId).stream()
+                        .filter(r -> r.getId() != null)
+                        .filter(r -> r.getStatus() == Room.RoomStatus.AVAILABLE)
+                        .map(Room::getId)
+                        .toList()
+        );
     }
 
     public Booking confirmBooking(String bookingCode, String paymentIntentId, String paymentMethod) {
@@ -193,15 +258,33 @@ public class BookingService {
      * are cancelled directly. Real paid bookings are refunded before the
      * cancellation is persisted.
      */
-    public Booking cancelBookingForUser(String bookingId, String userId) {
+    /**
+     * Cancel a booking from the host panel after verifying that the booking
+     * belongs to a resort owned by the authenticated host.
+     */
+    public Booking cancelBookingForOwner(String bookingId, String ownerId, boolean admin) {
         Booking booking = bookingRepository.findById(bookingId).orElse(null);
-
-        // Some older frontend versions sent the reservation/booking code
-        // instead of the Firestore document id. Support both identifiers.
         if (booking == null) {
             booking = bookingRepository.findByBookingCode(bookingId).orElse(null);
         }
+        if (booking == null) {
+            throw new ResourceNotFoundException("Booking not found with ID or code: " + bookingId);
+        }
 
+        Resort resort = getResort(booking.getResortId());
+        if (!admin && (ownerId == null || !ownerId.equals(resort.getOwnerId()))) {
+            throw new com.reservo.backend.exception.UnauthorizedException(
+                    "You can only cancel bookings for your own properties");
+        }
+
+        return cancelBookingInternal(booking);
+    }
+
+    public Booking cancelBookingForUser(String bookingId, String userId) {
+        Booking booking = bookingRepository.findById(bookingId).orElse(null);
+        if (booking == null) {
+            booking = bookingRepository.findByBookingCode(bookingId).orElse(null);
+        }
         if (booking == null) {
             throw new ResourceNotFoundException("Booking not found with ID or code: " + bookingId);
         }
@@ -211,6 +294,10 @@ public class BookingService {
                     "You are not allowed to cancel this booking");
         }
 
+        return cancelBookingInternal(booking);
+    }
+
+    private Booking cancelBookingInternal(Booking booking) {
         if (booking.getStatus() == Booking.BookingStatus.CANCELLED) {
             return booking;
         }
@@ -219,6 +306,12 @@ public class BookingService {
         // never prevent the customer's booking from being cancelled.
         booking.setStatus(Booking.BookingStatus.CANCELLED);
         Booking cancelled = bookingRepository.save(booking);
+        // Make every cancelled night immediately bookable again.
+        try {
+            bookingRepository.releaseBookingLocks(booking);
+        } catch (Exception lockError) {
+            log.warn("Could not release booking locks for {}: {}", booking.getBookingCode(), lockError.getMessage());
+        }
 
         Payment payment = null;
         try {
@@ -301,8 +394,7 @@ public class BookingService {
                     booking.getId(), ancillaryError.getMessage());
         }
 
-        return cancelled;
-    }
+        return cancelled;    }
 
 
     /**

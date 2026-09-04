@@ -83,7 +83,7 @@ export const bookingService = {
     }
 
     const result = await apiClient.post(
-      `/api/v1/bookings/create?userId=${encodeURIComponent(user.id)}&resortId=${encodeURIComponent(rId)}&roomId=${encodeURIComponent(roomId)}&checkIn=${encodeURIComponent(bookingDetails.checkin)}&checkOut=${encodeURIComponent(bookingDetails.checkout)}&amount=${encodeURIComponent(bookingDetails.total)}`
+      `/api/v1/bookings/create?userId=${encodeURIComponent(user.id)}&resortId=${encodeURIComponent(rId)}&roomId=${encodeURIComponent(roomId)}&checkIn=${encodeURIComponent(bookingDetails.checkin)}&checkOut=${encodeURIComponent(bookingDetails.checkout)}&amount=${encodeURIComponent(bookingDetails.total)}&adults=${encodeURIComponent(bookingDetails.adults ?? 2)}&children=${encodeURIComponent(bookingDetails.children ?? 0)}&roomsCount=${encodeURIComponent(bookingDetails.roomsCount ?? 1)}&couponCode=${encodeURIComponent(bookingDetails.couponCode || "")}&discountAmount=${encodeURIComponent(bookingDetails.discountAmount ?? 0)}&pointsToRedeem=${encodeURIComponent(bookingDetails.pointsToRedeem ?? 0)}&pointsValue=${encodeURIComponent(bookingDetails.pointsValue ?? 0)}`
     );
 
     if (!result?.success || !result.data) {
@@ -110,16 +110,23 @@ export const bookingService = {
     return result;
   },
 
-  async checkAvailability(resortId, dates) {
-    if (!resortId) {
-      throw new Error("A valid resort ID is required.");
-    }
+  async checkAvailability(resortId, dates, guests = {}) {
+    if (!resortId) throw new Error("A valid resort ID is required.");
 
     const checkIn = dates?.checkIn;
     const checkOut = dates?.checkOut;
     if (!checkIn || !checkOut) {
       throw new Error("Check-in and check-out dates are required.");
     }
+
+    const adults = Math.max(1, Number(guests.adults ?? 2));
+    const children = Math.max(0, Number(guests.children ?? 0));
+    const requiredRooms = Math.max(
+      1,
+      Math.ceil(adults / 2),
+      Math.ceil(children / 2),
+      Number(guests.roomsCount ?? 1)
+    );
 
     const result = await apiClient.get(
       `/api/v1/availability/check?resortId=${encodeURIComponent(resortId)}&checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}`
@@ -135,43 +142,37 @@ export const bookingService = {
       price: Number(room.pricePerNight || 0)
     })) : [];
 
+    if (rooms.length < requiredRooms) {
+      throw new Error(
+        requiredRooms === 1
+          ? "No room is available for the selected dates. Please choose different dates."
+          : `Only ${rooms.length} room${rooms.length === 1 ? "" : "s"} available for these dates. You need ${requiredRooms}. Please choose different dates or reduce the number of rooms.`
+      );
+    }
+
     return {
-      available: rooms.length > 0,
-      suggestedRooms: rooms
+      available: true,
+      suggestedRooms: rooms,
+      requiredRooms
     };
   },
 
   async createCheckoutSession(bookingDetails) {
-    const user = secureStorage.getItem("reservo_user");
-    const uId = user?.id;   if (!uId) throw new Error("Please log in before checkout.");
-
-    const rId = bookingDetails.resortId;
-    const roomId = bookingDetails.roomId;
-    if (!rId || !roomId) {
-      throw new Error("A valid resort and room are required.");
+    // Real payment processing is intentionally disabled. A reservation can
+    // only be created directly when the final payable amount is exactly zero.
+    const total = Number(bookingDetails?.total);
+    if (!Number.isFinite(total) || total < 0) {
+      throw new Error("Invalid booking amount.");
+    }
+    if (Math.round(total * 100) !== 0) {
+      throw new Error("Payment module not implemented yet. Your booking was not created.");
     }
 
-    const successUrl = `${window.location.origin}/payment/success`;
-    const cancelUrl = `${window.location.origin}/payment/cancel`;
+    const booking = await this.createBooking({
+      ...bookingDetails,
+      total: 0
+    });
 
-    let url = `/api/v1/payments/checkout?userId=${uId}&resortId=${rId}&roomId=${roomId}&checkIn=${bookingDetails.checkin}&checkOut=${bookingDetails.checkout}&amount=${bookingDetails.total}&successUrl=${encodeURIComponent(successUrl)}&cancelUrl=${encodeURIComponent(cancelUrl)}`;
-    if (bookingDetails.couponCode) {
-      url += `&couponCode=${encodeURIComponent(bookingDetails.couponCode)}`;
-    }
-    if (bookingDetails.pointsToRedeem) {
-      url += `&pointsToRedeem=${bookingDetails.pointsToRedeem}`;
-    }
-    if (bookingDetails.guestName) {
-      url += `&guestName=${encodeURIComponent(bookingDetails.guestName)}`;
-    }
-    if (bookingDetails.guestPhone) {
-      url += `&guestPhone=${encodeURIComponent(bookingDetails.guestPhone)}`;
-    }
-
-    const result = await apiClient.post(url);
-    if (result && result.success && result.data) {
-      return result.data;
-    }
-    throw new Error(result?.message || "Failed to generate checkout link");
+    return `${window.location.origin}/payment/success?bookingCode=${encodeURIComponent(booking.code || booking.id || "")}`;
   }
 };

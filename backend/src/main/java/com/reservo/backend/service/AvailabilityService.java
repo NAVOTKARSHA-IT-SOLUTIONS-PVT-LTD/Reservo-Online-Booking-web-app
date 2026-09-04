@@ -41,12 +41,19 @@ public class AvailabilityService {
         List<Booking> overlapping = bookingRepository.findOverlappingBookings(resortId, checkIn, checkOut);
 
         Set<String> occupiedRoomIds = overlapping.stream()
-                .map(Booking::getRoomId)
+                .flatMap(booking -> {
+                    if (booking.getAssignedRoomIds() != null && !booking.getAssignedRoomIds().isEmpty()) {
+                        return booking.getAssignedRoomIds().stream();
+                    }
+                    return java.util.stream.Stream.ofNullable(booking.getRoomId());
+                })
                 .filter(java.util.Objects::nonNull)
+                .map(String::valueOf)
                 .collect(Collectors.toSet());
 
         return allRooms.stream()
-                .filter(r -> !occupiedRoomIds.contains(r.getId()))
+                .filter(r -> r.getId() != null)
+                .filter(r -> !occupiedRoomIds.contains(String.valueOf(r.getId())))
                 .filter(r -> r.getStatus() == Room.RoomStatus.AVAILABLE)
                 .toList();
     }

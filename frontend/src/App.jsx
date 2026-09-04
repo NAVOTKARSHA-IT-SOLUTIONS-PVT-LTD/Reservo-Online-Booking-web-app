@@ -17,6 +17,7 @@ import { secureStorage } from "./services/secureStorage";
 import { useToast } from "./context/ToastContext";
 import { useWishlist } from "./context/WishlistContext";
 import { resortService } from "./services/resort.service";
+import { bookingService } from "./services/booking.service";
 import { apiClient } from "./services/apiClient";
 
 // Lazy-loaded pages
@@ -293,6 +294,7 @@ function App() {
   const [bookingResort, setBookingResort] = useState(null);
   const [bookingRoom, setBookingRoom] = useState(null);
   const [bookingDates, setBookingDates] = useState({ checkIn: null, checkOut: null });
+  const [bookingGuests, setBookingGuests] = useState({ adults: 2, children: 0, roomsCount: 1 });
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -387,7 +389,7 @@ function App() {
   // Centralized booking opener: resolve the real Firestore room before the
   // BookingModal is rendered. This prevents checkout from ever receiving an
   // undefined roomId when booking starts from Resort Details/Wishlist.
-  const openBookingForResort = async (inputResort) => {
+  const openBookingForResort = async (inputResort, searchDetails = null) => {
     if (!inputResort?.id) {
       toast("This property has an invalid ID.", "error");
       return;
@@ -396,47 +398,62 @@ function App() {
     setIsCheckingAvailability(true);
     try {
       const resort = await resortService.getResortById(String(inputResort.id));
-      if (!resort?.id) {
-        throw new Error("This property could not be found.");
-      }
+      if (!resort?.id) throw new Error("This property could not be found.");
 
-      const response = await apiClient.get(
-        `/api/v1/rooms/resort/${encodeURIComponent(resort.id)}`
+      let saved = {};
+      try {
+        saved = JSON.parse(sessionStorage.getItem("reservo_search_state") || "{}");
+      } catch (_) {}
+
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      const defaultCheckoutDate = new Date(today);
+      defaultCheckoutDate.setDate(defaultCheckoutDate.getDate() + 3);
+      const defaultCheckout = defaultCheckoutDate.toISOString().split("T")[0];
+
+      let checkIn = searchDetails?.checkIn || saved.checkInDate || todayStr;
+      let checkOut = searchDetails?.checkOut || saved.checkOutDate || defaultCheckout;
+      if (checkIn < todayStr || checkOut <= checkIn) {
+        checkIn = todayStr;
+        checkOut = defaultCheckout;
+      }
+      const adults = Math.max(1, Number(searchDetails?.adults ?? saved.guestCount ?? 2));
+      const children = Math.max(0, Number(searchDetails?.children ?? saved.childCount ?? 0));
+      const roomsCount = Math.max(
+        1,
+        Number(searchDetails?.roomsCount ?? saved.roomCount ?? 1),
+        Math.ceil(adults / 2),
+        Math.ceil(children / 2)
       );
 
-      const rooms = Array.isArray(response?.data) ? response.data : [];
-      const availableRoom =
-        rooms.find((r) => {
-          const status = String(r?.status || "AVAILABLE").toUpperCase();
-          return r?.id && !["MAINTENANCE", "INACTIVE", "BLOCKED"].includes(status);
-        }) || null;
-
-      if (!availableRoom?.id) {
-        throw new Error("No available room is configured for this resort. Please add an available room in the Host panel.");
+      if (!checkIn || !checkOut || checkOut <= checkIn) {
+        throw new Error("Please select valid check-in and check-out dates.");
       }
 
-      // Keep the current search dates. ResortDetails writes these values to
-      // sessionStorage whenever the user changes the date/guest controls.
-      let bookingDates = {};
-      try {
-        bookingDates = JSON.parse(
-          sessionStorage.getItem("reservo_search_state") || "{}"
-        );
-      } catch (_) {}
+      // This is the authoritative pre-booking check. Do not open the booking
+      // wizard when the requested number of rooms is unavailable.
+      const availability = await bookingService.checkAvailability(
+        resort.id,
+        { checkIn, checkOut },
+        { adults, children, roomsCount }
+      );
+
+      const availableRoom = availability.suggestedRooms?.[0];
+      if (!availableRoom?.id) {
+        throw new Error("No room is available for the selected dates.");
+      }
 
       setBookingRoom(availableRoom);
       setBookingResort(resort);
-      setIsCheckingAvailability(false);
-      setBookingDates({
-        checkIn: bookingDates.checkInDate || null,
-        checkOut: bookingDates.checkOutDate || null,
-      });
+      setBookingDates({ checkIn, checkOut });
+      setBookingGuests({ adults, children, roomsCount });
     } catch (err) {
       console.error("Failed to prepare booking:", err);
       setBookingRoom(null);
       setBookingResort(null);
-      setIsCheckingAvailability(false);
       toast(err?.message || "Unable to prepare this booking.", "error");
+    } finally {
+      setIsCheckingAvailability(false);
     }
   };
 
@@ -603,6 +620,7 @@ function App() {
           resort={bookingResort}
           room={bookingRoom}
           bookingDates={bookingDates}
+          bookingGuests={bookingGuests}
           isDarkMode={isDark}
           onClose={() => {
             setBookingResort(null);

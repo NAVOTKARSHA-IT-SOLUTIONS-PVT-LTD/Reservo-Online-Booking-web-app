@@ -168,6 +168,20 @@ export const hostService = {
     return data.reservations;
   },
 
+  cancelBooking: async (reservationId) => {
+    if (!reservationId) throw new Error("Booking ID is required.");
+
+    const result = await apiClient.patch(
+      `/api/v1/bookings/owner/${encodeURIComponent(reservationId)}/cancel`
+    );
+
+    if (!result?.success) {
+      throw new Error(result?.message || "Could not cancel booking.");
+    }
+
+    return result.data;
+  },
+
   toggleDateBlock: async (listingId, dateStr) => {
     const data = hostService.getData();
     if (!data.blockedDates[listingId]) data.blockedDates[listingId] = [];

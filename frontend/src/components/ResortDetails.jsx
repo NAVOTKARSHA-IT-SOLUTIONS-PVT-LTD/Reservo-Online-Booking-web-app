@@ -4,13 +4,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon } from "lucide-react";
 import ResortNavigationMap from "./ResortNavigationMap";
 import CustomCalendar from "./CustomCalendar";
+import { rewardService } from "../services/reward.service";
+import { bookingService } from "../services/booking.service";
 
 import { useTranslation } from "../hooks/useTranslation";
+import { useToast } from "../context/ToastContext";
 
 export default function ResortDetails({ resort, urlId, isDarkMode, onBack, currencySymbol = "₹", exchangeRate = 1, onBook }) {
   const navigate = useNavigate();
   const locationState = useLocation();
   const { t } = useTranslation();
+  const toast = useToast();
   const { wishlist, toggleWishlist } = useWishlist();
   const targetId = urlId || resort.id;
   const isFavorited = wishlist.some((item) => item.id === targetId);
@@ -129,10 +133,28 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
     }
   };
   
-  const [adults, setAdults] = useState(() => initialSearch?.guestCount || 2);
-  const [childrenCount, setChildrenCount] = useState(() => initialSearch?.childCount || 0);
-  const [roomsCount, setRoomsCount] = useState(() => initialSearch?.roomCount || 1);
+  const [adults, setAdults] = useState(() => Math.max(1, initialSearch?.guestCount || 2));
+  const [childrenCount, setChildrenCount] = useState(() => Math.max(0, initialSearch?.childCount || 0));
+  const [roomsCount, setRoomsCount] = useState(() => Math.max(
+    1,
+    initialSearch?.roomCount || 1,
+    Math.ceil((initialSearch?.guestCount || 2) / 2),
+    Math.ceil((initialSearch?.childCount || 0) / 2)
+  ));
   const [showGuestPicker, setShowGuestPicker] = useState(false);
+
+  // One room supports up to 2 adults and up to 2 children. Increase rooms
+  // automatically when guest counts require it; never reduce a user-selected
+  // number of rooms unless it falls below the minimum required.
+  const minimumRoomsForGuests = Math.max(
+    1,
+    Math.ceil(adults / 2),
+    Math.ceil(childrenCount / 2)
+  );
+
+  useEffect(() => {
+    setRoomsCount(prev => Math.max(prev, minimumRoomsForGuests));
+  }, [minimumRoomsForGuests]);
 
   const formatGuestsLabel = (a, c, r) => {
     let label = `${a} Adult${a !== 1 ? "s" : ""}`;
@@ -171,7 +193,10 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const [reviewsCount, setReviewsCount] = useState(resort.reviewsCount || resort.reviewCount || 128);
 
   const [couponCode, setCouponCode] = useState("");
-  const [appliedDiscountPercent, setAppliedDiscountPercent] = useState(0);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponDiscountVal, setCouponDiscountVal] = useState(0);
+  const [couponDiscountType, setCouponDiscountType] = useState("PERCENTAGE");
   const [couponMessage, setCouponMessage] = useState("");
 
   const [resortPosts, setResortPosts] = useState([]);
@@ -213,14 +238,52 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   }, [activeDetailTab, resort.id, resort.name, targetId]);
 
   // Format price
-  const convertedPriceVal = resort.price ? Math.round(resort.price * exchangeRate) : 8000;
+  const convertedPriceVal = Number(resort.pricePerNight ?? resort.price) > 0
+    ? Math.round(Number(resort.pricePerNight ?? resort.price) * exchangeRate)
+    : 8000;
   const formattedPrice = convertedPriceVal.toLocaleString();
 
-  const handleCheckAvailability = () => {
-    if (onBook) {
-      onBook(resort);
-    } else {
-      navigate("/resorts", { state: { checkAvailabilityFor: resort.id } });
+  const handleCheckAvailability = async () => {
+    if (!checkIn || !checkOut || !new Date(`${checkIn}T00:00:00`).getTime() || !new Date(`${checkOut}T00:00:00`).getTime()) {
+      toast("Please select valid check-in and check-out dates.", "error");
+      return;
+    }
+    if (checkOut <= checkIn) {
+      toast("Check-out must be after check-in.", "error");
+      return;
+    }
+
+    try {
+      // Availability is checked BEFORE opening the booking wizard. This
+      // includes the exact number of rooms required by the guest count.
+      await bookingService.checkAvailability(
+        resort.id,
+        { checkIn, checkOut },
+        { adults, children: childrenCount, roomsCount }
+      );
+
+      if (onBook) {
+        await onBook(resort, {
+          checkIn,
+          checkOut,
+          adults,
+          children: childrenCount,
+          roomsCount
+        });
+      } else {
+        navigate("/resorts", {
+          state: {
+            checkAvailabilityFor: resort.id,
+            checkInDate: checkIn,
+            checkOutDate: checkOut,
+            guestCount: adults,
+            childCount: childrenCount,
+            roomCount: roomsCount
+          }
+        });
+      }
+    } catch (e) {
+      toast(e.message || "These dates/rooms are not available.", "error");
     }
   };
 
@@ -228,41 +291,60 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
     navigate("/resorts");
   };
 
-  // Calculate nights & breakdown
+  // Customer pricing is simply nightly rate × nights × rooms.
+  // No cleaning, luxury, service, or tax charges are added.
   const calculateNights = () => {
     try {
-      const d1 = new Date(checkIn);
-      const d2 = new Date(checkOut);
+      const d1 = new Date(`${checkIn}T00:00:00`);
+      const d2 = new Date(`${checkOut}T00:00:00`);
       const diffTime = d2.getTime() - d1.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.round(diffTime / 86400000);
       return diffDays > 0 ? diffDays : 1;
     } catch (e) {
-      return 3;
+      return 1;
     }
   };
 
   const nights = calculateNights();
-  const subtotal = convertedPriceVal * nights;
-  const gstTax = Math.round(subtotal * 0.18);
-  const serviceFee = 1200;
-  const discountAmount = Math.round((subtotal * appliedDiscountPercent) / 100);
-  const grandTotal = subtotal + gstTax + serviceFee - discountAmount;
+  const subtotal = convertedPriceVal * nights * roomsCount;
+  const totalBeforeDiscount = subtotal;
 
-  const handleApplyCoupon = (e) => {
+  const discountAmount = couponApplied
+    ? (couponDiscountType === "PERCENTAGE"
+        ? Math.round(totalBeforeDiscount * (Number(couponDiscountVal) / 100))
+        : Math.min(Math.round(Number(couponDiscountVal) || 0), totalBeforeDiscount))
+    : 0;
+  const grandTotal = Math.max(0, totalBeforeDiscount - discountAmount);
+
+  // Use the same backend coupon-validation logic as BookingModal.
+  const handleApplyCoupon = async (e) => {
     e.preventDefault();
     const code = couponCode.trim().toUpperCase();
-    if (code === "SUMMER20" || code === "MONSOON20") {
-      setAppliedDiscountPercent(20);
-      setCouponMessage("🎉 Promo code 'SUMMER20' applied! 20% OFF");
-    } else if (code === "WELCOME10") {
-      setAppliedDiscountPercent(10);
-      setCouponMessage("🎉 Promo code 'WELCOME10' applied! 10% OFF");
-    } else if (code === "MONSOON30") {
-      setAppliedDiscountPercent(30);
-      setCouponMessage("🎉 Promo code 'MONSOON30' applied! 30% OFF");
-    } else {
-      setAppliedDiscountPercent(0);
-      setCouponMessage("❌ Invalid promo code. Try 'SUMMER20' or 'WELCOME10'");
+    if (!code || couponLoading) return;
+
+    setCouponLoading(true);
+    setCouponMessage("");
+    try {
+      const resp = await rewardService.validateCoupon(
+        code,
+        resort.id,
+        totalBeforeDiscount
+      );
+
+      setCouponDiscountVal(Number(resp.discountValue) || 0);
+      setCouponDiscountType(resp.discountType || "PERCENTAGE");
+      setCouponApplied(true);
+
+      const label = resp.discountType === "PERCENTAGE"
+        ? `${resp.discountValue}%`
+        : `₹${Number(resp.discountValue).toLocaleString("en-IN")}`;
+      setCouponMessage(`✓ Coupon applied successfully! ${label} discount applied.`);
+    } catch (e) {
+      setCouponDiscountVal(0);
+      setCouponApplied(false);
+      setCouponMessage(`❌ ${e.message || "Invalid promo code."}`);
+    } finally {
+      setCouponLoading(false);
     }
   };
 
@@ -664,6 +746,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             {/* Guests & Rooms Interactive Modifier Card */}
             <div className="flex flex-col gap-1.5 relative" ref={guestPickerRef}>
               <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Guests & Rooms</label>
+              <span className="text-[9px] text-text-gray font-medium">Each room: up to 2 adults + 2 children</span>
               <button
                 type="button"
                 onClick={() => setShowGuestPicker(!showGuestPicker)}
@@ -694,7 +777,11 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                       <span className="w-5 text-center font-black text-xs text-text-dark">{adults}</span>
                       <button
                         type="button"
-                        onClick={() => setAdults(prev => prev + 1)}
+                        onClick={() => setAdults(prev => {
+                          const next = prev + 1;
+                          setRoomsCount(current => Math.max(current, Math.ceil(next / 2), Math.ceil(childrenCount / 2), 1));
+                          return next;
+                        })}
                         className="w-8 h-8 rounded-full border border-border-color flex items-center justify-center text-text-dark font-bold text-sm hover:border-primary cursor-pointer bg-bg-light transition"
                       >
                         <Plus size={13} />
@@ -720,7 +807,11 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                       <span className="w-5 text-center font-black text-xs text-text-dark">{childrenCount}</span>
                       <button
                         type="button"
-                        onClick={() => setChildrenCount(prev => prev + 1)}
+                        onClick={() => setChildrenCount(prev => {
+                          const next = prev + 1;
+                          setRoomsCount(current => Math.max(current, Math.ceil(adults / 2), Math.ceil(next / 2), 1));
+                          return next;
+                        })}
                         className="w-8 h-8 rounded-full border border-border-color flex items-center justify-center text-text-dark font-bold text-sm hover:border-primary cursor-pointer bg-bg-light transition"
                       >
                         <Plus size={13} />
@@ -737,8 +828,8 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                     <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        disabled={roomsCount <= 1}
-                        onClick={() => setRoomsCount(prev => Math.max(1, prev - 1))}
+                        disabled={roomsCount <= minimumRoomsForGuests}
+                        onClick={() => setRoomsCount(prev => Math.max(minimumRoomsForGuests, prev - 1))}
                         className="w-8 h-8 rounded-full border border-border-color flex items-center justify-center text-text-dark font-bold text-sm hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer bg-bg-light transition"
                       >
                         <Minus size={13} />
@@ -772,22 +863,14 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
               
               <div className="space-y-2 text-text-gray font-medium">
                 <div className="flex justify-between">
-                  <span>{currencySymbol}{formattedPrice} × {nights} {nights === 1 ? "night" : "nights"}</span>
+                  <span>{currencySymbol}{formattedPrice} × {nights} {nights === 1 ? "night" : "nights"} × {roomsCount} {roomsCount === 1 ? "room" : "rooms"}</span>
                   <span className="font-bold text-text-dark">{currencySymbol}{(subtotal).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Cleaning & Luxury Service Fee</span>
-                  <span className="font-bold text-text-dark">{currencySymbol}{(serviceFee * exchangeRate).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>GST Tax (18%)</span>
-                  <span className="font-bold text-text-dark">{currencySymbol}{(gstTax).toLocaleString()}</span>
-                </div>
 
-                {appliedDiscountPercent > 0 && (
+                {couponApplied && discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-600 font-bold">
-                    <span>Discount ({appliedDiscountPercent}% OFF)</span>
-                    <span>-{currencySymbol}{(discountAmount).toLocaleString()}</span>
+                    <span>Discount ({couponDiscountType === "PERCENTAGE" ? `${couponDiscountVal}% OFF` : `₹${Number(couponDiscountVal).toLocaleString("en-IN")} OFF`})</span>
+                    <span>-{currencySymbol}{Math.round(discountAmount).toLocaleString()}</span>
                   </div>
                 )}
               </div>
@@ -798,21 +881,38 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                   type="text"
                   placeholder="Promo code (e.g. SUMMER20)"
                   value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  className="flex-1 border border-border-color rounded-xl px-3 py-2 text-xs font-bold bg-bg-light text-text-dark outline-none focus:border-primary uppercase"
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  disabled={couponApplied || couponLoading}
+                  className="flex-1 border border-border-color rounded-xl px-3 py-2 text-xs font-bold bg-bg-light text-text-dark outline-none focus:border-primary uppercase disabled:opacity-60"
                 />
                 <button
                   type="submit"
-                  className="px-3 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 rounded-xl text-xs font-extrabold transition-all cursor-pointer"
+                  disabled={couponApplied || couponLoading || !couponCode.trim()}
+                  className="px-3 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 rounded-xl text-xs font-extrabold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Apply
+                  {couponLoading ? "Checking..." : couponApplied ? "Applied" : "Apply"}
                 </button>
               </form>
 
               {couponMessage && (
-                <div className={`text-[11px] font-bold ${appliedDiscountPercent > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                <div className={`text-[11px] font-bold ${couponApplied ? "text-emerald-600" : "text-red-500"}`}>
                   {couponMessage}
                 </div>
+              )}
+              {couponApplied && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCouponApplied(false);
+                    setCouponCode("");
+                    setCouponDiscountVal(0);
+                    setCouponDiscountType("PERCENTAGE");
+                    setCouponMessage("");
+                  }}
+                  className="text-[11px] font-bold text-red-500 hover:underline cursor-pointer bg-transparent border-none p-0"
+                >
+                  Remove
+                </button>
               )}
 
               {/* Total Payable */}

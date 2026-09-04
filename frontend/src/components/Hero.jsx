@@ -449,12 +449,13 @@ function Hero() {
                 <CustomCalendar
                   checkInDate={checkInDate}
                   checkOutDate={checkOutDate}
-                  selectionMode={calendarSelectionMode}
-                  onDateChange={(ci, co) => {
+                  activeField={calendarSelectionMode}
+                  onActiveFieldChange={(field) => setCalendarSelectionMode(field)}
+                  onDateChange={(ci, co, status) => {
                     setCheckInDate(ci);
                     setCheckOutDate(co);
-                    if (ci && co) {
-                      setTimeout(() => setShowCalendarDropdown(false), 300);
+                    if (status === "done" && ci && co) {
+                      setTimeout(() => setShowCalendarDropdown(false), 250);
                     }
                   }}
                   isDarkMode={document.body.classList.contains("dark-theme")}

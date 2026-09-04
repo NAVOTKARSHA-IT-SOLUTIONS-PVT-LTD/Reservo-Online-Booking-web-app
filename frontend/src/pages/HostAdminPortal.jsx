@@ -503,6 +503,25 @@ export default function HostAdminPortal() {
     };
 
     loadOwnerBookings();
+
+    // Refresh owner bookings when the host returns to the tab/window so a
+    // cancelled customer booking immediately becomes available again.
+    const refreshOnFocus = () => loadOwnerBookings();
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === "visible") loadOwnerBookings();
+    };
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnVisibility);
+
+    const refreshTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") loadOwnerBookings();
+    }, 15000);
+
+    return () => {
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnVisibility);
+      window.clearInterval(refreshTimer);
+    };
   }, [currentUser]);
 
   // Filter States
@@ -582,6 +601,38 @@ export default function HostAdminPortal() {
     toast("Reservation declined. Guest refund initiated.", "info");
   };
 
+  const handleCancelBooking = async (resId) => {
+    const reservation = hostData.reservations?.find(r => r.id === resId);
+    if (!reservation || reservation.status === "Cancelled" || reservation.status === "Completed") {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Cancel booking ${reservation.bookingCode || ""} for ${reservation.guest?.name || "this guest"}? This will immediately release the booked dates.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await hostService.cancelBooking(resId);
+
+      // Update the local host view immediately. The backend is the source of
+      // truth; this only avoids waiting for the next polling/focus refresh.
+      setHostData(previous => ({
+        ...previous,
+        reservations: (previous.reservations || []).map(item =>
+          item.id === resId
+            ? { ...item, status: "Cancelled", paymentStatus: "Refunded / Cancelled" }
+            : item
+        )
+      }));
+
+      toast("Booking cancelled successfully. The reserved dates are available again.", "success");
+    } catch (error) {
+      console.error("Failed to cancel booking:", error);
+      toast(error.message || "Could not cancel booking.", "error");
+    }
+  };
+
   const handleStatusChange = (resId, newStatus) => {
     hostService.updateStayStatus(resId, newStatus);
     setHostData(hostService.getData());
@@ -589,6 +640,20 @@ export default function HostAdminPortal() {
   };
 
   const handleToggleBlock = async (dateStr) => {
+    // Past and already-booked nights are read-only in the host calendar.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const clickedDate = new Date(`${dateStr}T00:00:00`);
+    const booked = (hostData.reservations || []).some((reservation) => {
+      if (String(reservation.resortId) !== String(selectedListingForCalendar)) return false;
+      if (reservation.status === "Cancelled") return false;
+      const checkIn = reservation.dates?.checkIn;
+      const checkOut = reservation.dates?.checkOut;
+      return checkIn && checkOut && dateStr >= checkIn && dateStr < checkOut;
+    });
+
+    if (clickedDate < today || booked) return;
+
     try {
       await hostService.toggleDateBlock(selectedListingForCalendar, dateStr);
       setHostData(hostService.getData());
@@ -2058,6 +2123,14 @@ export default function HostAdminPortal() {
                         >
                           <MessageSquare size={13} /> Chat Guest
                         </button>
+                        {res.status !== "Cancelled" && res.status !== "Completed" && (
+                          <button
+                            onClick={() => handleCancelBooking(res.id)}
+                            className="text-xs font-bold px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 cursor-pointer flex items-center gap-1 transition-all"
+                          >
+                            <X size={13} /> Cancel Booking
+                          </button>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -2476,7 +2549,7 @@ export default function HostAdminPortal() {
                   <h3 className="text-base font-bold font-serif text-[var(--color-text-dark)]">
                     {calendarMonth.toLocaleDateString("en-IN", { month: "long", year: "numeric" })} Availability Schedule
                   </h3>
-                  <p className="text-[10px] text-[var(--color-text-gray)] mt-1">All dates are available by default.</p>
+                  <p className="text-[10px] text-[var(--color-text-gray)] mt-1">Available dates are green. Booked and past dates are read-only.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))} className="p-2 rounded-xl border border-[var(--color-border-color)] hover:border-primary cursor-pointer bg-transparent">
@@ -2491,6 +2564,8 @@ export default function HostAdminPortal() {
               <div className="flex items-center gap-3 text-xs">
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> Available</span>
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500"></span> Blocked</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-slate-400"></span> Booked</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-slate-300"></span> Past</span>
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-amber-400"></span> Custom Price</span>
               </div>
 
@@ -2507,13 +2582,53 @@ export default function HostAdminPortal() {
                   const dateStr = `${y}-${m}-${String(dayNum).padStart(2, '0')}`;
                   const blocked = (hostData.blockedDates?.[selectedListingForCalendar] || []).includes(dateStr);
                   const customPrice = (hostData.customPricing?.[selectedListingForCalendar] || {})[dateStr];
+                  const cellDate = new Date(`${dateStr}T00:00:00`);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const past = cellDate < today;
+
+                  // Any non-cancelled reservation occupies its check-in through
+                  // the night before check-out. A cancellation immediately frees
+                  // those dates because the owner booking list is refreshed.
+                  const booked = !past && !blocked && (hostData.reservations || []).some((reservation) => {
+                    if (String(reservation.resortId) !== String(selectedListingForCalendar)) return false;
+                    if (reservation.status === "Cancelled") return false;
+                    const checkIn = reservation.dates?.checkIn;
+                    const checkOut = reservation.dates?.checkOut;
+                    return checkIn && checkOut && dateStr >= checkIn && dateStr < checkOut;
+                  });
+
                   const selectedProp = myProperties.find(l => String(l.id) === String(selectedListingForCalendar)) || hostData.listings?.find(l => String(l.id) === String(selectedListingForCalendar)) || myProperties[0] || hostData.listings?.[0];
                   const basePrice = Number(selectedProp?.pricePerNight ?? selectedProp?.price ?? 0);
                   const priceToShow = customPrice ? Number(customPrice) : basePrice;
+                  const readOnly = past || booked;
+
+                  const cellClass = past
+                    ? 'bg-slate-200/80 border-slate-300 text-slate-500 dark:bg-slate-800/70 dark:border-slate-700 dark:text-slate-500 cursor-not-allowed'
+                    : booked
+                      ? 'bg-slate-300/80 border-slate-400 text-slate-600 dark:bg-slate-700/80 dark:border-slate-600 dark:text-slate-300 cursor-not-allowed'
+                      : blocked
+                        ? 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400'
+                        : customPrice
+                          ? 'bg-amber-500/10 border-amber-500/40 text-[var(--color-text-dark)]'
+                          : 'bg-emerald-500/10 border-emerald-500/20 text-[var(--color-text-dark)] hover:border-primary';
+
                   return (
-                    <button key={dateStr} type="button" onClick={() => handleToggleBlock(dateStr)} className={`p-3 rounded-2xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${blocked ? 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400' : customPrice ? 'bg-amber-500/10 border-amber-500/40 text-[var(--color-text-dark)]' : 'bg-emerald-500/10 border-emerald-500/20 text-[var(--color-text-dark)] hover:border-primary'}`}>
-                      <div className="flex justify-between items-center w-full"><span className="text-xs font-extrabold">{dayNum}</span>{blocked ? <Lock size={11} className="text-red-500" /> : customPrice ? <Sparkles size={11} className="text-amber-500" /> : <Check size={11} className="text-emerald-600" />}</div>
-                      <div className="text-[10px] font-bold mt-auto">{blocked ? 'Blocked' : priceToShow > 0 ? `₹${priceToShow.toLocaleString('en-IN')}` : 'Available'}</div>
+                    <button
+                      key={dateStr}
+                      type="button"
+                      disabled={readOnly}
+                      onClick={() => handleToggleBlock(dateStr)}
+                      title={past ? "Past date" : booked ? "Booked" : blocked ? "Blocked — click to make available" : "Available — click to block"}
+                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between h-20 transition-all ${cellClass}`}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-xs font-extrabold">{dayNum}</span>
+                        {past ? <Clock size={11} className="text-slate-500" /> : booked ? <Lock size={11} className="text-slate-500" /> : blocked ? <Lock size={11} className="text-red-500" /> : customPrice ? <Sparkles size={11} className="text-amber-500" /> : <Check size={11} className="text-emerald-600" />}
+                      </div>
+                      <div className="text-[10px] font-bold mt-auto">
+                        {past ? 'Past' : booked ? 'Booked' : blocked ? 'Blocked' : priceToShow > 0 ? `₹${priceToShow.toLocaleString('en-IN')}` : 'Available'}
+                      </div>
                     </button>
                   );
                 })}
