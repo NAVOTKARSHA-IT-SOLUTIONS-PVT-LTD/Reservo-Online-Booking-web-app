@@ -232,12 +232,6 @@ function Hero() {
         {/* Left Content Area */}
         <div className="flex-1 max-w-[600px] text-white" style={{ transform: `translateY(${-scrollY * 0.08}px)`, opacity: Math.max(0, 1 - scrollY / 700) }}>
           
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-black/20 backdrop-blur-md mb-6 shadow-lg">
-            <Sparkles size={14} className="text-yellow-400" />
-            <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/90">AI-POWERED TRAVEL PLANNER</span>
-          </div>
-
           {/* Title */}
           <h1 className="font-extrabold text-[36px] sm:text-[56px] lg:text-[70px] leading-[1.05] mb-6 font-serif tracking-tight drop-shadow-xl text-white">
   Book Smart.<br />
@@ -262,18 +256,6 @@ function Hero() {
 
           {/* Social Proof */}
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border border-white/10 bg-black/20 backdrop-blur-sm">
-              <div className="flex -space-x-2">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=32&h=32&q=80" alt="User" className="w-8 h-8 rounded-full border-2 border-transparent object-cover" />
-                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=32&h=32&q=80" alt="User" className="w-8 h-8 rounded-full border-2 border-transparent object-cover" />
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=32&h=32&q=80" alt="User" className="w-8 h-8 rounded-full border-2 border-transparent object-cover" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[13px] font-bold text-white leading-tight">10,000+</span>
-                <span className="text-[11px] text-white/70">Happy Travelers</span>
-              </div>
-            </div>
-
             <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border border-white/10 bg-black/20 backdrop-blur-sm">
               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
                 <Star size={14} className="fill-current text-teal-300" />
