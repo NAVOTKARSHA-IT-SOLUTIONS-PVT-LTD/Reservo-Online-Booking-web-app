@@ -127,7 +127,7 @@ function Contact() {
                       Location
                     </span>
                   </div>
-                  <p className="m-0 text-text-gray font-medium text-base">Pune, Maharashtra, India</p>
+                  <p className="m-0 text-text-gray font-medium text-base">Research Park Foundation, SPPU, Pune, Maharashtra, India</p>
                 </div>
               </div>
 
