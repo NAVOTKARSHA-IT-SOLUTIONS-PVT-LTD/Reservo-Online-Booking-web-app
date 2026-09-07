@@ -182,6 +182,22 @@ export const hostService = {
     return result.data;
   },
 
+  getRoomBlockedDates: async (roomId, from, to) => {
+    if (!roomId || !from || !to) return [];
+    const result = await apiClient.get(`/api/v1/availability/room/${encodeURIComponent(roomId)}/blocks?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+    if (!result?.success) throw new Error(result?.message || "Could not load room calendar.");
+    return Array.isArray(result.data) ? result.data : [];
+  },
+
+  toggleRoomDateBlock: async (roomId, dateStr) => {
+    if (!roomId || !dateStr) throw new Error("Room and date are required.");
+    const current = await hostService.getRoomBlockedDates(roomId, dateStr, new Date(new Date(`${dateStr}T00:00:00`).getTime()+86400000).toISOString().slice(0,10));
+    const blocked = !current.includes(dateStr);
+    const result = await apiClient.post(`/api/v1/availability/room/${encodeURIComponent(roomId)}/block?date=${encodeURIComponent(dateStr)}&blocked=${blocked}`);
+    if (!result?.success) throw new Error(result?.message || "Could not update room availability.");
+    return blocked;
+  },
+
   toggleDateBlock: async (listingId, dateStr) => {
     const data = hostService.getData();
     if (!data.blockedDates[listingId]) data.blockedDates[listingId] = [];

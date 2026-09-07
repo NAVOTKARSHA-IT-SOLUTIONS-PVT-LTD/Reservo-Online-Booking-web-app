@@ -125,6 +125,13 @@ public class BookingRepository {
                     for (LocalDate date = booking.getCheckInDate();
                          date.isBefore(booking.getCheckOutDate());
                          date = date.plusDays(1)) {
+                        DocumentSnapshot roomBlock = transaction.get(
+                                firestore.collection("room_availability_blocks")
+                                        .document(roomId + "_" + date)).get();
+                        if (roomBlock.exists()) {
+                            locked = true;
+                            break;
+                        }
                         String lockId = roomId + "_" + date;
                         DocumentSnapshot lock = transaction.get(
                                 firestore.collection("booking_locks").document(lockId)

@@ -70,6 +70,48 @@ export const bookingService = {
     return mapped;
   },
 
+  async getBookingHistory() {
+    const user = secureStorage.getItem("reservo_user");
+    if (!user?.id) {
+      throw new Error("Please log in to view your booking history.");
+    }
+
+    const result = await apiClient.get(
+      `/api/v1/bookings/history?userId=${encodeURIComponent(user.id)}`
+    );
+
+    if (!result?.success || !Array.isArray(result.data)) {
+      throw new Error(result?.message || "Failed to load your booking history.");
+    }
+
+    const mapped = await Promise.all(result.data.map(async (booking) => {
+      let resort = null;
+      if (booking?.resortId) {
+        try {
+          resort = await resortService.getResortById(booking.resortId);
+        } catch (e) {}
+      }
+      return {
+        ...mapBackendBooking(booking, resort),
+        id: booking.bookingId || booking.id,
+        resortId: booking.resortId,
+        code: booking.bookingCode,
+        roomTitle: booking.roomType || (Array.isArray(booking.roomTypes) ? booking.roomTypes.join(", ") : "Room"),
+        roomNumber: booking.roomNumber || (Array.isArray(booking.roomNumbers) ? booking.roomNumbers.join(", ") : ""),
+        roomTypes: Array.isArray(booking.roomTypes) ? booking.roomTypes : [],
+        roomNumbers: Array.isArray(booking.roomNumbers) ? booking.roomNumbers : [],
+        checkin: booking.checkInDate,
+        checkout: booking.checkOutDate,
+        guests: booking.guestsCount || 0,
+        total: Number(booking.totalAmount || 0),
+        status: booking.status,
+        reviewed: Boolean(booking.reviewed)
+      };
+    }));
+
+    return mapped;
+  },
+
   async createBooking(bookingDetails) {
     const user = secureStorage.getItem("reservo_user");
     if (!user?.id) {
@@ -83,7 +125,7 @@ export const bookingService = {
     }
 
     const result = await apiClient.post(
-      `/api/v1/bookings/create?userId=${encodeURIComponent(user.id)}&resortId=${encodeURIComponent(rId)}&roomId=${encodeURIComponent(roomId)}&checkIn=${encodeURIComponent(bookingDetails.checkin)}&checkOut=${encodeURIComponent(bookingDetails.checkout)}&amount=${encodeURIComponent(bookingDetails.total)}&adults=${encodeURIComponent(bookingDetails.adults ?? 2)}&children=${encodeURIComponent(bookingDetails.children ?? 0)}&roomsCount=${encodeURIComponent(bookingDetails.roomsCount ?? 1)}&couponCode=${encodeURIComponent(bookingDetails.couponCode || "")}&discountAmount=${encodeURIComponent(bookingDetails.discountAmount ?? 0)}&pointsToRedeem=${encodeURIComponent(bookingDetails.pointsToRedeem ?? 0)}&pointsValue=${encodeURIComponent(bookingDetails.pointsValue ?? 0)}`
+      `/api/v1/bookings/create?userId=${encodeURIComponent(user.id)}&resortId=${encodeURIComponent(rId)}&roomId=${encodeURIComponent(roomId)}&checkIn=${encodeURIComponent(bookingDetails.checkin)}&checkOut=${encodeURIComponent(bookingDetails.checkout)}&amount=${encodeURIComponent(bookingDetails.total)}&adults=${encodeURIComponent(bookingDetails.adults ?? 2)}&children=${encodeURIComponent(bookingDetails.children ?? 0)}&roomsCount=${encodeURIComponent(bookingDetails.roomsCount ?? 1)}&couponCode=${encodeURIComponent(bookingDetails.couponCode || "")}&discountAmount=${encodeURIComponent(bookingDetails.discountAmount ?? 0)}&pointsToRedeem=${encodeURIComponent(bookingDetails.pointsToRedeem ?? 0)}&pointsValue=${encodeURIComponent(bookingDetails.pointsValue ?? 0)}&roomType=${encodeURIComponent(bookingDetails.roomType || "")}`
     );
 
     if (!result?.success || !result.data) {
@@ -121,10 +163,10 @@ export const bookingService = {
 
     const adults = Math.max(1, Number(guests.adults ?? 2));
     const children = Math.max(0, Number(guests.children ?? 0));
-    const requiredRooms = Math.max(
+    const roomCapacity = Math.max(1, Number(guests.roomCapacity ?? 4));
+    const requiredRooms = guests.wholeVilla ? 1 : Math.max(
       1,
-      Math.ceil(adults / 2),
-      Math.ceil(children / 2),
+      Math.ceil((adults + children) / roomCapacity),
       Number(guests.roomsCount ?? 1)
     );
 
@@ -136,11 +178,17 @@ export const bookingService = {
       throw new Error(result?.message || "Failed to check availability.");
     }
 
-    const rooms = Array.isArray(result.data) ? result.data.map(room => ({
+    const allRooms = Array.isArray(result.data) ? result.data.map(room => ({
       id: room.id,
       title: (room.roomType || room.type || "Room").replace(/_/g, " "),
-      price: Number(room.pricePerNight || 0)
+      roomType: room.roomType || room.type || "Room",
+      price: Number(room.pricePerNight || 0),
+      capacity: Number(room.capacity || 0)
     })) : [];
+    const requestedType = String(guests.roomType || "").trim();
+    const rooms = requestedType
+      ? allRooms.filter(room => String(room.roomType).trim() === requestedType)
+      : allRooms;
 
     if (rooms.length < requiredRooms) {
       throw new Error(

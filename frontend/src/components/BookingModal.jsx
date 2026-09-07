@@ -176,10 +176,10 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
     return Number.isFinite(number) && number >= 0 ? number : fallback;
   };
 
-  const basePrice = toFiniteNumber(
-    resort?.pricePerNight ?? resort?.price,
-    toFiniteNumber(room?.pricePerNight ?? room?.price, 0)
-  );
+  const isWholeVilla = String(resort?.listingMode || "").toUpperCase() === "VILLA";
+  const basePrice = isWholeVilla
+    ? toFiniteNumber(resort?.pricePerNight ?? resort?.price, 0)
+    : toFiniteNumber(room?.pricePerNight ?? room?.price, toFiniteNumber(resort?.pricePerNight ?? resort?.price, 0));
   const subtotal = basePrice * nights * roomsCount;
   const totalBeforeDiscount = subtotal;
 
@@ -323,7 +323,7 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
       await bookingService.checkAvailability(
         resort.id,
         { checkIn: modalCheckIn, checkOut: modalCheckOut },
-        { adults: adultsCount, children: childrenCount, roomsCount }
+        { adults: adultsCount, children: childrenCount, roomsCount, roomType: room?.roomType || room?.type || "", roomCapacity: Number(room?.capacity || 4), wholeVilla: String(resort?.listingMode || "").toUpperCase() === "VILLA" }
       );
 
       const bookingDetails = {
@@ -335,6 +335,8 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
         adults: adultsCount,
         children: childrenCount,
         roomsCount,
+        roomType: room?.roomType || room?.type || "",
+        roomCapacity: Number(room?.capacity || 4),
         couponCode: couponApplied ? couponCode.trim().toUpperCase() : undefined,
         discountAmount: calculatedCouponDiscount,
         pointsToRedeem: redeemPointsChecked ? pointsToRedeem : 0,

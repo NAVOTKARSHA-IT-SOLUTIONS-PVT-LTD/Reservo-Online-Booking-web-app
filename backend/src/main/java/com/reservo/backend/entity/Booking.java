@@ -70,6 +70,7 @@ public class Booking {
     public enum BookingStatus {
         PENDING,
         CONFIRMED,
+        IN_HOUSE,
         CANCELLED,
         COMPLETED
     }

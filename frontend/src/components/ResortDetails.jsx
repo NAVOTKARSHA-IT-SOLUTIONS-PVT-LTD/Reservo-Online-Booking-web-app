@@ -6,6 +6,7 @@ import ResortNavigationMap from "./ResortNavigationMap";
 import CustomCalendar from "./CustomCalendar";
 import { rewardService } from "../services/reward.service";
 import { bookingService } from "../services/booking.service";
+import { apiClient } from "../services/apiClient";
 
 import { useTranslation } from "../hooks/useTranslation";
 import { useToast } from "../context/ToastContext";
@@ -133,6 +134,42 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
     }
   };
   
+  const isWholeVilla = String(resort?.listingMode || "").toUpperCase() === "VILLA";
+  const [roomInventory, setRoomInventory] = useState([]);
+  const [selectedRoomType, setSelectedRoomType] = useState("");
+  const [roomInventoryLoading, setRoomInventoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (isWholeVilla || !resort?.id) {
+      setRoomInventory([]);
+      setSelectedRoomType("");
+      return;
+    }
+    let active = true;
+    setRoomInventoryLoading(true);
+    apiClient.get(`/api/v1/rooms/resort/${resort.id}`)
+      .then(res => {
+        if (!active) return;
+        const rooms = Array.isArray(res?.data) ? res.data : [];
+        setRoomInventory(rooms);
+        const firstType = rooms.find(r => r.status === "AVAILABLE")?.roomType || rooms[0]?.roomType || rooms[0]?.type || "";
+        setSelectedRoomType(prev => prev || firstType);
+      })
+      .catch(() => { if (active) setRoomInventory([]); })
+      .finally(() => { if (active) setRoomInventoryLoading(false); });
+    return () => { active = false; };
+  }, [resort?.id, isWholeVilla]);
+
+  const roomTypeOptions = Array.from(new Set((roomInventory || []).map(room => String(room.roomType || room.type || "Room").trim()).filter(Boolean)));
+  const selectedRoomRecords = roomInventory.filter(room => String(room.roomType || room.type || "Room") === String(selectedRoomType));
+  const selectedRoomCapacity = isWholeVilla
+    ? Math.max(1, Number(resort?.guests || 1))
+    : Math.max(1, Number(selectedRoomRecords.find(r => Number(r.capacity) > 0)?.capacity || selectedRoomRecords[0]?.capacity || 2));
+  const selectedAvailableRoomCount = selectedRoomRecords.filter(r => r.status === "AVAILABLE").length;
+  const selectedRoomPrice = isWholeVilla
+    ? Number(resort?.pricePerNight ?? resort?.price ?? 0)
+    : Number(selectedRoomRecords.find(r => r.status === "AVAILABLE")?.pricePerNight || selectedRoomRecords[0]?.pricePerNight || resort?.pricePerNight || resort?.price || 0);
+
   const [adults, setAdults] = useState(() => Math.max(1, initialSearch?.guestCount || 2));
   const [childrenCount, setChildrenCount] = useState(() => Math.max(0, initialSearch?.childCount || 0));
   const [roomsCount, setRoomsCount] = useState(() => Math.max(
@@ -146,15 +183,21 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   // One room supports up to 2 adults and up to 2 children. Increase rooms
   // automatically when guest counts require it; never reduce a user-selected
   // number of rooms unless it falls below the minimum required.
-  const minimumRoomsForGuests = Math.max(
+  const minimumRoomsForGuests = isWholeVilla ? 1 : Math.max(
     1,
-    Math.ceil(adults / 2),
-    Math.ceil(childrenCount / 2)
+    Math.ceil((adults + childrenCount) / selectedRoomCapacity)
   );
 
   useEffect(() => {
-    setRoomsCount(prev => Math.max(prev, minimumRoomsForGuests));
-  }, [minimumRoomsForGuests]);
+    if (isWholeVilla) setRoomsCount(1);
+    else setRoomsCount(prev => Math.max(prev, minimumRoomsForGuests));
+  }, [minimumRoomsForGuests, isWholeVilla]);
+
+  useEffect(() => {
+    if (!isWholeVilla && selectedRoomType) {
+      setRoomsCount(prev => Math.max(1, Math.min(prev, Math.max(1, selectedAvailableRoomCount))));
+    }
+  }, [selectedRoomType, selectedAvailableRoomCount, isWholeVilla]);
 
   const formatGuestsLabel = (a, c, r) => {
     let label = `${a} Adult${a !== 1 ? "s" : ""}`;
@@ -177,7 +220,9 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
         guestsLabel: guests,
         guestCount: adults,
         childCount: childrenCount,
-        roomCount: roomsCount
+        roomCount: roomsCount,
+        roomType: selectedRoomType,
+        roomCapacity: selectedRoomCapacity
       };
       sessionStorage.setItem("reservo_search_state", JSON.stringify(activeState));
     } catch (e) {}
@@ -238,8 +283,8 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   }, [activeDetailTab, resort.id, resort.name, targetId]);
 
   // Format price
-  const convertedPriceVal = Number(resort.pricePerNight ?? resort.price) > 0
-    ? Math.round(Number(resort.pricePerNight ?? resort.price) * exchangeRate)
+  const convertedPriceVal = (selectedRoomPrice > 0 ? selectedRoomPrice : Number(resort.pricePerNight ?? resort.price)) > 0
+    ? Math.round((selectedRoomPrice > 0 ? selectedRoomPrice : Number(resort.pricePerNight ?? resort.price)) * exchangeRate)
     : 8000;
   const formattedPrice = convertedPriceVal.toLocaleString();
 
@@ -259,7 +304,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
       await bookingService.checkAvailability(
         resort.id,
         { checkIn, checkOut },
-        { adults, children: childrenCount, roomsCount }
+        { adults, children: childrenCount, roomsCount, wholeVilla: isWholeVilla, roomType: selectedRoomType, roomCapacity: selectedRoomCapacity }
       );
 
       if (onBook) {
@@ -268,7 +313,9 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
           checkOut,
           adults,
           children: childrenCount,
-          roomsCount
+          roomsCount,
+          roomType: selectedRoomType,
+          roomCapacity: selectedRoomCapacity
         });
       } else {
         navigate("/resorts", {
@@ -743,10 +790,31 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
 
             </div>
 
+            {!isWholeVilla && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Room Type</label>
+                <select
+                  value={selectedRoomType}
+                  onChange={e => { setSelectedRoomType(e.target.value); setRoomsCount(1); }}
+                  disabled={roomInventoryLoading || roomTypeOptions.length === 0}
+                  className="w-full border border-border-color rounded-xl px-3.5 py-2.5 text-xs font-semibold bg-bg-light text-text-dark outline-none focus:border-primary cursor-pointer disabled:opacity-50"
+                >
+                  {roomTypeOptions.length === 0 ? <option value="">No room types available</option> : roomTypeOptions.map(type => {
+                    const records = roomInventory.filter(room => String(room.roomType || room.type || "Room") === type);
+                    const available = records.filter(room => room.status === "AVAILABLE").length;
+                    const capacity = Number(records.find(r => Number(r.capacity) > 0)?.capacity || 2);
+                    const price = Number(records.find(r => r.status === "AVAILABLE")?.pricePerNight || records[0]?.pricePerNight || 0);
+                    return <option key={type} value={type}>{type} • {capacity} guests • ₹{price.toLocaleString("en-IN")} • {available} available</option>;
+                  })}
+                </select>
+                <span className="text-[9px] text-text-gray">Capacity: {selectedRoomCapacity} guest{selectedRoomCapacity !== 1 ? "s" : ""} per room • {selectedAvailableRoomCount} available</span>
+              </div>
+            )}
+
             {/* Guests & Rooms Interactive Modifier Card */}
             <div className="flex flex-col gap-1.5 relative" ref={guestPickerRef}>
               <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Guests & Rooms</label>
-              <span className="text-[9px] text-text-gray font-medium">Each room: up to 2 adults + 2 children</span>
+              <span className="text-[9px] text-text-gray font-medium">{isWholeVilla ? `Entire villa • up to ${selectedRoomCapacity} guests` : `Selected room type • up to ${selectedRoomCapacity} guests per room`}</span>
               <button
                 type="button"
                 onClick={() => setShowGuestPicker(!showGuestPicker)}
@@ -777,11 +845,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                       <span className="w-5 text-center font-black text-xs text-text-dark">{adults}</span>
                       <button
                         type="button"
-                        onClick={() => setAdults(prev => {
-                          const next = prev + 1;
-                          setRoomsCount(current => Math.max(current, Math.ceil(next / 2), Math.ceil(childrenCount / 2), 1));
-                          return next;
-                        })}
+                        onClick={() => setAdults(prev => prev + 1)}
                         className="w-8 h-8 rounded-full border border-border-color flex items-center justify-center text-text-dark font-bold text-sm hover:border-primary cursor-pointer bg-bg-light transition"
                       >
                         <Plus size={13} />
@@ -807,11 +871,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                       <span className="w-5 text-center font-black text-xs text-text-dark">{childrenCount}</span>
                       <button
                         type="button"
-                        onClick={() => setChildrenCount(prev => {
-                          const next = prev + 1;
-                          setRoomsCount(current => Math.max(current, Math.ceil(adults / 2), Math.ceil(next / 2), 1));
-                          return next;
-                        })}
+                        onClick={() => setChildrenCount(prev => prev + 1)}
                         className="w-8 h-8 rounded-full border border-border-color flex items-center justify-center text-text-dark font-bold text-sm hover:border-primary cursor-pointer bg-bg-light transition"
                       >
                         <Plus size={13} />
@@ -828,7 +888,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                     <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        disabled={roomsCount <= minimumRoomsForGuests}
+                        disabled={isWholeVilla || roomsCount <= minimumRoomsForGuests}
                         onClick={() => setRoomsCount(prev => Math.max(minimumRoomsForGuests, prev - 1))}
                         className="w-8 h-8 rounded-full border border-border-color flex items-center justify-center text-text-dark font-bold text-sm hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer bg-bg-light transition"
                       >
@@ -837,7 +897,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                       <span className="w-5 text-center font-black text-xs text-text-dark">{roomsCount}</span>
                       <button
                         type="button"
-                        onClick={() => setRoomsCount(prev => prev + 1)}
+                        onClick={() => !isWholeVilla && setRoomsCount(prev => Math.min(prev + 1, Math.max(1, selectedAvailableRoomCount)))}
                         className="w-8 h-8 rounded-full border border-border-color flex items-center justify-center text-text-dark font-bold text-sm hover:border-primary cursor-pointer bg-bg-light transition"
                       >
                         <Plus size={13} />

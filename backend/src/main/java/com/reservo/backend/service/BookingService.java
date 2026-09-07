@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,6 +30,7 @@ public class BookingService {
     private final LoyaltyService loyaltyService;
     private final NotificationService notificationService;
     private final LoyaltyTransactionRepository loyaltyTransactionRepository;
+    private final ReviewRepository reviewRepository;
 
     /**
      * Canonical pre-discount booking price used by both the UI and checkout.
@@ -59,9 +61,11 @@ public class BookingService {
 
         // One simple customer-facing price: nightly rate × nights × rooms.
         // No cleaning fee, luxury/service fee, or tax is added here.
-        BigDecimal nightly = resort.getPricePerNight();
+        BigDecimal nightly = "VILLA".equalsIgnoreCase(resort.getListingMode())
+                ? resort.getPricePerNight()
+                : room.getPricePerNight();
         if (nightly == null || nightly.compareTo(BigDecimal.ZERO) < 0) {
-            nightly = room.getPricePerNight();
+            nightly = resort.getPricePerNight();
         }
         if (nightly == null || nightly.compareTo(BigDecimal.ZERO) < 0) {
             nightly = BigDecimal.ZERO;
@@ -107,7 +111,9 @@ public class BookingService {
                 (int) Math.ceil(safeAdults / 2.0),
                 (int) Math.ceil(safeChildren / 2.0)
         );
-        int requestedRooms = Math.max(requiredRoomsByGuests, roomsCount);
+        int requestedRooms = "VILLA".equalsIgnoreCase(resort.getListingMode())
+                ? 1
+                : Math.max(requiredRoomsByGuests, roomsCount);
 
         // The backend is the final authority for the nightly × nights × rooms
         // amount. A non-zero amount cannot be booked without a payment module.
@@ -178,14 +184,43 @@ public class BookingService {
                 .build();
 
         // Atomically select and lock all requested rooms for every night.
-        return bookingRepository.createIfAvailable(
-                booking,
-                roomRepository.findByResortId(resortId).stream()
-                        .filter(r -> r.getId() != null)
-                        .filter(r -> r.getStatus() == Room.RoomStatus.AVAILABLE)
-                        .map(Room::getId)
-                        .toList()
-        );
+        // The room selected by the guest is the first candidate. For a single-room
+        // booking we MUST reserve that exact physical room; never silently move
+        // the booking to another room. For multi-room bookings, additional rooms
+        // are selected from the same room type where possible.
+        List<Room> availableRooms = roomRepository.findByResortId(resortId).stream()
+                .filter(r -> r.getId() != null)
+                .filter(r -> r.getStatus() == Room.RoomStatus.AVAILABLE)
+                .toList();
+
+        Room selectedRoom = availableRooms.stream()
+                .filter(r -> String.valueOf(r.getId()).equals(String.valueOf(roomId)))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "The selected room is no longer available. Please choose another room."));
+
+        List<String> candidateRoomIds = new ArrayList<>();
+        candidateRoomIds.add(selectedRoom.getId());
+
+        if (requestedRooms > 1) {
+            // Prefer the same room type for additional rooms.
+            availableRooms.stream()
+                    .filter(r -> !String.valueOf(r.getId()).equals(String.valueOf(selectedRoom.getId())))
+                    .filter(r -> java.util.Objects.equals(
+                            String.valueOf(r.getRoomType()),
+                            String.valueOf(selectedRoom.getRoomType())))
+                    .map(Room::getId)
+                    .forEach(candidateRoomIds::add);
+
+            // If the same type does not have enough inventory, allow other
+            // available room types only for the additional requested rooms.
+            availableRooms.stream()
+                    .filter(r -> !candidateRoomIds.contains(r.getId()))
+                    .map(Room::getId)
+                    .forEach(candidateRoomIds::add);
+        }
+
+        return bookingRepository.createIfAvailable(booking, candidateRoomIds);
     }
 
     public Booking confirmBooking(String bookingCode, String paymentIntentId, String paymentMethod) {
@@ -475,6 +510,46 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    /**
+     * Update a stay status on behalf of its property owner. Ownership is resolved
+     * from the resort document instead of trusting a resort/owner ID supplied by
+     * the browser.
+     */
+    public Booking updateBookingStatusForOwner(String bookingId, String ownerId,
+                                               Booking.BookingStatus status, boolean admin) {
+        if (status == null) {
+            throw new IllegalArgumentException("Booking status cannot be null");
+        }
+
+        Booking booking = getBookingById(bookingId);
+        Resort resort = getResort(booking.getResortId());
+
+        if (!admin && (ownerId == null || !ownerId.equals(resort.getOwnerId()))) {
+            throw new com.reservo.backend.exception.UnauthorizedException(
+                    "You are not authorized to update this booking");
+        }
+
+        // Hosts use this endpoint for the guest check-in/check-out lifecycle.
+        if (status == Booking.BookingStatus.IN_HOUSE
+                && booking.getStatus() != Booking.BookingStatus.CONFIRMED) {
+            throw new IllegalStateException(
+                    "Only a confirmed/upcoming booking can be checked in");
+        }
+
+        if (status == Booking.BookingStatus.COMPLETED
+                && booking.getStatus() != Booking.BookingStatus.IN_HOUSE) {
+            throw new IllegalStateException(
+                    "Only an in-house booking can be completed");
+        }
+
+        if (status == Booking.BookingStatus.CANCELLED) {
+            return cancelBookingForOwner(bookingId, ownerId, admin);
+        }
+
+        booking.setStatus(status);
+        return bookingRepository.save(booking);
+    }
+
     private BookingHistoryResponse toHistoryResponse(Booking booking) {
         Resort resort = booking.getResortId() != null
                 ? resortRepository.findById(booking.getResortId()).orElse(null) : null;
@@ -485,6 +560,7 @@ public class BookingService {
                 BookingHistoryResponse.builder()
                         .bookingId(booking.getId())
                         .bookingCode(booking.getBookingCode())
+                        .resortId(booking.getResortId())
                         .checkInDate(booking.getCheckInDate())
                         .checkOutDate(booking.getCheckOutDate())
                         .guestsCount(booking.getGuestsCount())
@@ -500,6 +576,38 @@ public class BookingService {
         if (room != null) {
             builder.roomNumber(room.getRoomNumber()).roomType(room.getRoomType());
         }
+
+        List<String> assignedRoomIds = booking.getAssignedRoomIds() != null
+                ? booking.getAssignedRoomIds().stream()
+                    .filter(java.util.Objects::nonNull)
+                    .map(String::valueOf)
+                    .distinct()
+                    .toList()
+                : List.of();
+        if (assignedRoomIds.isEmpty() && booking.getRoomId() != null) {
+            assignedRoomIds = List.of(booking.getRoomId());
+        }
+
+        List<String> roomNumbers = new ArrayList<>();
+        List<String> roomTypes = new ArrayList<>();
+        for (String assignedId : assignedRoomIds) {
+            roomRepository.findById(assignedId).ifPresent(assignedRoom -> {
+                if (assignedRoom.getRoomNumber() != null && !assignedRoom.getRoomNumber().isBlank()) {
+                    roomNumbers.add(assignedRoom.getRoomNumber());
+                }
+                if (assignedRoom.getRoomType() != null && !assignedRoom.getRoomType().isBlank()) {
+                    roomTypes.add(assignedRoom.getRoomType());
+                }
+            });
+        }
+
+        builder.roomNumbers(roomNumbers)
+                .roomTypes(roomTypes)
+                .reviewed(reviewRepository.findByBookingId(booking.getId()).isPresent());
+
+        if (!roomNumbers.isEmpty()) builder.roomNumber(String.join(", ", roomNumbers));
+        if (!roomTypes.isEmpty()) builder.roomType(String.join(", ", roomTypes));
+
         return builder.build();
     }
 

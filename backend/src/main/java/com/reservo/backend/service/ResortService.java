@@ -231,6 +231,12 @@ public class ResortService {
         // Never allow the client to change identity/ownership/status.
         existing.setName(changes.getName());
         existing.setLocation(changes.getLocation());
+        existing.setAddress(changes.getAddress());
+        existing.setCity(changes.getCity());
+        existing.setState(changes.getState());
+        existing.setCountry(changes.getCountry());
+        existing.setPinCode(changes.getPinCode());
+        existing.setLandmark(changes.getLandmark());
         existing.setDescription(changes.getDescription());
         existing.setImageUrl(changes.getImageUrl());
         existing.setPricePerNight(changes.getPricePerNight());
@@ -245,6 +251,18 @@ public class ResortService {
         existing.setBedrooms(changes.getBedrooms());
         existing.setBeds(changes.getBeds());
         existing.setBathrooms(changes.getBathrooms());
+        existing.setSqft(changes.getSqft());
+        existing.setInstantBook(changes.getInstantBook());
+        existing.setCleaningFee(changes.getCleaningFee());
+        existing.setWeekendSurgePercent(changes.getWeekendSurgePercent());
+        existing.setWeeklyDiscount(changes.getWeeklyDiscount());
+        existing.setMonthlyDiscount(changes.getMonthlyDiscount());
+        existing.setCancellationPolicy(changes.getCancellationPolicy());
+        existing.setMinNights(changes.getMinNights());
+        existing.setMaxNights(changes.getMaxNights());
+        if (changes.getListingMode() != null && !changes.getListingMode().isBlank()) {
+            existing.setListingMode(changes.getListingMode().toUpperCase());
+        }
 
         // Owner edits always require a fresh admin approval.
         existing.setStatus(Resort.ResortStatus.PENDING_APPROVAL);

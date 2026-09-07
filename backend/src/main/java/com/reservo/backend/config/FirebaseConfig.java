@@ -110,7 +110,12 @@ public class FirebaseConfig {
         return null;
     }
 
-    @Bean
+    // Firestore owns background gRPC threads and is shared by the FirebaseApp.
+    // Do not let Spring call Firestore.close() when a DevTools/restart context is
+    // destroyed; that closes the shared client and the next context receives a
+    // "Firestore client has already been closed" instance. FirebaseApp remains the
+    // lifecycle owner of the client.
+    @Bean(destroyMethod = "")
     public Firestore firestore(FirebaseApp firebaseApp) {
         return FirestoreClient.getFirestore(firebaseApp);
     }

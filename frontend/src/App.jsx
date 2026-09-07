@@ -419,11 +419,13 @@ function App() {
       }
       const adults = Math.max(1, Number(searchDetails?.adults ?? saved.guestCount ?? 2));
       const children = Math.max(0, Number(searchDetails?.children ?? saved.childCount ?? 0));
-      const roomsCount = Math.max(
+      const isWholeVilla = String(resort.listingMode || "").toUpperCase() === "VILLA";
+      const roomType = String(searchDetails?.roomType || saved.roomType || "").trim();
+      const roomCapacity = Math.max(1, Number(searchDetails?.roomCapacity || saved.roomCapacity || 4));
+      const roomsCount = isWholeVilla ? 1 : Math.max(
         1,
         Number(searchDetails?.roomsCount ?? saved.roomCount ?? 1),
-        Math.ceil(adults / 2),
-        Math.ceil(children / 2)
+        Math.ceil((adults + children) / roomCapacity)
       );
 
       if (!checkIn || !checkOut || checkOut <= checkIn) {
@@ -435,7 +437,7 @@ function App() {
       const availability = await bookingService.checkAvailability(
         resort.id,
         { checkIn, checkOut },
-        { adults, children, roomsCount }
+        { adults, children, roomsCount, wholeVilla: String(resort.listingMode || "").toUpperCase() === "VILLA", roomType, roomCapacity }
       );
 
       const availableRoom = availability.suggestedRooms?.[0];
@@ -446,7 +448,7 @@ function App() {
       setBookingRoom(availableRoom);
       setBookingResort(resort);
       setBookingDates({ checkIn, checkOut });
-      setBookingGuests({ adults, children, roomsCount });
+      setBookingGuests({ adults, children, roomsCount, roomType, roomCapacity });
     } catch (err) {
       console.error("Failed to prepare booking:", err);
       setBookingRoom(null);

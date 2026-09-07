@@ -1,10 +1,12 @@
 package com.reservo.backend.service;
 
 import com.reservo.backend.entity.Resort;
+import com.reservo.backend.entity.Booking;
 import com.reservo.backend.entity.Room;
 import com.reservo.backend.exception.ResourceNotFoundException;
 import com.reservo.backend.repository.ResortRepository;
 import com.reservo.backend.repository.RoomRepository;
+import com.reservo.backend.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,7 @@ import java.util.List;
 public class RoomService {
     private final RoomRepository roomRepository;
     private final ResortRepository resortRepository;
+    private final BookingRepository bookingRepository;
 
     public List<Room> getRoomsByResort(String resortId) {
         Resort resort = resortRepository.findById(resortId)
@@ -56,11 +59,23 @@ public class RoomService {
     }
 
     public Room createRoom(String resortId, Room room) {
-        resortRepository.findById(resortId)
+        Resort resort = resortRepository.findById(resortId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + resortId));
+
+        // Once a listing is approved, its inventory is locked. Owners must
+        // change room inventory through Edit Property, which sends the listing
+        // back to PENDING_APPROVAL before the change can be published.
+        if (resort.getStatus() == Resort.ResortStatus.APPROVED) {
+            throw new IllegalStateException("New rooms cannot be added to a published property. Use Edit Property and submit the property for approval again.");
+        }
         room.setResortId(resortId);
         if (room.getStatus() == null) room.setStatus(Room.RoomStatus.AVAILABLE);
-        if (room.getCapacity() == null) room.setCapacity(2);
+        if (room.getCapacity() == null) room.setCapacity(4);
+        if (room.getRoomNumber() == null || room.getRoomNumber().isBlank()) {
+            int max = roomRepository.findByResortId(resortId).stream().map(Room::getRoomNumber)
+                    .filter(java.util.Objects::nonNull).mapToInt(n -> { try { return Integer.parseInt(n.replaceAll("\\D", "")); } catch (Exception e) { return 100; } }).max().orElse(100);
+            room.setRoomNumber(String.valueOf(max + 1));
+        }
         return roomRepository.save(room);
     }
 
@@ -86,7 +101,30 @@ public class RoomService {
     }
 
     public void deleteRoom(String id) {
-        getRoomById(id);
+        Room room = getRoomById(id);
+
+        // Never remove a physical room that is referenced by an active or
+        // historical booking. This prevents Edit Property inventory changes
+        // from breaking booking history or an existing guest stay.
+        boolean hasBooking = bookingRepository.findAll().stream().anyMatch(booking -> {
+            if (booking == null || booking.getStatus() == Booking.BookingStatus.CANCELLED) return false;
+            if (booking.getAssignedRoomIds() != null
+                    && booking.getAssignedRoomIds().stream().anyMatch(roomId ->
+                            String.valueOf(room.getId()).equals(String.valueOf(roomId)))) {
+                return true;
+            }
+            return booking.getRoomId() != null
+                    && String.valueOf(room.getId()).equals(String.valueOf(booking.getRoomId()));
+        });
+
+        if (hasBooking) {
+            throw new IllegalStateException(
+                    "Room " + (room.getRoomNumber() == null ? "" : room.getRoomNumber())
+                            + " cannot be removed because it is linked to a booking."
+            );
+        }
+
         roomRepository.deleteById(id);
     }
+
 }
