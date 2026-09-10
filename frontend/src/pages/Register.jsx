@@ -30,7 +30,7 @@ const registerSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters." })
 });
 
-export default function Register() {
+export default function Register({ setIsAuthenticated }) {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -164,6 +164,7 @@ export default function Register() {
       const role = roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER";
       await authService.register(data.name, data.email, data.password, otpCode, roleMode === "business" ? ownerPhone : null, role);
       setToastMsg("Account created successfully. Redirecting...");
+      setIsAuthenticated(true);
       setTimeout(() => {
         setToastMsg("");
         navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });
@@ -194,6 +195,7 @@ export default function Register() {
       );
       
       setToastMsg("Account created successfully! Redirecting...");
+      setIsAuthenticated(true);
       setTimeout(() => {
         setToastMsg("");
         navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });
@@ -240,6 +242,7 @@ export default function Register() {
           
           if (signInResult.success) {
             setToastMsg(`Signed in successfully! Redirecting...`);
+            setIsAuthenticated(true);
             setTimeout(() => {
               setToastMsg("");
               const user = authService.getCurrentUser();
@@ -254,6 +257,7 @@ export default function Register() {
           console.error("Error code:", error.code);
           console.error("Error message:", error.message);
           // If auto sign-in fails, redirect to login page
+          setIsAuthenticated(false);
           navigate("/login", { replace: true });
           return;
         }
@@ -261,6 +265,7 @@ export default function Register() {
       }
       
       setToastMsg(`Account created with ${provider.charAt(0).toUpperCase() + provider.slice(1)}! Redirecting...`);
+      setIsAuthenticated(true);
       setTimeout(() => {
         setToastMsg("");
         navigate(role === "ROLE_OWNER" ? "/partner" : "/dashboard", { replace: true });

@@ -19,6 +19,7 @@ import { useWishlist } from "./context/WishlistContext";
 import { resortService } from "./services/resort.service";
 import { bookingService } from "./services/booking.service";
 import { apiClient } from "./services/apiClient";
+import { authService } from "./services/auth.service";
 
 // Lazy-loaded pages
 const About = React.lazy(() => import("./pages/About"));
@@ -236,6 +237,41 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
+
+  // Authentication state with validation
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  // Validate authentication on app startup
+  useEffect(() => {
+    const validateAuth = async () => {
+      try {
+        const hasToken = authService.isAuthenticated();
+        if (hasToken) {
+          // Validate token with backend
+          const validatedUser = await authService.refreshCurrentUser();
+          if (validatedUser) {
+            setIsAuthenticated(true);
+          } else {
+            // Token is invalid, clear it
+            await authService.logout();
+            setIsAuthenticated(false);
+          }
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error("Auth validation failed:", error);
+        // Clear invalid auth state
+        await authService.logout();
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoadingAuth(false);
+      }
+    };
+
+    validateAuth();
+  }, []);
 
   // Shared theme state
   const [isDark, setIsDark] = useState(() => {
@@ -523,8 +559,8 @@ function App() {
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+            <Route path="/register" element={<Register setIsAuthenticated={setIsAuthenticated} />} />
             <Route path="/search" element={renderResortListing()} />
             <Route path="/search-results" element={renderResortListing()} />
             <Route path="/resorts" element={renderResortListing()} />
@@ -551,6 +587,18 @@ function App() {
       </motion.div>
     </AnimatePresence>
   );
+
+  // Show loading screen while validating authentication
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-light">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm font-bold text-text-gray">Verifying session...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-bg-light transition-colors duration-300">
@@ -595,7 +643,7 @@ function App() {
         </MobileUI>
       ) : (
         <div className="flex flex-col flex-1 bg-bg-light transition-colors duration-300">
-          <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} />
+          <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
 
           <main id="main-content" className={`flex-1 flex flex-col ${location.pathname === "/" ? "" : location.pathname === "/ai-planner" ? "pt-20" : "pt-28"}`}>
             {renderAppRoutes()}
