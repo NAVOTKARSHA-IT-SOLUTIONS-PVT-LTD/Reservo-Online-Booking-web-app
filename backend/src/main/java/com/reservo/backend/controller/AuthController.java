@@ -86,6 +86,34 @@ public class AuthController {
     }
 
 
+    @PostMapping("/social/link")
+    public ResponseEntity<ApiResponse<String>> linkProvider(
+            @Valid @RequestBody SocialAuthRequestDTO request) {
+
+        authService.linkProvider(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Provider linked successfully"
+                )
+        );
+    }
+
+
+    @PostMapping("/social/unlink")
+    public ResponseEntity<ApiResponse<String>> unlinkProvider(
+            @Valid @RequestBody SocialAuthRequestDTO request) {
+
+        authService.unlinkProvider(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Provider unlinked successfully"
+                )
+        );
+    }
+
+
     // =========================================================
     // EMAIL OTP
     // =========================================================

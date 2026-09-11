@@ -541,24 +541,34 @@ export const authService = {
       const result = await firebaseService.linkWithProvider(newProvider);
 
       if (result.success) {
-        // Call backend social login endpoint - it will link to existing account if already logged in
-        const currentUser = authService.getCurrentUser();
-        const backendResult = await apiClient.post("/api/v1/auth/social/login", {
+        // Call backend to persist the provider link
+        const backendResult = await apiClient.post("/api/v1/auth/social/link", {
           provider: newProvider,
-          firebaseIdToken: result.idToken,
-          role: currentUser?.role || "ROLE_CUSTOMER"
+          firebaseIdToken: result.idToken
         });
 
-        if (backendResult.success && backendResult.data) {
+        if (backendResult.success) {
           // Update local storage with new user data
-          secureStorage.setItem(TOKEN_KEY, backendResult.data.token);
-          secureStorage.setItem(USER_KEY, backendResult.data);
+          const currentUser = authService.getCurrentUser();
+          if (currentUser) {
+            const updatedUser = {
+              ...currentUser,
+              providerData: result.user.providerData,
+              linkedProviders: [...(currentUser.linkedProviders || []), newProvider],
+              token: result.idToken // Update with new token
+            };
+            secureStorage.setItem(TOKEN_KEY, result.idToken);
+            secureStorage.setItem(USER_KEY, updatedUser);
+          }
 
           return {
             success: true,
             message: `${newProvider.charAt(0).toUpperCase() + newProvider.slice(1)} has been linked to your account. You can now use either provider.`,
-            user: backendResult.data
+            user: result.user
           };
+        } else {
+          throw new Error(backendResult.message || "Failed to link provider on backend");
+        }
         } else {
           throw new Error(backendResult.message || "Failed to link provider on backend");
         }
@@ -569,6 +579,7 @@ export const authService = {
       console.error("Account linking error:", error);
 
       // Provide friendly error messages
+      // SECURITY: Do NOT auto-link based on email matching
       // SECURITY: Do NOT auto-link based on email matching
       if (error.code === 'auth/popup-closed-by-user') {
         throw new Error("The popup was closed. Please try again.");
@@ -582,8 +593,70 @@ export const authService = {
         // This email exists with a different provider
         // DO NOT auto-link based on email - this is a security requirement
         throw new Error("An account with this email already exists with a different sign-in method. Please sign in with your existing method first, then link this provider.");
+      } else if (error.code === 'auth/credential-already-in-use') {
+        // This provider is already linked to another Firebase user
+        // DO NOT auto-link based on email - this is a security requirement
+        throw new Error("This provider account is already linked to another account. Please sign in with this provider first, then link it.");
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        // This email exists with a different provider
+        // DO NOT auto-link based on email - this is a security requirement
+        throw new Error("An account with this email already exists with a different sign-in method. Please sign in with your existing method first, then link this provider.");
       } else if (error.code === 'auth/internal-error') {
         throw new Error("A server error occurred. Please try again.");
+      }
+
+      throw error;
+    }
+  },
+
+  // Unlink a provider from the current Firebase user
+  async unlinkAuthProvider(provider) {
+    try {
+      console.log(`Starting account unlinking for ${provider}...`);
+
+      // Call Firebase to unlink the provider
+      const result = await firebaseService.unlinkProvider(provider);
+
+      if (result.success) {
+        // Call backend to persist the provider unlink
+        const backendResult = await apiClient.post("/api/v1/auth/social/unlink", {
+          provider: provider,
+          firebaseIdToken: result.idToken
+        });
+
+        if (backendResult.success) {
+          // Update local storage with new user data
+          const currentUser = authService.getCurrentUser();
+          if (currentUser) {
+            const updatedUser = {
+              ...currentUser,
+              providerData: result.user.providerData,
+              linkedProviders: (currentUser.linkedProviders || []).filter(p => p !== provider),
+              token: result.idToken // Update with new token
+            };
+            secureStorage.setItem(TOKEN_KEY, result.idToken);
+            secureStorage.setItem(USER_KEY, updatedUser);
+          }
+
+          return {
+            success: true,
+            message: `${provider.charAt(0).toUpperCase() + provider.slice(1)} has been disconnected from your account.`,
+            user: result.user
+          };
+        } else {
+          throw new Error(backendResult.message || "Failed to unlink provider on backend");
+        }
+      }
+
+      throw new Error("Failed to unlink provider");
+    } catch (error) {
+      console.error("Account unlinking error:", error);
+
+      // Provide friendly error messages
+      if (error.code === 'auth/no-such-provider') {
+        throw new Error("This provider is not linked to your account.");
+      } else if (error.code === 'auth/weak-password') {
+        throw new Error("You cannot disconnect your last authentication method. Please add another provider first.");
       }
 
       throw error;

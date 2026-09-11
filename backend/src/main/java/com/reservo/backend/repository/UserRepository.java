@@ -3,9 +3,11 @@ package com.reservo.backend.repository;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import com.google.cloud.firestore.DocumentSnapshot;
@@ -14,6 +16,7 @@ import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.reservo.backend.entity.User;
 
+@Slf4j
 @Repository
 public class UserRepository {
 
@@ -601,6 +604,28 @@ public class UserRepository {
         user.setKycDocumentType(document.getString("kycDocumentType"));
         user.setKycDocumentUrl(document.getString("kycDocumentUrl"));
         user.setMembershipLevel(document.getString("membershipLevel"));
+
+        // Map providerData list
+        try {
+            var providerDataList = (List<Map<String, Object>>) document.get("providerData");
+            if (providerDataList != null && !providerDataList.isEmpty()) {
+                List<User.ProviderInfo> providerInfos = new ArrayList<>();
+                for (Map<String, Object> providerMap : providerDataList) {
+                    User.ProviderInfo providerInfo = new User.ProviderInfo();
+                    providerInfo.setProviderId((String) providerMap.get("providerId"));
+                    providerInfo.setUid((String) providerMap.get("uid"));
+                    providerInfo.setDisplayName((String) providerMap.get("displayName"));
+                    providerInfo.setEmail((String) providerMap.get("email"));
+                    providerInfo.setPhotoURL((String) providerMap.get("photoURL"));
+                    providerInfo.setPhoneNumber((String) providerMap.get("phoneNumber"));
+                    providerInfos.add(providerInfo);
+                }
+                user.setProviderData(providerInfos);
+            }
+        } catch (Exception e) {
+            // If providerData mapping fails, leave it null
+            log.debug("Failed to map providerData: {}", e.getMessage());
+        }
 
         Long points = document.getLong("rewardPoints");
         if (points != null) {

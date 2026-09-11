@@ -277,6 +277,11 @@ public class AuthService {
             user.setProviderData(new ArrayList<>());
         }
 
+        // Ensure providerData is initialized for local users
+        if (user.getProviderData() == null) {
+            user.setProviderData(new ArrayList<>());
+        }
+
         user = userRepository.save(user);
 
         // Generate JWT
@@ -409,6 +414,10 @@ public class AuthService {
                 );
             }
 
+            // SECURITY: Do NOT auto-link providers during normal login
+            // Only update providerData through explicit linking endpoint
+            // updateProviderData(user, request.getProvider(), firebaseToken);
+
             // Check if this is a linking request from Settings (user already authenticated)
             User authenticatedUser = getOptionalAuthenticatedUser().orElse(null);
             if (authenticatedUser != null && authenticatedUser.getEmail().equals(email)) {
@@ -421,15 +430,20 @@ public class AuthService {
             } else {
                 // Normal social login - do NOT auto-link providers
                 // Only update providerData through explicit linking endpoint
-                user.setLastLoginAt(Instant.now());
-                user.setEmailVerified(true);
+            user.setLastLoginAt(Instant.now());
+            user.setEmailVerified(true);
+
+            // Ensure providerData is initialized
+            if (user.getProviderData() == null) {
+                user.setProviderData(new ArrayList<>());
+            }
 
                 // Ensure providerData is initialized
                 if (user.getProviderData() == null) {
                     user.setProviderData(new ArrayList<>());
                 }
 
-                user = userRepository.save(user);
+            user = userRepository.save(user);
             }
 
         }
@@ -1024,6 +1038,11 @@ public class AuthService {
             user.setProviderData(new ArrayList<>());
         }
 
+        // Ensure providerData is initialized
+        if (user.getProviderData() == null) {
+            user.setProviderData(new ArrayList<>());
+        }
+
         userRepository.save(user);
 
         String token =
@@ -1252,6 +1271,190 @@ public class AuthService {
         }
 
         return "+" + cleaned;
+    }
+
+
+    // ============================================================
+    // UPDATE PROVIDER DATA
+    // ============================================================
+
+    private void updateProviderData(User user, String provider, FirebaseToken firebaseToken) {
+        // Map frontend provider names to Firebase provider IDs
+        String firebaseProviderId = mapProviderToFirebaseId(provider);
+
+        // Initialize providerData list if null
+        if (user.getProviderData() == null) {
+            user.setProviderData(new ArrayList<>());
+        }
+
+        // Check if this provider is already in the list
+        boolean providerExists = user.getProviderData().stream()
+                .anyMatch(p -> firebaseProviderId.equals(p.getProviderId()));
+
+        if (!providerExists) {
+            // Create new provider info
+            User.ProviderInfo providerInfo = new User.ProviderInfo();
+            providerInfo.setProviderId(firebaseProviderId);
+            providerInfo.setUid(firebaseToken.getUid());
+
+            // Extract additional claims
+            Object nameClaim = firebaseToken.getClaims().get("name");
+            if (nameClaim != null) {
+                providerInfo.setDisplayName(nameClaim.toString());
+            }
+
+            Object pictureClaim = firebaseToken.getClaims().get("picture");
+            if (pictureClaim != null) {
+                providerInfo.setPhotoURL(pictureClaim.toString());
+            }
+
+            providerInfo.setEmail(firebaseToken.getEmail());
+
+            Object phoneClaim = firebaseToken.getClaims().get("phone_number");
+            if (phoneClaim != null) {
+                providerInfo.setPhoneNumber(phoneClaim.toString());
+            }
+
+            // Add to provider data list
+            user.getProviderData().add(providerInfo);
+        }
+
+        // Update primary login provider
+        user.setLoginProvider(provider != null ? provider.toUpperCase() : "LOCAL");
+        user.setProviderUserId(firebaseToken.getUid());
+    }
+
+
+    private String mapProviderToFirebaseId(String provider) {
+        if (provider == null) {
+            return "local";
+        }
+        return switch (provider.toLowerCase()) {
+            case "google" -> "google.com";
+            case "facebook" -> "facebook.com";
+            case "twitter" -> "twitter.com";
+            case "phone" -> "phone";
+            default -> "local";
+        };
+    }
+
+
+    // ============================================================
+    // LINK PROVIDER (EXPLICIT USER ACTION)
+    // ============================================================
+
+    public void linkProvider(SocialAuthRequestDTO request) {
+        if (request == null) {
+            throw new BadRequestException(
+                    "Provider linking request is required"
+            );
+        }
+
+        if (!firebaseService.isFirebaseAvailable()) {
+            throw new BadRequestException(
+                    "Firebase is not configured. Please configure Firebase before linking providers."
+            );
+        }
+
+        String firebaseIdToken = request.getFirebaseIdToken();
+
+        if (firebaseIdToken == null || firebaseIdToken.isBlank()) {
+            throw new BadRequestException(
+                    "Firebase ID token is required"
+            );
+        }
+
+        FirebaseToken firebaseToken;
+        try {
+            firebaseToken = firebaseService.verifyIdToken(firebaseIdToken);
+        } catch (Exception e) {
+            log.error("Firebase token verification failed", e);
+            throw new BadRequestException(
+                    "Invalid or expired Firebase authentication token"
+            );
+        }
+
+        if (firebaseToken == null) {
+            throw new BadRequestException(
+                    "Invalid Firebase authentication token"
+            );
+        }
+
+        // Get the authenticated user
+        User user = getAuthenticatedUser();
+
+        // Update provider data
+        updateProviderData(user, request.getProvider(), firebaseToken);
+
+        // Save the updated user
+        userRepository.save(user);
+
+        log.info(
+                "Provider linked successfully for user: {}, provider: {}",
+                user.getEmail(),
+                request.getProvider()
+        );
+    }
+
+
+    // ============================================================
+    // UNLINK PROVIDER (EXPLICIT USER ACTION)
+    // ============================================================
+
+    public void unlinkProvider(SocialAuthRequestDTO request) {
+        if (request == null) {
+            throw new BadRequestException(
+                    "Provider unlinking request is required"
+            );
+        }
+
+        String provider = request.getProvider();
+        if (provider == null || provider.isBlank()) {
+            throw new BadRequestException(
+                    "Provider is required"
+            );
+        }
+
+        // Get the authenticated user
+        User user = getAuthenticatedUser();
+
+        if (user.getProviderData() == null || user.getProviderData().isEmpty()) {
+            throw new BadRequestException(
+                    "No providers linked to this account"
+            );
+        }
+
+        String firebaseProviderId = mapProviderToFirebaseId(provider);
+
+        // Remove the provider from providerData
+        boolean removed = user.getProviderData().removeIf(p ->
+                firebaseProviderId.equals(p.getProviderId())
+        );
+
+        if (!removed) {
+            throw new BadRequestException(
+                    "Provider is not linked to this account"
+            );
+        }
+
+        // If no providers left, set loginProvider to LOCAL
+        if (user.getProviderData().isEmpty()) {
+            user.setLoginProvider("LOCAL");
+            user.setProviderUserId(null);
+        } else {
+            // Update primary loginProvider to the first remaining provider
+            user.setLoginProvider(user.getProviderData().get(0).getProviderId().toUpperCase());
+            user.setProviderUserId(user.getProviderData().get(0).getUid());
+        }
+
+        user.updateTimestamp();
+        userRepository.save(user);
+
+        log.info(
+                "Provider unlinked successfully for user: {}, provider: {}",
+                user.getEmail(),
+                provider
+        );
     }
 
 

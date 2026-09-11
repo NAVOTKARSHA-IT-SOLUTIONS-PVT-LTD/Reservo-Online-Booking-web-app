@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon } from "lucide-react";
 import ResortNavigationMap from "./ResortNavigationMap";
 import CustomCalendar from "./CustomCalendar";
+import SimpleMapEmbed from "./SimpleMapEmbed";
 import { rewardService } from "../services/reward.service";
 import { bookingService } from "../services/booking.service";
 import { apiClient } from "../services/apiClient";
@@ -35,6 +36,80 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const guestPickerRef = useRef(null);
 
   const getTodayStr = () => new Date().toISOString().split("T")[0];
+
+  // Generate sample map points for resorts that don't have them configured
+  const generateSampleMapPoints = (resortName) => {
+    const basePoints = [
+      {
+        id: 'main-reception',
+        title: 'Main Reception',
+        category: 'accommodation',
+        x: 50,
+        y: 50,
+        walkTime: '0 min',
+        status: 'Open 24/7',
+        desc: 'Central reception with concierge services, luggage storage, and check-in/check-out facilities.',
+        image: 'https://images.unsplash.com/photo-1566073771259-6a8506099925?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'infinity-pool',
+        title: 'Infinity Pool',
+        category: 'leisure',
+        x: 30,
+        y: 35,
+        walkTime: '2 min',
+        status: 'Open 6AM-10PM',
+        desc: 'Temperature-controlled infinity pool with ocean views, poolside service, and luxury cabanas.',
+        image: 'https://images.unsplash.com/photo-1576013571620-4f1b7dd30b47?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'private-beach',
+        title: 'Private Beach Access',
+        category: 'leisure',
+        x: 70,
+        y: 40,
+        walkTime: '3 min',
+        status: 'Open 24/7',
+        desc: 'Exclusive private beach with sun loungers, water sports equipment, and beach butler service.',
+        image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'wellness-spa',
+        title: 'Wellness Spa Center',
+        category: 'wellness',
+        x: 45,
+        y: 65,
+        walkTime: '4 min',
+        status: 'Open 9AM-9PM',
+        desc: 'Full-service spa with massage therapies, sauna, steam room, and beauty treatments.',
+        image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'fine-dining',
+        title: 'Fine Dining Restaurant',
+        category: 'dining',
+        x: 55,
+        y: 30,
+        walkTime: '3 min',
+        status: 'Open 7AM-11PM',
+        desc: 'Award-winning restaurant serving local and international cuisine with ocean-view seating.',
+        image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'helipad',
+        title: 'Helipad & Arrivals',
+        category: 'transport',
+        x: 80,
+        y: 70,
+        walkTime: '5 min',
+        status: 'On Request',
+        desc: 'Private helipad for charter arrivals with VIP transfer services and luggage handling.',
+        image: 'https://images.unsplash.com/photo-1556388158-158ea5ccacbd?auto=format&fit=crop&w=800&q=80'
+      }
+    ];
+
+    return basePoints;
+  };
 
   const getFutureDateStr = (baseDateStr, addDays = 3) => {
     try {
@@ -647,9 +722,48 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                     }}
                   />
                 ) : (
-                  <div className="p-6 text-center text-xs text-text-gray font-semibold border border-border-color rounded-2xl">
-                    No map points or local spots configured for this resort.
-                  </div>
+                  <ResortNavigationMap 
+                    mapPoints={generateSampleMapPoints(resort.name)}
+                    resortName={resort.name}
+                    isDarkMode={isDarkMode}
+                    onSelectSpot={(spot) => {
+                      const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]') || document.querySelector('[aria-label="Chat with Rivo"]');
+                      if (mascotBtn) {
+                        const chatOpen = document.querySelector('form button[type="submit"]');
+                        if (!chatOpen) mascotBtn.click();
+                        setTimeout(() => {
+                          const inputEl = document.querySelector('form input[placeholder*="Ask Rivo"]') || document.querySelector('form input[placeholder*="Ask"]');
+                          if (inputEl) {
+                            inputEl.value = `Tell me about ${spot.title} at ${resort.name}`;
+                            const event = new Event('input', { bubbles: true });
+                            inputEl.dispatchEvent(event);
+                          }
+                        }, 400);
+                      }
+                    }}
+                  />
+                )}
+
+                {/* Google Maps Embed API (Secure) */}
+                {(resort.latitude && resort.longitude) ? (
+                  <SimpleMapEmbed
+                    latitude={parseFloat(resort.latitude)}
+                    longitude={parseFloat(resort.longitude)}
+                    zoom={15}
+                    isDarkMode={isDarkMode}
+                    height="400px"
+                    mode="place"
+                  />
+                ) : (
+                  <SimpleMapEmbed
+                    latitude={15.5164}
+                    longitude={73.7634}
+                    zoom={15}
+                    isDarkMode={isDarkMode}
+                    height="400px"
+                    mode="place"
+                    address={resort.location || resort.city || "Goa, India"}
+                  />
                 )}
               </div>
             )}

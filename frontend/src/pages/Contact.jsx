@@ -2,8 +2,13 @@ import React, { useState } from "react";
 import contactImage from "../assets/images/contact.jpg";
 import rivoSupport from "../assets/images/rivo_support.png";
 import { MapPin, Mail, Sparkles, Clock, ShieldCheck } from "lucide-react";
+import SimpleMapEmbed from "../components/SimpleMapEmbed";
 
 function Contact() {
+  const [isDarkMode, setIsDarkMode] = useState(() => 
+    document.body.classList.contains("dark-theme")
+  );
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -14,6 +19,25 @@ function Contact() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Track dark mode changes
+  React.useEffect(() => {
+    const handleThemeChange = () => {
+      setIsDarkMode(document.body.classList.contains("dark-theme"));
+    };
+    
+    window.addEventListener("storage", handleThemeChange);
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.body, { 
+      attributes: true, 
+      attributeFilter: ["class"] 
+    });
+    
+    return () => {
+      window.removeEventListener("storage", handleThemeChange);
+      observer.disconnect();
+    };
+  }, []);
 
   const validate = () => {
     const newErrors = {};
@@ -127,7 +151,7 @@ function Contact() {
                       Location
                     </span>
                   </div>
-                  <p className="m-0 text-text-gray font-medium text-base">Research Park Foundation, SPPU, Pune, Maharashtra, India</p>
+                  <p className="m-0 text-text-gray font-medium text-base">Navotkarsha IT Solutions Private Limited<br />Research Park Foundation, Savitribai Phule Pune University (SPPU)<br />Ganeshkhind, Pune, Maharashtra, India – 411007</p>
                 </div>
               </div>
 
@@ -261,12 +285,15 @@ function Contact() {
           <p className="max-w-[720px] mx-auto mb-15 text-center text-text-gray text-base md:text-lg leading-relaxed">
             Feel free to visit or schedule a meeting with our travel consultants.
           </p>
-          <iframe
-            title="Google Map"
-            src="https://www.google.com/maps?q=Pune&output=embed"
-            loading="lazy"
-            className="w-full h-[350px] md:h-[500px] border-none rounded-[22px] mt-12.5 shadow-[0_20px_45px_rgba(0,0,0,0.12)]"
-          ></iframe>
+          <SimpleMapEmbed 
+            latitude={18.5590} 
+            longitude={73.8213} 
+            zoom={16}
+            isDarkMode={isDarkMode}
+            height="400px"
+            mode="place"
+            address="Navotkarsha IT Solutions Private Limited, Research Park Foundation, Savitribai Phule Pune University (SPPU), Ganeshkhind, Pune, Maharashtra, India – 411007"
+          />
         </div>
       </section>
     </>

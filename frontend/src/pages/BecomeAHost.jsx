@@ -16,6 +16,7 @@ import { secureStorage } from "../services/secureStorage";
 import { useToast } from "../context/ToastContext";
 import { useWishlist } from "../context/WishlistContext";
 import { apiClient } from "../services/apiClient";
+import LocationMapPicker from "../components/LocationMapPicker";
 
 const DESTINATIONS = [
   { name: "Goa (North & South)", multiplier: 1.35, baseRate: 22000 },
@@ -234,7 +235,9 @@ export default function BecomeAHost() {
       state: "Goa",
       country: "India",
       pinCode: "",
-      landmark: ""
+      landmark: "",
+      latitude: null,
+      longitude: null
     },
     pricePerNight: estimatedNightlyRate,
     instantBook: true,
@@ -295,6 +298,10 @@ export default function BecomeAHost() {
     }
     if (currentStep === 2 && (!formData.location.address || !formData.location.city)) {
       toast("Please provide the property address and city", "error");
+      return;
+    }
+    if (currentStep === 2 && (!formData.location.latitude || !formData.location.longitude)) {
+      toast("Please set the property location on the map", "error");
       return;
     }
     if (currentStep === 3 && formData.listingMode === "VILLA" && Number(formData.pricePerNight || 0) <= 0) {
@@ -362,6 +369,8 @@ export default function BecomeAHost() {
         country: formData.location.country || "India",
         pinCode: formData.location.pinCode || "",
         landmark: formData.location.landmark || "",
+        latitude: formData.location.latitude || null,
+        longitude: formData.location.longitude || null,
         description,
         imageUrl: persistentImages[0] || "",
         pricePerNight: formData.listingMode === "ROOMS"
@@ -938,21 +947,28 @@ export default function BecomeAHost() {
                     </div>
                   </div>
 
-                  {/* Simulated Map Pin Card */}
-                  <div className="p-4 rounded-2xl bg-[var(--color-bg-light)] border border-[var(--color-border-color)] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                        <MapPin size={18} />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-[var(--color-text-dark)]">Pinpoint Map Coordinates</div>
-                        <div className="text-[11px] text-[var(--color-text-gray)]">Lat: 15.5164 • Long: 73.7634 (Auto-detected)</div>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200">
-                      Coordinates Verified
-                    </span>
-                  </div>
+                  {/* Interactive Map Coordinates */}
+                  <LocationMapPicker
+                    latitude={formData.location.latitude}
+                    longitude={formData.location.longitude}
+                    onCoordinatesChange={(lat, lng) => setFormData(prev => ({
+                      ...prev,
+                      location: { ...prev.location, latitude: lat, longitude: lng }
+                    }))}
+                    onAddressChange={(addressData) => setFormData(prev => ({
+                      ...prev,
+                      location: {
+                        ...prev.location,
+                        address: addressData.street || prev.location.address,
+                        city: addressData.city || prev.location.city,
+                        state: addressData.state || prev.location.state,
+                        pinCode: addressData.pinCode || prev.location.pinCode,
+                        country: addressData.country || prev.location.country
+                      }
+                    }))}
+                    address={`${formData.location.address}, ${formData.location.city}, ${formData.location.state} ${formData.location.pinCode}`}
+                    isDarkMode={document.body.classList.contains("dark-theme")}
+                  />
                 </div>
               </motion.div>
             )}
