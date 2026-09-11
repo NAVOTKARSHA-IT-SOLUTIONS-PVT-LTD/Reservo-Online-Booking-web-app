@@ -569,9 +569,6 @@ export const authService = {
         } else {
           throw new Error(backendResult.message || "Failed to link provider on backend");
         }
-        } else {
-          throw new Error(backendResult.message || "Failed to link provider on backend");
-        }
       }
 
       throw new Error("Failed to link provider");
