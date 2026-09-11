@@ -16,7 +16,6 @@ import { secureStorage } from "../services/secureStorage";
 import { useToast } from "../context/ToastContext";
 import { useWishlist } from "../context/WishlistContext";
 import { apiClient } from "../services/apiClient";
-import LocationMapPicker from "../components/LocationMapPicker";
 
 const DESTINATIONS = [
   { name: "Goa (North & South)", multiplier: 1.35, baseRate: 22000 },
@@ -300,10 +299,7 @@ export default function BecomeAHost() {
       toast("Please provide the property address and city", "error");
       return;
     }
-    if (currentStep === 2 && (!formData.location.latitude || !formData.location.longitude)) {
-      toast("Please set the property location on the map", "error");
-      return;
-    }
+
     if (currentStep === 3 && formData.listingMode === "VILLA" && Number(formData.pricePerNight || 0) <= 0) {
       toast("Please enter a valid whole-villa price per night.", "error");
       return;
@@ -946,29 +942,6 @@ export default function BecomeAHost() {
                       />
                     </div>
                   </div>
-
-                  {/* Interactive Map Coordinates */}
-                  <LocationMapPicker
-                    latitude={formData.location.latitude}
-                    longitude={formData.location.longitude}
-                    onCoordinatesChange={(lat, lng) => setFormData(prev => ({
-                      ...prev,
-                      location: { ...prev.location, latitude: lat, longitude: lng }
-                    }))}
-                    onAddressChange={(addressData) => setFormData(prev => ({
-                      ...prev,
-                      location: {
-                        ...prev.location,
-                        address: addressData.street || prev.location.address,
-                        city: addressData.city || prev.location.city,
-                        state: addressData.state || prev.location.state,
-                        pinCode: addressData.pinCode || prev.location.pinCode,
-                        country: addressData.country || prev.location.country
-                      }
-                    }))}
-                    address={`${formData.location.address}, ${formData.location.city}, ${formData.location.state} ${formData.location.pinCode}`}
-                    isDarkMode={document.body.classList.contains("dark-theme")}
-                  />
                 </div>
               </motion.div>
             )}

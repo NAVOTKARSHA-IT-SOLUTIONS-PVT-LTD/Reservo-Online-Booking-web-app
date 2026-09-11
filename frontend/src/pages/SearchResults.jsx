@@ -283,18 +283,6 @@ function SearchResults() {
     return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  const getMapSrc = () => {
-    if (sorted.length === 0) return "https://www.openstreetmap.org/export/embed.html?bbox=60.0%2C-10.0%2C120.0%2C40.0&layer=mapnik";
-    const points = sorted
-      .map(r => ({ lat: Number(r.lat), lng: Number(r.lng) }))
-      .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
-    if (!points.length) return "https://www.openstreetmap.org/export/embed.html?bbox=60.0%2C-10.0%2C120.0%2C40.0&layer=mapnik";
-    const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
-    const centerLng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
-    const bbox = `${centerLng - 2}%2C${centerLat - 2}%2C${centerLng + 2}%2C${centerLat + 2}`;
-    const marker = `${centerLat}%2C${centerLng}`;
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${marker}`;
-  };
 
   return (
     <div className="min-h-screen bg-bg-light pb-20">
@@ -485,19 +473,11 @@ function SearchResults() {
               </div>
             </div>
 
-            {/* Map Widget */}
-            <div className="bg-bg-white border border-border-color rounded-[24px] overflow-hidden shadow-sm h-[300px] relative group">
-              {!isLoading && (
-                <iframe
-                  title="Resort Map"
-                  src={getMapSrc()}
-                  className="w-full h-full border-none absolute inset-0 z-10"
-                  loading="lazy"
-                />
-              )}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl border border-border-color shadow-custom text-sm font-bold text-text-dark opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 cursor-pointer">
-                <Map size={14} className="text-gold" /> Expand Map
-              </div>
+            {/* Map Widget Placeholder */}
+            <div className="bg-bg-white border border-border-color rounded-[24px] overflow-hidden shadow-sm h-[300px] relative group flex flex-col items-center justify-center bg-gray-50">
+              <Map size={36} className="text-gold mb-2 opacity-50" />
+              <p className="text-sm font-bold text-text-dark">Interactive Map</p>
+              <p className="text-xs text-text-gray mt-1">Map feature is currently unavailable.</p>
             </div>
 
             {/* Local Events Widget */}
