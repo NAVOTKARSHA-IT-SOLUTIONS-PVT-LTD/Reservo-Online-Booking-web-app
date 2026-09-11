@@ -36,7 +36,7 @@ const loginSchema = z.object({
     .min(6, { message: "Password must be at least 6 characters." })
 });
 
-export default function Login() {
+export default function Login({ setIsAuthenticated }) {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -107,6 +107,7 @@ export default function Login() {
       const finalRole = result.role;
 
       setToastMsg("Signed in successfully! Redirecting...");
+      setIsAuthenticated(true);
       setTimeout(() => {
         setToastMsg("");
         if (finalRole === "ROLE_ADMIN") {
@@ -135,6 +136,7 @@ export default function Login() {
       
       const finalRole = result.role;
       setToastMsg("Signed in successfully! Redirecting...");
+      setIsAuthenticated(true);
       setTimeout(() => {
         setToastMsg("");
         if (finalRole === "ROLE_ADMIN") {
@@ -179,6 +181,7 @@ export default function Login() {
           
           if (signInResult.success) {
             setToastMsg(`Signed in successfully! Redirecting...`);
+            setIsAuthenticated(true);
             setTimeout(() => {
               setToastMsg("");
               const user = authService.getCurrentUser();
@@ -209,6 +212,7 @@ export default function Login() {
       console.log("Final role for redirect:", finalRole);
       
       setToastMsg(`Signed in with ${provider.charAt(0).toUpperCase() + provider.slice(1)}! Redirecting...`);
+      setIsAuthenticated(true);
       setTimeout(() => {
         setToastMsg("");
         if (finalRole === "ROLE_ADMIN") {

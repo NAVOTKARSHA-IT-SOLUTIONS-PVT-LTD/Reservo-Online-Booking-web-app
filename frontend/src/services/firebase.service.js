@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
+import {
+  getAuth,
   RecaptchaVerifier,
   signInWithPhoneNumber,
   GoogleAuthProvider,
@@ -12,7 +12,8 @@ import {
   getRedirectResult,
   fetchSignInMethodsForEmail,
   linkWithCredential,
-  linkWithPopup
+  linkWithPopup,
+  unlink
 } from 'firebase/auth';
 import firebaseConfig from '../config/firebase';
 
@@ -317,12 +318,9 @@ class FirebasePhoneAuthService {
     if (!isFirebaseInitialized) {
       throw new Error("Firebase is not initialized. Please check your Firebase configuration.");
     }
-    
+
     const currentUser = auth.currentUser;
-    if (!currentUser) {
-      throw new Error("No user is currently signed in. Please sign in first.");
-    }
-    
+
     try {
       let provider;
       switch (providerName) {
@@ -342,14 +340,26 @@ class FirebasePhoneAuthService {
         default:
           throw new Error(`Unsupported provider: ${providerName}`);
       }
-      
+
       console.log(`Linking ${providerName} to current user...`);
-      const result = await linkWithPopup(currentUser, provider);
-      const user = result.user;
-      const idToken = await user.getIdToken();
-      
+
+      let result, user, idToken;
+
+      if (currentUser) {
+        // User is already signed into Firebase - use linkWithPopup
+        result = await linkWithPopup(currentUser, provider);
+        user = result.user;
+        idToken = await user.getIdToken();
+      } else {
+        // User is NOT signed into Firebase (e.g., logged in with email/password)
+        // First sign them in with the provider, then the backend will link it
+        result = await signInWithPopup(auth, provider);
+        user = result.user;
+        idToken = await user.getIdToken();
+      }
+
       console.log(`${providerName} linked successfully. User now has providers:`, user.providerData);
-      
+
       return {
         success: true,
         user: {
@@ -358,23 +368,23 @@ class FirebasePhoneAuthService {
           displayName: user.displayName,
           photoURL: user.photoURL,
           emailVerified: user.emailVerified,
-          providerData: user.providerData // Shows all linked providers
+          providerData: user.providerData
         },
         idToken: idToken,
         linkedProvider: providerName
       };
     } catch (error) {
       console.error(`Error linking ${providerName}:`, error);
-      
+
       // Handle specific linking errors
       if (error.code === 'auth/provider-already-linked') {
         throw new Error(`${providerName.charAt(0).toUpperCase() + providerName.slice(1)} is already linked to your account.`);
       } else if (error.code === 'auth/credential-already-in-use') {
         throw new Error(`This ${providerName} account is already linked to another user.`);
       } else if (error.code === 'auth/popup-closed-by-user') {
-        throw new Error(`The ${providerName} popup was closed. Please try again.`);
+        throw new Error(`The ${providerName} authorization popup was closed. Please try again.`);
       }
-      
+
       throw new Error(`Failed to link ${providerName}: ${error.message}`);
     }
   }
@@ -384,7 +394,7 @@ class FirebasePhoneAuthService {
     if (!isFirebaseInitialized) {
       throw new Error("Firebase is not initialized. Please check your Firebase configuration.");
     }
-    
+
     try {
       let provider;
       switch (providerName) {
@@ -404,11 +414,11 @@ class FirebasePhoneAuthService {
         default:
           throw new Error(`Unsupported provider: ${providerName}`);
       }
-      
+
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       const idToken = await user.getIdToken();
-      
+
       return {
         success: true,
         user: {
@@ -426,6 +436,106 @@ class FirebasePhoneAuthService {
       console.error(`Error signing in with ${providerName}:`, error);
       throw error;
     }
+  }
+
+  // Get current Firebase user's providerData (source of truth for linked providers)
+  getCurrentFirebaseUser() {
+    if (!isFirebaseInitialized) {
+      return null;
+    }
+    return auth.currentUser;
+  }
+
+  // Get connected providers from Firebase Auth user
+  getConnectedProviders() {
+    const firebaseUser = this.getCurrentFirebaseUser();
+    if (!firebaseUser || !firebaseUser.providerData) {
+      return {
+        google: false,
+        facebook: false,
+        twitter: false
+      };
+    }
+
+    const providers = {
+      google: false,
+      facebook: false,
+      twitter: false
+    };
+
+    firebaseUser.providerData.forEach((provider) => {
+      if (provider.providerId === 'google.com') {
+        providers.google = true;
+      } else if (provider.providerId === 'facebook.com') {
+        providers.facebook = true;
+      } else if (provider.providerId === 'twitter.com') {
+        providers.twitter = true;
+      }
+    });
+
+    return providers;
+  }
+
+  // Unlink a provider from the current Firebase user
+  async unlinkProvider(providerName) {
+    if (!isFirebaseInitialized) {
+      throw new Error("Firebase is not initialized. Please check your Firebase configuration.");
+    }
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error("No user is currently signed in. Please sign in first.");
+    }
+
+    try {
+      const firebaseProviderId = this.mapProviderNameToFirebaseId(providerName);
+
+      // Use Firebase's unlink method
+      // Firebase v9+ modular API returns the User object directly, not wrapped in { user }
+      const user = await unlink(currentUser, firebaseProviderId);
+
+      if (!user) {
+        throw new Error("Failed to get user after unlinking provider");
+      }
+
+      const idToken = await user.getIdToken();
+
+      console.log(`${providerName} unlinked successfully. User now has providers:`, user.providerData);
+
+      return {
+        success: true,
+        user: {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          emailVerified: user.emailVerified,
+          providerData: user.providerData
+        },
+        idToken: idToken,
+        unlinkedProvider: providerName
+      };
+    } catch (error) {
+      console.error(`Error unlinking ${providerName}:`, error);
+
+      if (error.code === 'auth/no-such-provider') {
+        throw new Error(`${providerName.charAt(0).toUpperCase() + providerName.slice(1)} is not linked to your account.`);
+      } else if (error.code === 'auth/weak-password') {
+        throw new Error("You cannot disconnect your last authentication method. Please add another provider first.");
+      }
+
+      throw new Error(`Failed to unlink ${providerName}: ${error.message}`);
+    }
+  }
+
+  // Map provider name to Firebase provider ID
+  mapProviderNameToFirebaseId(providerName) {
+    const providerMap = {
+      'google': 'google.com',
+      'facebook': 'facebook.com',
+      'twitter': 'twitter.com'
+    };
+    return providerMap[providerName] || providerName;
   }
 }
 
