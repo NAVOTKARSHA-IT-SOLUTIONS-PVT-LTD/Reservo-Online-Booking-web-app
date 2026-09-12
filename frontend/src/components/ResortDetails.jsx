@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useWishlist } from "../context/WishlistContext";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon } from "lucide-react";
+import { 
+  ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon,
+  Coffee, Compass, Mountain, Tv, Zap, Wind, Award, HeartHandshake, Flame
+} from "lucide-react";
 import ResortNavigationMap from "./ResortNavigationMap";
 import CustomCalendar from "./CustomCalendar";
 import SimpleMapEmbed from "./SimpleMapEmbed";
@@ -11,6 +14,47 @@ import { apiClient } from "../services/apiClient";
 
 import { useTranslation } from "../hooks/useTranslation";
 import { useToast } from "../context/ToastContext";
+
+const getAmenityIcon = (name = "") => {
+  const lower = String(name).toLowerCase();
+  if (lower.includes("view") || lower.includes("compass") || lower.includes("panoramic")) {
+    return Compass;
+  }
+  if (lower.includes("mountain") || lower.includes("snow") || lower.includes("peak") || lower.includes("hill")) {
+    return Mountain;
+  }
+  if (lower.includes("pool") || lower.includes("swim") || lower.includes("jacuzzi") || lower.includes("hot tub") || lower.includes("water") || lower.includes("beach") || lower.includes("ocean") || lower.includes("lake")) {
+    return Waves;
+  }
+  if (lower.includes("wifi") || lower.includes("internet") || lower.includes("network")) {
+    return Wifi;
+  }
+  if (lower.includes("chef") || lower.includes("cook") || lower.includes("dining") || lower.includes("restaurant") || lower.includes("food") || lower.includes("coffee") || lower.includes("breakfast")) {
+    return Coffee;
+  }
+  if (lower.includes("fire") || lower.includes("hearth") || lower.includes("pit")) {
+    return Flame;
+  }
+  if (lower.includes("work") || lower.includes("tv") || lower.includes("desk") || lower.includes("office")) {
+    return Tv;
+  }
+  if (lower.includes("ev") || lower.includes("charg") || lower.includes("electric")) {
+    return Zap;
+  }
+  if (lower.includes("climate") || lower.includes("air") || lower.includes("cooling") || lower.includes("ac") || lower.includes("wind")) {
+    return Wind;
+  }
+  if (lower.includes("butler") || lower.includes("concierge") || lower.includes("award")) {
+    return Award;
+  }
+  if (lower.includes("pet") || lower.includes("dog") || lower.includes("cat") || lower.includes("animal")) {
+    return HeartHandshake;
+  }
+  if (lower.includes("spa") || lower.includes("wellness") || lower.includes("massage") || lower.includes("sauna")) {
+    return Sparkles;
+  }
+  return Sparkles;
+};
 
 export default function ResortDetails({ resort, urlId, isDarkMode, onBack, currencySymbol = "₹", exchangeRate = 1, onBook }) {
   const navigate = useNavigate();
@@ -311,6 +355,22 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const [ratingComment, setRatingComment] = useState("");
   const [currentRating, setCurrentRating] = useState(resort.rating || 4.9);
   const [reviewsCount, setReviewsCount] = useState(resort.reviewsCount || resort.reviewCount || 128);
+
+  const parsedAmenities = useMemo(() => {
+    if (!resort) return [];
+    let raw = resort.amenities;
+    if (!raw && typeof resort.amenitiesString === "string") raw = resort.amenitiesString;
+    let list = [];
+    if (Array.isArray(raw)) {
+      list = raw.map(item => {
+        if (typeof item === "string") return item.trim();
+        return String(item?.name || item?.label || item?.title || "").trim();
+      }).filter(Boolean);
+    } else if (typeof raw === "string" && raw.trim()) {
+      list = raw.split(",").map(s => s.trim()).filter(Boolean);
+    }
+    return Array.from(new Set(list));
+  }, [resort]);
 
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
@@ -636,29 +696,6 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             <p className="text-text-gray text-xs sm:text-sm leading-relaxed max-w-[680px]">
               {resort.description || "Experience the perfect blend of luxury and nature. Relax by the beach, indulge in world-class amenities, and create unforgettable memories."}
             </p>
-
-            {/* Amenities horizontal list */}
-            <div className="flex flex-wrap items-center gap-y-2 gap-x-5 pt-3 border-t border-border-color text-text-dark">
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Waves size={14} className="text-primary" /> Beachfront
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Waves size={14} className="text-primary" /> Pool
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Sparkles size={14} className="text-primary" /> Spa
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Wifi size={14} className="text-primary" /> Free Wi-Fi
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Utensils size={14} className="text-primary" /> Restaurant
-              </div>
-              <span className="text-[10px] font-bold bg-bg-light border border-border-color px-2.5 py-0.5 rounded-full text-text-gray">
-                +12 more
-              </span>
-            </div>
-
           </div>
 
           {/* Tabs bar */}
@@ -688,13 +725,28 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
               <div className="space-y-4 text-left animate-in fade-in duration-200">
                 {/* Amenities list */}
                 <h4 className="text-xs font-bold uppercase text-text-dark tracking-wide pt-2">Featured Amenities</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {["Beachfront Access", "Infinity Pool", "Wellness Spa Center", "High-speed Wi-Fi", "Signature Fine Dining", "24/7 Butler Service"].map((amenity, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2 bg-bg-light rounded-xl border border-border-color text-xs font-semibold text-text-dark">
-                      <Check className="w-3.5 h-3.5 text-primary" /> {amenity}
-                    </div>
-                  ))}
-                </div>
+                {parsedAmenities.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {parsedAmenities.map((amenity, i) => {
+                      const IconComp = getAmenityIcon(amenity);
+                      return (
+                        <div 
+                          key={i} 
+                          className="flex items-center gap-2.5 px-3.5 py-2.5 bg-bg-light rounded-xl border border-border-color text-xs font-semibold text-text-dark min-h-[42px] transition-colors"
+                        >
+                          <div className="w-5 h-5 flex items-center justify-center shrink-0 text-primary">
+                            <IconComp size={15} />
+                          </div>
+                          <span className="truncate text-text-dark" title={amenity}>
+                            {amenity}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-text-gray italic">No specific amenities listed for this property.</p>
+                )}
               </div>
             )}
 
