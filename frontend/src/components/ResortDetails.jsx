@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useWishlist } from "../context/WishlistContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
-  ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon,
-  Coffee, Compass, Mountain, Tv, Zap, Wind, Award, HeartHandshake, Flame
+  ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon,
+  Coffee, Compass, Mountain, Tv, Zap, Wind, Award, HeartHandshake, Flame,
+  ChevronLeft, ChevronRight, Maximize2
 } from "lucide-react";
 import ResortNavigationMap from "./ResortNavigationMap";
 import CustomCalendar from "./CustomCalendar";
@@ -569,6 +571,47 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
     }
   }, [resort]);
 
+  const currentPhoto = activePhoto || resort.heroImage || (finalGallery && finalGallery[0]) || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80";
+
+  const currentPhotoIndex = useMemo(() => {
+    if (!finalGallery || finalGallery.length === 0) return 0;
+    const idx = finalGallery.findIndex(url => url === currentPhoto);
+    return idx >= 0 ? idx : 0;
+  }, [finalGallery, currentPhoto]);
+
+  const handlePrevPhoto = useCallback((e) => {
+    if (e) e.stopPropagation();
+    if (!finalGallery || finalGallery.length <= 1) return;
+    const prevIdx = (currentPhotoIndex - 1 + finalGallery.length) % finalGallery.length;
+    const nextUrl = finalGallery[prevIdx];
+    setActivePhoto(nextUrl);
+    if (viewFullPhotoUrl) {
+      setViewFullPhotoUrl(nextUrl);
+    }
+  }, [finalGallery, currentPhotoIndex, viewFullPhotoUrl]);
+
+  const handleNextPhoto = useCallback((e) => {
+    if (e) e.stopPropagation();
+    if (!finalGallery || finalGallery.length <= 1) return;
+    const nextIdx = (currentPhotoIndex + 1) % finalGallery.length;
+    const nextUrl = finalGallery[nextIdx];
+    setActivePhoto(nextUrl);
+    if (viewFullPhotoUrl) {
+      setViewFullPhotoUrl(nextUrl);
+    }
+  }, [finalGallery, currentPhotoIndex, viewFullPhotoUrl]);
+
+  useEffect(() => {
+    if (!viewFullPhotoUrl) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft") handlePrevPhoto();
+      else if (e.key === "ArrowRight") handleNextPhoto();
+      else if (e.key === "Escape") setViewFullPhotoUrl(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [viewFullPhotoUrl, handlePrevPhoto, handleNextPhoto]);
+
   return (
     <div className="w-full max-w-[1280px] mx-auto px-5 py-8 font-sans transition-colors duration-300">
       
@@ -580,40 +623,67 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
           
           {/* Main Hero Card */}
           <div 
-            className="relative rounded-[32px] overflow-hidden min-h-[360px] sm:min-h-[440px] flex flex-col justify-between p-6 sm:p-8 bg-cover bg-center shadow-lg border border-border-color transition-all duration-500"
-            style={{ backgroundImage: `url(${activePhoto || resort.heroImage || (finalGallery && finalGallery[0]) || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"})` }}
+            onClick={() => setViewFullPhotoUrl(currentPhoto)}
+            className="relative rounded-[32px] overflow-hidden min-h-[360px] sm:min-h-[440px] flex flex-col justify-between p-6 sm:p-8 bg-slate-900 shadow-lg border border-border-color cursor-pointer group select-none"
+            title="Click to view photo in full screen"
           >
-            {/* Subtle Gradient at top for button visibility */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent z-0"></div>
+            {/* Animated Photo Layer */}
+            <div className="absolute inset-0 overflow-hidden z-0">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentPhoto}
+                  src={currentPhoto}
+                  alt={resort.name || "Resort"}
+                  initial={{ opacity: 0, scale: 1.04 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  className="w-full h-full object-cover"
+                />
+              </AnimatePresence>
+            </div>
+
+            {/* Subtle Gradient at top and bottom for button visibility */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/50 z-10 pointer-events-none"></div>
 
             {/* Top Bar (Back & Action Buttons) */}
-            <div className="relative z-10 flex justify-between items-center w-full">
+            <div className="relative z-20 flex justify-between items-center w-full" onClick={e => e.stopPropagation()}>
               {/* Back Button */}
               <button 
-                onClick={onBack}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBack();
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/20 text-white rounded-full text-xs font-bold hover:bg-black/60 transition cursor-pointer"
               >
                 <ArrowLeft size={14} /> Back to results
               </button>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3" onClick={e => e.stopPropagation()}>
                 <button 
-                  onClick={() => setShowRateModal(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowRateModal(true);
+                  }}
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-black/40 backdrop-blur-md border border-white/20 text-white rounded-full text-xs font-bold shadow-md hover:bg-black/60 transition cursor-pointer"
                   title="Rate this resort"
                 >
                   <Star size={14} className="fill-yellow-400 text-yellow-400" /> Rate
                 </button>
                 <button 
-                  onClick={toggleFavorite}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite();
+                  }}
                   className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-md hover:bg-black/60 transition cursor-pointer"
                   aria-label="Wishlist Resort"
                 >
                   <Heart size={18} className={isFavorited ? "fill-red-500 text-red-500" : ""} />
                 </button>
                 <button 
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     if (navigator.clipboard) {
                       navigator.clipboard.writeText(window.location.href);
                     }
@@ -623,6 +693,45 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                   <Share size={14} /> Share
                 </button>
               </div>
+            </div>
+
+            {/* Left & Right Navigation Arrows */}
+            {finalGallery.length > 1 && (
+              <div 
+                className="absolute inset-y-0 inset-x-3 sm:inset-x-5 flex items-center justify-between pointer-events-none z-20"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={handlePrevPhoto}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/50 hover:bg-black/80 active:scale-90 text-white border border-white/25 backdrop-blur-md flex items-center justify-center shadow-xl transition-all duration-200 pointer-events-auto cursor-pointer"
+                  aria-label="Previous photo"
+                  title="Previous photo"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextPhoto}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/50 hover:bg-black/80 active:scale-90 text-white border border-white/25 backdrop-blur-md flex items-center justify-center shadow-xl transition-all duration-200 pointer-events-auto cursor-pointer"
+                  aria-label="Next photo"
+                  title="Next photo"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              </div>
+            )}
+
+            {/* Bottom Bar: Fullscreen Hint & Photo Counter */}
+            <div className="relative z-20 flex justify-between items-end w-full pointer-events-none">
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[11px] font-semibold text-white/90 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-1.5">
+                <Maximize2 size={13} /> Click to expand
+              </span>
+              {finalGallery.length > 1 && (
+                <span className="text-[11px] font-bold text-white bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 ml-auto">
+                  {currentPhotoIndex + 1} / {finalGallery.length}
+                </span>
+              )}
             </div>
           </div>
 
@@ -1192,15 +1301,66 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
 
       {/* Full Screen Photo Viewer Modal */}
       {viewFullPhotoUrl && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[10005] p-4 animate-fade-in" onClick={() => setViewFullPhotoUrl(null)}>
-          <div className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center" onClick={e => e.stopPropagation()}>
-            <button 
-              className="absolute -top-10 right-0 bg-white/20 hover:bg-white/40 text-white rounded-full p-2 border-none cursor-pointer z-30 transition flex items-center justify-center"
-              onClick={() => setViewFullPhotoUrl(null)}
-            >
-              <X size={20} />
-            </button>
-            <img src={viewFullPhotoUrl} alt="Full size preview" className="max-w-full max-h-[82vh] object-contain rounded-2xl shadow-2xl border border-white/10" />
+        <div 
+          className="fixed inset-0 bg-black/95 flex items-center justify-center z-[10005] p-4 sm:p-8 animate-fade-in select-none" 
+          onClick={() => setViewFullPhotoUrl(null)}
+        >
+          {/* Close button */}
+          <button 
+            className="absolute top-5 right-5 bg-white/20 hover:bg-white/40 text-white rounded-full p-2.5 border-none cursor-pointer z-40 transition flex items-center justify-center shadow-xl hover:scale-105 active:scale-95"
+            onClick={() => setViewFullPhotoUrl(null)}
+            title="Close (Esc)"
+          >
+            <X size={22} />
+          </button>
+
+          {/* Photo Counter */}
+          {finalGallery.length > 1 && (
+            <div className="absolute top-6 left-6 text-xs font-bold text-white/90 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 z-40">
+              {currentPhotoIndex + 1} / {finalGallery.length}
+            </div>
+          )}
+
+          {/* Modal Container */}
+          <div className="relative max-w-6xl max-h-[90vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
+            {/* Prev button */}
+            {finalGallery.length > 1 && (
+              <button
+                type="button"
+                onClick={handlePrevPhoto}
+                className="absolute left-2 sm:-left-16 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 active:scale-95 text-white border border-white/25 backdrop-blur-md flex items-center justify-center z-40 cursor-pointer transition shadow-2xl"
+                title="Previous photo (←)"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
+
+            <AnimatePresence mode="wait">
+              <motion.img 
+                key={viewFullPhotoUrl}
+                src={viewFullPhotoUrl} 
+                alt="Full size preview" 
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10" 
+              />
+            </AnimatePresence>
+
+            {/* Next button */}
+            {finalGallery.length > 1 && (
+              <button
+                type="button"
+                onClick={handleNextPhoto}
+                className="absolute right-2 sm:-right-16 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 active:scale-95 text-white border border-white/25 backdrop-blur-md flex items-center justify-center z-40 cursor-pointer transition shadow-2xl"
+                title="Next photo (→)"
+                aria-label="Next photo"
+              >
+                <ChevronRight size={24} />
+              </button>
+            )}
           </div>
         </div>
       )}
