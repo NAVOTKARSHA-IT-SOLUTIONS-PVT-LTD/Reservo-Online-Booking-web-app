@@ -50,6 +50,18 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarActiveField, setCalendarActiveField] = useState("checkIn");
+
+  const formatHeaderDate = (dateStr) => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    const date = new Date(y, m, d);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
 
   const handleExecuteSearch = (queryStr) => {
     if (!queryStr || !queryStr.trim()) {
@@ -507,15 +519,18 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
                     <div className="mt-1">
                       <button
                         type="button"
-                        onClick={() => setShowCalendar(!showCalendar)}
+                        onClick={() => {
+                          if (!showCalendar) setCalendarActiveField("checkIn");
+                          setShowCalendar(!showCalendar);
+                        }}
                         className="text-xs font-semibold text-text-dark hover:text-primary flex items-center gap-1.5 bg-white dark:bg-slate-800 hover:bg-gray-50 border border-border-color px-2.5 py-1 rounded-xl cursor-pointer transition-all shadow-2xs"
                       >
                         <Calendar size={13} className="text-primary" />
                         <span>
                           {checkInDate && checkOutDate 
-                            ? `${checkInDate} → ${checkOutDate}` 
+                            ? `${formatHeaderDate(checkInDate)} → ${formatHeaderDate(checkOutDate)}` 
                             : checkInDate 
-                              ? `${checkInDate} → Select Date` 
+                              ? `${formatHeaderDate(checkInDate)} → Select Date` 
                               : "Select Date → Select Date"}
                         </span>
                         <ChevronDown size={12} className={`transition-transform text-text-gray ${showCalendar ? 'rotate-180' : ''}`} />
@@ -532,6 +547,7 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
                       setSearchText("");
                       setCheckInDate("");
                       setCheckOutDate("");
+                      setCalendarActiveField("checkIn");
                       setShowCalendar(false);
                     } else {
                       setShowSearchModal(false);
@@ -552,29 +568,46 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="bg-white dark:bg-slate-800 border border-border-color rounded-2xl p-4 shadow-xl space-y-3 z-50"
+                    className="bg-white dark:bg-slate-800 border border-border-color rounded-2xl p-3 sm:p-4 shadow-xl space-y-2.5 z-50 max-w-sm mx-auto w-full"
                   >
                     <div className="flex items-center justify-between border-b border-border-color pb-2">
                       <span className="text-xs font-bold text-text-dark flex items-center gap-1.5">
                         <Calendar size={14} className="text-primary" /> Select Stay Dates
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowCalendar(false)}
-                        className="text-xs font-bold text-primary hover:text-primary-dark border-none bg-transparent cursor-pointer"
-                      >
-                        Done ✓
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {(checkInDate || checkOutDate) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCheckInDate("");
+                              setCheckOutDate("");
+                              setCalendarActiveField("checkIn");
+                            }}
+                            className="text-xs font-semibold text-text-gray hover:text-red-500 border-none bg-transparent cursor-pointer transition-colors"
+                          >
+                            Reset
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowCalendar(false)}
+                          className="text-xs font-bold text-primary hover:text-primary-dark border-none bg-transparent cursor-pointer"
+                        >
+                          Done ✓
+                        </button>
+                      </div>
                     </div>
                     <div className="flex justify-center">
                       <CustomCalendar
                         checkInDate={checkInDate}
                         checkOutDate={checkOutDate}
-                        onDateChange={(ci, co) => {
+                        activeField={calendarActiveField}
+                        onActiveFieldChange={setCalendarActiveField}
+                        onDateChange={(ci, co, status) => {
                           setCheckInDate(ci);
                           setCheckOutDate(co);
-                          if (ci && co) {
-                            setTimeout(() => setShowCalendar(false), 300);
+                          if (status === "done" && ci && co) {
+                            setTimeout(() => setShowCalendar(false), 350);
                           }
                         }}
                         isDarkMode={isDark}
