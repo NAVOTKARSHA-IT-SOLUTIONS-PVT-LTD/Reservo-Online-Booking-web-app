@@ -5,7 +5,7 @@ import {
   Menu, X, Heart, Moon, Sun, Globe, ChevronDown, Check,
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
   LayoutGrid, BookOpen, Bell, Settings, User, LogOut, Sliders, Building2,
-  Search, MapPin, Calendar, Users, Minus, Plus
+  Search, MapPin, Calendar, Users, Star
 } from "lucide-react";
 import logoImage from "../assets/images/logo.png";
 import { motion, AnimatePresence } from "framer-motion";
@@ -293,9 +293,9 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
                 </Link>
               </li>
               <li>
-                <button className={getNavLinkClass(isHome && activeSection === "reviews")} style={navLinkStyle} onClick={() => scrollToSection("testimonials")}>
-                  {t("reviews")}
-                </button>
+                <Link to="/reviews" className={getNavLinkClass(location.pathname === "/reviews")} style={navLinkStyle}>
+                  {t("reviews") || "Reviews"}
+                </Link>
               </li>
               <li>
                 <Link to="/contact" className={getNavLinkClass(location.pathname === "/contact")} style={navLinkStyle}>
@@ -443,6 +443,7 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
               ]),
               { type: "divider" },
               { type: "item", icon: <BookOpen size={18} />, label: "Travel Blogs", path: "/blogs" },
+              { type: "item", icon: <Star size={18} />, label: "Guest Reviews", path: "/reviews" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
               { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },

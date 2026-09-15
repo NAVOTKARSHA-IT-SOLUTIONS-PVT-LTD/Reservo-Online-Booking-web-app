@@ -29,6 +29,7 @@ const ResortDetails = React.lazy(() => import("./components/ResortDetails"));
 const About = React.lazy(() => import("./pages/About"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const Blogs = React.lazy(() => import("./pages/Blogs"));
+const Reviews = React.lazy(() => import("./pages/Reviews"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Rewards = React.lazy(() => import("./pages/Rewards"));
 const Profile = React.lazy(() => import("./pages/Profile"));
@@ -97,6 +98,7 @@ function Home({ wishlist, toggleWishlist, currencySymbol, exchangeRate }) {
       <RecentlyViewed currencySymbol={currencySymbol} rates={exchangeRate} />
       <PopularDestinations wishlist={wishlist} toggleWishlist={toggleWishlist} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />
       <WhyChooseUs />
+      <Testimonials />
       <FAQ />
       <MascotShowcase />
     </>
@@ -553,6 +555,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/blog/:id" element={<Blogs />} />
+            <Route path="/reviews" element={<Reviews />} />
             <Route path="/rewards" element={<Rewards />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/terms" element={<Terms />} />
