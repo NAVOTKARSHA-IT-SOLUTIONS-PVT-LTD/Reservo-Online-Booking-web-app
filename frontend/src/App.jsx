@@ -2,16 +2,13 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Routes, Route, useLocation, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, WifiOff, CheckCircle2, ArrowUp, Send, Heart, Sun, Moon, Globe, ChevronDown, Menu, Check } from "lucide-react";
-import FeedbackPopup from "./components/FeedbackPopup";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Mascot from "./components/Mascot";
 import Preloader from "./components/Preloader";
 import MobileUI from "./components/MobileUI";
-import BookingModal from "./components/BookingModal";
 import SearchLoadingOverlay from "./components/SearchLoadingOverlay";
 import ProtectedRoute from "./components/ProtectedRoute";
-import GuidedTour from "./components/GuidedTour";
 import RecentlyViewed from "./components/RecentlyViewed";
 import { secureStorage } from "./services/secureStorage";
 import { useToast } from "./context/ToastContext";
@@ -21,7 +18,14 @@ import { bookingService } from "./services/booking.service";
 import { apiClient } from "./services/apiClient";
 import { authService } from "./services/auth.service";
 
-// Lazy-loaded pages
+// Lazy-loaded interactive modals and overlays
+const BookingModal = React.lazy(() => import("./components/BookingModal"));
+const FeedbackPopup = React.lazy(() => import("./components/FeedbackPopup"));
+const GuidedTour = React.lazy(() => import("./components/GuidedTour"));
+
+// Lazy-loaded pages & heavy route components
+const ResortListing = React.lazy(() => import("./components/ResortListing"));
+const ResortDetails = React.lazy(() => import("./components/ResortDetails"));
 const About = React.lazy(() => import("./pages/About"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
@@ -49,15 +53,14 @@ const HelpCenter = React.lazy(() => import("./pages/DummyPages").then(m => ({ de
 const Support = React.lazy(() => import("./pages/DummyPages").then(m => ({ default: m.Support })));
 const Privacy = React.lazy(() => import("./pages/DummyPages").then(m => ({ default: m.Privacy })));
 
-// Pre-load components to prevent lag
+// Core Landing Page components for immediate paint
 import Hero from "./components/Hero";
 import PopularDestinations from "./components/PopularDestinations";
 import WhyChooseUs from "./components/WhyChooseUs";
 import Testimonials from "./components/Testimonials";
 import FAQ from "./components/FAQ";
 import MascotShowcase from "./components/MascotShowcase";
-import ResortListing from "./components/ResortListing";
-import ResortDetails from "./components/ResortDetails";
+
 
 // Simple Loading Indicator for Suspense
 function PageLoader() {
@@ -221,15 +224,17 @@ function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate, onBook
   }
 
   return (
-    <ResortDetails
-      resort={resort}
-      urlId={id}
-      isDarkMode={isDark}
-      onBack={() => navigate("/")}
-      currencySymbol={currencySymbol}
-      exchangeRate={exchangeRate}
-      onBook={onBook}
-    />
+    <Suspense fallback={<PageLoader />}>
+      <ResortDetails
+        resort={resort}
+        urlId={id}
+        isDarkMode={isDark}
+        onBack={() => navigate("/")}
+        currencySymbol={currencySymbol}
+        exchangeRate={exchangeRate}
+        onBook={onBook}
+      />
+    </Suspense>
   );
 }
 
@@ -604,7 +609,9 @@ function App() {
     <div className="min-h-screen flex flex-col bg-bg-light transition-colors duration-300">
       
       {/* Interactive Guided Tour component overlay */}
-      <GuidedTour />
+      <Suspense fallback={null}>
+        <GuidedTour />
+      </Suspense>
 
       {/* Skip to content link for accessibility */}
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-xl z-[10002] font-semibold text-xs shadow transition-all">
@@ -666,24 +673,26 @@ function App() {
       )}
 
       {!isCheckingAvailability && bookingResort && (
-        <BookingModal
-          resort={bookingResort}
-          room={bookingRoom}
-          bookingDates={bookingDates}
-          bookingGuests={bookingGuests}
-          isDarkMode={isDark}
-          onClose={() => {
-            setBookingResort(null);
-            setBookingRoom(null);
-            setBookingDates({ checkIn: null, checkOut: null });
-          }}
-          onAskRivo={() => {
-            const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]');
-            if (mascotBtn) {
-              mascotBtn.click();
-            }
-          }}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <BookingModal
+            resort={bookingResort}
+            room={bookingRoom}
+            bookingDates={bookingDates}
+            bookingGuests={bookingGuests}
+            isDarkMode={isDark}
+            onClose={() => {
+              setBookingResort(null);
+              setBookingRoom(null);
+              setBookingDates({ checkIn: null, checkOut: null });
+            }}
+            onAskRivo={() => {
+              const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]');
+              if (mascotBtn) {
+                mascotBtn.click();
+              }
+            }}
+          />
+        </Suspense>
       )}
 
       {/* Floating Action Buttons: Back To Top */}
@@ -737,7 +746,9 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
-      <FeedbackPopup />
+      <Suspense fallback={null}>
+        <FeedbackPopup />
+      </Suspense>
     </div>
     
   );

@@ -204,7 +204,7 @@ function Hero() {
       
       {/* Background Video */}
 <div
-  className="absolute inset-0 z-10 overflow-hidden"
+  className="absolute inset-0 z-10 overflow-hidden bg-[#0a1118]"
   style={{
     transform: `translateY(${scrollY * 0.3}px) scale(${
       1 + scrollY * 0.0002
@@ -218,7 +218,7 @@ function Hero() {
     muted
     loop
     playsInline
-    preload="auto"
+    preload="metadata"
   />
 </div>
   

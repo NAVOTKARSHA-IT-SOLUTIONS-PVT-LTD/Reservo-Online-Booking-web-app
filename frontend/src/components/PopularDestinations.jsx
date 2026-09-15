@@ -195,6 +195,8 @@ function PopularDestinations({ currencySymbol = "₹", exchangeRate = 1 }) {
                     <img 
                       src={dest.imageUrl || dest.image || "https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=800&q=80"} 
                       alt={dest.name} 
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                     />
                     

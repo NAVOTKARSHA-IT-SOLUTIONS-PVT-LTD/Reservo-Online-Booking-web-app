@@ -630,6 +630,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
                             }}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             loading="lazy"
+                            decoding="async"
                           />
 
                           <div className="absolute top-4 left-4">

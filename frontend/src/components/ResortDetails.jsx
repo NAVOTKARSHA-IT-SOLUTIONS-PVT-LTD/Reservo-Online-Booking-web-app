@@ -634,6 +634,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                   key={currentPhoto}
                   src={currentPhoto}
                   alt={resort.name || "Resort"}
+                  decoding="async"
                   initial={{ opacity: 0, scale: 1.04 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
@@ -743,7 +744,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                 onClick={() => setActiveVideoUrl(finalVideos[0])}
                 className="relative rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group"
               >
-                <img src={finalGallery[0] || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80"} alt="Video preview" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                <img src={finalGallery[0] || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80"} alt="Video preview" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                 <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 text-white z-10">
                   <Play size={16} className="fill-current" />
                   <span className="text-[9px] font-bold uppercase tracking-wider">View Video</span>
@@ -764,7 +765,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                 }`}
                 title="Click to view photo full screen"
               >
-                <img src={imgUrl} alt={`Gallery thumbnail ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                <img src={imgUrl} alt={`Gallery thumbnail ${i+1}`} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
               </div>
             ))}
           </div>

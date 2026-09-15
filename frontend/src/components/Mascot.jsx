@@ -362,6 +362,8 @@ function Mascot({ isDark, setIsDark }) {
             <img 
               src={mascotWebp} 
               alt="Rivo Mascot Animation" 
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-contain select-none"
             />
           )}
@@ -384,7 +386,7 @@ function Mascot({ isDark, setIsDark }) {
           
           {/* Header */}
           <div className="bg-[#121e1b] px-5 py-3.75 flex items-center gap-3 text-white border-b border-white/5 shrink-0">
-            <img src={rivoAvatar} alt="Rivo Avatar" className="w-8.5 h-8.5 rounded-full border-1.5 border-white/20 object-cover" />
+            <img src={rivoAvatar} alt="Rivo Avatar" loading="lazy" decoding="async" className="w-8.5 h-8.5 rounded-full border-1.5 border-white/20 object-cover" />
             <div className="flex-1">
               <h4 className="text-[14.5px] m-0 font-bold text-white flex items-center gap-1">
                 Rivo AI {activeModeObj.emoji}
