@@ -29,6 +29,16 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### Environment & Secrets ###
+.env
+.env.*
+!.env.example
+*serviceAccountKey*.json
+*service-account*.json
+credentials.json
+*.key
+*.pem
+
 ### VS Code ###
 .vscode/
 
