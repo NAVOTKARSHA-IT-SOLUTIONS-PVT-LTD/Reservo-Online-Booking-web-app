@@ -52,15 +52,20 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
   const [showCalendar, setShowCalendar] = useState(false);
 
   const handleExecuteSearch = (queryStr) => {
+    if (!queryStr || !queryStr.trim()) {
+      toast("Please enter a destination to search for stays.", "error");
+      return;
+    }
     setShowSearchModal(false);
     setShowCalendar(false);
     const queryParams = new URLSearchParams();
-    if (queryStr) queryParams.set("destination", queryStr);
+    queryParams.set("destination", queryStr.trim());
     if (checkInDate) queryParams.set("checkIn", checkInDate);
     if (checkOutDate) queryParams.set("checkOut", checkOutDate);
     navigate(`/search?${queryParams.toString()}`, {
       state: {
-        location: queryStr,
+        location: queryStr.trim(),
+        destination: queryStr.trim(),
         checkIn: checkInDate,
         checkOut: checkOutDate
       }
@@ -591,7 +596,7 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
                       handleExecuteSearch(searchText.trim());
                     }
                   }}
-                  placeholder="Search by destination, resort name, or city..."
+                  placeholder="Enter destination (e.g. Goa, Manali, Udaipur)... *"
                   className="w-full text-sm font-semibold bg-transparent outline-none text-text-dark placeholder:text-text-gray"
                   autoFocus
                 />

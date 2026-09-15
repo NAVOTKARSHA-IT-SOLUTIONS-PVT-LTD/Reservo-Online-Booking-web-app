@@ -284,6 +284,27 @@ function SearchResults() {
     return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
+  if (!dest || !dest.trim()) {
+    return (
+      <div className="min-h-screen bg-bg-light flex flex-col items-center justify-center p-4">
+        <div className="text-center py-14 px-8 bg-bg-white border border-border-color rounded-3xl max-w-md w-full shadow-lg space-y-4">
+          <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-3xl">
+            📍
+          </div>
+          <h2 className="text-xl font-extrabold text-text-dark">Destination Required</h2>
+          <p className="text-xs text-text-gray leading-relaxed">
+            Searching for stays requires selecting a destination. Please choose your desired destination to explore available verified resorts.
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="w-full py-3.5 bg-primary hover:bg-primary-dark text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer border-none flex items-center justify-center gap-2"
+          >
+            <MapPin size={16} /> Choose Destination
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg-light pb-20">

@@ -19,8 +19,7 @@ import {
   X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-
+import { useToast } from "../context/ToastContext";
 
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 import herovideo from "../assets/images/hero-video.mp4";
@@ -67,8 +66,10 @@ const DESTINATIONS = [
 
 function Hero() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isSearching, setIsSearching] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [locationError, setLocationError] = useState(false);
   
 
 
@@ -146,6 +147,7 @@ function Hero() {
 
   const handleSelectLocation = (place) => {
     setLocation(`${place.name}, ${place.region.split(",")[0]}`);
+    setLocationError(false);
     setShowLocationDropdown(false);
     setLocationSearch("");
   };
@@ -165,6 +167,15 @@ function Hero() {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    if (!location || !location.trim()) {
+      setLocationError(true);
+      toast("Please select a destination to search for stays.", "error");
+      setShowLocationDropdown(true);
+      setShowGuestsDropdown(false);
+      setShowCalendarDropdown(false);
+      return;
+    }
+    setLocationError(false);
     setIsSearching(true);
   };
 
@@ -290,16 +301,38 @@ function Hero() {
           {/* Location - Clickable Dropdown */}
           <div className="flex-1 relative w-full" ref={locationRef}>
             <div 
-              onClick={() => { setShowLocationDropdown(!showLocationDropdown); setShowGuestsDropdown(false); }}
-              className="flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group"
+              onClick={() => { 
+                setShowLocationDropdown(!showLocationDropdown); 
+                setShowGuestsDropdown(false); 
+                setShowCalendarDropdown(false);
+              }}
+              className={`flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group transition-all duration-300 rounded-2xl md:rounded-full ${
+                locationError ? 'ring-2 ring-red-500 bg-red-500/5' : ''
+              }`}
             >
-              <MapPin size={20} className={`transition-colors ${showLocationDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
+              <MapPin size={20} className={`transition-colors ${
+                locationError ? 'text-red-500 animate-pulse' : showLocationDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'
+              }`} />
               <div className="flex flex-col w-full text-left">
-                <label className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Where to?</label>
-                <span className="text-[15px] font-bold text-text-dark transition-colors duration-300">
+                <label className="text-[11px] font-bold uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                  <span className={locationError ? 'text-red-500 font-extrabold' : 'text-gray-400'}>
+                    Where to? <span className="text-red-500 font-bold">*</span>
+                  </span>
+                  {locationError && (
+                    <span className="text-[10px] text-red-500 font-semibold tracking-normal capitalize animate-pulse">
+                      Required
+                    </span>
+                  )}
+                </label>
+                <span className={`text-[15px] font-bold transition-colors duration-300 ${
+                  location ? 'text-text-dark' : locationError ? 'text-red-600 dark:text-red-400' : 'text-text-dark'
+                }`}>
                   {location || "Select Destination"}
                 </span>
-                <span className="text-[12px] text-gray-400">All Destinations <ChevronDown size={12} className={`inline transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} /></span>
+                <span className="text-[12px] text-gray-400 flex items-center gap-1">
+                  {location ? "Destination Selected" : "All Destinations"}
+                  <ChevronDown size={12} className={`inline transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} />
+                </span>
               </div>
             </div>
 
@@ -317,6 +350,7 @@ function Hero() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && locationSearch.trim()) {
                           setLocation(locationSearch.trim());
+                          setLocationError(false);
                           setShowLocationDropdown(false);
                           setLocationSearch("");
                         }
@@ -339,6 +373,7 @@ function Hero() {
                     <button
                       onClick={() => {
                         setLocation(locationSearch.trim());
+                        setLocationError(false);
                         setShowLocationDropdown(false);
                         setLocationSearch("");
                       }}
