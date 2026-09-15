@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { CreditCard, Eye, EyeOff, ShieldCheck, Sparkles, RefreshCw, QrCode, Building } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import CustomDropdown from './CustomDropdown';
+
+const OTHER_BANK_OPTIONS = [
+  { value: "", label: "-- Choose Your Bank --" },
+  { value: "kotak", label: "Kotak Mahindra Bank" },
+  { value: "pnb", label: "Punjab National Bank" },
+  { value: "bob", label: "Bank of Baroda" },
+  { value: "indusind", label: "IndusInd Bank" },
+  { value: "yesbank", label: "Yes Bank" },
+  { value: "canara", label: "Canara Bank" }
+];
 
 export default function StripeCardInput({ onPaymentSuccess, grandTotal, currencySymbol = "₹" }) {
   const [paymentMethod, setPaymentMethod] = useState("card"); // 'card', 'upi', 'netbanking'
@@ -385,23 +396,17 @@ export default function StripeCardInput({ onPaymentSuccess, grandTotal, currency
               </div>
             </div>
 
-            {/* Dropdown list for other banks */}
             <div className="flex flex-col gap-1.5 text-left">
-              <label htmlFor="bank-select-dropdown" className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Other Banks</label>
-              <select
-                id="bank-select-dropdown"
+              <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Other Banks</label>
+              <CustomDropdown
                 value={selectedBank}
-                onChange={(e) => setSelectedBank(e.target.value)}
-                className="w-full p-3 bg-bg-light border border-border-color rounded-xl text-xs font-semibold outline-none focus:border-primary transition cursor-pointer"
-              >
-                <option value="">-- Choose Your Bank --</option>
-                <option value="kotak">Kotak Mahindra Bank</option>
-                <option value="pnb">Punjab National Bank</option>
-                <option value="bob">Bank of Baroda</option>
-                <option value="indusind">IndusInd Bank</option>
-                <option value="yesbank">Yes Bank</option>
-                <option value="canara">Canara Bank</option>
-              </select>
+                onChange={setSelectedBank}
+                options={OTHER_BANK_OPTIONS}
+                placeholder="-- Choose Your Bank --"
+                direction="up"
+                className="w-full"
+                buttonClassName="w-full p-3 bg-bg-light border border-border-color rounded-xl text-xs font-semibold"
+              />
             </div>
 
             <button 

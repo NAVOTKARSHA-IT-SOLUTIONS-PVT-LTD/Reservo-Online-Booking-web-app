@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -38,6 +38,7 @@ const loginSchema = z.object({
 
 export default function Login({ setIsAuthenticated }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [language, setLanguage] = useState("English");
@@ -101,6 +102,20 @@ export default function Login({ setIsAuthenticated }) {
     mode: "onChange" // Live Validation
   });
 
+  const performPostLoginRedirect = (finalRole) => {
+    const redirectPath = location.state?.from;
+    if (redirectPath) {
+      navigate(redirectPath, { replace: true });
+    } else if (finalRole === "ROLE_ADMIN") {
+      navigate("/admin/reservo", { replace: true });
+    } else if (finalRole === "ROLE_OWNER") {
+      // Redirect resort managers straight to their administrative Extranet PMS!
+      navigate("/admin/resort", { replace: true });
+    } else {
+      navigate("/dashboard", { replace: true });
+    }
+  };
+
   const onSubmit = async (data) => {
     try {
       const result = await authService.login(data.email, data.password);
@@ -110,14 +125,7 @@ export default function Login({ setIsAuthenticated }) {
       setIsAuthenticated(true);
       setTimeout(() => {
         setToastMsg("");
-        if (finalRole === "ROLE_ADMIN") {
-          navigate("/admin/reservo", { replace: true });
-        } else if (finalRole === "ROLE_OWNER") {
-          // Redirect resort managers straight to their administrative Extranet PMS!
-          navigate("/admin/resort", { replace: true });
-        } else {
-          navigate("/dashboard", { replace: true });
-        }
+        performPostLoginRedirect(finalRole);
       }, 1500);
     } catch (err) {
       setToastMsg(err.message || "Failed to sign in. Please check your credentials.");
@@ -139,13 +147,7 @@ export default function Login({ setIsAuthenticated }) {
       setIsAuthenticated(true);
       setTimeout(() => {
         setToastMsg("");
-        if (finalRole === "ROLE_ADMIN") {
-          navigate("/admin/reservo", { replace: true });
-        } else if (finalRole === "ROLE_OWNER") {
-          navigate("/admin/resort", { replace: true });
-        } else {
-          navigate("/dashboard", { replace: true });
-        }
+        performPostLoginRedirect(finalRole);
       }, 1500);
     } catch (err) {
       setToastMsg(err.message || "Phone authentication failed. Please try again.");
@@ -186,13 +188,7 @@ export default function Login({ setIsAuthenticated }) {
               setToastMsg("");
               const user = authService.getCurrentUser();
               const finalRole = user?.role || (roleMode === "business" ? "ROLE_OWNER" : "ROLE_CUSTOMER");
-              if (finalRole === "ROLE_ADMIN") {
-                navigate("/admin/reservo", { replace: true });
-              } else if (finalRole === "ROLE_OWNER") {
-                navigate("/admin/resort", { replace: true });
-              } else {
-                navigate("/dashboard", { replace: true });
-              }
+              performPostLoginRedirect(finalRole);
             }, 1500);
           } else {
             throw new Error(signInResult.message || "Failed to sign in with existing provider");
@@ -215,13 +211,7 @@ export default function Login({ setIsAuthenticated }) {
       setIsAuthenticated(true);
       setTimeout(() => {
         setToastMsg("");
-        if (finalRole === "ROLE_ADMIN") {
-          navigate("/admin/reservo", { replace: true });
-        } else if (finalRole === "ROLE_OWNER") {
-          navigate("/admin/resort", { replace: true });
-        } else {
-          navigate("/dashboard", { replace: true });
-        }
+        performPostLoginRedirect(finalRole);
       }, 1500);
     } catch (err) {
       console.error("Social auth error:", err);

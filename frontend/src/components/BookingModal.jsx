@@ -9,6 +9,7 @@ import { useToast } from '../context/ToastContext';
 import { apiClient } from '../services/apiClient';
 import { secureStorage } from '../services/secureStorage';
 import rivoConfirmed from '../assets/images/rivo_confirmed.png';
+import CustomDropdown from './CustomDropdown';
 
 export default function BookingModal({ resort, room, bookingDates, bookingGuests, checkInDate: propCheckIn, checkOutDate: propCheckOut, isDarkMode, onClose, onAskRivo }) {
   const toast = useToast();
@@ -527,17 +528,21 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
                   <div className="grid grid-cols-2 gap-3 items-center">
                     <div>
                       <label className="block text-[10px] font-bold text-stone-400 mb-1.5 uppercase tracking-wide">Document Type</label>
-                      <select
+                      <CustomDropdown
                         value={kycDocType}
-                        onChange={(e) => setKycDocType(e.target.value)}
-                        className={`w-full p-2.5 text-xs rounded-xl border bg-transparent font-bold outline-none ${
-                          isDarkMode ? 'border-[#334155] focus:border-[#2563EB] bg-[#1E293B]' : 'border-[#E2E8F0] focus:border-[#2563EB]'
-                        }`}
-                      >
-                        <option value="Aadhaar">Aadhaar Card</option>
-                        <option value="Passport">Passport</option>
-                        <option value="PAN">PAN Card</option>
-                      </select>
+                        onChange={setKycDocType}
+                        options={[
+                          { value: "Aadhaar", label: "Aadhaar Card" },
+                          { value: "Passport", label: "Passport" },
+                          { value: "PAN", label: "PAN Card" },
+                        ]}
+                        buttonClassName={
+                          isDarkMode
+                            ? "!border-[#334155] !bg-[#1E293B] !text-white !p-2.5"
+                            : "!border-[#E2E8F0] !bg-bg-white !text-text-dark !p-2.5"
+                        }
+                        menuClassName={isDarkMode ? "!bg-[#1E293B] !border-[#334155] !text-white" : ""}
+                      />
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-stone-400 mb-1.5 uppercase tracking-wide">Upload ID Copy</label>

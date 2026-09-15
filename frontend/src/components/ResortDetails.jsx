@@ -10,6 +10,7 @@ import {
 import ResortNavigationMap from "./ResortNavigationMap";
 import CustomCalendar from "./CustomCalendar";
 import SimpleMapEmbed from "./SimpleMapEmbed";
+import CustomDropdown from "./CustomDropdown";
 import { rewardService } from "../services/reward.service";
 import { bookingService } from "../services/booking.service";
 import { apiClient } from "../services/apiClient";
@@ -1069,20 +1070,23 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             {!isWholeVilla && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Room Type</label>
-                <select
+                <CustomDropdown
                   value={selectedRoomType}
-                  onChange={e => { setSelectedRoomType(e.target.value); setRoomsCount(1); }}
+                  onChange={val => { setSelectedRoomType(val); setRoomsCount(1); }}
                   disabled={roomInventoryLoading || roomTypeOptions.length === 0}
-                  className="w-full border border-border-color rounded-xl px-3.5 py-2.5 text-xs font-semibold bg-bg-light text-text-dark outline-none focus:border-primary cursor-pointer disabled:opacity-50"
-                >
-                  {roomTypeOptions.length === 0 ? <option value="">No room types available</option> : roomTypeOptions.map(type => {
+                  placeholder={roomTypeOptions.length === 0 ? "No room types available" : "Select Room Type"}
+                  options={roomTypeOptions.map(type => {
                     const records = roomInventory.filter(room => String(room.roomType || room.type || "Room") === type);
                     const available = records.filter(room => room.status === "AVAILABLE").length;
                     const capacity = Number(records.find(r => Number(r.capacity) > 0)?.capacity || 2);
                     const price = Number(records.find(r => r.status === "AVAILABLE")?.pricePerNight || records[0]?.pricePerNight || 0);
-                    return <option key={type} value={type}>{type} • {capacity} guests • ₹{price.toLocaleString("en-IN")} • {available} available</option>;
+                    return {
+                      value: type,
+                      label: `${type} • ${capacity} guests • ₹${price.toLocaleString("en-IN")} • ${available} available`,
+                    };
                   })}
-                </select>
+                  buttonClassName="!bg-bg-light !text-text-dark !border-border-color !text-xs !font-semibold"
+                />
                 <span className="text-[9px] text-text-gray">Capacity: {selectedRoomCapacity} guest{selectedRoomCapacity !== 1 ? "s" : ""} per room • {selectedAvailableRoomCount} available</span>
               </div>
             )}

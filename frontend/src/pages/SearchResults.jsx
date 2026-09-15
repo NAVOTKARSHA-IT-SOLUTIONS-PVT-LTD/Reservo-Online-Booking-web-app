@@ -8,6 +8,7 @@ import {
 import rivoSearching from "../assets/images/rivo_searching.png";
 import { resortService } from "../services/resort.service";
 import { authService } from "../services/auth.service";
+import CustomDropdown from "../components/CustomDropdown";
 
 const FILTER_CHIPS = [
   { id: "ai", label: "✨ AI Recommended", icon: null },
@@ -419,13 +420,13 @@ function SearchResults() {
               </h2>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-text-gray">Sort by:</span>
-                <select 
-                  className="bg-bg-white border border-border-color text-text-dark text-sm font-bold py-2 px-3 rounded-xl outline-none cursor-pointer hover:border-gold transition-colors"
+                <CustomDropdown
                   value={sortKey}
-                  onChange={(e) => setSortKey(e.target.value)}
-                >
-                  {SORT_OPTIONS.map(opt => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
-                </select>
+                  onChange={setSortKey}
+                  options={SORT_OPTIONS.map((opt) => ({ value: opt.key, label: opt.label }))}
+                  align="right"
+                  buttonClassName="!py-2 !px-3 !bg-bg-white !rounded-xl text-xs font-bold"
+                />
               </div>
             </div>
 

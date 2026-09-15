@@ -579,6 +579,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
                 ])
               ]),
               { type: "divider" },
+              { type: "item", icon: <BookOpen size={18} />, label: "Travel Blogs", path: "/blogs" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
               { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },

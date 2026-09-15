@@ -28,6 +28,7 @@ const ResortListing = React.lazy(() => import("./components/ResortListing"));
 const ResortDetails = React.lazy(() => import("./components/ResortDetails"));
 const About = React.lazy(() => import("./pages/About"));
 const Contact = React.lazy(() => import("./pages/Contact"));
+const Blogs = React.lazy(() => import("./pages/Blogs"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Rewards = React.lazy(() => import("./pages/Rewards"));
 const Profile = React.lazy(() => import("./pages/Profile"));
@@ -550,6 +551,8 @@ function App() {
             <Route path="/" element={<Home wishlist={wishlistIds} toggleWishlist={handleToggleWishlist} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blog/:id" element={<Blogs />} />
             <Route path="/rewards" element={<Rewards />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/terms" element={<Terms />} />

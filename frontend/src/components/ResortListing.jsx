@@ -7,6 +7,7 @@ import { resortService } from '../services/resort.service';
 import { ResortCardSkeleton } from './Skeleton';
 import EmptyState from './EmptyState';
 import ErrorScreen from './ErrorScreen';
+import CustomDropdown from './CustomDropdown';
 
 export default function ResortListing({ onSelectResort, activeCategory: propActiveCategory = 'all', setActiveCategory: propSetActiveCategory, isDarkMode, onAskRivo }) {
   const routerLocation = useLocation();
@@ -277,23 +278,26 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
     <div className="space-y-6">
       {/* 1. Sort Options */}
       <div className="space-y-2">
-        <label htmlFor="filter-sort" className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1">
+        <label className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-1">
           <ArrowUpDown className="w-3.5 h-3.5 text-[#2563EB]" /> Sort By
         </label>
-        <select
-          id="filter-sort"
+        <CustomDropdown
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className={`w-full p-3 rounded-xl border text-xs font-bold cursor-pointer focus:outline-none focus:border-[#2563EB] ${
-            isDarkMode ? 'bg-[#111827] border-[#334155] text-white' : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A]'
-          }`}
-        >
-          <option value="recommended">✨ Recommended / AI Match</option>
-          <option value="price-low">💰 Price: Low to High</option>
-          <option value="price-high">💎 Price: High to Low</option>
-          <option value="rating-high">⭐ Rating: Highest First</option>
-          <option value="popular">🔥 Popularity & Reviews</option>
-        </select>
+          onChange={setSortBy}
+          options={[
+            { value: "recommended", label: "✨ Recommended / AI Match" },
+            { value: "price-low", label: "💰 Price: Low to High" },
+            { value: "price-high", label: "💎 Price: High to Low" },
+            { value: "rating-high", label: "⭐ Rating: Highest First" },
+            { value: "popular", label: "🔥 Popularity & Reviews" },
+          ]}
+          buttonClassName={
+            isDarkMode
+              ? "!bg-[#111827] !border-[#334155] !text-white !p-3"
+              : "!bg-[#F8FAFC] !border-[#E2E8F0] !text-[#0F172A] !p-3"
+          }
+          menuClassName={isDarkMode ? "!bg-[#1E293B] !border-[#334155] !text-white" : ""}
+        />
       </div>
 
       {/* 2. Price Range */}

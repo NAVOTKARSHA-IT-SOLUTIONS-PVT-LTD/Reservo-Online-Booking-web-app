@@ -16,6 +16,7 @@ import { secureStorage } from "../services/secureStorage";
 import { useToast } from "../context/ToastContext";
 import { useWishlist } from "../context/WishlistContext";
 import { apiClient } from "../services/apiClient";
+import CustomDropdown from "../components/CustomDropdown";
 
 const DESTINATIONS = [
   { name: "Goa (North & South)", multiplier: 1.35, baseRate: 22000 },
@@ -33,6 +34,17 @@ const PROPERTY_CATEGORIES = [
   { id: "Beachfront", name: "Oceanfront Haven", icon: "🏖️", desc: "Direct beachfront access with panoramic coastal views" },
   { id: "Boutique Resort", name: "Boutique Resort", icon: "🌴", desc: "Curated resort suites with bespoke hospitality services" },
   { id: "Treehouse", name: "Eco Canopy Treehouse", icon: "🌿", desc: "Elevated nature immersion with architectural elegance" }
+];
+
+const CATEGORY_OPTIONS = PROPERTY_CATEGORIES.map(c => ({
+  value: c.id,
+  label: `${c.icon} ${c.name}`
+}));
+
+const CANCELLATION_OPTIONS = [
+  { value: "Flexible", label: "Flexible (24h)" },
+  { value: "Moderate", label: "Moderate (5 days)" },
+  { value: "Strict", label: "Strict (14 days)" }
 ];
 
 const AMENITY_OPTIONS = [
@@ -655,15 +667,13 @@ export default function BecomeAHost() {
                     <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-2">
                       Property Category
                     </label>
-                    <select
+                    <CustomDropdown
                       value={estType}
-                      onChange={(e) => setEstType(e.target.value)}
-                      className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3 rounded-2xl text-xs font-bold outline-none focus:border-primary"
-                    >
-                      {PROPERTY_CATEGORIES.map((c) => (
-                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                      ))}
-                    </select>
+                      onChange={setEstType}
+                      options={CATEGORY_OPTIONS}
+                      className="w-full"
+                      buttonClassName="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3 rounded-2xl text-xs font-bold"
+                    />
                   </div>
 
                   <div>
@@ -1332,15 +1342,13 @@ export default function BecomeAHost() {
                       <div className="text-xs font-bold text-[var(--color-text-dark)]">Cancellation Policy</div>
                       <div className="text-[11px] text-[var(--color-text-gray)]">Flexible, Moderate, or Strict</div>
                     </div>
-                    <select
+                    <CustomDropdown
                       value={formData.cancellationPolicy}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cancellationPolicy: e.target.value }))}
-                      className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-2 rounded-xl text-xs font-bold outline-none focus:border-primary"
-                    >
-                      <option value="Flexible">Flexible (24h)</option>
-                      <option value="Moderate">Moderate (5 days)</option>
-                      <option value="Strict">Strict (14 days)</option>
-                    </select>
+                      onChange={(val) => setFormData(prev => ({ ...prev, cancellationPolicy: val }))}
+                      options={CANCELLATION_OPTIONS}
+                      align="right"
+                      buttonClassName="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-2 px-3 rounded-xl text-xs font-bold"
+                    />
                   </div>
                 </div>
 

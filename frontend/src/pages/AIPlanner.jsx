@@ -17,6 +17,26 @@ import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
 import rivoPlanner from "../assets/images/rivo_planner.png";
 import rivoSupport from "../assets/images/rivo_support.png";
+import CustomDropdown from "../components/CustomDropdown";
+
+const GUEST_OPTIONS = [
+  { value: 1, label: "1 Adult (Solo)" },
+  { value: 2, label: "2 Adults (Couples)" },
+  { value: 4, label: "4 Adults (Family)" }
+];
+
+const DURATION_OPTIONS = [
+  { value: 1, label: "1 Night (Weekend)" },
+  { value: 2, label: "2 Nights" },
+  { value: 3, label: "3 Nights" },
+  { value: 5, label: "5 Nights" }
+];
+
+const TRANSPORT_OPTIONS = [
+  { value: "flight", label: "✈️ Flight Route" },
+  { value: "train", label: "🚂 Train Express" },
+  { value: "selfDrive", label: "🚗 Road Trip (Self Drive)" }
+];
 
 // Region and metadata configurations for parsing
 const REGION_METADATA = {
@@ -1112,15 +1132,13 @@ export default function AIPlanner() {
 
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-bold text-text-gray uppercase">Guests Count</label>
-              <select
+              <CustomDropdown
                 value={preferences.travellers}
-                onChange={(e) => handleFormChange("travellers", Number(e.target.value))}
-                className="w-full border border-border-color rounded-lg p-2 text-[10.5px] font-semibold bg-bg-white text-text-dark outline-none"
-              >
-                <option value="1">1 Adult (Solo)</option>
-                <option value="2">2 Adults (Couples)</option>
-                <option value="4">4 Adults (Family)</option>
-              </select>
+                onChange={(val) => handleFormChange("travellers", Number(val))}
+                options={GUEST_OPTIONS}
+                className="w-full"
+                buttonClassName="w-full border border-border-color rounded-lg p-2 text-[10.5px] font-semibold bg-bg-white text-text-dark"
+              />
             </div>
 
             <div className="flex flex-col gap-1">
@@ -1135,29 +1153,25 @@ export default function AIPlanner() {
 
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-bold text-text-gray uppercase">Trip Duration</label>
-              <select
+              <CustomDropdown
                 value={preferences.nights}
-                onChange={(e) => handleFormChange("nights", Number(e.target.value))}
-                className="w-full border border-border-color rounded-lg p-2 text-[10.5px] font-semibold bg-bg-white text-text-dark outline-none"
-              >
-                <option value="1">1 Night (Weekend)</option>
-                <option value="2">2 Nights</option>
-                <option value="3">3 Nights</option>
-                <option value="5">5 Nights</option>
-              </select>
+                onChange={(val) => handleFormChange("nights", Number(val))}
+                options={DURATION_OPTIONS}
+                className="w-full"
+                buttonClassName="w-full border border-border-color rounded-lg p-2 text-[10.5px] font-semibold bg-bg-white text-text-dark"
+              />
             </div>
 
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-bold text-text-gray uppercase">Preferred Transport</label>
-              <select
+              <CustomDropdown
                 value={preferences.transport}
-                onChange={(e) => handleFormChange("transport", e.target.value)}
-                className="w-full border border-border-color rounded-lg p-2 text-[10.5px] font-semibold bg-bg-white text-text-dark outline-none"
-              >
-                <option value="flight">✈️ Flight Route</option>
-                <option value="train">🚂 Train Express</option>
-                <option value="selfDrive">🚗 Road Trip (Self Drive)</option>
-              </select>
+                onChange={(val) => handleFormChange("transport", val)}
+                options={TRANSPORT_OPTIONS}
+                direction="up"
+                className="w-full"
+                buttonClassName="w-full border border-border-color rounded-lg p-2 text-[10.5px] font-semibold bg-bg-white text-text-dark"
+              />
             </div>
 
             <button

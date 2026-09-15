@@ -271,6 +271,11 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
                 </Link>
               </li>
               <li>
+                <Link to="/blogs" className={getNavLinkClass(location.pathname.startsWith("/blog"))} style={navLinkStyle}>
+                  {t("blogs") || "Blogs"}
+                </Link>
+              </li>
+              <li>
                 <button className={getNavLinkClass(isHome && activeSection === "reviews")} style={navLinkStyle} onClick={() => scrollToSection("testimonials")}>
                   {t("reviews")}
                 </button>
@@ -420,6 +425,7 @@ function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAu
                 ])
               ]),
               { type: "divider" },
+              { type: "item", icon: <BookOpen size={18} />, label: "Travel Blogs", path: "/blogs" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
               { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },
