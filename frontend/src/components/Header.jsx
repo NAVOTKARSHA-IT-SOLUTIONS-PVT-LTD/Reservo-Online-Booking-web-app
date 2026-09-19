@@ -5,7 +5,7 @@ import {
   Menu, X, Heart, Moon, Sun, Globe, ChevronDown, Check,
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
   LayoutGrid, BookOpen, Bell, Settings, User, LogOut, Sliders, Building2,
-  Search, MapPin, Calendar, Users, Minus, Plus
+  Search, MapPin, Calendar, Users, Star
 } from "lucide-react";
 import logoImage from "../assets/images/logo.png";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,7 +14,7 @@ import { hostService } from "../services/host.service";
 import { useToast } from "../context/ToastContext";
 import CustomCalendar from "./CustomCalendar";
 
-function Header({ isDark, onToggleTheme, wishlist = [] }) {
+function Header({ isDark, onToggleTheme, wishlist = [], isAuthenticated, setIsAuthenticated }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -50,17 +50,34 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarActiveField, setCalendarActiveField] = useState("checkIn");
+
+  const formatHeaderDate = (dateStr) => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    const date = new Date(y, m, d);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
 
   const handleExecuteSearch = (queryStr) => {
+    if (!queryStr || !queryStr.trim()) {
+      toast("Please enter a destination to search for stays.", "error");
+      return;
+    }
     setShowSearchModal(false);
     setShowCalendar(false);
     const queryParams = new URLSearchParams();
-    if (queryStr) queryParams.set("destination", queryStr);
+    queryParams.set("destination", queryStr.trim());
     if (checkInDate) queryParams.set("checkIn", checkInDate);
     if (checkOutDate) queryParams.set("checkOut", checkOutDate);
     navigate(`/search?${queryParams.toString()}`, {
       state: {
-        location: queryStr,
+        location: queryStr.trim(),
+        destination: queryStr.trim(),
         checkIn: checkInDate,
         checkOut: checkOutDate
       }
@@ -231,6 +248,10 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
             <img 
               src={logoImage} 
               alt="Reservo Logo" 
+              width="40"
+              height="40"
+              fetchPriority="high"
+              decoding="async"
               className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
             />
             <span className={`text-[22px] font-extrabold tracking-[0.5px] font-serif leading-none transition-colors duration-[400ms] ${brandTextColor}`}>
@@ -267,9 +288,14 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                 </Link>
               </li>
               <li>
-                <button className={getNavLinkClass(isHome && activeSection === "reviews")} style={navLinkStyle} onClick={() => scrollToSection("testimonials")}>
-                  {t("reviews")}
-                </button>
+                <Link to="/blogs" className={getNavLinkClass(location.pathname.startsWith("/blog"))} style={navLinkStyle}>
+                  {t("blogs") || "Blogs"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/reviews" className={getNavLinkClass(location.pathname === "/reviews")} style={navLinkStyle}>
+                  {t("reviews") || "Reviews"}
+                </Link>
               </li>
               <li>
                 <Link to="/contact" className={getNavLinkClass(location.pathname === "/contact")} style={navLinkStyle}>
@@ -398,10 +424,9 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
         </div>
         <ul className="list-none flex flex-col gap-1.5 p-0 m-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
           {(() => {
-            const isLoggedIn = authService.isAuthenticated();
             const user = authService.getCurrentUser();
             return [
-              ...(!isLoggedIn ? [
+              ...(!isAuthenticated ? [
                 { type: "item", icon: <LogIn size={18} />, label: "Login", path: "/login" },
                 { type: "item", icon: <UserPlus size={18} />, label: "Create Account", path: "/register" }
               ] : [
@@ -417,18 +442,20 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                 ])
               ]),
               { type: "divider" },
+              { type: "item", icon: <BookOpen size={18} />, label: "Travel Blogs", path: "/blogs" },
+              { type: "item", icon: <Star size={18} />, label: "Guest Reviews", path: "/reviews" },
               { type: "item", icon: <HelpCircle size={18} />, label: "Help Center", path: "/help" },
               { type: "item", icon: <Phone size={18} />, label: "Contact", path: "/contact" },
               { type: "item", icon: <Shield size={18} />, label: "Privacy Policy", path: "/privacy" },
               { type: "item", icon: <FileText size={18} />, label: "Terms", path: "/terms" },
               { type: "divider" },
-              ...(isLoggedIn ? [
+              ...(isAuthenticated ? [
                 { type: "item", icon: <LayoutGrid size={18} />, label: "Dashboard", path: "/dashboard" },
                 { type: "item", icon: <BookOpen size={18} />, label: "Bookings", path: "/bookings" },
                 { type: "item", icon: <Bell size={18} />, label: "Notifications", path: "/notifications" },
                 { type: "item", icon: <Settings size={18} />, label: "Settings", path: "/settings" },
                 { type: "divider" },
-                { type: "item", icon: <LogOut size={18} />, label: "Logout", action: () => { authService.logout().then(() => { navigate("/"); window.location.reload(); }); } }
+                { type: "item", icon: <LogOut size={18} />, label: "Logout", action: () => { authService.logout().then(() => { setIsAuthenticated(false); navigate("/"); }); } }
               ] : [])
             ];
           })().map((item, idx) => {
@@ -493,15 +520,18 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                     <div className="mt-1">
                       <button
                         type="button"
-                        onClick={() => setShowCalendar(!showCalendar)}
+                        onClick={() => {
+                          if (!showCalendar) setCalendarActiveField("checkIn");
+                          setShowCalendar(!showCalendar);
+                        }}
                         className="text-xs font-semibold text-text-dark hover:text-primary flex items-center gap-1.5 bg-white dark:bg-slate-800 hover:bg-gray-50 border border-border-color px-2.5 py-1 rounded-xl cursor-pointer transition-all shadow-2xs"
                       >
                         <Calendar size={13} className="text-primary" />
                         <span>
                           {checkInDate && checkOutDate 
-                            ? `${checkInDate} → ${checkOutDate}` 
+                            ? `${formatHeaderDate(checkInDate)} → ${formatHeaderDate(checkOutDate)}` 
                             : checkInDate 
-                              ? `${checkInDate} → Select Date` 
+                              ? `${formatHeaderDate(checkInDate)} → Select Date` 
                               : "Select Date → Select Date"}
                         </span>
                         <ChevronDown size={12} className={`transition-transform text-text-gray ${showCalendar ? 'rotate-180' : ''}`} />
@@ -518,6 +548,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                       setSearchText("");
                       setCheckInDate("");
                       setCheckOutDate("");
+                      setCalendarActiveField("checkIn");
                       setShowCalendar(false);
                     } else {
                       setShowSearchModal(false);
@@ -538,29 +569,46 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="bg-white dark:bg-slate-800 border border-border-color rounded-2xl p-4 shadow-xl space-y-3 z-50"
+                    className="bg-white dark:bg-slate-800 border border-border-color rounded-2xl p-3 sm:p-4 shadow-xl space-y-2.5 z-50 max-w-sm mx-auto w-full"
                   >
                     <div className="flex items-center justify-between border-b border-border-color pb-2">
                       <span className="text-xs font-bold text-text-dark flex items-center gap-1.5">
                         <Calendar size={14} className="text-primary" /> Select Stay Dates
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowCalendar(false)}
-                        className="text-xs font-bold text-primary hover:text-primary-dark border-none bg-transparent cursor-pointer"
-                      >
-                        Done ✓
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {(checkInDate || checkOutDate) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCheckInDate("");
+                              setCheckOutDate("");
+                              setCalendarActiveField("checkIn");
+                            }}
+                            className="text-xs font-semibold text-text-gray hover:text-red-500 border-none bg-transparent cursor-pointer transition-colors"
+                          >
+                            Reset
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowCalendar(false)}
+                          className="text-xs font-bold text-primary hover:text-primary-dark border-none bg-transparent cursor-pointer"
+                        >
+                          Done ✓
+                        </button>
+                      </div>
                     </div>
                     <div className="flex justify-center">
                       <CustomCalendar
                         checkInDate={checkInDate}
                         checkOutDate={checkOutDate}
-                        onDateChange={(ci, co) => {
+                        activeField={calendarActiveField}
+                        onActiveFieldChange={setCalendarActiveField}
+                        onDateChange={(ci, co, status) => {
                           setCheckInDate(ci);
                           setCheckOutDate(co);
-                          if (ci && co) {
-                            setTimeout(() => setShowCalendar(false), 300);
+                          if (status === "done" && ci && co) {
+                            setTimeout(() => setShowCalendar(false), 350);
                           }
                         }}
                         isDarkMode={isDark}
@@ -582,7 +630,7 @@ function Header({ isDark, onToggleTheme, wishlist = [] }) {
                       handleExecuteSearch(searchText.trim());
                     }
                   }}
-                  placeholder="Search by destination, resort name, or city..."
+                  placeholder="Enter destination (e.g. Goa, Manali, Udaipur)... *"
                   className="w-full text-sm font-semibold bg-transparent outline-none text-text-dark placeholder:text-text-gray"
                   autoFocus
                 />

@@ -9,16 +9,19 @@ import { useToast } from '../context/ToastContext';
 import { apiClient } from '../services/apiClient';
 import { secureStorage } from '../services/secureStorage';
 import rivoConfirmed from '../assets/images/rivo_confirmed.png';
+import CustomDropdown from './CustomDropdown';
 
-export default function BookingModal({ resort, room, checkInDate: propCheckIn, checkOutDate: propCheckOut, isDarkMode, onClose, onAskRivo }) {
+export default function BookingModal({ resort, room, bookingDates, bookingGuests, checkInDate: propCheckIn, checkOutDate: propCheckOut, isDarkMode, onClose, onAskRivo }) {
   const toast = useToast();
   const navigate = useNavigate();
 
   // Retrieve dates from props or saved search state
   const getModalDates = () => {
     try {
-      if (propCheckIn && propCheckOut) {
-        return { checkIn: propCheckIn, checkOut: propCheckOut };
+      const passedCheckIn = bookingDates?.checkIn || propCheckIn;
+      const passedCheckOut = bookingDates?.checkOut || propCheckOut;
+      if (passedCheckIn && passedCheckOut) {
+        return { checkIn: passedCheckIn, checkOut: passedCheckOut };
       }
       const saved = sessionStorage.getItem("reservo_search_state");
       if (saved) {
@@ -37,6 +40,32 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
   };
 
   const { checkIn: modalCheckIn, checkOut: modalCheckOut } = getModalDates();
+
+  const getModalGuests = () => {
+    try {
+      if (bookingGuests) return bookingGuests;
+      const saved = sessionStorage.getItem("reservo_search_state");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          adults: Math.max(1, Number(parsed.guestCount ?? 2)),
+          children: Math.max(0, Number(parsed.childCount ?? 0)),
+          roomsCount: Math.max(1, Number(parsed.roomCount ?? 1))
+        };
+      }
+    } catch (e) {}
+    return { adults: 2, children: 0, roomsCount: 1 };
+  };
+
+  const modalGuests = getModalGuests();
+  const adultsCount = Math.max(1, Number(modalGuests.adults ?? 2));
+  const childrenCount = Math.max(0, Number(modalGuests.children ?? 0));
+  const roomsCount = Math.max(
+    1,
+    Number(modalGuests.roomsCount ?? 1),
+    Math.ceil(adultsCount / 2),
+    Math.ceil(childrenCount / 2)
+  );
 
   const calculateNights = (startStr, endStr) => {
     try {
@@ -72,7 +101,7 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
   // 1: Guest Info (Booking for self vs other)
   // 2: KYC Identity Verification
   // 3: Coupon & Rewards Point Redemption
-  // 4: Summary & Verified Mock Checkout
+  // 4: Summary & Checkout
   // 5: Booking Confirmation Pass
   const [wizardStep, setWizardStep] = useState(1);
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -141,11 +170,19 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
     }
   }, []);
 
-  // Price calculations
-  const basePrice = room ? room.price : resort.price;
-  const subtotal = basePrice * nights;
-  const taxes = Math.round(subtotal * 0.12);
-  const totalBeforeDiscount = subtotal + taxes;
+  // Pricing is intentionally simple: nightly rate × nights × rooms.
+  // There are no cleaning, luxury, service, or tax charges.
+  const toFiniteNumber = (value, fallback = 0) => {
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0 ? number : fallback;
+  };
+
+  const isWholeVilla = String(resort?.listingMode || "").toUpperCase() === "VILLA";
+  const basePrice = isWholeVilla
+    ? toFiniteNumber(resort?.pricePerNight ?? resort?.price, 0)
+    : toFiniteNumber(room?.pricePerNight ?? room?.price, toFiniteNumber(resort?.pricePerNight ?? resort?.price, 0));
+  const subtotal = basePrice * nights * roomsCount;
+  const totalBeforeDiscount = subtotal;
 
   // Coupon discount calculation
   useEffect(() => {
@@ -153,7 +190,9 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
       if (couponDiscountType === "PERCENTAGE") {
         setCalculatedCouponDiscount(Math.round(totalBeforeDiscount * (couponDiscountVal / 100)));
       } else {
-        setCalculatedCouponDiscount(Math.round(couponDiscountVal));
+        setCalculatedCouponDiscount(
+          Math.min(Math.round(couponDiscountVal), Math.round(totalBeforeDiscount))
+        );
       }
     } else {
       setCalculatedCouponDiscount(0);
@@ -161,16 +200,29 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
   }, [couponApplied, couponDiscountVal, couponDiscountType, totalBeforeDiscount]);
 
   // Points conversion (10 points = 1 INR)
-  const maxRedeemablePoints = Math.min(
-    pointsBalance,
-    Math.round((totalBeforeDiscount - calculatedCouponDiscount) * 0.5 * 10) // Limit to 50% value of remaining total
+  const maxRedeemablePoints = Math.max(
+    0,
+    Math.min(
+      toFiniteNumber(pointsBalance),
+      Math.round(Math.max(0, totalBeforeDiscount - calculatedCouponDiscount) * 0.5 * 10)
+    )
   );
   
-  const pointsDiscountValue = redeemPointsChecked
-    ? Math.round(pointsToRedeem / 10)
+  const requestedPointsDiscount = redeemPointsChecked
+    ? Math.max(0, Math.round(toFiniteNumber(pointsToRedeem) / 10))
     : 0;
-
-  const grandTotal = Math.max(0, totalBeforeDiscount - calculatedCouponDiscount - pointsDiscountValue);
+  const maxPointsDiscount = Math.max(
+    0,
+    Math.min(
+      requestedPointsDiscount,
+      Math.floor(Math.max(0, totalBeforeDiscount - calculatedCouponDiscount) * 0.5)
+    )
+  );
+  const pointsDiscountValue = maxPointsDiscount;
+  const grandTotal = Math.max(
+    0,
+    totalBeforeDiscount - calculatedCouponDiscount - pointsDiscountValue
+  );
 
   const handleNextStep = () => {
     if (wizardStep === 1) {
@@ -259,25 +311,45 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
 
   // Checkout call
   const handleCheckout = async () => {
+    if (Math.round(grandTotal * 100) !== 0) {
+      toast("Payment module not implemented yet. Your booking was not created.", "error");
+      return;
+    }
+
     setSubmitting(true);
     try {
+      // Re-check availability at the last step as a race-condition safeguard.
+      // The primary availability check already happens when the user clicks
+      // "Check Availability".
+      await bookingService.checkAvailability(
+        resort.id,
+        { checkIn: modalCheckIn, checkOut: modalCheckOut },
+        { adults: adultsCount, children: childrenCount, roomsCount, roomType: room?.roomType || room?.type || "", roomCapacity: Number(room?.capacity || 4), wholeVilla: String(resort?.listingMode || "").toUpperCase() === "VILLA" }
+      );
+
       const bookingDetails = {
         resortId: resort.id,
-        roomId: room ? room.id : (resort.roomTypes && resort.roomTypes[0] ? resort.roomTypes[0].id : null),
+        roomId: room?.id || null,
         checkin: modalCheckIn,
         checkout: modalCheckOut,
-        total: totalBeforeDiscount,
+        total: grandTotal,
+        adults: adultsCount,
+        children: childrenCount,
+        roomsCount,
+        roomType: room?.roomType || room?.type || "",
+        roomCapacity: Number(room?.capacity || 4),
         couponCode: couponApplied ? couponCode.trim().toUpperCase() : undefined,
-        pointsToRedeem: redeemPointsChecked ? pointsToRedeem : undefined,
+        discountAmount: calculatedCouponDiscount,
+        pointsToRedeem: redeemPointsChecked ? pointsToRedeem : 0,
+        pointsValue: pointsDiscountValue,
         guestName: isBookingForSelf ? undefined : guestName,
         guestPhone: isBookingForSelf ? undefined : guestPhone
       };
 
       const result = await bookingService.createCheckoutSession(bookingDetails);
-      // Since Stripe key is placeholder, result returns mock checkout success redirect URL
       const url = new URL(result);
       const bCode = url.searchParams.get("bookingCode") || `RES-${Math.floor(100000 + Math.random() * 900000)}`;
-      
+
       setConfirmedBookingCode(bCode);
       setIsConfirmed(true);
       setWizardStep(5);
@@ -456,17 +528,21 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
                   <div className="grid grid-cols-2 gap-3 items-center">
                     <div>
                       <label className="block text-[10px] font-bold text-stone-400 mb-1.5 uppercase tracking-wide">Document Type</label>
-                      <select
+                      <CustomDropdown
                         value={kycDocType}
-                        onChange={(e) => setKycDocType(e.target.value)}
-                        className={`w-full p-2.5 text-xs rounded-xl border bg-transparent font-bold outline-none ${
-                          isDarkMode ? 'border-[#334155] focus:border-[#2563EB] bg-[#1E293B]' : 'border-[#E2E8F0] focus:border-[#2563EB]'
-                        }`}
-                      >
-                        <option value="Aadhaar">Aadhaar Card</option>
-                        <option value="Passport">Passport</option>
-                        <option value="PAN">PAN Card</option>
-                      </select>
+                        onChange={setKycDocType}
+                        options={[
+                          { value: "Aadhaar", label: "Aadhaar Card" },
+                          { value: "Passport", label: "Passport" },
+                          { value: "PAN", label: "PAN Card" },
+                        ]}
+                        buttonClassName={
+                          isDarkMode
+                            ? "!border-[#334155] !bg-[#1E293B] !text-white !p-2.5"
+                            : "!border-[#E2E8F0] !bg-bg-white !text-text-dark !p-2.5"
+                        }
+                        menuClassName={isDarkMode ? "!bg-[#1E293B] !border-[#334155] !text-white" : ""}
+                      />
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-stone-400 mb-1.5 uppercase tracking-wide">Upload ID Copy</label>
@@ -613,18 +689,14 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
             <div className="space-y-5 animate-fade-in">
               <div className="border-b pb-3 border-slate-200 dark:border-slate-700">
                 <h4 className="text-sm font-extrabold text-[#2563EB] flex items-center gap-1.5"><BadgePercent size={16} /> Checkout Pricing Summary</h4>
-                <p className="text-[11px] text-stone-400 mt-1">Review the final charges and complete your mock payment</p>
+                <p className="text-[11px] text-stone-400 mt-1">Review the final charges and complete your reservation</p>
               </div>
 
               {/* Itemized pricing breakdown */}
               <div className={`p-4 rounded-2xl border space-y-3 text-xs ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
                 <div className="flex justify-between">
-                  <span className="text-stone-400">Stay Duration ({nights} night{nights !== 1 ? "s" : ""}):</span>
+                  <span className="text-stone-400">Stay ({nights} night{nights !== 1 ? "s" : ""} × {roomsCount} room{roomsCount !== 1 ? "s" : ""}):</span>
                   <span className="font-bold">{currencySymbol}{(Math.round(subtotal * exchangeRate)).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-400">Resort Taxes (12%):</span>
-                  <span className="font-bold">{currencySymbol}{(Math.round(taxes * exchangeRate)).toLocaleString()}</span>
                 </div>
 
                 {couponApplied && (
@@ -647,13 +719,13 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
                 </div>
               </div>
 
-              {/* Secure Payment details note */}
+              {/* Payment module status note */}
               <div className={`p-4 rounded-xl border flex items-start gap-3 ${isDarkMode ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-100/50 border-slate-200'}`}>
                 <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <h6 className="text-[11.5px] font-bold">Reservo Verified Mock Payment</h6>
+                  <h6 className="text-[11.5px] font-bold">Payment Module</h6>
                   <p className="text-[10.5px] text-stone-400 leading-relaxed">
-                    This reservation uses the secure development sandboxed dummy checkout flow. No real credit cards or Stripe charges will be processed. Clicking checkout completes the booking mock process automatically.
+                    Reservations with a ₹0 final total can be confirmed immediately. For any amount above ₹0, the payment module is not implemented yet and the reservation will not be created.
                   </p>
                 </div>
               </div>
@@ -707,7 +779,7 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
                   </div>
                   <div>
                     <span className="text-slate-400 text-[10px] uppercase block">ROOM SELECTION</span>
-                    <span className="font-bold">{room ? room.title : "Luxury Suite"}</span>
+                    <span className="font-bold">{roomsCount} Room{roomsCount !== 1 ? "s" : ""}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 text-[10px] uppercase block">LOYALTY POINTS</span>
@@ -738,7 +810,7 @@ export default function BookingModal({ resort, room, checkInDate: propCheckIn, c
                 disabled={submitting}
                 className="py-3 px-6 bg-[#22C55E] hover:bg-[#15803D] disabled:bg-stone-400 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg border-none transition cursor-pointer flex items-center justify-center gap-1.5"
               >
-                {submitting ? "Processing Mock Payment..." : "Complete Reservation"}
+                {submitting ? "Processing..." : "Complete Reservation"}
               </button>
             ) : (
               <button

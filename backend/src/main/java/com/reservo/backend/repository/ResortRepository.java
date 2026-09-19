@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.stereotype.Repository;
@@ -24,6 +25,13 @@ public class ResortRepository {
     private static final String COLLECTION = "resorts";
 
     private final Firestore firestore;
+
+    // Public resort lists are requested by several frontend components at once.
+    // Cache the approved list briefly so one page load does not issue the same
+    // Firestore query repeatedly. Writes invalidate the cache immediately.
+    private volatile List<Resort> approvedCache;
+    private volatile long approvedCacheAt;
+    private static final long APPROVED_CACHE_TTL_MS = TimeUnit.SECONDS.toMillis(30);
 
     public ResortRepository(Firestore firestore) {
         this.firestore = firestore;
@@ -55,6 +63,7 @@ public class ResortRepository {
                     .set(resort)
                     .get();
 
+            invalidateApprovedCache();
             return resort;
 
         } catch (InterruptedException e) {
@@ -120,6 +129,43 @@ public class ResortRepository {
 
     public List<Resort> findByStatus(Resort.ResortStatus status) {
 
+        if (status == Resort.ResortStatus.APPROVED) {
+            long now = System.currentTimeMillis();
+            List<Resort> cached = approvedCache;
+            if (cached != null && (now - approvedCacheAt) < APPROVED_CACHE_TTL_MS) {
+                return new ArrayList<>(cached);
+            }
+
+            synchronized (this) {
+                now = System.currentTimeMillis();
+                cached = approvedCache;
+                if (cached != null && (now - approvedCacheAt) < APPROVED_CACHE_TTL_MS) {
+                    return new ArrayList<>(cached);
+                }
+
+                try {
+                    List<QueryDocumentSnapshot> documents = firestore
+                            .collection(COLLECTION)
+                            .whereEqualTo("status", status.name())
+                            .get()
+                            .get()
+                            .getDocuments();
+
+                    List<Resort> resorts = convertDocuments(documents);
+                    approvedCache = List.copyOf(resorts);
+                    approvedCacheAt = System.currentTimeMillis();
+                    return new ArrayList<>(resorts);
+
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(
+                            "Interrupted while finding resorts by status", e);
+                } catch (ExecutionException e) {
+                    throw new RuntimeException("Failed to find resorts by status", e);
+                }
+            }
+        }
+
         try {
             List<QueryDocumentSnapshot> documents = firestore
                     .collection(COLLECTION)
@@ -139,19 +185,47 @@ public class ResortRepository {
         }
     }
 
+    private void invalidateApprovedCache() {
+        approvedCache = null;
+        approvedCacheAt = 0L;
+    }
+
     // =========================================================
     // FIND BY OWNER
     // =========================================================
 
     public List<Resort> findByOwnerId(String ownerId) {
 
-        // Do not query Firestore directly by ownerId here because the
-        // existing database may contain ownerId as either String or Number.
-        // Read the documents and normalize the value during conversion.
-        return findAll().stream()
-                .filter(resort -> ownerId != null
-                        && ownerId.equals(resort.getOwnerId()))
-                .toList();
+        if (ownerId == null || ownerId.isBlank()) {
+            return List.of();
+        }
+
+        try {
+            List<QueryDocumentSnapshot> documents = firestore
+                    .collection(COLLECTION)
+                    .whereEqualTo("ownerId", ownerId)
+                    .get()
+                    .get()
+                    .getDocuments();
+
+            List<Resort> result = convertDocuments(documents);
+
+            // Legacy records may contain a numeric ownerId. Only perform the
+            // expensive fallback scan when the indexed/string query found nothing.
+            if (!result.isEmpty()) {
+                return result;
+            }
+
+            return findAll().stream()
+                    .filter(resort -> ownerId.equals(resort.getOwnerId()))
+                    .toList();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while finding resorts by owner", e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Failed to find resorts by owner", e);
+        }
     }
 
     // =========================================================
@@ -160,7 +234,7 @@ public class ResortRepository {
 
     public List<Resort> search(String search) {
 
-        List<Resort> resorts = findAll();
+        List<Resort> resorts = findByStatus(Resort.ResortStatus.APPROVED);
 
         if (search == null || search.isBlank()) {
             return resorts;
@@ -187,7 +261,7 @@ public class ResortRepository {
 
     public List<Resort> findByLocationContainingIgnoreCase(String location) {
 
-        List<Resort> resorts = findAll();
+        List<Resort> resorts = findByStatus(Resort.ResortStatus.APPROVED);
 
         if (location == null || location.isBlank()) {
             return resorts;
@@ -210,7 +284,7 @@ public class ResortRepository {
             String location
     ) {
 
-        List<Resort> resorts = findAll();
+        List<Resort> resorts = findByStatus(Resort.ResortStatus.APPROVED);
 
         String nameValue = name == null ? "" : name.trim().toLowerCase();
         String locationValue = location == null ? "" : location.trim().toLowerCase();
@@ -306,6 +380,7 @@ public class ResortRepository {
         resort.setBedrooms(asInteger(document.get("bedrooms")));
         resort.setBeds(asInteger(document.get("beds")));
         resort.setBathrooms(asInteger(document.get("bathrooms")));
+        resort.setListingMode(asString(document.get("listingMode")));
 
         resort.setPricePerNight(asBigDecimal(document.get("pricePerNight")));
 

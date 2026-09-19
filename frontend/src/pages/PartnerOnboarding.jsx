@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import { apiClient } from "../services/apiClient";
+import SimpleMapEmbed from "../components/SimpleMapEmbed";
 
 export default function PartnerOnboarding() {
   const navigate = useNavigate();
@@ -80,9 +81,6 @@ export default function PartnerOnboarding() {
     tourUrl: ""
   });
 
-  // Steps 3 maps coordinates picker simulation state
-  const [pinPlaced, setPinPlaced] = useState(false);
-
   const propertyTypes = [
     { id: "resort", label: "Resort" },
     { id: "hotel", label: "Hotel" },
@@ -127,24 +125,6 @@ export default function PartnerOnboarding() {
     setStep(prev => prev - 1);
   };
 
-  // Maps click coordinates simulator
-  const handleMapClick = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Convert click position to realistic India latitudes/longitudes
-    const lat = (28.6139 - (y / rect.height) * 20).toFixed(4);
-    const lon = (77.2090 + (x / rect.width) * 15).toFixed(4);
-
-    setFormData({
-      ...formData,
-      latitude: lat,
-      longitude: lon
-    });
-    setPinPlaced(true);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -165,6 +145,13 @@ export default function PartnerOnboarding() {
       const result = await apiClient.post("/api/v1/resorts", {
         name: formData.name,
         location: `${formData.city}, ${formData.state}, ${formData.country}`,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        pinCode: formData.pinCode,
+        latitude: parseFloat(formData.latitude),
+        longitude: parseFloat(formData.longitude),
         description: `Welcome to ${formData.name}. Managed by ${formData.businessName}. Experience premium comfort in our luxury ${formData.category} rooms.`,
         imageUrl: finalImageUrl,
         pricePerNight: parseFloat(formData.pricePerNight),
@@ -458,37 +445,48 @@ export default function PartnerOnboarding() {
                       />
                     </div>
 
-                    {/* Google Maps Drag & Drop Simulation */}
+                    {/* Google Maps Embed */}
                     <div className="space-y-1">
                       <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase flex justify-between">
-                        <span>Google Maps Location Pin *</span>
-                        {pinPlaced ? (
-                          <span className="text-emerald-500 font-extrabold">📍 Location Pin Placed</span>
-                        ) : (
-                          <span className="text-primary animate-pulse">Click on map grid to place pin</span>
-                        )}
+                        <span>Location on Map *</span>
+                        <span className="text-emerald-500 font-extrabold">📍 Google Maps</span>
                       </label>
-                      <div 
-                        onClick={handleMapClick}
-                        className="h-28 w-full bg-[#cbd5e1] dark:bg-slate-700 rounded-xl relative overflow-hidden cursor-crosshair border border-[var(--color-border-color)] flex items-center justify-center"
-                      >
-                        {/* Map Grid Pattern Grid */}
-                        <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:14px_14px]" />
-                        
-                        {pinPlaced ? (
-                          <div className="absolute p-2 bg-primary text-white rounded-full flex items-center justify-center shadow-lg border border-white animate-bounce pointer-events-none" style={{ left: '45%', top: '35%' }}>
-                            <MapPin className="w-4 h-4" />
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold pointer-events-none z-10">
-                            <Map className="w-4 h-4" /> Select Location Coordinates
-                          </div>
-                        )}
+                      <SimpleMapEmbed
+                        latitude={parseFloat(formData.latitude) || 15.2993}
+                        longitude={parseFloat(formData.longitude) || 74.1240}
+                        zoom={15}
+                        isDarkMode={false}
+                        height="280px"
+                        mode="view"
+                      />
+                      <div className="grid grid-cols-2 gap-4 mt-2">
+                        <div className="space-y-1">
+                          <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Latitude</label>
+                          <input
+                            type="text"
+                            value={formData.latitude}
+                            onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                            placeholder="15.2993"
+                            className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Longitude</label>
+                          <input
+                            type="text"
+                            value={formData.longitude}
+                            onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                            placeholder="74.1240"
+                            className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
+                          />
+                        </div>
                       </div>
-                      <div className="flex gap-4 text-[9px] text-[var(--color-text-gray)] font-semibold">
-                        <span>Lat: <strong>{formData.latitude}° N</strong></span>
-                        <span>Lon: <strong>{formData.longitude}° E</strong></span>
-                      </div>
+                      <p className="text-[8px] text-gray-500 mt-1">
+                        * Enter coordinates manually or use Google Maps to find your location.
+                      </p>
+                      <p className="text-[9px] text-[var(--color-text-gray)]">
+                        Coordinates are automatically filled when you select an address using the autocomplete above
+                      </p>
                     </div>
                   </div>
                 )}

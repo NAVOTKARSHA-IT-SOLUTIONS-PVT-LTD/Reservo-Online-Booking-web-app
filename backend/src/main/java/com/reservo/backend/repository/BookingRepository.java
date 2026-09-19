@@ -11,6 +11,10 @@ import org.springframework.stereotype.Repository;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.Query;
+import com.google.cloud.firestore.QuerySnapshot;
+import com.google.cloud.firestore.Transaction;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.reservo.backend.entity.Booking;
 
@@ -23,6 +27,222 @@ public class BookingRepository {
 
     public BookingRepository(Firestore firestore) {
         this.firestore = firestore;
+    }
+
+    /**
+     * Atomically creates a booking only when the selected room has no
+     * overlapping active booking and none of the requested nights has a
+     * host-level availability block.
+     *
+     * The deterministic room/night lock documents are the concurrency guard:
+     * two simultaneous checkout requests for the same room/night cannot both
+     * create the lock, even if both requests initially observe no booking.
+     */
+    public Booking createIfAvailable(Booking booking) {
+        return createIfAvailable(booking,
+                booking.getAssignedRoomIds() != null && !booking.getAssignedRoomIds().isEmpty()
+                        ? booking.getAssignedRoomIds()
+                        : java.util.List.of(booking.getRoomId()));
+    }
+
+    /**
+     * Atomically assigns the requested number of rooms from the supplied
+     * candidate rooms. A room is available only when it has no overlapping
+     * active booking, no booking lock for any requested night, and the
+     * property is not blocked for any requested night.
+     */
+    public Booking createIfAvailable(Booking booking, List<String> candidateRoomIds) {
+        if (booking.getId() == null || booking.getId().isBlank()) {
+            booking.setId(firestore.collection(COLLECTION).document().getId());
+        }
+
+        final int requestedRooms = Math.max(1,
+                booking.getRoomsCount() == null ? 1 : booking.getRoomsCount());
+
+        try {
+            return firestore.runTransaction(transaction -> {
+                QuerySnapshot snapshot = transaction.get(
+                        firestore.collection(COLLECTION)
+                                .whereEqualTo("resortId", String.valueOf(booking.getResortId()))
+                ).get();
+
+                List<Booking> overlappingBookings = new ArrayList<>();
+                for (DocumentSnapshot document : snapshot.getDocuments()) {
+                    Booking existing = fromDocument(document);
+                    if (existing == null
+                            || existing.getCheckInDate() == null
+                            || existing.getCheckOutDate() == null
+                            || existing.getStatus() == Booking.BookingStatus.CANCELLED) {
+                        continue;
+                    }
+                    boolean overlaps = existing.getCheckInDate().isBefore(booking.getCheckOutDate())
+                            && existing.getCheckOutDate().isAfter(booking.getCheckInDate());
+                    if (overlaps) {
+                        overlappingBookings.add(existing);
+                    }
+                }
+
+                // A host block makes the whole property unavailable for the
+                // affected night(s).
+                for (LocalDate date = booking.getCheckInDate();
+                     date.isBefore(booking.getCheckOutDate());
+                     date = date.plusDays(1)) {
+                    String blockId = String.valueOf(booking.getResortId()) + "_" + date;
+                    DocumentSnapshot block = transaction.get(
+                            firestore.collection("availability_blocks").document(blockId)
+                    ).get();
+                    if (block.exists()) {
+                        throw new IllegalStateException(
+                                "This property is not available for " + date + ". Please choose different dates.");
+                    }
+                }
+
+                List<String> candidates = candidateRoomIds == null
+                        ? new ArrayList<>()
+                        : candidateRoomIds.stream()
+                            .filter(java.util.Objects::nonNull)
+                            .map(String::valueOf)
+                            .filter(id -> !id.isBlank())
+                            .distinct()
+                            .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+
+                if (candidates.isEmpty()) {
+                    throw new IllegalStateException("No rooms are configured for this property.");
+                }
+
+                List<String> selectedRooms = new ArrayList<>();
+
+                for (String roomId : candidates) {
+                    boolean overlapsExistingRoom = overlappingBookings.stream().anyMatch(existing -> {
+                        if (existing.getAssignedRoomIds() != null && !existing.getAssignedRoomIds().isEmpty()) {
+                            return existing.getAssignedRoomIds().contains(roomId);
+                        }
+                        return roomId.equals(existing.getRoomId());
+                    });
+                    if (overlapsExistingRoom) continue;
+
+                    boolean locked = false;
+                    for (LocalDate date = booking.getCheckInDate();
+                         date.isBefore(booking.getCheckOutDate());
+                         date = date.plusDays(1)) {
+                        DocumentSnapshot roomBlock = transaction.get(
+                                firestore.collection("room_availability_blocks")
+                                        .document(roomId + "_" + date)).get();
+                        if (roomBlock.exists()) {
+                            locked = true;
+                            break;
+                        }
+                        String lockId = roomId + "_" + date;
+                        DocumentSnapshot lock = transaction.get(
+                                firestore.collection("booking_locks").document(lockId)
+                        ).get();
+                        if (lock.exists()) {
+                            locked = true;
+                            break;
+                        }
+                    }
+
+                    if (!locked) {
+                        selectedRooms.add(roomId);
+                        if (selectedRooms.size() == requestedRooms) break;
+                    }
+                }
+
+                if (selectedRooms.size() < requestedRooms) {
+                    throw new IllegalStateException(
+                            requestedRooms == 1
+                                    ? "The selected room is no longer available for these dates. Please choose different dates."
+                                    : "Only " + selectedRooms.size() + " room(s) are available for the selected dates. Please reduce the number of rooms or choose different dates."
+                    );
+                }
+
+                booking.setAssignedRoomIds(new ArrayList<>(selectedRooms));
+                booking.setRoomId(selectedRooms.get(0));
+
+                transaction.create(
+                        firestore.collection(COLLECTION).document(booking.getId()),
+                        toFirestoreMap(booking)
+                );
+
+                for (String roomId : selectedRooms) {
+                    for (LocalDate date = booking.getCheckInDate();
+                         date.isBefore(booking.getCheckOutDate());
+                         date = date.plusDays(1)) {
+                        String lockId = roomId + "_" + date;
+                        DocumentReference lockRef =
+                                firestore.collection("booking_locks").document(lockId);
+                        transaction.create(lockRef, java.util.Map.of(
+                                "bookingId", booking.getId(),
+                                "bookingCode", booking.getBookingCode(),
+                                "roomId", roomId,
+                                "resortId", booking.getResortId(),
+                                "date", date.toString()
+                        ));
+                    }
+                }
+
+                return booking;
+            }).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while checking booking availability", e);
+        } catch (java.util.concurrent.ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IllegalStateException) {
+                throw (IllegalStateException) cause;
+            }
+            throw new RuntimeException(
+                    "Could not create booking because the selected rooms/dates are no longer available.",
+                    cause != null ? cause : e
+            );
+        }
+    }
+
+    /**
+     * Removes the deterministic room/night locks for a cancelled booking.
+     */
+    public void releaseBookingLocks(Booking booking) {
+        if (booking == null
+                || booking.getCheckInDate() == null
+                || booking.getCheckOutDate() == null) {
+            return;
+        }
+
+        List<String> roomIds = booking.getAssignedRoomIds() != null
+                ? new ArrayList<>(booking.getAssignedRoomIds())
+                : new ArrayList<>();
+        if (roomIds.isEmpty() && booking.getRoomId() != null) {
+            roomIds.add(booking.getRoomId());
+        }
+        if (roomIds.isEmpty()) return;
+
+        try {
+            firestore.runTransaction(transaction -> {
+                for (String roomId : roomIds) {
+                    for (LocalDate date = booking.getCheckInDate();
+                         date.isBefore(booking.getCheckOutDate());
+                         date = date.plusDays(1)) {
+                        String lockId = String.valueOf(roomId) + "_" + date;
+                        DocumentReference lockRef =
+                                firestore.collection("booking_locks").document(lockId);
+                        DocumentSnapshot lock = transaction.get(lockRef).get();
+                        if (lock.exists()) {
+                            Object lockBookingId = lock.get("bookingId");
+                            if (lockBookingId == null
+                                    || String.valueOf(lockBookingId).equals(booking.getId())) {
+                                transaction.delete(lockRef);
+                            }
+                        }
+                    }
+                }
+                return null;
+            }).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while releasing booking availability", e);
+        } catch (java.util.concurrent.ExecutionException e) {
+            throw new RuntimeException("Failed to release booking availability", e);
+        }
     }
 
     // =========================================================
@@ -464,6 +684,8 @@ public class BookingRepository {
         data.put("userId", booking.getUserId());
         data.put("resortId", booking.getResortId());
         data.put("roomId", booking.getRoomId());
+        data.put("assignedRoomIds", booking.getAssignedRoomIds() != null
+                ? booking.getAssignedRoomIds() : java.util.List.of(booking.getRoomId()));
         data.put("checkInDate", booking.getCheckInDate() != null ? booking.getCheckInDate().toString() : null);
         data.put("checkOutDate", booking.getCheckOutDate() != null ? booking.getCheckOutDate().toString() : null);
         data.put("guestsCount", booking.getGuestsCount());
@@ -501,6 +723,15 @@ public class BookingRepository {
         booking.setUserId(asString(d.get("userId")));
         booking.setResortId(asString(d.get("resortId")));
         booking.setRoomId(asString(d.get("roomId")));
+        Object assigned = d.get("assignedRoomIds");
+        if (assigned instanceof java.util.List<?> list) {
+            booking.setAssignedRoomIds(list.stream()
+                    .filter(java.util.Objects::nonNull)
+                    .map(String::valueOf)
+                    .toList());
+        } else if (booking.getRoomId() != null) {
+            booking.setAssignedRoomIds(new java.util.ArrayList<>(java.util.List.of(booking.getRoomId())));
+        }
         booking.setCheckInDate(asLocalDate(d.get("checkInDate")));
         booking.setCheckOutDate(asLocalDate(d.get("checkOutDate")));
         booking.setGuestsCount(asInteger(d.get("guestsCount"), 2));

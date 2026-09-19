@@ -1,5 +1,18 @@
 import { apiClient } from "./apiClient";
 
+// Several homepage components request the public resort list independently.
+// Share one in-flight request and cache the result briefly to avoid duplicate
+// Firestore reads during a single page load.
+let approvedResortsCache = null;
+let approvedResortsCacheAt = 0;
+let approvedResortsRequest = null;
+const RESORT_CACHE_TTL_MS = 30_000;
+
+const clearResortCache = () => {
+  approvedResortsCache = null;
+  approvedResortsCacheAt = 0;
+};
+
 
 export const resortService = {
   async updateResort(id, changes) {
@@ -12,6 +25,7 @@ export const resortService = {
       throw new Error(result?.message || "Failed to update property");
     }
 
+    clearResortCache();
     return result.data;
   },
 
@@ -31,25 +45,49 @@ export const resortService = {
   },
 
   async getAllResorts() {
-    const result = await apiClient.get("/api/v1/resorts");
-    if (!result?.success) {
-      throw new Error(result?.message || "Failed to load approved resorts");
+    const now = Date.now();
+
+    if (
+      Array.isArray(approvedResortsCache) &&
+      now - approvedResortsCacheAt < RESORT_CACHE_TTL_MS
+    ) {
+      return approvedResortsCache;
     }
 
-    const items = Array.isArray(result.data) ? result.data : [];
+    if (approvedResortsRequest) {
+      return approvedResortsRequest;
+    }
 
-    // Public listings are database-only.
-    // Ignore malformed legacy records with no property name/location.
-    return items
-      .filter(item =>
-        item &&
-        typeof item.name === "string" &&
-        item.name.trim() !== "" &&
-        typeof item.location === "string" &&
-        item.location.trim() !== "" &&
-        String(item.status || "").toUpperCase() === "APPROVED"
-      )
-      .map(item => this.mapBackendResort(item));
+    approvedResortsRequest = (async () => {
+      const result = await apiClient.get("/api/v1/resorts");
+      if (!result?.success) {
+        throw new Error(result?.message || "Failed to load approved resorts");
+      }
+
+      const items = Array.isArray(result.data) ? result.data : [];
+
+      const mapped = items
+        .filter(item =>
+          item &&
+          typeof item.name === "string" &&
+          item.name.trim() !== "" &&
+          typeof item.location === "string" &&
+          item.location.trim() !== "" &&
+          String(item.status || "").toUpperCase() === "APPROVED"
+        )
+        .map(item => this.mapBackendResort(item));
+
+      approvedResortsCache = mapped;
+      approvedResortsCacheAt = Date.now();
+
+      return mapped;
+    })();
+
+    try {
+      return await approvedResortsRequest;
+    } finally {
+      approvedResortsRequest = null;
+    }
   },
 
   async getSearchResorts() {
@@ -212,6 +250,7 @@ export const resortService = {
       amenities: asList(item.amenities).map(name => ({ name, icon: "Sparkles" })),
       perks: ["Free Cancellation", "Breakfast Included", "Transfer Services"],
       category: category,
+      listingMode: String(item.listingMode || "").toUpperCase() || "ROOMS",
       categoryLabel: this.getCategoryLabel(safeName, safeLocation),
       specs: {
         guests: item.guests ? `${item.guests} Guests` : "2-4 Guests",
@@ -328,6 +367,7 @@ export const resortService = {
   async deleteResort(id) {
     const result = await apiClient.delete(`/api/v1/resorts/${id}`);
     if (result && result.success) {
+      clearResortCache();
       return true;
     }
     throw new Error(result?.message || "Failed to delete resort");
@@ -336,6 +376,7 @@ export const resortService = {
   async createResort(resortData) {
     const result = await apiClient.post("/api/v1/resorts", resortData, { suppressAuthRedirect: true });
     if (result && result.success) {
+      clearResortCache();
       return result.data;
     }
     throw new Error(result?.message || "Failed to submit resort for approval");

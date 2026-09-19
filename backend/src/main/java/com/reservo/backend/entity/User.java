@@ -3,6 +3,7 @@ package com.reservo.backend.entity;
 import com.google.cloud.firestore.annotation.Exclude;
 
 import java.time.Instant;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,20 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(exclude = {"passwordHash"})
 public class User {
+
+    // Nested class for provider information
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ProviderInfo {
+        private String providerId;
+        private String uid;
+        private String displayName;
+        private String email;
+        private String photoURL;
+        private String phoneNumber;
+    }
 
     // =========================================================
     // IDENTITY
@@ -69,6 +84,9 @@ public class User {
     private String loginProvider = "LOCAL";
 
     private String providerUserId;
+
+    // Store multiple linked providers (Firebase providerData)
+    private List<ProviderInfo> providerData;
 
     @Builder.Default
     private boolean emailVerified = false;

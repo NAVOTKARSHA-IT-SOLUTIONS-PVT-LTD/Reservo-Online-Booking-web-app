@@ -48,6 +48,7 @@ public class Room {
     public enum RoomStatus {
         AVAILABLE,
         BOOKED,
+        BLOCKED,
         MAINTENANCE,
         INACTIVE
     }

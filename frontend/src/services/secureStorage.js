@@ -10,10 +10,9 @@ const getFingerprintKey = () => {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
     return "reservo-fallback-salt";
   }
+  // Remove screen dimensions from fingerprint to prevent decryption failure on resize
   const parts = [
     navigator.userAgent || "ua",
-    (window.screen ? window.screen.width : 0) + "",
-    (window.screen ? window.screen.height : 0) + "",
     "reservo-salt-2026"
   ];
   return parts.join("|");

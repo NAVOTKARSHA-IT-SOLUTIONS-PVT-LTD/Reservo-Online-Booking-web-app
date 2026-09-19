@@ -11,6 +11,13 @@ import { authService } from "../services/auth.service";
 import { ProfileSkeleton } from "../components/Skeleton";
 import ErrorScreen from "../components/ErrorScreen";
 import rivoSupport from "../assets/images/rivo_support.png";
+import CustomDropdown from "../components/CustomDropdown";
+
+const LANGUAGE_OPTIONS = [
+  { value: "en_inr", label: "English (INR)" },
+  { value: "en_usd", label: "English (USD)" },
+  { value: "hi_inr", label: "हिन्दी (INR)" }
+];
 
 // Define schema for personal details validation
 const profileSchema = z.object({
@@ -35,6 +42,7 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeSection, setActiveSection] = useState("details");
+  const [selectedLanguage, setSelectedLanguage] = useState("en_inr");
 
   // React Hook Form setup
   const {
@@ -315,11 +323,13 @@ function Profile() {
                     <label htmlFor="languageSelect" className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1">
                       <Globe size={12} /> Language / Currency
                     </label>
-                    <select id="languageSelect" defaultValue="en_inr" className="p-3 px-4 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm outline-none transition-all duration-300 focus:border-gold focus:shadow-[0_0_0_2px_rgba(194,168,120,0.1)]">
-                      <option value="en_inr">English (INR)</option>
-                      <option value="en_usd">English (USD)</option>
-                      <option value="hi_inr">हिन्दी (INR)</option>
-                    </select>
+                    <CustomDropdown
+                      value={selectedLanguage}
+                      onChange={setSelectedLanguage}
+                      options={LANGUAGE_OPTIONS}
+                      className="w-full"
+                      buttonClassName="p-3 px-4 rounded-lg border border-border-color bg-bg-light text-text-dark text-sm font-medium"
+                    />
                   </div>
                 </div>
 

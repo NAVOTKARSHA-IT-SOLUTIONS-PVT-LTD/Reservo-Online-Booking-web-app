@@ -31,7 +31,8 @@ public class ReviewController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Double rating = Double.valueOf(body.get("rating").toString());
         String comment = (String) body.get("comment");
-        Review created = reviewService.createReview(auth.getName(), resortId, rating, comment);
+        String bookingId = body.get("bookingId") != null ? body.get("bookingId").toString() : null;
+        Review created = reviewService.createReview(auth.getName(), resortId, bookingId, rating, comment);
         return ResponseEntity.ok(ApiResponse.success(created, "Review posted successfully"));
     }
 }

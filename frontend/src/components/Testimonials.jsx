@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Quote, Star, ChevronLeft, ChevronRight, Users, Globe, Award, Shield } from "lucide-react";
 import { useTranslation } from "../hooks/useTranslation";
 
@@ -100,6 +101,17 @@ function Testimonials() {
             <span className="w-1.5 h-1.5 rounded-full bg-border-color transition-colors"></span>
           </div>
           <button className="text-primary hover:text-primary-dark transition-colors border-none bg-transparent cursor-pointer flex items-center"><ChevronRight size={16} /></button>
+        </div>
+
+        {/* Explore All Reviews Link */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            to="/reviews"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary hover:bg-primary-dark text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all hover:scale-[1.02]"
+          >
+            <span>Read All 12,000+ Verified Guest Reviews</span>
+            <ChevronRight size={16} />
+          </Link>
         </div>
 
       </div>

@@ -66,6 +66,9 @@ public class PaymentController {
             @RequestParam String checkIn,
             @RequestParam String checkOut,
             @RequestParam BigDecimal amount,
+            @RequestParam(defaultValue = "2") int adults,
+            @RequestParam(defaultValue = "0") int children,
+            @RequestParam(defaultValue = "1") int roomsCount,
             @RequestParam(required = false) String couponCode,
             @RequestParam(required = false) Integer pointsToRedeem,
             @RequestParam(required = false) String guestName,
@@ -79,7 +82,8 @@ public class PaymentController {
             // Never trust the amount calculated by the browser. Recalculate the
             // canonical pre-discount price from the Firestore resort + dates.
             BigDecimal calculatedAmount = bookingService.calculateBaseBookingAmount(
-                    resortId, roomId, LocalDate.parse(checkIn), LocalDate.parse(checkOut));
+                    resortId, roomId, LocalDate.parse(checkIn), LocalDate.parse(checkOut),
+                    Math.max(1, Math.max(roomsCount, Math.max((int) Math.ceil(adults / 2.0), (int) Math.ceil(children / 2.0)))));
 
             // KYC validation rule: > ₹50,000 amount requires verified status
             if (calculatedAmount.compareTo(BigDecimal.valueOf(50000)) > 0 && user.getKycStatus() != User.KycStatus.VERIFIED) {
@@ -119,77 +123,65 @@ public class PaymentController {
 
             BigDecimal finalAmount = calculatedAmount.subtract(discountAmount).subtract(pointsDiscount).max(BigDecimal.ZERO);
 
-            // Create pending booking
-            Booking booking = bookingService.createBooking(
-                    effectiveUserId, resortId, roomId,
-                    LocalDate.parse(checkIn), LocalDate.parse(checkOut),
-                    finalAmount, guestName, guestPhone,
-                    (couponCode != null && !couponCode.trim().isEmpty()) ? couponCode.trim().toUpperCase() : null,
-                    discountAmount, redeemedPoints, pointsDiscount
-            );
+            // Payment is intentionally not implemented yet.
+            // Only a fully discounted (₹0) reservation may be completed without
+            // a payment gateway. For any positive amount, fail before creating
+            // a booking so we never leave an unpaid PENDING reservation behind.
+            if (finalAmount.compareTo(BigDecimal.ZERO) > 0) {
+                log.info("Payment required for checkout but payment module is not implemented yet. Amount: {}",
+                        finalAmount);
+                return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                        .body(ApiResponse.error(
+                                "Payment module not implemented yet. Your booking was not created. " +
+                                "Please use a 100% discount/promo code for now.",
+                                HttpStatus.NOT_IMPLEMENTED.value()));
+            }
 
             // ============================================================
             // ZERO-TOTAL BOOKING
             // ============================================================
             // A 100% coupon (or other combination of discounts) can make
             // the final amount exactly zero. In that case NO payment
-            // gateway should be called. The reservation is confirmed
-            // immediately as a fully-comped/mock booking.
-            if (finalAmount.compareTo(BigDecimal.ZERO) == 0) {
-                log.info("Zero-total booking {}. Completing reservation without payment gateway.",
-                        booking.getBookingCode());
+            // gateway should be called. Create and confirm the reservation
+            // immediately as a fully-comped booking.
+            Booking booking = bookingService.createBooking(
+                    effectiveUserId, resortId, roomId,
+                    LocalDate.parse(checkIn), LocalDate.parse(checkOut),
+                    BigDecimal.ZERO, guestName, guestPhone,
+                    (couponCode != null && !couponCode.trim().isEmpty()) ? couponCode.trim().toUpperCase() : null,
+                    discountAmount, redeemedPoints, pointsDiscount,
+                    Math.max(1, adults), Math.max(0, children),
+                    Math.max(1, Math.max(roomsCount, Math.max((int) Math.ceil(adults / 2.0), (int) Math.ceil(children / 2.0))))
+            );
 
-                bookingService.confirmBooking(
-                        booking.getBookingCode(),
-                        "FREE_" + System.currentTimeMillis(),
-                        "ZERO_TOTAL_COUPON"
-                );
+            log.info("Zero-total booking {}. Completing reservation without payment gateway.",
+                    booking.getBookingCode());
 
-                if (couponCode != null && !couponCode.trim().isEmpty()) {
-                    couponService.incrementCouponUsage(couponCode.trim());
-                }
+            bookingService.confirmBooking(
+                    booking.getBookingCode(),
+                    "FREE_" + System.currentTimeMillis(),
+                    "ZERO_TOTAL_COUPON"
+            );
 
-                String zeroTotalSuccessUrl = appendBookingCode(successUrl, booking.getBookingCode());
-                return ResponseEntity.ok(
-                        ApiResponse.success(
-                                zeroTotalSuccessUrl,
-                                "Reservation completed successfully. No payment was required."
-                        )
-                );
+            if (couponCode != null && !couponCode.trim().isEmpty()) {
+                couponService.incrementCouponUsage(couponCode.trim());
             }
 
-            // ============================================================
-            // DEVELOPMENT MOCK PAYMENT
-            // ============================================================
-            if (stripeService.isPlaceholderKey()) {
-                log.warn("Stripe API key is a placeholder. Falling back to local mock payment simulation.");
-
-                bookingService.confirmBooking(
-                        booking.getBookingCode(),
-                        "ch_mock_" + System.currentTimeMillis(),
-                        "MOCK_UPI"
-                );
-
-                if (couponCode != null && !couponCode.trim().isEmpty()) {
-                    couponService.incrementCouponUsage(couponCode.trim());
-                }
-
-                String mockSuccessUrl = appendBookingCode(successUrl, booking.getBookingCode());
-                return ResponseEntity.ok(
-                        ApiResponse.success(
-                                mockSuccessUrl,
-                                "Mock payment completed successfully"
-                        )
-                );
-            }
-
-            // Create Stripe Checkout session
-            Session session = stripeService.createCheckoutSession(booking, successUrl, cancelUrl, couponCode);
-            return ResponseEntity.ok(ApiResponse.success(session.getUrl(), "Checkout session generated successfully"));
+            String zeroTotalSuccessUrl = appendBookingCode(successUrl, booking.getBookingCode());
+            return ResponseEntity.ok(
+                    ApiResponse.success(
+                            zeroTotalSuccessUrl,
+                            "Reservation completed successfully. No payment was required."
+                    )
+            );
+        } catch (IllegalStateException e) {
+            log.warn("Checkout rejected because dates are unavailable: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.CONFLICT.value()));
         } catch (Exception e) {
-            log.error("Failed to generate Stripe checkout session", e);
+            log.error("Failed to process checkout", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("Failed to generate payment link: " + e.getMessage(), 500));
+                    .body(ApiResponse.error("Failed to process checkout: " + e.getMessage(), 500));
         }
     }
 

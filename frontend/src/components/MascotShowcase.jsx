@@ -122,6 +122,8 @@ function MascotShowcase() {
                 <img 
                   src={`${activeTab.image}?v=10`} 
                   alt={`Rivo ${activeTabId}`}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-300"
                 />
               </div>

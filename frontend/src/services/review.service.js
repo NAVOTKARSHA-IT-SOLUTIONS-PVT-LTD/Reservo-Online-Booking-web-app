@@ -39,7 +39,8 @@ export const reviewService = {
     try {
       const body = {
         rating: review.rating,
-        comment: review.content
+        comment: review.content,
+        bookingId: review.bookingId
       };
       const result = await apiClient.post(`/api/v1/reviews/resort/${resortId}`, body);
       if (result && result.success && result.data) {

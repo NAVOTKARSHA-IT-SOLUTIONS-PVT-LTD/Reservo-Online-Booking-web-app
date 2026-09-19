@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Gift, Award, TrendingUp, CreditCard, Tag, Heart, X, Sparkles, RefreshCw } from "lucide-react";
+import { Gift, Award, TrendingUp, CreditCard, Tag, Heart, X, Sparkles, RefreshCw, Coins } from "lucide-react";
 import { rewardService } from "../services/reward.service";
 import { Skeleton } from "../components/Skeleton";
 import ErrorScreen from "../components/ErrorScreen";
@@ -73,9 +73,11 @@ export default function Rewards() {
     }
   };
 
+  const userCoins = rewardStatus ? (rewardStatus.coins ?? rewardStatus.points ?? 0) : 0;
+
   const handleRedeem = async () => {
-    if (rewardStatus.points < 5000) {
-      showGlobalToast("You need at least 5,000 points to redeem a coupon!");
+    if (userCoins < 5000) {
+      showGlobalToast("You need at least 5,000 coins to redeem a coupon!");
       return;
     }
     setRedeeming(true);
@@ -83,10 +85,11 @@ export default function Rewards() {
       const result = await rewardService.redeemPoints(5000);
       setRewardStatus(prev => ({
         ...prev,
+        coins: result.updatedPoints,
         points: result.updatedPoints,
         couponsCount: result.couponsCount
       }));
-      showGlobalToast("Successfully redeemed 5,000 points for a discount coupon! 💎");
+      showGlobalToast("Successfully redeemed 5,000 coins for a discount coupon! 🪙");
     } catch (err) {
       showGlobalToast(err.message || "Redemption failed.");
     } finally {
@@ -96,9 +99,9 @@ export default function Rewards() {
 
   const CARDS_DATA = [
     {
-      icon: <TrendingUp size={24} />,
-      title: "Loyalty Points",
-      description: "Earn 10 points for every $1 spent on bookings. Use points to get free nights and room upgrades."
+      icon: <Coins size={24} />,
+      title: "Loyalty Coins",
+      description: "Earn 10 coins for every ₹100 spent on bookings. Use coins to get free nights and room upgrades."
     },
     {
       icon: <Tag size={24} />,
@@ -109,7 +112,7 @@ export default function Rewards() {
     {
       icon: <Heart size={24} />,
       title: "Referral Rewards",
-      description: "Invite a friend to Reservo and you both get a $50 coupon when they complete their first stay."
+      description: "Invite a friend to Reservo and you both get a ₹50 coupon when they complete their first stay."
     },
     {
       icon: <CreditCard size={24} />,
@@ -124,7 +127,7 @@ export default function Rewards() {
     {
       icon: <Gift size={24} />,
       title: "Birthday Surprise",
-      description: "Travel during your birthday month and receive a complimentary bottle of champagne and spa voucher."
+      description: "Travel during your birthday month and receive a complimentary spa voucher."
     }
   ];
 
@@ -176,7 +179,7 @@ export default function Rewards() {
             
             <div className="z-10 text-center md:text-left mb-6 md:mb-0 max-w-[500px]">
               <h2 className="text-2xl font-bold mb-2">Track Your Loyalty Rewards</h2>
-              <p className="text-white/70">Sign in to view your points balance, available coupons, and unlock exclusive travel benefits.</p>
+              <p className="text-white/70">Sign in to view your coins balance, available coupons, and unlock exclusive travel benefits.</p>
             </div>
             <div className="z-10 shrink-0">
               <button 
@@ -194,24 +197,27 @@ export default function Rewards() {
             
             <div className="z-10 text-center md:text-left mb-8 md:mb-0">
               <h2 className="text-2xl font-bold mb-2">Welcome back, {user?.name || user?.displayName || user?.email?.split('@')[0] || "User"}!</h2>
-              <p className="text-white/70 mb-4">You are currently a <strong className="text-gold">{rewardStatus.membershipLevel}</strong></p>
+              <p className="text-white/70 mb-4">You are currently a <strong className="text-gold">{rewardStatus?.membershipLevel || "Silver Member"}</strong></p>
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[140px]">
-                  <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Total Points</div>
-                  <div className="text-3xl font-extrabold font-number text-gold">{rewardStatus.points.toLocaleString()}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Total Coins</div>
+                  <div className="text-3xl font-extrabold font-number text-gold flex items-center gap-1.5">
+                    <Coins className="w-6 h-6 text-gold" />
+                    {userCoins.toLocaleString()}
+                  </div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 min-w-[140px]">
                   <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Available Coupons</div>
-                  <div className="text-3xl font-extrabold font-number">{rewardStatus.couponsCount}</div>
+                  <div className="text-3xl font-extrabold font-number">{rewardStatus?.couponsCount || 0}</div>
                 </div>
               </div>
             </div>
             <div className="z-10">
               <button 
                 onClick={handleRedeem}
-                disabled={redeeming || rewardStatus.points < 5000}
+                disabled={redeeming || userCoins < 5000}
                 className={`font-bold py-3.5 px-8 rounded-xl border-none transition-all shadow-[0_10px_20px_rgba(212,166,79,0.3)] flex items-center gap-2 ${
-                  redeeming || rewardStatus.points < 5000 
+                  redeeming || userCoins < 5000 
                     ? "bg-slate-500/50 text-white/50 cursor-not-allowed shadow-none" 
                     : "bg-gold text-white cursor-pointer hover:bg-gold-dark hover:scale-105"
                 }`}
@@ -221,10 +227,10 @@ export default function Rewards() {
                     <RefreshCw className="w-4 h-4 animate-spin" /> Redeeming...
                   </>
                 ) : (
-                  "Redeem 5,000 pts"
+                  "Redeem 5,000 coins"
                 )}
               </button>
-              <span className="block text-center text-[10px] text-white/60 mt-2 font-medium">5,000 points = 1 Coupon pass</span>
+              <span className="block text-center text-[10px] text-white/60 mt-2 font-medium">5,000 coins = 1 Coupon pass</span>
             </div>
           </div>
         )}
@@ -268,7 +274,7 @@ export default function Rewards() {
             <div className="p-4 bg-bg-light border border-border-color rounded-2xl">
               <h4 className="text-xs uppercase tracking-wider text-text-dark font-bold mb-2">How to redeem:</h4>
               <p className="text-xs text-text-gray m-0 leading-relaxed">
-                Redeem points immediately using the card at the top. Once converted, your coupon passes will be active automatically during checkouts. Or tell Rivo chatbot *"Redeem my loyalty points"*!
+                Redeem coins immediately using the card at the top. Once converted, your coupon passes will be active automatically during checkouts. Or tell Rivo chatbot *"Redeem my loyalty coins"*!
               </p>
             </div>
           </div>

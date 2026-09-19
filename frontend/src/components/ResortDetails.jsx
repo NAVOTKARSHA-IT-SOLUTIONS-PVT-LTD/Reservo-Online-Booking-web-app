@@ -1,16 +1,69 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useWishlist } from "../context/WishlistContext";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Utensils, Shield, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon } from "lucide-react";
+import { 
+  ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon,
+  Coffee, Compass, Mountain, Tv, Zap, Wind, Award, HeartHandshake, Flame,
+  ChevronLeft, ChevronRight, Maximize2
+} from "lucide-react";
 import ResortNavigationMap from "./ResortNavigationMap";
 import CustomCalendar from "./CustomCalendar";
+import SimpleMapEmbed from "./SimpleMapEmbed";
+import CustomDropdown from "./CustomDropdown";
+import { rewardService } from "../services/reward.service";
+import { bookingService } from "../services/booking.service";
+import { apiClient } from "../services/apiClient";
 
 import { useTranslation } from "../hooks/useTranslation";
+import { useToast } from "../context/ToastContext";
+
+const getAmenityIcon = (name = "") => {
+  const lower = String(name).toLowerCase();
+  if (lower.includes("view") || lower.includes("compass") || lower.includes("panoramic")) {
+    return Compass;
+  }
+  if (lower.includes("mountain") || lower.includes("snow") || lower.includes("peak") || lower.includes("hill")) {
+    return Mountain;
+  }
+  if (lower.includes("pool") || lower.includes("swim") || lower.includes("jacuzzi") || lower.includes("hot tub") || lower.includes("water") || lower.includes("beach") || lower.includes("ocean") || lower.includes("lake")) {
+    return Waves;
+  }
+  if (lower.includes("wifi") || lower.includes("internet") || lower.includes("network")) {
+    return Wifi;
+  }
+  if (lower.includes("chef") || lower.includes("cook") || lower.includes("dining") || lower.includes("restaurant") || lower.includes("food") || lower.includes("coffee") || lower.includes("breakfast")) {
+    return Coffee;
+  }
+  if (lower.includes("fire") || lower.includes("hearth") || lower.includes("pit")) {
+    return Flame;
+  }
+  if (lower.includes("work") || lower.includes("tv") || lower.includes("desk") || lower.includes("office")) {
+    return Tv;
+  }
+  if (lower.includes("ev") || lower.includes("charg") || lower.includes("electric")) {
+    return Zap;
+  }
+  if (lower.includes("climate") || lower.includes("air") || lower.includes("cooling") || lower.includes("ac") || lower.includes("wind")) {
+    return Wind;
+  }
+  if (lower.includes("butler") || lower.includes("concierge") || lower.includes("award")) {
+    return Award;
+  }
+  if (lower.includes("pet") || lower.includes("dog") || lower.includes("cat") || lower.includes("animal")) {
+    return HeartHandshake;
+  }
+  if (lower.includes("spa") || lower.includes("wellness") || lower.includes("massage") || lower.includes("sauna")) {
+    return Sparkles;
+  }
+  return Sparkles;
+};
 
 export default function ResortDetails({ resort, urlId, isDarkMode, onBack, currencySymbol = "₹", exchangeRate = 1, onBook }) {
   const navigate = useNavigate();
   const locationState = useLocation();
   const { t } = useTranslation();
+  const toast = useToast();
   const { wishlist, toggleWishlist } = useWishlist();
   const targetId = urlId || resort.id;
   const isFavorited = wishlist.some((item) => item.id === targetId);
@@ -30,6 +83,80 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const guestPickerRef = useRef(null);
 
   const getTodayStr = () => new Date().toISOString().split("T")[0];
+
+  // Generate sample map points for resorts that don't have them configured
+  const generateSampleMapPoints = (resortName) => {
+    const basePoints = [
+      {
+        id: 'main-reception',
+        title: 'Main Reception',
+        category: 'accommodation',
+        x: 50,
+        y: 50,
+        walkTime: '0 min',
+        status: 'Open 24/7',
+        desc: 'Central reception with concierge services, luggage storage, and check-in/check-out facilities.',
+        image: 'https://images.unsplash.com/photo-1566073771259-6a8506099925?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'infinity-pool',
+        title: 'Infinity Pool',
+        category: 'leisure',
+        x: 30,
+        y: 35,
+        walkTime: '2 min',
+        status: 'Open 6AM-10PM',
+        desc: 'Temperature-controlled infinity pool with ocean views, poolside service, and luxury cabanas.',
+        image: 'https://images.unsplash.com/photo-1576013571620-4f1b7dd30b47?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'private-beach',
+        title: 'Private Beach Access',
+        category: 'leisure',
+        x: 70,
+        y: 40,
+        walkTime: '3 min',
+        status: 'Open 24/7',
+        desc: 'Exclusive private beach with sun loungers, water sports equipment, and beach butler service.',
+        image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'wellness-spa',
+        title: 'Wellness Spa Center',
+        category: 'wellness',
+        x: 45,
+        y: 65,
+        walkTime: '4 min',
+        status: 'Open 9AM-9PM',
+        desc: 'Full-service spa with massage therapies, sauna, steam room, and beauty treatments.',
+        image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'fine-dining',
+        title: 'Fine Dining Restaurant',
+        category: 'dining',
+        x: 55,
+        y: 30,
+        walkTime: '3 min',
+        status: 'Open 7AM-11PM',
+        desc: 'Award-winning restaurant serving local and international cuisine with ocean-view seating.',
+        image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80'
+      },
+      {
+        id: 'helipad',
+        title: 'Helipad & Arrivals',
+        category: 'transport',
+        x: 80,
+        y: 70,
+        walkTime: '5 min',
+        status: 'On Request',
+        desc: 'Private helipad for charter arrivals with VIP transfer services and luggage handling.',
+        image: 'https://images.unsplash.com/photo-1556388158-158ea5ccacbd?auto=format&fit=crop&w=800&q=80'
+      }
+    ];
+
+    return basePoints;
+  };
 
   const getFutureDateStr = (baseDateStr, addDays = 3) => {
     try {
@@ -129,10 +256,70 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
     }
   };
   
-  const [adults, setAdults] = useState(() => initialSearch?.guestCount || 2);
-  const [childrenCount, setChildrenCount] = useState(() => initialSearch?.childCount || 0);
-  const [roomsCount, setRoomsCount] = useState(() => initialSearch?.roomCount || 1);
+  const isWholeVilla = String(resort?.listingMode || "").toUpperCase() === "VILLA";
+  const [roomInventory, setRoomInventory] = useState([]);
+  const [selectedRoomType, setSelectedRoomType] = useState("");
+  const [roomInventoryLoading, setRoomInventoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (isWholeVilla || !resort?.id) {
+      setRoomInventory([]);
+      setSelectedRoomType("");
+      return;
+    }
+    let active = true;
+    setRoomInventoryLoading(true);
+    apiClient.get(`/api/v1/rooms/resort/${resort.id}`)
+      .then(res => {
+        if (!active) return;
+        const rooms = Array.isArray(res?.data) ? res.data : [];
+        setRoomInventory(rooms);
+        const firstType = rooms.find(r => r.status === "AVAILABLE")?.roomType || rooms[0]?.roomType || rooms[0]?.type || "";
+        setSelectedRoomType(prev => prev || firstType);
+      })
+      .catch(() => { if (active) setRoomInventory([]); })
+      .finally(() => { if (active) setRoomInventoryLoading(false); });
+    return () => { active = false; };
+  }, [resort?.id, isWholeVilla]);
+
+  const roomTypeOptions = Array.from(new Set((roomInventory || []).map(room => String(room.roomType || room.type || "Room").trim()).filter(Boolean)));
+  const selectedRoomRecords = roomInventory.filter(room => String(room.roomType || room.type || "Room") === String(selectedRoomType));
+  const selectedRoomCapacity = isWholeVilla
+    ? Math.max(1, Number(resort?.guests || 1))
+    : Math.max(1, Number(selectedRoomRecords.find(r => Number(r.capacity) > 0)?.capacity || selectedRoomRecords[0]?.capacity || 2));
+  const selectedAvailableRoomCount = selectedRoomRecords.filter(r => r.status === "AVAILABLE").length;
+  const selectedRoomPrice = isWholeVilla
+    ? Number(resort?.pricePerNight ?? resort?.price ?? 0)
+    : Number(selectedRoomRecords.find(r => r.status === "AVAILABLE")?.pricePerNight || selectedRoomRecords[0]?.pricePerNight || resort?.pricePerNight || resort?.price || 0);
+
+  const [adults, setAdults] = useState(() => Math.max(1, initialSearch?.guestCount || 2));
+  const [childrenCount, setChildrenCount] = useState(() => Math.max(0, initialSearch?.childCount || 0));
+  const [roomsCount, setRoomsCount] = useState(() => Math.max(
+    1,
+    initialSearch?.roomCount || 1,
+    Math.ceil((initialSearch?.guestCount || 2) / 2),
+    Math.ceil((initialSearch?.childCount || 0) / 2)
+  ));
   const [showGuestPicker, setShowGuestPicker] = useState(false);
+
+  // One room supports up to 2 adults and up to 2 children. Increase rooms
+  // automatically when guest counts require it; never reduce a user-selected
+  // number of rooms unless it falls below the minimum required.
+  const minimumRoomsForGuests = isWholeVilla ? 1 : Math.max(
+    1,
+    Math.ceil((adults + childrenCount) / selectedRoomCapacity)
+  );
+
+  useEffect(() => {
+    if (isWholeVilla) setRoomsCount(1);
+    else setRoomsCount(prev => Math.max(prev, minimumRoomsForGuests));
+  }, [minimumRoomsForGuests, isWholeVilla]);
+
+  useEffect(() => {
+    if (!isWholeVilla && selectedRoomType) {
+      setRoomsCount(prev => Math.max(1, Math.min(prev, Math.max(1, selectedAvailableRoomCount))));
+    }
+  }, [selectedRoomType, selectedAvailableRoomCount, isWholeVilla]);
 
   const formatGuestsLabel = (a, c, r) => {
     let label = `${a} Adult${a !== 1 ? "s" : ""}`;
@@ -155,7 +342,9 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
         guestsLabel: guests,
         guestCount: adults,
         childCount: childrenCount,
-        roomCount: roomsCount
+        roomCount: roomsCount,
+        roomType: selectedRoomType,
+        roomCapacity: selectedRoomCapacity
       };
       sessionStorage.setItem("reservo_search_state", JSON.stringify(activeState));
     } catch (e) {}
@@ -170,8 +359,27 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   const [currentRating, setCurrentRating] = useState(resort.rating || 4.9);
   const [reviewsCount, setReviewsCount] = useState(resort.reviewsCount || resort.reviewCount || 128);
 
+  const parsedAmenities = useMemo(() => {
+    if (!resort) return [];
+    let raw = resort.amenities;
+    if (!raw && typeof resort.amenitiesString === "string") raw = resort.amenitiesString;
+    let list = [];
+    if (Array.isArray(raw)) {
+      list = raw.map(item => {
+        if (typeof item === "string") return item.trim();
+        return String(item?.name || item?.label || item?.title || "").trim();
+      }).filter(Boolean);
+    } else if (typeof raw === "string" && raw.trim()) {
+      list = raw.split(",").map(s => s.trim()).filter(Boolean);
+    }
+    return Array.from(new Set(list));
+  }, [resort]);
+
   const [couponCode, setCouponCode] = useState("");
-  const [appliedDiscountPercent, setAppliedDiscountPercent] = useState(0);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponDiscountVal, setCouponDiscountVal] = useState(0);
+  const [couponDiscountType, setCouponDiscountType] = useState("PERCENTAGE");
   const [couponMessage, setCouponMessage] = useState("");
 
   const [resortPosts, setResortPosts] = useState([]);
@@ -213,14 +421,54 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   }, [activeDetailTab, resort.id, resort.name, targetId]);
 
   // Format price
-  const convertedPriceVal = resort.price ? Math.round(resort.price * exchangeRate) : 8000;
+  const convertedPriceVal = (selectedRoomPrice > 0 ? selectedRoomPrice : Number(resort.pricePerNight ?? resort.price)) > 0
+    ? Math.round((selectedRoomPrice > 0 ? selectedRoomPrice : Number(resort.pricePerNight ?? resort.price)) * exchangeRate)
+    : 8000;
   const formattedPrice = convertedPriceVal.toLocaleString();
 
-  const handleCheckAvailability = () => {
-    if (onBook) {
-      onBook(resort);
-    } else {
-      navigate("/resorts", { state: { checkAvailabilityFor: resort.id } });
+  const handleCheckAvailability = async () => {
+    if (!checkIn || !checkOut || !new Date(`${checkIn}T00:00:00`).getTime() || !new Date(`${checkOut}T00:00:00`).getTime()) {
+      toast("Please select valid check-in and check-out dates.", "error");
+      return;
+    }
+    if (checkOut <= checkIn) {
+      toast("Check-out must be after check-in.", "error");
+      return;
+    }
+
+    try {
+      // Availability is checked BEFORE opening the booking wizard. This
+      // includes the exact number of rooms required by the guest count.
+      await bookingService.checkAvailability(
+        resort.id,
+        { checkIn, checkOut },
+        { adults, children: childrenCount, roomsCount, wholeVilla: isWholeVilla, roomType: selectedRoomType, roomCapacity: selectedRoomCapacity }
+      );
+
+      if (onBook) {
+        await onBook(resort, {
+          checkIn,
+          checkOut,
+          adults,
+          children: childrenCount,
+          roomsCount,
+          roomType: selectedRoomType,
+          roomCapacity: selectedRoomCapacity
+        });
+      } else {
+        navigate("/resorts", {
+          state: {
+            checkAvailabilityFor: resort.id,
+            checkInDate: checkIn,
+            checkOutDate: checkOut,
+            guestCount: adults,
+            childCount: childrenCount,
+            roomCount: roomsCount
+          }
+        });
+      }
+    } catch (e) {
+      toast(e.message || "These dates/rooms are not available.", "error");
     }
   };
 
@@ -228,41 +476,60 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
     navigate("/resorts");
   };
 
-  // Calculate nights & breakdown
+  // Customer pricing is simply nightly rate × nights × rooms.
+  // No cleaning, luxury, service, or tax charges are added.
   const calculateNights = () => {
     try {
-      const d1 = new Date(checkIn);
-      const d2 = new Date(checkOut);
+      const d1 = new Date(`${checkIn}T00:00:00`);
+      const d2 = new Date(`${checkOut}T00:00:00`);
       const diffTime = d2.getTime() - d1.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.round(diffTime / 86400000);
       return diffDays > 0 ? diffDays : 1;
     } catch (e) {
-      return 3;
+      return 1;
     }
   };
 
   const nights = calculateNights();
-  const subtotal = convertedPriceVal * nights;
-  const gstTax = Math.round(subtotal * 0.18);
-  const serviceFee = 1200;
-  const discountAmount = Math.round((subtotal * appliedDiscountPercent) / 100);
-  const grandTotal = subtotal + gstTax + serviceFee - discountAmount;
+  const subtotal = convertedPriceVal * nights * roomsCount;
+  const totalBeforeDiscount = subtotal;
 
-  const handleApplyCoupon = (e) => {
+  const discountAmount = couponApplied
+    ? (couponDiscountType === "PERCENTAGE"
+        ? Math.round(totalBeforeDiscount * (Number(couponDiscountVal) / 100))
+        : Math.min(Math.round(Number(couponDiscountVal) || 0), totalBeforeDiscount))
+    : 0;
+  const grandTotal = Math.max(0, totalBeforeDiscount - discountAmount);
+
+  // Use the same backend coupon-validation logic as BookingModal.
+  const handleApplyCoupon = async (e) => {
     e.preventDefault();
     const code = couponCode.trim().toUpperCase();
-    if (code === "SUMMER20" || code === "MONSOON20") {
-      setAppliedDiscountPercent(20);
-      setCouponMessage("🎉 Promo code 'SUMMER20' applied! 20% OFF");
-    } else if (code === "WELCOME10") {
-      setAppliedDiscountPercent(10);
-      setCouponMessage("🎉 Promo code 'WELCOME10' applied! 10% OFF");
-    } else if (code === "MONSOON30") {
-      setAppliedDiscountPercent(30);
-      setCouponMessage("🎉 Promo code 'MONSOON30' applied! 30% OFF");
-    } else {
-      setAppliedDiscountPercent(0);
-      setCouponMessage("❌ Invalid promo code. Try 'SUMMER20' or 'WELCOME10'");
+    if (!code || couponLoading) return;
+
+    setCouponLoading(true);
+    setCouponMessage("");
+    try {
+      const resp = await rewardService.validateCoupon(
+        code,
+        resort.id,
+        totalBeforeDiscount
+      );
+
+      setCouponDiscountVal(Number(resp.discountValue) || 0);
+      setCouponDiscountType(resp.discountType || "PERCENTAGE");
+      setCouponApplied(true);
+
+      const label = resp.discountType === "PERCENTAGE"
+        ? `${resp.discountValue}%`
+        : `₹${Number(resp.discountValue).toLocaleString("en-IN")}`;
+      setCouponMessage(`✓ Coupon applied successfully! ${label} discount applied.`);
+    } catch (e) {
+      setCouponDiscountVal(0);
+      setCouponApplied(false);
+      setCouponMessage(`❌ ${e.message || "Invalid promo code."}`);
+    } finally {
+      setCouponLoading(false);
     }
   };
 
@@ -305,6 +572,47 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
     }
   }, [resort]);
 
+  const currentPhoto = activePhoto || resort.heroImage || (finalGallery && finalGallery[0]) || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80";
+
+  const currentPhotoIndex = useMemo(() => {
+    if (!finalGallery || finalGallery.length === 0) return 0;
+    const idx = finalGallery.findIndex(url => url === currentPhoto);
+    return idx >= 0 ? idx : 0;
+  }, [finalGallery, currentPhoto]);
+
+  const handlePrevPhoto = useCallback((e) => {
+    if (e) e.stopPropagation();
+    if (!finalGallery || finalGallery.length <= 1) return;
+    const prevIdx = (currentPhotoIndex - 1 + finalGallery.length) % finalGallery.length;
+    const nextUrl = finalGallery[prevIdx];
+    setActivePhoto(nextUrl);
+    if (viewFullPhotoUrl) {
+      setViewFullPhotoUrl(nextUrl);
+    }
+  }, [finalGallery, currentPhotoIndex, viewFullPhotoUrl]);
+
+  const handleNextPhoto = useCallback((e) => {
+    if (e) e.stopPropagation();
+    if (!finalGallery || finalGallery.length <= 1) return;
+    const nextIdx = (currentPhotoIndex + 1) % finalGallery.length;
+    const nextUrl = finalGallery[nextIdx];
+    setActivePhoto(nextUrl);
+    if (viewFullPhotoUrl) {
+      setViewFullPhotoUrl(nextUrl);
+    }
+  }, [finalGallery, currentPhotoIndex, viewFullPhotoUrl]);
+
+  useEffect(() => {
+    if (!viewFullPhotoUrl) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft") handlePrevPhoto();
+      else if (e.key === "ArrowRight") handleNextPhoto();
+      else if (e.key === "Escape") setViewFullPhotoUrl(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [viewFullPhotoUrl, handlePrevPhoto, handleNextPhoto]);
+
   return (
     <div className="w-full max-w-[1280px] mx-auto px-5 py-8 font-sans transition-colors duration-300">
       
@@ -316,40 +624,68 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
           
           {/* Main Hero Card */}
           <div 
-            className="relative rounded-[32px] overflow-hidden min-h-[360px] sm:min-h-[440px] flex flex-col justify-between p-6 sm:p-8 bg-cover bg-center shadow-lg border border-border-color transition-all duration-500"
-            style={{ backgroundImage: `url(${activePhoto || resort.heroImage || (finalGallery && finalGallery[0]) || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80"})` }}
+            onClick={() => setViewFullPhotoUrl(currentPhoto)}
+            className="relative rounded-[32px] overflow-hidden min-h-[360px] sm:min-h-[440px] flex flex-col justify-between p-6 sm:p-8 bg-slate-900 shadow-lg border border-border-color cursor-pointer group select-none"
+            title="Click to view photo in full screen"
           >
-            {/* Subtle Gradient at top for button visibility */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent z-0"></div>
+            {/* Animated Photo Layer */}
+            <div className="absolute inset-0 overflow-hidden z-0">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentPhoto}
+                  src={currentPhoto}
+                  alt={resort.name || "Resort"}
+                  decoding="async"
+                  initial={{ opacity: 0, scale: 1.04 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  className="w-full h-full object-cover"
+                />
+              </AnimatePresence>
+            </div>
+
+            {/* Subtle Gradient at top and bottom for button visibility */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/50 z-10 pointer-events-none"></div>
 
             {/* Top Bar (Back & Action Buttons) */}
-            <div className="relative z-10 flex justify-between items-center w-full">
+            <div className="relative z-20 flex justify-between items-center w-full" onClick={e => e.stopPropagation()}>
               {/* Back Button */}
               <button 
-                onClick={onBack}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBack();
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/20 text-white rounded-full text-xs font-bold hover:bg-black/60 transition cursor-pointer"
               >
                 <ArrowLeft size={14} /> Back to results
               </button>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3" onClick={e => e.stopPropagation()}>
                 <button 
-                  onClick={() => setShowRateModal(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowRateModal(true);
+                  }}
                   className="flex items-center gap-1.5 px-3.5 py-2 bg-black/40 backdrop-blur-md border border-white/20 text-white rounded-full text-xs font-bold shadow-md hover:bg-black/60 transition cursor-pointer"
                   title="Rate this resort"
                 >
                   <Star size={14} className="fill-yellow-400 text-yellow-400" /> Rate
                 </button>
                 <button 
-                  onClick={toggleFavorite}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite();
+                  }}
                   className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-md hover:bg-black/60 transition cursor-pointer"
                   aria-label="Wishlist Resort"
                 >
                   <Heart size={18} className={isFavorited ? "fill-red-500 text-red-500" : ""} />
                 </button>
                 <button 
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     if (navigator.clipboard) {
                       navigator.clipboard.writeText(window.location.href);
                     }
@@ -359,6 +695,45 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                   <Share size={14} /> Share
                 </button>
               </div>
+            </div>
+
+            {/* Left & Right Navigation Arrows */}
+            {finalGallery.length > 1 && (
+              <div 
+                className="absolute inset-y-0 inset-x-3 sm:inset-x-5 flex items-center justify-between pointer-events-none z-20"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={handlePrevPhoto}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/50 hover:bg-black/80 active:scale-90 text-white border border-white/25 backdrop-blur-md flex items-center justify-center shadow-xl transition-all duration-200 pointer-events-auto cursor-pointer"
+                  aria-label="Previous photo"
+                  title="Previous photo"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextPhoto}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/50 hover:bg-black/80 active:scale-90 text-white border border-white/25 backdrop-blur-md flex items-center justify-center shadow-xl transition-all duration-200 pointer-events-auto cursor-pointer"
+                  aria-label="Next photo"
+                  title="Next photo"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              </div>
+            )}
+
+            {/* Bottom Bar: Fullscreen Hint & Photo Counter */}
+            <div className="relative z-20 flex justify-between items-end w-full pointer-events-none">
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[11px] font-semibold text-white/90 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-1.5">
+                <Maximize2 size={13} /> Click to expand
+              </span>
+              {finalGallery.length > 1 && (
+                <span className="text-[11px] font-bold text-white bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 ml-auto">
+                  {currentPhotoIndex + 1} / {finalGallery.length}
+                </span>
+              )}
             </div>
           </div>
 
@@ -370,7 +745,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                 onClick={() => setActiveVideoUrl(finalVideos[0])}
                 className="relative rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group"
               >
-                <img src={finalGallery[0] || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80"} alt="Video preview" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                <img src={finalGallery[0] || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80"} alt="Video preview" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                 <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 text-white z-10">
                   <Play size={16} className="fill-current" />
                   <span className="text-[9px] font-bold uppercase tracking-wider">View Video</span>
@@ -391,7 +766,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                 }`}
                 title="Click to view photo full screen"
               >
-                <img src={imgUrl} alt={`Gallery thumbnail ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                <img src={imgUrl} alt={`Gallery thumbnail ${i+1}`} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
               </div>
             ))}
           </div>
@@ -432,29 +807,6 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             <p className="text-text-gray text-xs sm:text-sm leading-relaxed max-w-[680px]">
               {resort.description || "Experience the perfect blend of luxury and nature. Relax by the beach, indulge in world-class amenities, and create unforgettable memories."}
             </p>
-
-            {/* Amenities horizontal list */}
-            <div className="flex flex-wrap items-center gap-y-2 gap-x-5 pt-3 border-t border-border-color text-text-dark">
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Waves size={14} className="text-primary" /> Beachfront
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Waves size={14} className="text-primary" /> Pool
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Sparkles size={14} className="text-primary" /> Spa
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Wifi size={14} className="text-primary" /> Free Wi-Fi
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold">
-                <Utensils size={14} className="text-primary" /> Restaurant
-              </div>
-              <span className="text-[10px] font-bold bg-bg-light border border-border-color px-2.5 py-0.5 rounded-full text-text-gray">
-                +12 more
-              </span>
-            </div>
-
           </div>
 
           {/* Tabs bar */}
@@ -484,13 +836,28 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
               <div className="space-y-4 text-left animate-in fade-in duration-200">
                 {/* Amenities list */}
                 <h4 className="text-xs font-bold uppercase text-text-dark tracking-wide pt-2">Featured Amenities</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {["Beachfront Access", "Infinity Pool", "Wellness Spa Center", "High-speed Wi-Fi", "Signature Fine Dining", "24/7 Butler Service"].map((amenity, i) => (
-                    <div key={i} className="flex items-center gap-2 p-2 bg-bg-light rounded-xl border border-border-color text-xs font-semibold text-text-dark">
-                      <Check className="w-3.5 h-3.5 text-primary" /> {amenity}
-                    </div>
-                  ))}
-                </div>
+                {parsedAmenities.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {parsedAmenities.map((amenity, i) => {
+                      const IconComp = getAmenityIcon(amenity);
+                      return (
+                        <div 
+                          key={i} 
+                          className="flex items-center gap-2.5 px-3.5 py-2.5 bg-bg-light rounded-xl border border-border-color text-xs font-semibold text-text-dark min-h-[42px] transition-colors"
+                        >
+                          <div className="w-5 h-5 flex items-center justify-center shrink-0 text-primary">
+                            <IconComp size={15} />
+                          </div>
+                          <span className="truncate text-text-dark" title={amenity}>
+                            {amenity}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-text-gray italic">No specific amenities listed for this property.</p>
+                )}
               </div>
             )}
 
@@ -518,9 +885,48 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                     }}
                   />
                 ) : (
-                  <div className="p-6 text-center text-xs text-text-gray font-semibold border border-border-color rounded-2xl">
-                    No map points or local spots configured for this resort.
-                  </div>
+                  <ResortNavigationMap 
+                    mapPoints={generateSampleMapPoints(resort.name)}
+                    resortName={resort.name}
+                    isDarkMode={isDarkMode}
+                    onSelectSpot={(spot) => {
+                      const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]') || document.querySelector('[aria-label="Chat with Rivo"]');
+                      if (mascotBtn) {
+                        const chatOpen = document.querySelector('form button[type="submit"]');
+                        if (!chatOpen) mascotBtn.click();
+                        setTimeout(() => {
+                          const inputEl = document.querySelector('form input[placeholder*="Ask Rivo"]') || document.querySelector('form input[placeholder*="Ask"]');
+                          if (inputEl) {
+                            inputEl.value = `Tell me about ${spot.title} at ${resort.name}`;
+                            const event = new Event('input', { bubbles: true });
+                            inputEl.dispatchEvent(event);
+                          }
+                        }, 400);
+                      }
+                    }}
+                  />
+                )}
+
+                {/* Google Maps Embed API (Secure) */}
+                {(resort.latitude && resort.longitude) ? (
+                  <SimpleMapEmbed
+                    latitude={parseFloat(resort.latitude)}
+                    longitude={parseFloat(resort.longitude)}
+                    zoom={15}
+                    isDarkMode={isDarkMode}
+                    height="400px"
+                    mode="place"
+                  />
+                ) : (
+                  <SimpleMapEmbed
+                    latitude={15.5164}
+                    longitude={73.7634}
+                    zoom={15}
+                    isDarkMode={isDarkMode}
+                    height="400px"
+                    mode="place"
+                    address={resort.location || resort.city || "Goa, India"}
+                  />
                 )}
               </div>
             )}
@@ -661,9 +1067,34 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
 
             </div>
 
+            {!isWholeVilla && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Room Type</label>
+                <CustomDropdown
+                  value={selectedRoomType}
+                  onChange={val => { setSelectedRoomType(val); setRoomsCount(1); }}
+                  disabled={roomInventoryLoading || roomTypeOptions.length === 0}
+                  placeholder={roomTypeOptions.length === 0 ? "No room types available" : "Select Room Type"}
+                  options={roomTypeOptions.map(type => {
+                    const records = roomInventory.filter(room => String(room.roomType || room.type || "Room") === type);
+                    const available = records.filter(room => room.status === "AVAILABLE").length;
+                    const capacity = Number(records.find(r => Number(r.capacity) > 0)?.capacity || 2);
+                    const price = Number(records.find(r => r.status === "AVAILABLE")?.pricePerNight || records[0]?.pricePerNight || 0);
+                    return {
+                      value: type,
+                      label: `${type} • ${capacity} guests • ₹${price.toLocaleString("en-IN")} • ${available} available`,
+                    };
+                  })}
+                  buttonClassName="!bg-bg-light !text-text-dark !border-border-color !text-xs !font-semibold"
+                />
+                <span className="text-[9px] text-text-gray">Capacity: {selectedRoomCapacity} guest{selectedRoomCapacity !== 1 ? "s" : ""} per room • {selectedAvailableRoomCount} available</span>
+              </div>
+            )}
+
             {/* Guests & Rooms Interactive Modifier Card */}
             <div className="flex flex-col gap-1.5 relative" ref={guestPickerRef}>
               <label className="text-[10px] font-bold uppercase tracking-wider text-text-gray">Guests & Rooms</label>
+              <span className="text-[9px] text-text-gray font-medium">{isWholeVilla ? `Entire villa • up to ${selectedRoomCapacity} guests` : `Selected room type • up to ${selectedRoomCapacity} guests per room`}</span>
               <button
                 type="button"
                 onClick={() => setShowGuestPicker(!showGuestPicker)}
@@ -737,8 +1168,8 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                     <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        disabled={roomsCount <= 1}
-                        onClick={() => setRoomsCount(prev => Math.max(1, prev - 1))}
+                        disabled={isWholeVilla || roomsCount <= minimumRoomsForGuests}
+                        onClick={() => setRoomsCount(prev => Math.max(minimumRoomsForGuests, prev - 1))}
                         className="w-8 h-8 rounded-full border border-border-color flex items-center justify-center text-text-dark font-bold text-sm hover:border-primary disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer bg-bg-light transition"
                       >
                         <Minus size={13} />
@@ -746,7 +1177,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                       <span className="w-5 text-center font-black text-xs text-text-dark">{roomsCount}</span>
                       <button
                         type="button"
-                        onClick={() => setRoomsCount(prev => prev + 1)}
+                        onClick={() => !isWholeVilla && setRoomsCount(prev => Math.min(prev + 1, Math.max(1, selectedAvailableRoomCount)))}
                         className="w-8 h-8 rounded-full border border-border-color flex items-center justify-center text-text-dark font-bold text-sm hover:border-primary cursor-pointer bg-bg-light transition"
                       >
                         <Plus size={13} />
@@ -772,22 +1203,14 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
               
               <div className="space-y-2 text-text-gray font-medium">
                 <div className="flex justify-between">
-                  <span>{currencySymbol}{formattedPrice} × {nights} {nights === 1 ? "night" : "nights"}</span>
+                  <span>{currencySymbol}{formattedPrice} × {nights} {nights === 1 ? "night" : "nights"} × {roomsCount} {roomsCount === 1 ? "room" : "rooms"}</span>
                   <span className="font-bold text-text-dark">{currencySymbol}{(subtotal).toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Cleaning & Luxury Service Fee</span>
-                  <span className="font-bold text-text-dark">{currencySymbol}{(serviceFee * exchangeRate).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>GST Tax (18%)</span>
-                  <span className="font-bold text-text-dark">{currencySymbol}{(gstTax).toLocaleString()}</span>
-                </div>
 
-                {appliedDiscountPercent > 0 && (
+                {couponApplied && discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-600 font-bold">
-                    <span>Discount ({appliedDiscountPercent}% OFF)</span>
-                    <span>-{currencySymbol}{(discountAmount).toLocaleString()}</span>
+                    <span>Discount ({couponDiscountType === "PERCENTAGE" ? `${couponDiscountVal}% OFF` : `₹${Number(couponDiscountVal).toLocaleString("en-IN")} OFF`})</span>
+                    <span>-{currencySymbol}{Math.round(discountAmount).toLocaleString()}</span>
                   </div>
                 )}
               </div>
@@ -798,21 +1221,38 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                   type="text"
                   placeholder="Promo code (e.g. SUMMER20)"
                   value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  className="flex-1 border border-border-color rounded-xl px-3 py-2 text-xs font-bold bg-bg-light text-text-dark outline-none focus:border-primary uppercase"
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  disabled={couponApplied || couponLoading}
+                  className="flex-1 border border-border-color rounded-xl px-3 py-2 text-xs font-bold bg-bg-light text-text-dark outline-none focus:border-primary uppercase disabled:opacity-60"
                 />
                 <button
                   type="submit"
-                  className="px-3 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 rounded-xl text-xs font-extrabold transition-all cursor-pointer"
+                  disabled={couponApplied || couponLoading || !couponCode.trim()}
+                  className="px-3 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 rounded-xl text-xs font-extrabold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Apply
+                  {couponLoading ? "Checking..." : couponApplied ? "Applied" : "Apply"}
                 </button>
               </form>
 
               {couponMessage && (
-                <div className={`text-[11px] font-bold ${appliedDiscountPercent > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                <div className={`text-[11px] font-bold ${couponApplied ? "text-emerald-600" : "text-red-500"}`}>
                   {couponMessage}
                 </div>
+              )}
+              {couponApplied && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCouponApplied(false);
+                    setCouponCode("");
+                    setCouponDiscountVal(0);
+                    setCouponDiscountType("PERCENTAGE");
+                    setCouponMessage("");
+                  }}
+                  className="text-[11px] font-bold text-red-500 hover:underline cursor-pointer bg-transparent border-none p-0"
+                >
+                  Remove
+                </button>
               )}
 
               {/* Total Payable */}
@@ -866,15 +1306,66 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
 
       {/* Full Screen Photo Viewer Modal */}
       {viewFullPhotoUrl && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[10005] p-4 animate-fade-in" onClick={() => setViewFullPhotoUrl(null)}>
-          <div className="relative max-w-5xl max-h-[90vh] flex flex-col items-center justify-center" onClick={e => e.stopPropagation()}>
-            <button 
-              className="absolute -top-10 right-0 bg-white/20 hover:bg-white/40 text-white rounded-full p-2 border-none cursor-pointer z-30 transition flex items-center justify-center"
-              onClick={() => setViewFullPhotoUrl(null)}
-            >
-              <X size={20} />
-            </button>
-            <img src={viewFullPhotoUrl} alt="Full size preview" className="max-w-full max-h-[82vh] object-contain rounded-2xl shadow-2xl border border-white/10" />
+        <div 
+          className="fixed inset-0 bg-black/95 flex items-center justify-center z-[10005] p-4 sm:p-8 animate-fade-in select-none" 
+          onClick={() => setViewFullPhotoUrl(null)}
+        >
+          {/* Close button */}
+          <button 
+            className="absolute top-5 right-5 bg-white/20 hover:bg-white/40 text-white rounded-full p-2.5 border-none cursor-pointer z-40 transition flex items-center justify-center shadow-xl hover:scale-105 active:scale-95"
+            onClick={() => setViewFullPhotoUrl(null)}
+            title="Close (Esc)"
+          >
+            <X size={22} />
+          </button>
+
+          {/* Photo Counter */}
+          {finalGallery.length > 1 && (
+            <div className="absolute top-6 left-6 text-xs font-bold text-white/90 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 z-40">
+              {currentPhotoIndex + 1} / {finalGallery.length}
+            </div>
+          )}
+
+          {/* Modal Container */}
+          <div className="relative max-w-6xl max-h-[90vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
+            {/* Prev button */}
+            {finalGallery.length > 1 && (
+              <button
+                type="button"
+                onClick={handlePrevPhoto}
+                className="absolute left-2 sm:-left-16 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 active:scale-95 text-white border border-white/25 backdrop-blur-md flex items-center justify-center z-40 cursor-pointer transition shadow-2xl"
+                title="Previous photo (←)"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft size={24} />
+              </button>
+            )}
+
+            <AnimatePresence mode="wait">
+              <motion.img 
+                key={viewFullPhotoUrl}
+                src={viewFullPhotoUrl} 
+                alt="Full size preview" 
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10" 
+              />
+            </AnimatePresence>
+
+            {/* Next button */}
+            {finalGallery.length > 1 && (
+              <button
+                type="button"
+                onClick={handleNextPhoto}
+                className="absolute right-2 sm:-right-16 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/90 active:scale-95 text-white border border-white/25 backdrop-blur-md flex items-center justify-center z-40 cursor-pointer transition shadow-2xl"
+                title="Next photo (→)"
+                aria-label="Next photo"
+              >
+                <ChevronRight size={24} />
+              </button>
+            )}
           </div>
         </div>
       )}

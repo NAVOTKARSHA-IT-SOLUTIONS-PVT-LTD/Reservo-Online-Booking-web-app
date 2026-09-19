@@ -19,8 +19,7 @@ import {
   X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-
+import { useToast } from "../context/ToastContext";
 
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 import herovideo from "../assets/images/hero-video.mp4";
@@ -67,8 +66,10 @@ const DESTINATIONS = [
 
 function Hero() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isSearching, setIsSearching] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [locationError, setLocationError] = useState(false);
   
 
 
@@ -146,6 +147,7 @@ function Hero() {
 
   const handleSelectLocation = (place) => {
     setLocation(`${place.name}, ${place.region.split(",")[0]}`);
+    setLocationError(false);
     setShowLocationDropdown(false);
     setLocationSearch("");
   };
@@ -165,6 +167,15 @@ function Hero() {
 
   const handleSearch = (e) => {
     e.preventDefault();
+    if (!location || !location.trim()) {
+      setLocationError(true);
+      toast("Please select a destination to search for stays.", "error");
+      setShowLocationDropdown(true);
+      setShowGuestsDropdown(false);
+      setShowCalendarDropdown(false);
+      return;
+    }
+    setLocationError(false);
     setIsSearching(true);
   };
 
@@ -204,7 +215,7 @@ function Hero() {
       
       {/* Background Video */}
 <div
-  className="absolute inset-0 z-10 overflow-hidden"
+  className="absolute inset-0 z-10 overflow-hidden bg-[#0a1118]"
   style={{
     transform: `translateY(${scrollY * 0.3}px) scale(${
       1 + scrollY * 0.0002
@@ -218,7 +229,7 @@ function Hero() {
     muted
     loop
     playsInline
-    preload="auto"
+    preload="metadata"
   />
 </div>
   
@@ -232,12 +243,6 @@ function Hero() {
         {/* Left Content Area */}
         <div className="flex-1 max-w-[600px] text-white" style={{ transform: `translateY(${-scrollY * 0.08}px)`, opacity: Math.max(0, 1 - scrollY / 700) }}>
           
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-black/20 backdrop-blur-md mb-6 shadow-lg">
-            <Sparkles size={14} className="text-yellow-400" />
-            <span className="text-[11px] font-bold uppercase tracking-[1px] text-white/90">AI-POWERED TRAVEL PLANNER</span>
-          </div>
-
           {/* Title */}
           <h1 className="font-extrabold text-[36px] sm:text-[56px] lg:text-[70px] leading-[1.05] mb-6 font-serif tracking-tight drop-shadow-xl text-white">
   Book Smart.<br />
@@ -262,18 +267,6 @@ function Hero() {
 
           {/* Social Proof */}
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border border-white/10 bg-black/20 backdrop-blur-sm">
-              <div className="flex -space-x-2">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=32&h=32&q=80" alt="User" className="w-8 h-8 rounded-full border-2 border-transparent object-cover" />
-                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=32&h=32&q=80" alt="User" className="w-8 h-8 rounded-full border-2 border-transparent object-cover" />
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=32&h=32&q=80" alt="User" className="w-8 h-8 rounded-full border-2 border-transparent object-cover" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[13px] font-bold text-white leading-tight">10,000+</span>
-                <span className="text-[11px] text-white/70">Happy Travelers</span>
-              </div>
-            </div>
-
             <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border border-white/10 bg-black/20 backdrop-blur-sm">
               <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
                 <Star size={14} className="fill-current text-teal-300" />
@@ -308,16 +301,38 @@ function Hero() {
           {/* Location - Clickable Dropdown */}
           <div className="flex-1 relative w-full" ref={locationRef}>
             <div 
-              onClick={() => { setShowLocationDropdown(!showLocationDropdown); setShowGuestsDropdown(false); }}
-              className="flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group"
+              onClick={() => { 
+                setShowLocationDropdown(!showLocationDropdown); 
+                setShowGuestsDropdown(false); 
+                setShowCalendarDropdown(false);
+              }}
+              className={`flex items-center gap-3 px-6 py-2 md:py-0 w-full cursor-pointer group transition-all duration-300 rounded-2xl md:rounded-full ${
+                locationError ? 'ring-2 ring-red-500 bg-red-500/5' : ''
+              }`}
             >
-              <MapPin size={20} className={`transition-colors ${showLocationDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`} />
+              <MapPin size={20} className={`transition-colors ${
+                locationError ? 'text-red-500 animate-pulse' : showLocationDropdown ? 'text-primary' : 'text-gray-400 group-hover:text-primary'
+              }`} />
               <div className="flex flex-col w-full text-left">
-                <label className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Where to?</label>
-                <span className="text-[15px] font-bold text-text-dark transition-colors duration-300">
+                <label className="text-[11px] font-bold uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                  <span className={locationError ? 'text-red-500 font-extrabold' : 'text-gray-400'}>
+                    Where to? <span className="text-red-500 font-bold">*</span>
+                  </span>
+                  {locationError && (
+                    <span className="text-[10px] text-red-500 font-semibold tracking-normal capitalize animate-pulse">
+                      Required
+                    </span>
+                  )}
+                </label>
+                <span className={`text-[15px] font-bold transition-colors duration-300 ${
+                  location ? 'text-text-dark' : locationError ? 'text-red-600 dark:text-red-400' : 'text-text-dark'
+                }`}>
                   {location || "Select Destination"}
                 </span>
-                <span className="text-[12px] text-gray-400">All Destinations <ChevronDown size={12} className={`inline transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} /></span>
+                <span className="text-[12px] text-gray-400 flex items-center gap-1">
+                  {location ? "Destination Selected" : "All Destinations"}
+                  <ChevronDown size={12} className={`inline transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} />
+                </span>
               </div>
             </div>
 
@@ -335,6 +350,7 @@ function Hero() {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && locationSearch.trim()) {
                           setLocation(locationSearch.trim());
+                          setLocationError(false);
                           setShowLocationDropdown(false);
                           setLocationSearch("");
                         }
@@ -357,6 +373,7 @@ function Hero() {
                     <button
                       onClick={() => {
                         setLocation(locationSearch.trim());
+                        setLocationError(false);
                         setShowLocationDropdown(false);
                         setLocationSearch("");
                       }}
@@ -449,12 +466,13 @@ function Hero() {
                 <CustomCalendar
                   checkInDate={checkInDate}
                   checkOutDate={checkOutDate}
-                  selectionMode={calendarSelectionMode}
-                  onDateChange={(ci, co) => {
+                  activeField={calendarSelectionMode}
+                  onActiveFieldChange={(field) => setCalendarSelectionMode(field)}
+                  onDateChange={(ci, co, status) => {
                     setCheckInDate(ci);
                     setCheckOutDate(co);
-                    if (ci && co) {
-                      setTimeout(() => setShowCalendarDropdown(false), 300);
+                    if (status === "done" && ci && co) {
+                      setTimeout(() => setShowCalendarDropdown(false), 250);
                     }
                   }}
                   isDarkMode={document.body.classList.contains("dark-theme")}

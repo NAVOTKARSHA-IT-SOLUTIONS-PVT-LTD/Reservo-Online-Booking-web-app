@@ -5,6 +5,8 @@ import com.google.cloud.firestore.annotation.Exclude;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,8 +31,12 @@ public class Booking {
     /** Firestore document ID of the resort. */
     private String resortId;
 
-    /** Firestore document ID of the room. */
+    /** Primary/first assigned room. Kept for backward compatibility. */
     private String roomId;
+
+    /** All room IDs assigned to this booking when multiple rooms are requested. */
+    @Builder.Default
+    private List<String> assignedRoomIds = new ArrayList<>();
 
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
@@ -64,6 +70,7 @@ public class Booking {
     public enum BookingStatus {
         PENDING,
         CONFIRMED,
+        IN_HOUSE,
         CANCELLED,
         COMPLETED
     }

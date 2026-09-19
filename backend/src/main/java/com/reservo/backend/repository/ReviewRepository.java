@@ -109,6 +109,34 @@ public class ReviewRepository {
     }
 
     /**
+     * Find a review submitted for a specific booking.
+     */
+    public Optional<Review> findByBookingId(String bookingId) {
+        if (bookingId == null || bookingId.isBlank()) {
+            return Optional.empty();
+        }
+
+        try {
+            QuerySnapshot snapshot = firestore.collection(COLLECTION)
+                    .whereEqualTo("bookingId", bookingId)
+                    .limit(1)
+                    .get()
+                    .get();
+
+            if (snapshot.isEmpty()) {
+                return Optional.empty();
+            }
+
+            return Optional.ofNullable(snapshot.getDocuments().get(0).toObject(Review.class));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to find review for booking", e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Failed to find review for booking", e);
+        }
+    }
+
+    /**
      * Find all reviews for a resort.
      */
     public List<Review> findByResortId(String resortId) {

@@ -16,6 +16,7 @@ import { secureStorage } from "../services/secureStorage";
 import { useToast } from "../context/ToastContext";
 import { useWishlist } from "../context/WishlistContext";
 import { apiClient } from "../services/apiClient";
+import CustomDropdown from "../components/CustomDropdown";
 
 const DESTINATIONS = [
   { name: "Goa (North & South)", multiplier: 1.35, baseRate: 22000 },
@@ -33,6 +34,17 @@ const PROPERTY_CATEGORIES = [
   { id: "Beachfront", name: "Oceanfront Haven", icon: "🏖️", desc: "Direct beachfront access with panoramic coastal views" },
   { id: "Boutique Resort", name: "Boutique Resort", icon: "🌴", desc: "Curated resort suites with bespoke hospitality services" },
   { id: "Treehouse", name: "Eco Canopy Treehouse", icon: "🌿", desc: "Elevated nature immersion with architectural elegance" }
+];
+
+const CATEGORY_OPTIONS = PROPERTY_CATEGORIES.map(c => ({
+  value: c.id,
+  label: `${c.icon} ${c.name}`
+}));
+
+const CANCELLATION_OPTIONS = [
+  { value: "Flexible", label: "Flexible (24h)" },
+  { value: "Moderate", label: "Moderate (5 days)" },
+  { value: "Strict", label: "Strict (14 days)" }
 ];
 
 const AMENITY_OPTIONS = [
@@ -201,7 +213,7 @@ export default function BecomeAHost() {
 
   const [mode, setMode] = useState("landing"); // 'landing' or 'wizard'
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 10;
+  const totalSteps = 9;
 
   // Earnings Estimator States
   const [estLocation, setEstLocation] = useState(DESTINATIONS[0].name);
@@ -221,13 +233,22 @@ export default function BecomeAHost() {
   const [formData, setFormData] = useState({
     title: "",
     category: "Villa",
+    listingMode: "VILLA",
+    roomTypes: [
+      { name: "Small Room", pricePerNight: 5000, count: 1, capacity: 2 },
+      { name: "Master Room", pricePerNight: 8000, count: 0, capacity: 4 },
+      { name: "Luxury Room", pricePerNight: 12000, count: 0, capacity: 4 },
+      { name: "AC Room", pricePerNight: 6000, count: 0, capacity: 2 }
+    ],
     location: {
       address: "",
       city: "Goa",
       state: "Goa",
       country: "India",
       pinCode: "",
-      landmark: ""
+      landmark: "",
+      latitude: null,
+      longitude: null
     },
     pricePerNight: estimatedNightlyRate,
     instantBook: true,
@@ -290,6 +311,22 @@ export default function BecomeAHost() {
       toast("Please provide the property address and city", "error");
       return;
     }
+
+    if (currentStep === 3 && formData.listingMode === "VILLA" && Number(formData.pricePerNight || 0) <= 0) {
+      toast("Please enter a valid whole-villa price per night.", "error");
+      return;
+    }
+    if (currentStep === 3 && formData.listingMode === "ROOMS") {
+      const totalRooms = (formData.roomTypes || []).reduce((sum, r) => sum + Number(r.count || 0), 0);
+      if (totalRooms < 1) {
+        toast("Please add at least one physical room.", "error");
+        return;
+      }
+      if ((formData.roomTypes || []).some(r => Number(r.count || 0) > 0 && Number(r.pricePerNight || 0) <= 0)) {
+        toast("Every listed room type must have a price per night.", "error");
+        return;
+      }
+    }
     if (currentStep < totalSteps) {
       setCurrentStep(prev => prev + 1);
       window.scrollTo({ top: 120, behavior: "smooth" });
@@ -334,14 +371,25 @@ export default function BecomeAHost() {
       const resortData = {
         name: finalTitle,
         location: `${formData.location.city || "Goa"}, ${formData.location.state || "Goa"}, ${formData.location.country || "India"}`,
+        address: formData.location.address || "",
+        city: formData.location.city || "",
+        state: formData.location.state || "",
+        country: formData.location.country || "India",
+        pinCode: formData.location.pinCode || "",
+        landmark: formData.location.landmark || "",
+        latitude: formData.location.latitude || null,
+        longitude: formData.location.longitude || null,
         description,
         imageUrl: persistentImages[0] || "",
-        pricePerNight: Number(formData.pricePerNight || 0),
+        pricePerNight: formData.listingMode === "ROOMS"
+          ? Math.min(...(formData.roomTypes || []).filter(r => Number(r.count || 0) > 0).map(r => Number(r.pricePerNight || 0)).filter(p => p > 0), Number(formData.pricePerNight || 0))
+          : Number(formData.pricePerNight || 0),
         // A submitted owner property ALWAYS waits for admin approval.
         status: "PENDING_APPROVAL",
         rating: 5.0,
         reviewCount: 0,
         category: String(formData.category || "Villa").toLowerCase(),
+        listingMode: formData.listingMode || "VILLA",
         galleryUrls: persistentImages.join("|"),
         videoUrls: persistentVideos.join("|"),
         highlights: (formData.amenities || []).slice(0, 5).join(","),
@@ -349,12 +397,44 @@ export default function BecomeAHost() {
         guests: Number(formData.specs?.guests || 0),
         bedrooms: Number(formData.specs?.bedrooms || 0),
         beds: Number(formData.specs?.beds || 0),
-        bathrooms: Number(formData.specs?.bathrooms || 0)
+        bathrooms: Number(formData.specs?.bathrooms || 0),
+        sqft: Number(formData.specs?.sqft || 0),
+        instantBook: Boolean(formData.instantBook),
+        cleaningFee: Number(formData.cleaningFee || 0),
+        weekendSurgePercent: Number(formData.weekendSurgePercent || 0),
+        weeklyDiscount: Number(formData.discounts?.weekly || 0),
+        monthlyDiscount: Number(formData.discounts?.monthly || 0),
+        cancellationPolicy: formData.cancellationPolicy || "Flexible",
+        minNights: Number(formData.minNights || 1),
+        maxNights: Number(formData.maxNights || 30)
       };
 
       // Do NOT create a fake/local listing before the backend succeeds.
       // The backend is the single source of truth.
       const created = await resortService.createResort(resortData);
+
+      // Create the physical inventory only for room-wise listings. Room numbers
+      // are assigned deterministically from 101 upward; the host can rename
+      // them later from Rooms & Accommodation.
+      if (String(formData.listingMode || "VILLA").toUpperCase() === "ROOMS") {
+        const roomTypes = (formData.roomTypes || []).filter(r => String(r.name || "").trim() && Number(r.count || 0) > 0);
+        if (roomTypes.length === 0) {
+          throw new Error("Please add at least one room type and one room.");
+        }
+        let roomNumber = 101;
+        for (const type of roomTypes) {
+          for (let i = 0; i < Number(type.count); i++) {
+            await apiClient.post(`/api/v1/rooms/resort/${created.id}`, {
+              roomNumber: String(roomNumber++),
+              roomType: type.name.trim(),
+              pricePerNight: Number(type.pricePerNight || 0),
+              capacity: Number(type.capacity || 2),
+              status: "AVAILABLE",
+              cleaningStatus: "CLEAN"
+            });
+          }
+        }
+      }
 
       // Keep only a lightweight local reference for the owner's portal UI.
       // This is not used by the public resort listing.
@@ -369,6 +449,7 @@ export default function BecomeAHost() {
               name: finalTitle,
               location: formData.location,
               status: "Pending Approval",
+              listingMode: resortData.listingMode,
               pricePerNight: resortData.pricePerNight,
               image: persistentImages[0] || "",
               createdAt: new Date().toISOString()
@@ -586,15 +667,13 @@ export default function BecomeAHost() {
                     <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-2">
                       Property Category
                     </label>
-                    <select
+                    <CustomDropdown
                       value={estType}
-                      onChange={(e) => setEstType(e.target.value)}
-                      className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3 rounded-2xl text-xs font-bold outline-none focus:border-primary"
-                    >
-                      {PROPERTY_CATEGORIES.map((c) => (
-                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                      ))}
-                    </select>
+                      onChange={setEstType}
+                      options={CATEGORY_OPTIONS}
+                      className="w-full"
+                      buttonClassName="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3 rounded-2xl text-xs font-bold"
+                    />
                   </div>
 
                   <div>
@@ -873,22 +952,6 @@ export default function BecomeAHost() {
                       />
                     </div>
                   </div>
-
-                  {/* Simulated Map Pin Card */}
-                  <div className="p-4 rounded-2xl bg-[var(--color-bg-light)] border border-[var(--color-border-color)] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                        <MapPin size={18} />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-[var(--color-text-dark)]">Pinpoint Map Coordinates</div>
-                        <div className="text-[11px] text-[var(--color-text-gray)]">Lat: 15.5164 • Long: 73.7634 (Auto-detected)</div>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200">
-                      Coordinates Verified
-                    </span>
-                  </div>
                 </div>
               </motion.div>
             )}
@@ -897,120 +960,78 @@ export default function BecomeAHost() {
             {currentStep === 3 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 3 • Floor Plan</span>
-                  <h2 className="text-2xl font-extrabold font-serif text-[var(--color-text-dark)] mt-1">
-                    Share the essentials about your space
-                  </h2>
-                  <p className="text-xs text-[var(--color-text-gray)]">
-                    Let guests know the maximum occupancy and bed layouts.
-                  </p>
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 3 • Accommodation Setup</span>
+                  <h2 className="text-2xl font-extrabold font-serif text-[var(--color-text-dark)] mt-1">How do you want to list your property?</h2>
+                  <p className="text-xs text-[var(--color-text-gray)]">Choose a whole-villa listing or manage every room separately. Room listings get an individual calendar for every physical room.</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
-                    { label: "Maximum Guests", key: "guests", min: 1, max: 10000, icon: Users },
-                    { label: "Rooms", key: "rooms", min: 1, max: 1000, icon: Building2 },
-                    { label: "Bedrooms", key: "bedrooms", min: 1, max: 1000, icon: Bed },
-                    { label: "Beds", key: "beds", min: 1, max: 1000, icon: Bed },
-                    { label: "Bathrooms", key: "bathrooms", min: 1, max: 1000, icon: Bath }
-                  ].map((item) => {
-                    const Icon = item.icon;
-                    const currentValue = formData.specs[item.key] ?? 1;
-                    return (
-                      <div key={item.key} className="flex items-center justify-between p-4 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-2xl transition-colors duration-300">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)] flex items-center justify-center text-primary transition-colors duration-300">
-                            <Icon size={16} />
-                          </div>
-                          <span className="text-xs font-bold text-[var(--color-text-dark)] transition-colors duration-300">{item.label}</span>
+                    { value: "VILLA", title: "List the whole villa", desc: "One bookable property with one calendar and one nightly price.", icon: "🏡" },
+                    { value: "ROOMS", title: "List rooms separately", desc: "Create room types, quantities, prices and separate room calendars.", icon: "🛏️" }
+                  ].map(option => (
+                    <button key={option.value} type="button" onClick={() => setFormData(prev => ({ ...prev, listingMode: option.value }))}
+                      className={`p-5 rounded-2xl border text-left transition-all cursor-pointer ${formData.listingMode === option.value ? "border-primary bg-primary/10 shadow-md" : "border-[var(--color-border-color)] bg-[var(--color-bg-light)] hover:border-primary/50"}`}>
+                      <div className="text-2xl mb-2">{option.icon}</div>
+                      <div className="text-sm font-extrabold text-[var(--color-text-dark)]">{option.title}</div>
+                      <div className="text-[11px] text-[var(--color-text-gray)] mt-1 leading-relaxed">{option.desc}</div>
+                    </button>
+                  ))}
+                </div>
+
+                {formData.listingMode === "ROOMS" ? (
+                  <div className="space-y-4 p-5 rounded-3xl border border-[var(--color-border-color)] bg-[var(--color-bg-light)]">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-[var(--color-text-dark)]">Room types & inventory</h3>
+                      <p className="text-[10px] text-[var(--color-text-gray)] mt-1">Set the price per night and how many physical rooms exist for each type. Every room is numbered automatically starting at 101.</p>
+                    </div>
+                    {formData.roomTypes.map((type, index) => (
+                      <div key={type.name} className="grid grid-cols-1 sm:grid-cols-[1fr_150px_130px_110px] gap-3 items-end p-3 rounded-2xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)]">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1">Room Type</label>
+                          <input value={type.name} onChange={e => setFormData(prev => ({ ...prev, roomTypes: prev.roomTypes.map((r,i) => i===index ? {...r,name:e.target.value} : r) }))} className="w-full p-2.5 rounded-xl border border-[var(--color-border-color)] bg-[var(--color-bg-light)] text-xs font-bold outline-none focus:border-primary" />
                         </div>
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setFormData(prev => ({
-                              ...prev,
-                              specs: { ...prev.specs, [item.key]: Math.max(item.min, (prev.specs[item.key] ?? 1) - 1) }
-                            }))}
-                            className="w-8 h-8 rounded-full border border-[var(--color-border-color)] bg-[var(--color-bg-white)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer transition-colors duration-300 shadow-xs"
-                            title={`Decrease ${item.label}`}
-                          >
-                            <Minus size={13} />
-                          </button>
-                          <input
-                            type="number"
-                            value={formData.specs[item.key] === "" ? "" : (formData.specs[item.key] ?? 1)}
-                            onChange={(e) => {
-                              const val = e.target.value === "" ? "" : parseInt(e.target.value, 10);
-                              if (val === "") {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  specs: { ...prev.specs, [item.key]: "" }
-                                }));
-                              } else if (!isNaN(val)) {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  specs: { ...prev.specs, [item.key]: Math.max(item.min, Math.min(item.max, val)) }
-                                }));
-                              }
-                            }}
-                            onBlur={() => {
-                              if (formData.specs[item.key] === "" || isNaN(formData.specs[item.key])) {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  specs: { ...prev.specs, [item.key]: item.min }
-                                }));
-                              }
-                            }}
-                            className="text-xs font-extrabold text-[var(--color-text-dark)] w-10 text-center bg-transparent border-none outline-none focus:ring-1 focus:ring-primary rounded font-sans"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setFormData(prev => ({
-                              ...prev,
-                              specs: { ...prev.specs, [item.key]: (prev.specs[item.key] ?? 0) + 1 }
-                            }))}
-                            className="w-8 h-8 rounded-full border border-[var(--color-border-color)] bg-[var(--color-bg-white)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer transition-colors duration-300 shadow-xs"
-                            title={`Increase ${item.label}`}
-                          >
-                            <Plus size={13} />
-                          </button>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1">Price / Night ₹</label>
+                          <input type="number" min="1" value={type.pricePerNight} onChange={e => setFormData(prev => ({ ...prev, roomTypes: prev.roomTypes.map((r,i) => i===index ? {...r,pricePerNight:Number(e.target.value)} : r) }))} className="w-full p-2.5 rounded-xl border border-[var(--color-border-color)] bg-[var(--color-bg-light)] text-xs font-bold outline-none focus:border-primary" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1">Guest Capacity</label>
+                          <input type="number" min="1" max="20" value={type.capacity || 2} onChange={e => setFormData(prev => ({ ...prev, roomTypes: prev.roomTypes.map((r,i) => i===index ? {...r,capacity:Math.max(1,Number(e.target.value))} : r) }))} className="w-full p-2.5 rounded-xl border border-[var(--color-border-color)] bg-[var(--color-bg-light)] text-xs font-bold outline-none focus:border-primary" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1">Rooms</label>
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => setFormData(prev => ({...prev, roomTypes: prev.roomTypes.map((r,i)=>i===index?{...r,count:Math.max(0,(r.count||0)-1)}:r)}))} className="w-8 h-8 rounded-full border bg-[var(--color-bg-white)] cursor-pointer"><Minus size={12} className="mx-auto" /></button>
+                            <span className="w-6 text-center text-xs font-black text-[var(--color-text-dark)]">{type.count}</span>
+                            <button type="button" onClick={() => setFormData(prev => ({...prev, roomTypes: prev.roomTypes.map((r,i)=>i===index?{...r,count:(r.count||0)+1}:r)}))} className="w-8 h-8 rounded-full border bg-[var(--color-bg-white)] cursor-pointer"><Plus size={12} className="mx-auto" /></button>
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5 transition-colors duration-300">
-                      Approximate Area (Sq. Ft.)
-                    </label>
-                    <div className="relative flex items-center">
-                      <input 
-                        type="number"
-                        value={formData.specs.sqft}
-                        onChange={(e) => setFormData(prev => ({ ...prev, specs: { ...prev.specs, sqft: Math.max(0, Number(e.target.value)) } }))}
-                        className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 pr-24 rounded-2xl text-xs font-medium outline-none focus:border-primary font-sans tabular-nums transition-colors duration-300"
-                      />
-                      <div className="absolute right-2.5 flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, specs: { ...prev.specs, sqft: Math.max(0, (prev.specs.sqft || 0) - 100) } }))}
-                          className="w-7 h-7 rounded-xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer text-xs font-bold transition-all shadow-xs"
-                          title="Decrease Area by 100"
-                        >
-                          <Minus size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, specs: { ...prev.specs, sqft: (prev.specs.sqft || 0) + 100 } }))}
-                          className="w-7 h-7 rounded-xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)] flex items-center justify-center text-[var(--color-text-dark)] hover:border-primary cursor-pointer text-xs font-bold transition-all shadow-xs"
-                          title="Increase Area by 100"
-                        >
-                          <Plus size={12} />
-                        </button>
+                    ))}
+                    <div className="text-[11px] font-bold text-primary">Total physical rooms: {formData.roomTypes.reduce((sum, r) => sum + Number(r.count || 0), 0)}</div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 p-5 rounded-3xl border border-[var(--color-border-color)] bg-[var(--color-bg-light)]">
+                    <div className="text-sm font-extrabold text-[var(--color-text-dark)]">Whole villa settings</div>
+                    <div className="p-4 rounded-2xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)]">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-primary mb-1.5">Price / Night ₹</label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-extrabold text-primary">₹</span>
+                        <input type="number" min="1" step="500" value={formData.pricePerNight} onChange={e => setFormData(prev => ({ ...prev, pricePerNight: Math.max(0, Number(e.target.value)) }))} className="w-full p-2.5 rounded-xl border border-[var(--color-border-color)] bg-[var(--color-bg-light)] text-sm font-black outline-none focus:border-primary" />
+                        <span className="text-[10px] font-bold text-[var(--color-text-gray)] whitespace-nowrap">/ night</span>
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        { label: "Guests", key: "guests", icon: Users },
+                        { label: "Bedrooms", key: "bedrooms", icon: Bed },
+                        { label: "Beds", key: "beds", icon: Bed },
+                        { label: "Bathrooms", key: "bathrooms", icon: Bath }
+                      ].map(item => { const Icon=item.icon; return <div key={item.key} className="p-3 rounded-2xl bg-[var(--color-bg-white)] border border-[var(--color-border-color)]"><div className="flex items-center gap-2 text-[10px] font-bold text-[var(--color-text-gray)]"><Icon size={13}/>{item.label}</div><input type="number" min="1" value={formData.specs[item.key]} onChange={e=>setFormData(prev=>({...prev,specs:{...prev.specs,[item.key]:Math.max(1,Number(e.target.value))}}))} className="mt-2 w-full bg-transparent text-sm font-black text-[var(--color-text-dark)] outline-none"/></div> })}
+                    </div>
                   </div>
-                </div>
+                )}
               </motion.div>
             )}
 
@@ -1321,15 +1342,13 @@ export default function BecomeAHost() {
                       <div className="text-xs font-bold text-[var(--color-text-dark)]">Cancellation Policy</div>
                       <div className="text-[11px] text-[var(--color-text-gray)]">Flexible, Moderate, or Strict</div>
                     </div>
-                    <select
+                    <CustomDropdown
                       value={formData.cancellationPolicy}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cancellationPolicy: e.target.value }))}
-                      className="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-2 rounded-xl text-xs font-bold outline-none focus:border-primary"
-                    >
-                      <option value="Flexible">Flexible (24h)</option>
-                      <option value="Moderate">Moderate (5 days)</option>
-                      <option value="Strict">Strict (14 days)</option>
-                    </select>
+                      onChange={(val) => setFormData(prev => ({ ...prev, cancellationPolicy: val }))}
+                      options={CANCELLATION_OPTIONS}
+                      align="right"
+                      buttonClassName="bg-[var(--color-bg-white)] border border-[var(--color-border-color)] p-2 px-3 rounded-xl text-xs font-bold"
+                    />
                   </div>
                 </div>
 
@@ -1342,71 +1361,11 @@ export default function BecomeAHost() {
               </motion.div>
             )}
 
-            {/* Step 8: Nightly Pricing & Discounts */}
+            {/* Step 8: Host KYC & Payout Details */}
             {currentStep === 8 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 8 • Pricing</span>
-                  <h2 className="text-2xl font-extrabold font-serif text-[var(--color-text-dark)] mt-1">
-                    Set your nightly rates & discounts
-                  </h2>
-                  <p className="text-xs text-[var(--color-text-gray)]">
-                    You can easily override rates for weekends or holidays later in your calendar.
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="p-6 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-3xl space-y-3 transition-colors duration-300">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-primary">
-                      Base Nightly Price (INR ₹)
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl font-extrabold text-primary font-sans tabular-nums">₹</span>
-                      <input 
-                        type="number"
-                        step="500"
-                        value={formData.pricePerNight}
-                        onChange={(e) => setFormData(prev => ({ ...prev, pricePerNight: Number(e.target.value) }))}
-                        className="text-2xl font-extrabold text-[var(--color-text-dark)] bg-transparent border-b-2 border-primary outline-none w-48 font-sans tabular-nums"
-                      />
-                      <span className="text-xs font-bold text-[var(--color-text-gray)] font-sans">/ night</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
-                        Cleaning & Sanitization Fee (₹)
-                      </label>
-                      <input 
-                        type="number"
-                        value={formData.cleaningFee}
-                        onChange={(e) => setFormData(prev => ({ ...prev, cleaningFee: Number(e.target.value) }))}
-                        className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
-                        Weekend Surge (% Surcharge)
-                      </label>
-                      <input 
-                        type="number"
-                        value={formData.weekendSurgePercent}
-                        onChange={(e) => setFormData(prev => ({ ...prev, weekendSurgePercent: Number(e.target.value) }))}
-                        className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 9: Host KYC & Payout Details */}
-            {currentStep === 9 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 9 • Verification & Payouts</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">Step 8 • Verification & Payouts</span>
                   <h2 className="text-2xl font-extrabold font-serif text-[var(--color-text-dark)] mt-1">
                     Where should we deposit your earnings?
                   </h2>
@@ -1598,8 +1557,8 @@ export default function BecomeAHost() {
               </motion.div>
             )}
 
-            {/* Step 10: Review & Instant Publish */}
-            {currentStep === 10 && (
+            {/* Step 9: Review & Instant Publish */}
+            {currentStep === 9 && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Final Step • Live Preview</span>

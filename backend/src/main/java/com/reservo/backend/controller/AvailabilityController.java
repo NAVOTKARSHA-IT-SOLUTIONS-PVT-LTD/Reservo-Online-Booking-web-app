@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/availability")
@@ -23,6 +24,7 @@ public class AvailabilityController {
     private final AvailabilityService availabilityService;
     private final AuthService authService;
     private final ResortRepository resortRepository;
+    private final com.reservo.backend.repository.RoomRepository roomRepository;
 
     @GetMapping("/check")
     public ResponseEntity<ApiResponse<List<Room>>> checkAvailability(
@@ -55,4 +57,38 @@ public class AvailabilityController {
                 blocked ? "Date blocked successfully" : "Date made available successfully"));
     }
 
+    @GetMapping("/room/{roomId}/blocks")
+    public ResponseEntity<ApiResponse<List<String>>> getRoomBlocks(
+            @PathVariable String roomId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        User user = authService.getAuthenticatedUser();
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new com.reservo.backend.exception.ResourceNotFoundException("Room not found"));
+        if (user.getRole() == User.Role.ROLE_OWNER) {
+            var resort = resortRepository.findById(room.getResortId())
+                    .orElseThrow(() -> new com.reservo.backend.exception.ResourceNotFoundException("Resort not found"));
+            if (!user.getId().equals(resort.getOwnerId())) throw new UnauthorizedException("You can only manage your own room calendar");
+        }
+        return ResponseEntity.ok(ApiResponse.success(availabilityService.getRoomBlockedDates(roomId, from, to)));
     }
+
+    @PostMapping("/room/{roomId}/block")
+    public ResponseEntity<ApiResponse<String>> setRoomBlocked(
+            @PathVariable String roomId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(defaultValue = "true") boolean blocked) {
+        User user = authService.getAuthenticatedUser();
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new com.reservo.backend.exception.ResourceNotFoundException("Room not found"));
+        var resort = resortRepository.findById(room.getResortId())
+                .orElseThrow(() -> new com.reservo.backend.exception.ResourceNotFoundException("Resort not found"));
+        if (user.getRole() != User.Role.ROLE_ADMIN && !user.getId().equals(resort.getOwnerId())) {
+            throw new UnauthorizedException("You can only change availability for your own room");
+        }
+        availabilityService.setRoomDateBlocked(roomId, date, blocked);
+        return ResponseEntity.ok(ApiResponse.success(blocked ? "BLOCKED" : "AVAILABLE",
+                blocked ? "Room date blocked successfully" : "Room date made available successfully"));
+    }
+
+}

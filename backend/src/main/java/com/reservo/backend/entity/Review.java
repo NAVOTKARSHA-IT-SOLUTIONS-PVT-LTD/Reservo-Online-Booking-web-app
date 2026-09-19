@@ -29,6 +29,9 @@ public class Review {
     /** Firestore document ID of the resort. */
     private String resortId;
 
+    /** The completed booking this review belongs to. */
+    private String bookingId;
+
     @Builder.Default
     private Instant createdAt = Instant.now();
     /**

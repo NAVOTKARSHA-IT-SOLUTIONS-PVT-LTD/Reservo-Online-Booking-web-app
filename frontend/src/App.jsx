@@ -2,26 +2,34 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Routes, Route, useLocation, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, WifiOff, CheckCircle2, ArrowUp, Send, Heart, Sun, Moon, Globe, ChevronDown, Menu, Check } from "lucide-react";
-import FeedbackPopup from "./components/FeedbackPopup";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Mascot from "./components/Mascot";
 import Preloader from "./components/Preloader";
 import MobileUI from "./components/MobileUI";
-import BookingModal from "./components/BookingModal";
 import SearchLoadingOverlay from "./components/SearchLoadingOverlay";
 import ProtectedRoute from "./components/ProtectedRoute";
-import GuidedTour from "./components/GuidedTour";
 import RecentlyViewed from "./components/RecentlyViewed";
 import { secureStorage } from "./services/secureStorage";
 import { useToast } from "./context/ToastContext";
 import { useWishlist } from "./context/WishlistContext";
 import { resortService } from "./services/resort.service";
+import { bookingService } from "./services/booking.service";
 import { apiClient } from "./services/apiClient";
+import { authService } from "./services/auth.service";
 
-// Lazy-loaded pages
+// Lazy-loaded interactive modals and overlays
+const BookingModal = React.lazy(() => import("./components/BookingModal"));
+const FeedbackPopup = React.lazy(() => import("./components/FeedbackPopup"));
+const GuidedTour = React.lazy(() => import("./components/GuidedTour"));
+
+// Lazy-loaded pages & heavy route components
+const ResortListing = React.lazy(() => import("./components/ResortListing"));
+const ResortDetails = React.lazy(() => import("./components/ResortDetails"));
 const About = React.lazy(() => import("./pages/About"));
 const Contact = React.lazy(() => import("./pages/Contact"));
+const Blogs = React.lazy(() => import("./pages/Blogs"));
+const Reviews = React.lazy(() => import("./pages/Reviews"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Rewards = React.lazy(() => import("./pages/Rewards"));
 const Profile = React.lazy(() => import("./pages/Profile"));
@@ -47,15 +55,14 @@ const HelpCenter = React.lazy(() => import("./pages/DummyPages").then(m => ({ de
 const Support = React.lazy(() => import("./pages/DummyPages").then(m => ({ default: m.Support })));
 const Privacy = React.lazy(() => import("./pages/DummyPages").then(m => ({ default: m.Privacy })));
 
-// Pre-load components to prevent lag
+// Core Landing Page components for immediate paint
 import Hero from "./components/Hero";
 import PopularDestinations from "./components/PopularDestinations";
 import WhyChooseUs from "./components/WhyChooseUs";
 import Testimonials from "./components/Testimonials";
 import FAQ from "./components/FAQ";
 import MascotShowcase from "./components/MascotShowcase";
-import ResortListing from "./components/ResortListing";
-import ResortDetails from "./components/ResortDetails";
+
 
 // Simple Loading Indicator for Suspense
 function PageLoader() {
@@ -91,6 +98,7 @@ function Home({ wishlist, toggleWishlist, currencySymbol, exchangeRate }) {
       <RecentlyViewed currencySymbol={currencySymbol} rates={exchangeRate} />
       <PopularDestinations wishlist={wishlist} toggleWishlist={toggleWishlist} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />
       <WhyChooseUs />
+      <Testimonials />
       <FAQ />
       <MascotShowcase />
     </>
@@ -219,15 +227,17 @@ function ResortDetailsPageWrapper({ isDark, currencySymbol, exchangeRate, onBook
   }
 
   return (
-    <ResortDetails
-      resort={resort}
-      urlId={id}
-      isDarkMode={isDark}
-      onBack={() => navigate("/")}
-      currencySymbol={currencySymbol}
-      exchangeRate={exchangeRate}
-      onBook={onBook}
-    />
+    <Suspense fallback={<PageLoader />}>
+      <ResortDetails
+        resort={resort}
+        urlId={id}
+        isDarkMode={isDark}
+        onBack={() => navigate("/")}
+        currencySymbol={currencySymbol}
+        exchangeRate={exchangeRate}
+        onBook={onBook}
+      />
+    </Suspense>
   );
 }
 
@@ -235,6 +245,41 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
+
+  // Authentication state with validation
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  // Validate authentication on app startup
+  useEffect(() => {
+    const validateAuth = async () => {
+      try {
+        const hasToken = authService.isAuthenticated();
+        if (hasToken) {
+          // Validate token with backend
+          const validatedUser = await authService.refreshCurrentUser();
+          if (validatedUser) {
+            setIsAuthenticated(true);
+          } else {
+            // Token is invalid, clear it
+            await authService.logout();
+            setIsAuthenticated(false);
+          }
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error("Auth validation failed:", error);
+        // Clear invalid auth state
+        await authService.logout();
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoadingAuth(false);
+      }
+    };
+
+    validateAuth();
+  }, []);
 
   // Shared theme state
   const [isDark, setIsDark] = useState(() => {
@@ -293,6 +338,7 @@ function App() {
   const [bookingResort, setBookingResort] = useState(null);
   const [bookingRoom, setBookingRoom] = useState(null);
   const [bookingDates, setBookingDates] = useState({ checkIn: null, checkOut: null });
+  const [bookingGuests, setBookingGuests] = useState({ adults: 2, children: 0, roomsCount: 1 });
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -387,7 +433,7 @@ function App() {
   // Centralized booking opener: resolve the real Firestore room before the
   // BookingModal is rendered. This prevents checkout from ever receiving an
   // undefined roomId when booking starts from Resort Details/Wishlist.
-  const openBookingForResort = async (inputResort) => {
+  const openBookingForResort = async (inputResort, searchDetails = null) => {
     if (!inputResort?.id) {
       toast("This property has an invalid ID.", "error");
       return;
@@ -396,47 +442,64 @@ function App() {
     setIsCheckingAvailability(true);
     try {
       const resort = await resortService.getResortById(String(inputResort.id));
-      if (!resort?.id) {
-        throw new Error("This property could not be found.");
-      }
+      if (!resort?.id) throw new Error("This property could not be found.");
 
-      const response = await apiClient.get(
-        `/api/v1/rooms/resort/${encodeURIComponent(resort.id)}`
+      let saved = {};
+      try {
+        saved = JSON.parse(sessionStorage.getItem("reservo_search_state") || "{}");
+      } catch (_) {}
+
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      const defaultCheckoutDate = new Date(today);
+      defaultCheckoutDate.setDate(defaultCheckoutDate.getDate() + 3);
+      const defaultCheckout = defaultCheckoutDate.toISOString().split("T")[0];
+
+      let checkIn = searchDetails?.checkIn || saved.checkInDate || todayStr;
+      let checkOut = searchDetails?.checkOut || saved.checkOutDate || defaultCheckout;
+      if (checkIn < todayStr || checkOut <= checkIn) {
+        checkIn = todayStr;
+        checkOut = defaultCheckout;
+      }
+      const adults = Math.max(1, Number(searchDetails?.adults ?? saved.guestCount ?? 2));
+      const children = Math.max(0, Number(searchDetails?.children ?? saved.childCount ?? 0));
+      const isWholeVilla = String(resort.listingMode || "").toUpperCase() === "VILLA";
+      const roomType = String(searchDetails?.roomType || saved.roomType || "").trim();
+      const roomCapacity = Math.max(1, Number(searchDetails?.roomCapacity || saved.roomCapacity || 4));
+      const roomsCount = isWholeVilla ? 1 : Math.max(
+        1,
+        Number(searchDetails?.roomsCount ?? saved.roomCount ?? 1),
+        Math.ceil((adults + children) / roomCapacity)
       );
 
-      const rooms = Array.isArray(response?.data) ? response.data : [];
-      const availableRoom =
-        rooms.find((r) => {
-          const status = String(r?.status || "AVAILABLE").toUpperCase();
-          return r?.id && !["MAINTENANCE", "INACTIVE", "BLOCKED"].includes(status);
-        }) || null;
-
-      if (!availableRoom?.id) {
-        throw new Error("No available room is configured for this resort. Please add an available room in the Host panel.");
+      if (!checkIn || !checkOut || checkOut <= checkIn) {
+        throw new Error("Please select valid check-in and check-out dates.");
       }
 
-      // Keep the current search dates. ResortDetails writes these values to
-      // sessionStorage whenever the user changes the date/guest controls.
-      let bookingDates = {};
-      try {
-        bookingDates = JSON.parse(
-          sessionStorage.getItem("reservo_search_state") || "{}"
-        );
-      } catch (_) {}
+      // This is the authoritative pre-booking check. Do not open the booking
+      // wizard when the requested number of rooms is unavailable.
+      const availability = await bookingService.checkAvailability(
+        resort.id,
+        { checkIn, checkOut },
+        { adults, children, roomsCount, wholeVilla: String(resort.listingMode || "").toUpperCase() === "VILLA", roomType, roomCapacity }
+      );
+
+      const availableRoom = availability.suggestedRooms?.[0];
+      if (!availableRoom?.id) {
+        throw new Error("No room is available for the selected dates.");
+      }
 
       setBookingRoom(availableRoom);
       setBookingResort(resort);
-      setIsCheckingAvailability(false);
-      setBookingDates({
-        checkIn: bookingDates.checkInDate || null,
-        checkOut: bookingDates.checkOutDate || null,
-      });
+      setBookingDates({ checkIn, checkOut });
+      setBookingGuests({ adults, children, roomsCount, roomType, roomCapacity });
     } catch (err) {
       console.error("Failed to prepare booking:", err);
       setBookingRoom(null);
       setBookingResort(null);
-      setIsCheckingAvailability(false);
       toast(err?.message || "Unable to prepare this booking.", "error");
+    } finally {
+      setIsCheckingAvailability(false);
     }
   };
 
@@ -490,6 +553,9 @@ function App() {
             <Route path="/" element={<Home wishlist={wishlistIds} toggleWishlist={handleToggleWishlist} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blog/:id" element={<Blogs />} />
+            <Route path="/reviews" element={<Reviews />} />
             <Route path="/rewards" element={<Rewards />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/terms" element={<Terms />} />
@@ -504,8 +570,8 @@ function App() {
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+            <Route path="/register" element={<Register setIsAuthenticated={setIsAuthenticated} />} />
             <Route path="/search" element={renderResortListing()} />
             <Route path="/search-results" element={renderResortListing()} />
             <Route path="/resorts" element={renderResortListing()} />
@@ -533,11 +599,25 @@ function App() {
     </AnimatePresence>
   );
 
+  // Show loading screen while validating authentication
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-light">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm font-bold text-text-gray">Verifying session...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-bg-light transition-colors duration-300">
       
       {/* Interactive Guided Tour component overlay */}
-      <GuidedTour />
+      <Suspense fallback={null}>
+        <GuidedTour />
+      </Suspense>
 
       {/* Skip to content link for accessibility */}
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-white px-4 py-2 rounded-xl z-[10002] font-semibold text-xs shadow transition-all">
@@ -576,7 +656,7 @@ function App() {
         </MobileUI>
       ) : (
         <div className="flex flex-col flex-1 bg-bg-light transition-colors duration-300">
-          <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} />
+          <Header isDark={isDark} onToggleTheme={() => setIsDark(!isDark)} wishlist={wishlist} isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
 
           <main id="main-content" className={`flex-1 flex flex-col ${location.pathname === "/" ? "" : location.pathname === "/ai-planner" ? "pt-20" : "pt-28"}`}>
             {renderAppRoutes()}
@@ -599,23 +679,26 @@ function App() {
       )}
 
       {!isCheckingAvailability && bookingResort && (
-        <BookingModal
-          resort={bookingResort}
-          room={bookingRoom}
-          bookingDates={bookingDates}
-          isDarkMode={isDark}
-          onClose={() => {
-            setBookingResort(null);
-            setBookingRoom(null);
-            setBookingDates({ checkIn: null, checkOut: null });
-          }}
-          onAskRivo={() => {
-            const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]');
-            if (mascotBtn) {
-              mascotBtn.click();
-            }
-          }}
-        />
+        <Suspense fallback={<PageLoader />}>
+          <BookingModal
+            resort={bookingResort}
+            room={bookingRoom}
+            bookingDates={bookingDates}
+            bookingGuests={bookingGuests}
+            isDarkMode={isDark}
+            onClose={() => {
+              setBookingResort(null);
+              setBookingRoom(null);
+              setBookingDates({ checkIn: null, checkOut: null });
+            }}
+            onAskRivo={() => {
+              const mascotBtn = document.querySelector('[aria-label="Toggle Rivo AI Companion"]');
+              if (mascotBtn) {
+                mascotBtn.click();
+              }
+            }}
+          />
+        </Suspense>
       )}
 
       {/* Floating Action Buttons: Back To Top */}
@@ -669,7 +752,9 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
-      <FeedbackPopup />
+      <Suspense fallback={null}>
+        <FeedbackPopup />
+      </Suspense>
     </div>
     
   );

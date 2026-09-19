@@ -8,6 +8,7 @@ import {
 import rivoSearching from "../assets/images/rivo_searching.png";
 import { resortService } from "../services/resort.service";
 import { authService } from "../services/auth.service";
+import CustomDropdown from "../components/CustomDropdown";
 
 const FILTER_CHIPS = [
   { id: "ai", label: "✨ AI Recommended", icon: null },
@@ -283,18 +284,27 @@ function SearchResults() {
     return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  const getMapSrc = () => {
-    if (sorted.length === 0) return "https://www.openstreetmap.org/export/embed.html?bbox=60.0%2C-10.0%2C120.0%2C40.0&layer=mapnik";
-    const points = sorted
-      .map(r => ({ lat: Number(r.lat), lng: Number(r.lng) }))
-      .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
-    if (!points.length) return "https://www.openstreetmap.org/export/embed.html?bbox=60.0%2C-10.0%2C120.0%2C40.0&layer=mapnik";
-    const centerLat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
-    const centerLng = points.reduce((sum, p) => sum + p.lng, 0) / points.length;
-    const bbox = `${centerLng - 2}%2C${centerLat - 2}%2C${centerLng + 2}%2C${centerLat + 2}`;
-    const marker = `${centerLat}%2C${centerLng}`;
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${marker}`;
-  };
+  if (!dest || !dest.trim()) {
+    return (
+      <div className="min-h-screen bg-bg-light flex flex-col items-center justify-center p-4">
+        <div className="text-center py-14 px-8 bg-bg-white border border-border-color rounded-3xl max-w-md w-full shadow-lg space-y-4">
+          <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto text-3xl">
+            📍
+          </div>
+          <h2 className="text-xl font-extrabold text-text-dark">Destination Required</h2>
+          <p className="text-xs text-text-gray leading-relaxed">
+            Searching for stays requires selecting a destination. Please choose your desired destination to explore available verified resorts.
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="w-full py-3.5 bg-primary hover:bg-primary-dark text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer border-none flex items-center justify-center gap-2"
+          >
+            <MapPin size={16} /> Choose Destination
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg-light pb-20">
@@ -431,13 +441,13 @@ function SearchResults() {
               </h2>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-text-gray">Sort by:</span>
-                <select 
-                  className="bg-bg-white border border-border-color text-text-dark text-sm font-bold py-2 px-3 rounded-xl outline-none cursor-pointer hover:border-gold transition-colors"
+                <CustomDropdown
                   value={sortKey}
-                  onChange={(e) => setSortKey(e.target.value)}
-                >
-                  {SORT_OPTIONS.map(opt => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
-                </select>
+                  onChange={setSortKey}
+                  options={SORT_OPTIONS.map((opt) => ({ value: opt.key, label: opt.label }))}
+                  align="right"
+                  buttonClassName="!py-2 !px-3 !bg-bg-white !rounded-xl text-xs font-bold"
+                />
               </div>
             </div>
 
@@ -485,19 +495,11 @@ function SearchResults() {
               </div>
             </div>
 
-            {/* Map Widget */}
-            <div className="bg-bg-white border border-border-color rounded-[24px] overflow-hidden shadow-sm h-[300px] relative group">
-              {!isLoading && (
-                <iframe
-                  title="Resort Map"
-                  src={getMapSrc()}
-                  className="w-full h-full border-none absolute inset-0 z-10"
-                  loading="lazy"
-                />
-              )}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl border border-border-color shadow-custom text-sm font-bold text-text-dark opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 cursor-pointer">
-                <Map size={14} className="text-gold" /> Expand Map
-              </div>
+            {/* Map Widget Placeholder */}
+            <div className="bg-bg-white border border-border-color rounded-[24px] overflow-hidden shadow-sm h-[300px] relative group flex flex-col items-center justify-center bg-gray-50">
+              <Map size={36} className="text-gold mb-2 opacity-50" />
+              <p className="text-sm font-bold text-text-dark">Interactive Map</p>
+              <p className="text-xs text-text-gray mt-1">Map feature is currently unavailable.</p>
             </div>
 
             {/* Local Events Widget */}

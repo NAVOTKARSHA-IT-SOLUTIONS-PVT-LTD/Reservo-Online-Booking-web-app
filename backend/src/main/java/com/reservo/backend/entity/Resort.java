@@ -30,6 +30,14 @@ public class Resort {
 
     private String name;
     private String location;
+
+    // Structured location fields captured during property listing/editing.
+    private String address;
+    private String city;
+    private String state;
+    private String country;
+    private String pinCode;
+    private String landmark;
     private String description;
     private String imageUrl;
     private BigDecimal pricePerNight;
@@ -51,6 +59,18 @@ public class Resort {
     private Integer bedrooms;
     private Integer beds;
     private Integer bathrooms;
+    private Integer sqft;
+    private Boolean instantBook;
+    private Integer cleaningFee;
+    private Integer weekendSurgePercent;
+    private Integer weeklyDiscount;
+    private Integer monthlyDiscount;
+    private String cancellationPolicy;
+    private Integer minNights;
+    private Integer maxNights;
+
+    /** VILLA = one whole-property unit; ROOMS = room-wise inventory. */
+    private String listingMode;
 
     private ResortStatus status;
 

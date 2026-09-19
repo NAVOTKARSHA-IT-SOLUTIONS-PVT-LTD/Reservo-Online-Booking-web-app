@@ -19,11 +19,16 @@ public class BookingHistoryResponse {
     private String bookingId;
     private String bookingCode;
 
+    private String resortId;
     private String resortName;
     private String resortLocation;
 
     private String roomNumber;
     private String roomType;
+
+    private java.util.List<String> roomNumbers;
+    private java.util.List<String> roomTypes;
+    private Boolean reviewed;
 
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
