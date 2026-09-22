@@ -23,7 +23,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.reservo.backend.security.CustomUserDetailsService;
 import com.reservo.backend.security.JwtAuthenticationFilter;
-import com.reservo.backend.security.OAuth2AuthenticationSuccessHandler;
 
 import lombok.RequiredArgsConstructor;
 
@@ -93,9 +92,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            OAuth2AuthenticationSuccessHandler
-                    oAuth2AuthenticationSuccessHandler
+            HttpSecurity http
     ) throws Exception {
 
         http
@@ -149,16 +146,6 @@ public class SecurityConfig {
                                 "/api/v1/auth/social/login",
                                 "/api/v1/auth/logout",
                                 "/api/v1/auth/me"
-                        ).permitAll()
-
-
-                        // ====================================================
-                        // OAUTH2
-                        // ====================================================
-
-                        .requestMatchers(
-                                "/oauth2/**",
-                                "/login/oauth2/code/**"
                         ).permitAll()
 
 
@@ -220,14 +207,6 @@ public class SecurityConfig {
                                 "/api/v1/reviews/**",
                                 "/api/v1/availability/**",
                                 "/api/v1/rewards/validate"
-                        ).permitAll()
-
-                        // Places calls are protected by the dedicated per-IP limiter.
-                        // They stay public so guests can browse nearby places and new
-                        // hosts can search an address before signing in.
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/v1/places/**"
                         ).permitAll()
 
 
@@ -498,12 +477,6 @@ public class SecurityConfig {
                                                 )
                                 )
                 );
-
-        // OAuth2 login is enabled only when a real Google OAuth registration is
-        // provided through deployment environment variables.
-        if (System.getenv("SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID") != null) {
-            http.oauth2Login(oauth2 -> oauth2.successHandler(oAuth2AuthenticationSuccessHandler));
-        }
 
         return http.build();
     }
