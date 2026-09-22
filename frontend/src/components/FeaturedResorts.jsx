@@ -10,15 +10,23 @@ function FeaturedResorts() {
 
   useEffect(() => {
     let active = true;
-    resortService.getAllResorts()
-      .then(data => {
-        if (active) setResorts(Array.isArray(data) ? data.slice(0, 8) : []);
-      })
-      .catch(err => {
-        console.warn("Failed to load featured resorts:", err);
-        if (active) setResorts([]);
-      });
-    return () => { active = false; };
+    const fetchFeatured = () => {
+      resortService.getAllResorts()
+        .then(data => {
+          if (active) setResorts(Array.isArray(data) ? data.slice(0, 8) : []);
+        })
+        .catch(err => {
+          console.warn("Failed to load featured resorts:", err);
+          if (active) setResorts([]);
+        });
+    };
+
+    fetchFeatured();
+    window.addEventListener("reservo-host-data-updated", fetchFeatured);
+    return () => { 
+      active = false; 
+      window.removeEventListener("reservo-host-data-updated", fetchFeatured);
+    };
   }, []);
 
   const toggleWishlistHandler = (resort, e) => {
@@ -111,7 +119,17 @@ function FeaturedResorts() {
             {resorts.map((resort) => (
               <article className="flex-[0_0_85%] md:flex-[0_0_calc((100%-30px)/2)] lg:flex-[0_0_calc((100%-60px)/3)] bg-bg-white border border-border-color rounded-2xl overflow-hidden shadow-custom transition-all duration-400 ease-out flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] group" key={resort.id}>
                 <div className="relative h-60 overflow-hidden bg-border-color">
-                  <img src={resort.image} alt={resort.name} className="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105" />
+                  <img 
+                    src={resort.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80"} 
+                    alt={resort.name} 
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => {
+                      const fallback = "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80";
+                      if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+                    }}
+                    className="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105" 
+                  />
                   
                   {resort.isAIRecommended && (
                     <span className="absolute bottom-3.75 left-3.75 px-3 py-1.5 rounded-full text-xs font-bold z-10 shadow-[0_4px_10px_rgba(0,0,0,0.1)] flex items-center gap-1 bg-gradient-to-br from-[#121e1b] to-[#2f483c] text-white border border-white/10">

@@ -15,7 +15,8 @@ function PopularDestinations({ currencySymbol = "₹", exchangeRate = 1 }) {
   const [resorts, setResorts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadStays = () => {
+    setLoading(true);
     resortService.getAllResorts()
       .then(data => {
         setResorts(data || []);
@@ -27,6 +28,12 @@ function PopularDestinations({ currencySymbol = "₹", exchangeRate = 1 }) {
       .finally(() => {
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadStays();
+    window.addEventListener("reservo-host-data-updated", loadStays);
+    return () => window.removeEventListener("reservo-host-data-updated", loadStays);
   }, []);
 
   const filteredDestinations = resorts.filter((dest) => {
