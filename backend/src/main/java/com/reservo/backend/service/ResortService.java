@@ -237,6 +237,9 @@ public class ResortService {
         existing.setCountry(changes.getCountry());
         existing.setPinCode(changes.getPinCode());
         existing.setLandmark(changes.getLandmark());
+        existing.setLatitude(changes.getLatitude());
+        existing.setLongitude(changes.getLongitude());
+        existing.setGooglePlaceId(changes.getGooglePlaceId());
         existing.setDescription(changes.getDescription());
         existing.setImageUrl(changes.getImageUrl());
         existing.setPricePerNight(changes.getPricePerNight());

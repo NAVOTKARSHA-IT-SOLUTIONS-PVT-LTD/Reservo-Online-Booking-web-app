@@ -361,6 +361,15 @@ public class ResortRepository {
 
         resort.setName(asString(document.get("name")));
         resort.setLocation(asString(document.get("location")));
+        resort.setAddress(asString(document.get("address")));
+        resort.setCity(asString(document.get("city")));
+        resort.setState(asString(document.get("state")));
+        resort.setCountry(asString(document.get("country")));
+        resort.setPinCode(asString(document.get("pinCode")));
+        resort.setLandmark(asString(document.get("landmark")));
+        resort.setLatitude(asDouble(document.get("latitude")));
+        resort.setLongitude(asDouble(document.get("longitude")));
+        resort.setGooglePlaceId(asString(document.get("googlePlaceId")));
         resort.setDescription(asString(document.get("description")));
         resort.setImageUrl(asString(document.get("imageUrl")));
         resort.setFeaturedTag(asString(document.get("featuredTag")));

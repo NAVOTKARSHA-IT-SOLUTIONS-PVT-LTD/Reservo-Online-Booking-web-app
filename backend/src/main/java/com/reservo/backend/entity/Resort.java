@@ -38,6 +38,9 @@ public class Resort {
     private String country;
     private String pinCode;
     private String landmark;
+    private Double latitude;
+    private Double longitude;
+    private String googlePlaceId;
     private String description;
     private String imageUrl;
     private BigDecimal pricePerNight;
