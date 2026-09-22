@@ -222,6 +222,14 @@ public class SecurityConfig {
                                 "/api/v1/rewards/validate"
                         ).permitAll()
 
+                        // Places calls are protected by the dedicated per-IP limiter.
+                        // They stay public so guests can browse nearby places and new
+                        // hosts can search an address before signing in.
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/places/**"
+                        ).permitAll()
+
 
                         // ====================================================
                         // PUBLIC AI ENDPOINTS
@@ -387,17 +395,6 @@ public class SecurityConfig {
 
 
                 // ============================================================
-                // OAUTH2 LOGIN
-                // ============================================================
-
-                .oauth2Login(oauth2 ->
-                        oauth2.successHandler(
-                                oAuth2AuthenticationSuccessHandler
-                        )
-                )
-
-
-                // ============================================================
                 // JWT FILTER
                 // ============================================================
 
@@ -501,6 +498,12 @@ public class SecurityConfig {
                                                 )
                                 )
                 );
+
+        // OAuth2 login is enabled only when a real Google OAuth registration is
+        // provided through deployment environment variables.
+        if (System.getenv("SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID") != null) {
+            http.oauth2Login(oauth2 -> oauth2.successHandler(oAuth2AuthenticationSuccessHandler));
+        }
 
         return http.build();
     }
