@@ -119,6 +119,9 @@ export default function HostAdminPortal() {
     country: "India",
     pinCode: "",
     landmark: "",
+    latitude: null,
+    longitude: null,
+    googlePlaceId: "",
     description: "",
     pricePerNight: "",
     guests: "",
@@ -371,6 +374,9 @@ export default function HostAdminPortal() {
       country: property.country || locationParts[2] || "India",
       pinCode: property.pinCode || "",
       landmark: property.landmark || "",
+      latitude: property.latitude ?? null,
+      longitude: property.longitude ?? null,
+      googlePlaceId: property.googlePlaceId || "",
       description: property.description || "",
       pricePerNight: property.pricePerNight ?? "",
       guests: property.guests ?? "",
@@ -525,6 +531,9 @@ export default function HostAdminPortal() {
         country: String(propertyEditForm.country || "").trim() || null,
         pinCode: String(propertyEditForm.pinCode || "").trim() || null,
         landmark: String(propertyEditForm.landmark || "").trim() || null,
+        latitude: Number.isFinite(Number(propertyEditForm.latitude)) ? Number(propertyEditForm.latitude) : null,
+        longitude: Number.isFinite(Number(propertyEditForm.longitude)) ? Number(propertyEditForm.longitude) : null,
+        googlePlaceId: String(propertyEditForm.googlePlaceId || "").trim() || null,
         description: String(propertyEditForm.description || "").trim(),
         imageUrl: propertyEditForm.imageUrl || null,
         galleryUrls: (propertyEditForm.galleryUrls || []).join("|"),
@@ -3529,6 +3538,10 @@ export default function HostAdminPortal() {
                     </div>
                     <label><span className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Landmark</span>
                       <input value={propertyEditForm.landmark} onChange={e => setPropertyEditForm(p=>({...p,landmark:e.target.value}))} placeholder="Nearby landmark" className="w-full p-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-blue-500"/></label>
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                      <MapPin className="w-6 h-6 text-primary mb-2" />
+                      <p className="text-xs text-slate-500">Interactive map disabled. Location set via address fields above.</p>
+                    </div>
                   </div>
                 </section>
 

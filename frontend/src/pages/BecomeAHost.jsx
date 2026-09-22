@@ -283,7 +283,8 @@ export default function BecomeAHost() {
       pinCode: "",
       landmark: "",
       latitude: null,
-      longitude: null
+      longitude: null,
+      googlePlaceId: ""
     },
     pricePerNight: estimatedNightlyRate,
     instantBook: true,
@@ -416,6 +417,7 @@ export default function BecomeAHost() {
         landmark: formData.location.landmark || "",
         latitude: formData.location.latitude || null,
         longitude: formData.location.longitude || null,
+        googlePlaceId: formData.location.googlePlaceId || null,
         description,
         imageUrl: persistentImages[0] || "",
         pricePerNight: formData.listingMode === "ROOMS"
@@ -989,6 +991,13 @@ export default function BecomeAHost() {
                         onChange={(e) => setFormData(prev => ({ ...prev, location: { ...prev.location, country: e.target.value } }))}
                         className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
                       />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">Location Details</label>
+                    <div className="p-4 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl">
+                      <MapPin className="w-6 h-6 text-primary mb-2" />
+                      <p className="text-xs text-[var(--color-text-gray)]">Interactive map disabled. Location details will be set via address fields above.</p>
                     </div>
                   </div>
                 </div>

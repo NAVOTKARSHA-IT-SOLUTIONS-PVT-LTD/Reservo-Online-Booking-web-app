@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import { apiClient } from "../services/apiClient";
-import SimpleMapEmbed from "../components/SimpleMapEmbed";
 
 export default function PartnerOnboarding() {
   const navigate = useNavigate();
@@ -65,8 +64,9 @@ export default function PartnerOnboarding() {
     city: "",
     address: "",
     pinCode: "",
-    latitude: "15.2993",
-    longitude: "74.1240",
+    latitude: "",
+    longitude: "",
+    googlePlaceId: "",
     // Step 4: Verification
     licenseNumber: "",
     docType: "GST", // GST, government, company
@@ -152,6 +152,7 @@ export default function PartnerOnboarding() {
         pinCode: formData.pinCode,
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
+        googlePlaceId: formData.googlePlaceId || null,
         description: `Welcome to ${formData.name}. Managed by ${formData.businessName}. Experience premium comfort in our luxury ${formData.category} rooms.`,
         imageUrl: finalImageUrl,
         pricePerNight: parseFloat(formData.pricePerNight),
@@ -445,48 +446,12 @@ export default function PartnerOnboarding() {
                       />
                     </div>
 
-                    {/* Google Maps Embed */}
                     <div className="space-y-1">
-                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase flex justify-between">
-                        <span>Location on Map *</span>
-                        <span className="text-emerald-500 font-extrabold">📍 Google Maps</span>
-                      </label>
-                      <SimpleMapEmbed
-                        latitude={parseFloat(formData.latitude) || 15.2993}
-                        longitude={parseFloat(formData.longitude) || 74.1240}
-                        zoom={15}
-                        isDarkMode={false}
-                        height="280px"
-                        mode="view"
-                      />
-                      <div className="grid grid-cols-2 gap-4 mt-2">
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Latitude</label>
-                          <input
-                            type="text"
-                            value={formData.latitude}
-                            onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                            placeholder="15.2993"
-                            className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Longitude</label>
-                          <input
-                            type="text"
-                            value={formData.longitude}
-                            onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                            placeholder="74.1240"
-                            className="w-full px-3 py-2 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-xs text-[var(--color-text-dark)] font-semibold outline-none"
-                          />
-                        </div>
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Location confirmation</label>
+                      <div className="p-4 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl">
+                        <MapPin className="w-6 h-6 text-primary mb-2" />
+                        <p className="text-xs text-[var(--color-text-gray)]">Interactive map disabled. Location set via address fields above.</p>
                       </div>
-                      <p className="text-[8px] text-gray-500 mt-1">
-                        * Enter coordinates manually or use Google Maps to find your location.
-                      </p>
-                      <p className="text-[9px] text-[var(--color-text-gray)]">
-                        Coordinates are automatically filled when you select an address using the autocomplete above
-                      </p>
                     </div>
                   </div>
                 )}

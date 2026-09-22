@@ -7,18 +7,21 @@ public class TokenBucket {
     private final double refillRatePerSecond;
     private double tokens;
     private Instant lastRefillTimestamp;
+    private long lastUsedMillis;
 
     public TokenBucket(long capacity, double refillRatePerSecond) {
         this.capacity = capacity;
         this.refillRatePerSecond = refillRatePerSecond;
         this.tokens = capacity;
         this.lastRefillTimestamp = Instant.now();
+        this.lastUsedMillis = System.currentTimeMillis();
     }
 
     public synchronized boolean tryConsume() {
         refill();
         if (tokens >= 1.0) {
             tokens -= 1.0;
+            lastUsedMillis = System.currentTimeMillis();
             return true;
         }
         return false;
@@ -30,5 +33,17 @@ public class TokenBucket {
         double refillAmount = elapsedSeconds * refillRatePerSecond;
         tokens = Math.min(capacity, tokens + refillAmount);
         lastRefillTimestamp = now;
+    }
+
+    public long getCapacity() {
+        return capacity;
+    }
+
+    public double getTokens() {
+        return tokens;
+    }
+
+    public long getLastUsed() {
+        return lastUsedMillis;
     }
 }
