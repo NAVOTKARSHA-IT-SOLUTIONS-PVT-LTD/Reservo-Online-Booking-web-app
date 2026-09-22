@@ -31,40 +31,55 @@ async function request(endpoint, options = {}) {
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutMs = options.timeout || 12000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   config.signal = controller.signal;
 
-  let response;
-  try {
-    response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-  } catch (error) {
-    if (error?.name === "AbortError") {
-      throw new Error("Request timed out. Please check the backend server.");
-    }
-    throw new Error(`Unable to connect to backend at ${API_BASE_URL}`);
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
   const isAuthEndpoint = endpoint.includes("/api/v1/auth/");
+  const maxRetries = (options.method === "GET" || !options.method) ? (options.retries ?? 1) : 0;
+  let attempt = 0;
+  let lastError = null;
 
-  if (response.status === 401 && !isAuthEndpoint && !options.suppressAuthRedirect) {
-    secureStorage.removeItem(TOKEN_KEY);
-    secureStorage.removeItem("reservo_user");
-    if (!window.location.pathname.includes("/login")) {
-      window.location.href = "/login?expired=true";
+  while (attempt <= maxRetries) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+      clearTimeout(timeoutId);
+
+      if (response.status === 401 && !isAuthEndpoint && !options.suppressAuthRedirect) {
+        secureStorage.removeItem(TOKEN_KEY);
+        secureStorage.removeItem("reservo_user");
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = "/login?expired=true";
+        }
+        throw new Error("Session expired. Please log in again.");
+      }
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const errorMessage = data?.message || data?.error || `Server responded with error status (${response.status})`;
+        const err = new Error(errorMessage);
+        err.status = response.status;
+        err.data = data;
+        throw err;
+      }
+
+      return data;
+    } catch (error) {
+      lastError = error;
+      if (error?.name === "AbortError") {
+        lastError = new Error("Connection timed out. Please check your network or server connection.");
+      }
+      attempt++;
+      if (attempt <= maxRetries) {
+        await new Promise(res => setTimeout(res, attempt * 600));
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
-    throw new Error("Session expired. Please log in again.");
   }
 
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const errorMessage = data?.message || data?.error || "An unexpected error occurred. Please try again.";
-    throw new Error(errorMessage);
-  }
-
-  return data;
+  throw lastError || new Error(`Unable to connect to backend service at ${API_BASE_URL}`);
 }
 
 export const apiClient = {

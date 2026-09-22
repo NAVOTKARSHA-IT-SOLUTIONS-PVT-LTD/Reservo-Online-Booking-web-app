@@ -139,8 +139,28 @@ export default function BecomeAHost() {
   };
 
   const handlePhotoFileUpload = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
+    const rawFiles = Array.from(e.target.files || []);
+    if (!rawFiles.length) return;
+
+    const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB limit per photo
+    const files = [];
+
+    for (const file of rawFiles) {
+      if (!file.type.startsWith("image/")) {
+        toast(`"${file.name}" is not a supported image file.`, "error");
+        continue;
+      }
+      if (file.size > MAX_PHOTO_SIZE) {
+        toast(`"${file.name}" exceeds 10MB limit. Please upload an optimized photo.`, "error");
+        continue;
+      }
+      files.push(file);
+    }
+
+    if (!files.length) {
+      if (e.target) e.target.value = "";
+      return;
+    }
 
     if (formData.images.length + files.length > 10) {
       toast("Maximum 10 photos allowed. Some files were skipped.", "warning");
@@ -163,9 +183,23 @@ export default function BecomeAHost() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith("video/")) {
+      toast("Please select a valid video file.", "error");
+      if (e.target) e.target.value = "";
+      return;
+    }
+
+    const MAX_VIDEO_SIZE = 30 * 1024 * 1024; // 30MB limit
+    if (file.size > MAX_VIDEO_SIZE) {
+      toast(`Video "${file.name}" exceeds 30MB limit. Please upload a compressed video.`, "error");
+      if (e.target) e.target.value = "";
+      return;
+    }
+
     const currentVideos = formData.videos || [];
     if (currentVideos.length >= 2) {
       toast("Maximum 2 videos allowed.", "warning");
+      if (e.target) e.target.value = "";
       return;
     }
 
@@ -213,6 +247,7 @@ export default function BecomeAHost() {
 
   const [mode, setMode] = useState("landing"); // 'landing' or 'wizard'
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const totalSteps = 9;
 
   // Earnings Estimator States
@@ -341,6 +376,8 @@ export default function BecomeAHost() {
   };
 
   const handlePublishListing = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const currentUser = authService.getCurrentUser();
       const token = authService.getAuthToken();
@@ -470,6 +507,8 @@ export default function BecomeAHost() {
     } catch (err) {
       console.error("Publish listing failed:", err);
       toast(`Failed to submit property: ${err?.message || "Unknown error"}`, "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1704,9 +1743,19 @@ export default function BecomeAHost() {
                 <button
                   type="button"
                   onClick={handlePublishListing}
-                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-extrabold px-7 py-3 rounded-xl shadow-lg cursor-pointer border-none flex items-center gap-2 transition-all"
+                  disabled={isSubmitting}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-7 py-3 rounded-xl shadow-lg cursor-pointer border-none flex items-center gap-2 transition-all"
                 >
-                  <Sparkles size={15} /> Publish to Host Administration
+                  {isSubmitting ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-1" />
+                      Publishing Property...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={15} /> Publish to Host Administration
+                    </>
+                  )}
                 </button>
               )}
             </div>

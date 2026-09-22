@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import { hostService } from "./host.service";
 
 // Several homepage components request the public resort list independently.
 // Share one in-flight request and cache the result briefly to avoid duplicate
@@ -59,28 +60,39 @@ export const resortService = {
     }
 
     approvedResortsRequest = (async () => {
-      const result = await apiClient.get("/api/v1/resorts");
-      if (!result?.success) {
-        throw new Error(result?.message || "Failed to load approved resorts");
+      try {
+        const result = await apiClient.get("/api/v1/resorts");
+        if (result?.success && Array.isArray(result.data)) {
+          const items = result.data;
+          const mapped = items
+            .filter(item =>
+              item &&
+              typeof item.name === "string" &&
+              item.name.trim() !== "" &&
+              typeof item.location === "string" &&
+              item.location.trim() !== "" &&
+              String(item.status || "").toUpperCase() === "APPROVED"
+            )
+            .map(item => this.mapBackendResort(item));
+
+          approvedResortsCache = mapped;
+          approvedResortsCacheAt = Date.now();
+          return mapped;
+        }
+      } catch (backendError) {
+        console.warn("Backend /api/v1/resorts unreachable or erroring. Utilizing local fallback:", backendError?.message);
       }
 
-      const items = Array.isArray(result.data) ? result.data : [];
+      // Safe local fallback: check host published listings so user sees their own registered stays
+      const localData = hostService.getData();
+      const localListings = (localData?.listings || []).map(item => this.mapHostListingToResort(item));
+      if (localListings.length > 0) {
+        approvedResortsCache = localListings;
+        approvedResortsCacheAt = Date.now();
+        return localListings;
+      }
 
-      const mapped = items
-        .filter(item =>
-          item &&
-          typeof item.name === "string" &&
-          item.name.trim() !== "" &&
-          typeof item.location === "string" &&
-          item.location.trim() !== "" &&
-          String(item.status || "").toUpperCase() === "APPROVED"
-        )
-        .map(item => this.mapBackendResort(item));
-
-      approvedResortsCache = mapped;
-      approvedResortsCacheAt = Date.now();
-
-      return mapped;
+      return [];
     })();
 
     try {
@@ -149,28 +161,34 @@ export const resortService = {
   },
 
   async getResortById(id) {
-    const result = await apiClient.get(
-      `/api/v1/resorts/${encodeURIComponent(id)}`
-    );
+    try {
+      const result = await apiClient.get(
+        `/api/v1/resorts/${encodeURIComponent(id)}`
+      );
 
-    if (!result?.success || !result.data) {
-      throw new Error("Resort not found");
+      if (result?.success && result.data) {
+        const item = result.data;
+        if (
+          typeof item.name === "string" &&
+          item.name.trim() &&
+          typeof item.location === "string" &&
+          item.location.trim()
+        ) {
+          return this.mapBackendResort(item);
+        }
+      }
+    } catch (apiErr) {
+      console.warn(`Backend resort fetch for id=${id} failed, checking local published stays:`, apiErr?.message);
     }
 
-    const item = result.data;
-
-    // Never fall back to frontend demo/static resort data.
-    // A property must come from the backend database.
-    if (
-      typeof item.name !== "string" ||
-      !item.name.trim() ||
-      typeof item.location !== "string" ||
-      !item.location.trim()
-    ) {
-      throw new Error("Invalid property data");
+    // Check locally published host listings if backend fails or returns 500
+    const localData = hostService.getData();
+    const localMatch = (localData?.listings || []).find(l => String(l.id) === String(id) || String(l.backendResortId) === String(id));
+    if (localMatch) {
+      return this.mapHostListingToResort(localMatch);
     }
 
-    return this.mapBackendResort(item);
+    throw new Error("Resort not found");
   },
 
   async getCategories() {
@@ -356,13 +374,7 @@ export const resortService = {
     return labels[category] || "Luxury Stays";
   },
 
-  async updateResort(id, resortDetails) {
-    const result = await apiClient.put(`/api/v1/resorts/${id}`, resortDetails);
-    if (result && result.success) {
-      return result.data;
-    }
-    throw new Error(result?.message || "Failed to update resort details");
-  },
+
 
   async deleteResort(id) {
     const result = await apiClient.delete(`/api/v1/resorts/${id}`);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CheckCircle, Sparkles, QrCode, ArrowLeft, ArrowRight, Upload, ShieldAlert, Check, Calendar, Users, DollarSign, Gift, BadgePercent } from 'lucide-react';
+import { X, CheckCircle, Sparkles, QrCode, ArrowLeft, ArrowRight, Upload, ShieldAlert, Check, Calendar, Users, DollarSign, Gift, BadgePercent, Printer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { bookingService } from '../services/booking.service';
@@ -834,6 +834,13 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
                 className="w-full sm:flex-grow py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 border-none cursor-pointer transition"
               >
                 <Sparkles className="w-4 h-4" /> Open Rivo for Check-in
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="w-full sm:w-auto px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 border-none cursor-pointer transition shadow-sm"
+              >
+                <Printer className="w-4 h-4" /> Print Voucher
               </button>
               <button
                 onClick={onClose}
