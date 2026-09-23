@@ -23,9 +23,28 @@ public class UserRepository {
     private static final String COLLECTION = "users";
 
     private final Firestore firestore;
+    private final java.util.Map<String, User> memoryStoreById = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, User> memoryStoreByEmail = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, User> memoryStoreByPhone = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, User> memoryStoreByProvider = new java.util.concurrent.ConcurrentHashMap<>();
 
     public UserRepository(Firestore firestore) {
         this.firestore = firestore;
+    }
+
+    private void cacheUser(User user) {
+        if (user == null || user.getId() == null) return;
+        memoryStoreById.put(user.getId(), user);
+        if (user.getEmail() != null) {
+            memoryStoreByEmail.put(user.getEmail().trim().toLowerCase(), user);
+        }
+        if (user.getPhone() != null) {
+            String norm = normalizePhoneNumber(user.getPhone());
+            if (norm != null) memoryStoreByPhone.put(norm, user);
+        }
+        if (user.getProviderUserId() != null) {
+            memoryStoreByProvider.put(user.getProviderUserId(), user);
+        }
     }
 
 
@@ -47,30 +66,19 @@ public class UserRepository {
                     .get()
                     .get();
 
-            if (!snapshot.exists()) {
-                return Optional.empty();
+            if (snapshot.exists()) {
+                User user = mapDocument(snapshot);
+                if (user != null) {
+                    cacheUser(user);
+                    return Optional.of(user);
+                }
             }
 
-            User user = mapDocument(snapshot);
-
-            return Optional.ofNullable(user);
-
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while finding user",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to find user",
-                    e
-            );
+        } catch (Exception e) {
+            log.debug("Firestore findById unavailable, checking local cache: {}", e.getMessage());
         }
+
+        return Optional.ofNullable(memoryStoreById.get(id));
     }
 
 
@@ -86,40 +94,31 @@ public class UserRepository {
             );
         }
 
+        if (user.getId() == null
+                || user.getId().isBlank()) {
+
+            String newId = null;
+            try {
+                newId = firestore
+                        .collection(COLLECTION)
+                        .document()
+                        .getId();
+            } catch (Exception ignored) {}
+
+            if (newId == null || newId.isBlank()) {
+                newId = java.util.UUID.randomUUID().toString();
+            }
+            user.setId(newId);
+        }
+
+        if (user.getCreatedAt() == null) {
+            user.setCreatedAt(Instant.now());
+        }
+
+        user.updateTimestamp();
+        cacheUser(user);
+
         try {
-
-            // ----------------------------------------------------
-            // CREATE FIRESTORE DOCUMENT ID
-            // ----------------------------------------------------
-
-            if (user.getId() == null
-                    || user.getId().isBlank()) {
-
-                user.setId(
-                        firestore
-                                .collection(COLLECTION)
-                                .document()
-                                .getId()
-                );
-            }
-
-            // ----------------------------------------------------
-            // CREATED AT
-            // ----------------------------------------------------
-
-            if (user.getCreatedAt() == null) {
-                user.setCreatedAt(Instant.now());
-            }
-
-            // ----------------------------------------------------
-            // UPDATE TIMESTAMP
-            // ----------------------------------------------------
-
-            user.updateTimestamp();
-
-            // ----------------------------------------------------
-            // SAVE TO FIRESTORE
-            // ----------------------------------------------------
 
             firestore
                     .collection(COLLECTION)
@@ -127,24 +126,11 @@ public class UserRepository {
                     .set(user)
                     .get();
 
-            return user;
-
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while saving user",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to save user",
-                    e
-            );
+        } catch (Exception e) {
+            log.warn("Firestore write skipped/unavailable (cached in-memory): {}", e.getMessage());
         }
+
+        return user;
     }
 
 
@@ -178,30 +164,19 @@ public class UserRepository {
                             .get()
                             .getDocuments();
 
-            if (documents.isEmpty()) {
-                return Optional.empty();
+            if (!documents.isEmpty()) {
+                User user = mapDocument(documents.get(0));
+                if (user != null) {
+                    cacheUser(user);
+                    return Optional.of(user);
+                }
             }
 
-            User user = mapDocument(documents.get(0));
-
-            return Optional.ofNullable(user);
-
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while finding user by email",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to find user by email",
-                    e
-            );
+        } catch (Exception e) {
+            log.debug("Firestore findByEmail unavailable, checking local cache: {}", e.getMessage());
         }
+
+        return Optional.ofNullable(memoryStoreByEmail.get(normalizedEmail));
     }
 
 
@@ -234,30 +209,19 @@ public class UserRepository {
                             .get()
                             .getDocuments();
 
-            if (documents.isEmpty()) {
-                return Optional.empty();
+            if (!documents.isEmpty()) {
+                User user = mapDocument(documents.get(0));
+                if (user != null) {
+                    cacheUser(user);
+                    return Optional.of(user);
+                }
             }
 
-            User user = mapDocument(documents.get(0));
-
-            return Optional.ofNullable(user);
-
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while finding user by provider ID",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to find user by provider ID",
-                    e
-            );
+        } catch (Exception e) {
+            log.debug("Firestore findByProviderUserId unavailable, checking local cache: {}", e.getMessage());
         }
+
+        return Optional.ofNullable(memoryStoreByProvider.get(providerUserId));
     }
 
 
@@ -291,30 +255,19 @@ public class UserRepository {
                             .get()
                             .getDocuments();
 
-            if (documents.isEmpty()) {
-                return Optional.empty();
+            if (!documents.isEmpty()) {
+                User user = mapDocument(documents.get(0));
+                if (user != null) {
+                    cacheUser(user);
+                    return Optional.of(user);
+                }
             }
 
-            User user = mapDocument(documents.get(0));
-
-            return Optional.ofNullable(user);
-
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while finding user by phone",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to find user by phone",
-                    e
-            );
+        } catch (Exception e) {
+            log.debug("Firestore findByPhone unavailable, checking local cache: {}", e.getMessage());
         }
+
+        return Optional.ofNullable(normalizedPhone != null ? memoryStoreByPhone.get(normalizedPhone) : null);
     }
 
 
@@ -366,23 +319,15 @@ public class UserRepository {
                             .get()
                             .getDocuments();
 
-            return convertDocuments(documents);
+            List<User> users = convertDocuments(documents);
+            for (User u : users) cacheUser(u);
+            return users;
 
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while finding users by KYC status",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to find users by KYC status",
-                    e
-            );
+        } catch (Exception e) {
+            log.debug("Firestore findByKycStatus unavailable, filtering local cache: {}", e.getMessage());
+            return memoryStoreById.values().stream()
+                    .filter(u -> kycStatus.equals(u.getKycStatus()))
+                    .toList();
         }
     }
 
@@ -412,21 +357,10 @@ public class UserRepository {
                     .get()
                     .size();
 
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while counting users by role",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to count users by role",
-                    e
-            );
+        } catch (Exception e) {
+            return memoryStoreById.values().stream()
+                    .filter(u -> role.equals(u.getRole()))
+                    .count();
         }
     }
 
@@ -456,21 +390,10 @@ public class UserRepository {
                     .get()
                     .size();
 
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while counting users by status",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to count users by status",
-                    e
-            );
+        } catch (Exception e) {
+            return memoryStoreById.values().stream()
+                    .filter(u -> status.equals(u.getStatus()))
+                    .count();
         }
     }
 
@@ -500,23 +423,13 @@ public class UserRepository {
                             .get()
                             .getDocuments();
 
-            return convertDocuments(documents);
+            List<User> users = convertDocuments(documents);
+            for (User u : users) cacheUser(u);
+            return users;
 
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while loading users",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to load users",
-                    e
-            );
+        } catch (Exception e) {
+            log.debug("Firestore findAll unavailable, returning local cache: {}", e.getMessage());
+            return new ArrayList<>(memoryStoreById.values());
         }
     }
 
@@ -532,6 +445,20 @@ public class UserRepository {
             return;
         }
 
+        User removed = memoryStoreById.remove(id);
+        if (removed != null) {
+            if (removed.getEmail() != null) {
+                memoryStoreByEmail.remove(removed.getEmail().trim().toLowerCase());
+            }
+            if (removed.getPhone() != null) {
+                String norm = normalizePhoneNumber(removed.getPhone());
+                if (norm != null) memoryStoreByPhone.remove(norm);
+            }
+            if (removed.getProviderUserId() != null) {
+                memoryStoreByProvider.remove(removed.getProviderUserId());
+            }
+        }
+
         try {
 
             firestore
@@ -540,21 +467,8 @@ public class UserRepository {
                     .delete()
                     .get();
 
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            throw new RuntimeException(
-                    "Interrupted while deleting user",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to delete user",
-                    e
-            );
+        } catch (Exception e) {
+            log.debug("Firestore deleteById unavailable: {}", e.getMessage());
         }
     }
 

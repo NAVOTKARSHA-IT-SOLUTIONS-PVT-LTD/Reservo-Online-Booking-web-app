@@ -13,6 +13,7 @@
 
   --color-bg-light: #FAFCFF;
   --color-bg-white: #ffffff;
+  --color-bg-card: #F0F4FA;
 
   --color-text-dark: #0A2342;
   --color-text-gray: #4A5D73;
@@ -28,6 +29,7 @@ body.dark-theme {
   --color-gold-dark: #1B6EDC;
   --color-bg-light: #0A1120;
   --color-bg-white: #111A2E;
+  --color-bg-card: #152238;
   --color-text-dark: #F1F6FF;
   --color-text-gray: #A3B8D9;
   --color-border-color: #1E2A44;

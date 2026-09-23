@@ -477,7 +477,7 @@ function Mascot({ isDark, setIsDark }) {
               onChange={(e) => setInputVal(e.target.value)}
               className="flex-1 border-none outline-none px-3 py-2 text-[13.5px] bg-bg-light rounded-lg text-text-dark"
             />
-            <button type="submit" className="bg-[#121e1b] text-white border-none w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 hover:bg-gold shrink-0" aria-label="Send message">
+            <button type="submit" className="bg-primary text-white border-none w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 hover:bg-primary-dark shrink-0 shadow-sm" aria-label="Send message">
               <Send size={16} />
             </button>
           </form>

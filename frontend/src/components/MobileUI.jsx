@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu, X, Moon, Sun, Heart, Bell, MapPin, Calendar, Users,
   Search, ArrowRight, Waves, Mountain, Home, Droplets,
-  Sparkles, Star, ChevronRight, User, Send,
+  Sparkles, Star, ChevronRight, ChevronLeft, User, Send,
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
   LayoutGrid, BookOpen, Settings, LogOut, Sliders, Building2
 } from "lucide-react";
+import logoImage from "../assets/images/logo.png";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import rivoConfirmed from "../assets/images/rivo_confirmed.png";
@@ -334,20 +335,38 @@ function MobileUI({ isDark, onToggleTheme, children }) {
 
       {/* ── TOP BAR ─────────────────────────────────── */}
       <header className="sticky top-0 z-[99] flex items-center justify-between px-4 py-3 bg-[var(--color-bg-white)]/95 backdrop-blur-xl border-b border-[var(--color-border-color)] shrink-0">
-        <button
-          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--color-bg-light)] transition-colors border-none bg-transparent cursor-pointer"
-          onClick={() => setIsDrawerOpen(true)}
-          aria-label="Open menu"
-        >
-          <Menu size={20} className="text-[var(--color-text-dark)]" />
-        </button>
+        {location.pathname === "/ai-planner" ? (
+          <button
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--color-bg-light)] transition-colors border-none bg-transparent cursor-pointer"
+            onClick={() => navigate("/")}
+            aria-label="Back to home"
+          >
+            <ChevronLeft size={22} className="text-[var(--color-text-dark)]" />
+          </button>
+        ) : (
+          <button
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[var(--color-bg-light)] transition-colors border-none bg-transparent cursor-pointer"
+            onClick={() => setIsDrawerOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu size={20} className="text-[var(--color-text-dark)]" />
+          </button>
+        )}
 
-        <div className="flex items-center gap-1.5">
-          <img src={rivoMascot} alt="Rivo" className="w-5 h-5 rounded-full object-cover border border-[var(--color-border-color)]" />
-          <span className="text-sm font-extrabold tracking-[3px] text-[var(--color-text-dark)] uppercase">
-            RESERV<span className="text-gold">O</span>
+        <button 
+          onClick={() => { setActiveTab("home"); navigate("/"); }} 
+          className="flex items-center gap-2 bg-transparent border-none cursor-pointer p-0 select-none shrink-0"
+          aria-label="Go to Reservo home"
+        >
+          <img 
+            src={logoImage} 
+            alt="Reservo Logo" 
+            className="h-8 w-auto object-contain" 
+          />
+          <span className="text-[20px] font-extrabold tracking-[0.5px] font-serif leading-none text-[var(--color-text-dark)]">
+            Reservo
           </span>
-        </div>
+        </button>
 
         <div className="flex items-center gap-0.5">
           <button
@@ -374,15 +393,23 @@ function MobileUI({ isDark, onToggleTheme, children }) {
       </header>
 
       {/* ── SCROLLABLE CONTENT ─────────────────────── */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overscroll-contain bg-[var(--color-bg-light)] text-[var(--color-text-dark)]">
-        <div className="pb-0">
+      <div 
+        ref={scrollContainerRef} 
+        className={`flex-1 ${
+          location.pathname === "/ai-planner" 
+            ? "overflow-hidden flex flex-col" 
+            : "overflow-y-auto overscroll-contain"
+        } bg-[var(--color-bg-light)] text-[var(--color-text-dark)]`}
+      >
+        <div className={location.pathname === "/ai-planner" ? "flex-1 flex flex-col h-full" : "pb-0"}>
           {children}
           {location.pathname !== "/ai-planner" && <Footer />}
         </div>
       </div>
 
       {/* ── RIVO MASCOT CHAT (Above bottom nav) ──── */}
-      <div className="fixed bottom-[72px] right-4 z-[8500]">
+      {location.pathname !== "/ai-planner" && (
+        <div className="fixed bottom-[72px] right-4 z-[8500]">
         {/* Chat Popup */}
         {isMascotOpen && (
           <div className="absolute bottom-[60px] right-0 w-[300px] h-[420px] bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-2xl shadow-[0_15px_45px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-300">
@@ -401,18 +428,18 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             </div>
 
             {/* Companion Mode Selector Bar (Mobile) */}
-            <div className="bg-slate-50 border-b border-border-color px-3 py-1.5 flex gap-1.5 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-none">
+            <div className="bg-[var(--color-bg-light)] border-b border-[var(--color-border-color)] px-3 py-1.5 flex gap-1.5 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-none">
               {COMPANION_MODES.map(m => (
                 <button
                   key={m.id}
                   onClick={() => handleSelectMode(m)}
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all border cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold transition-all border cursor-pointer flex items-center gap-1 shrink-0 ${
                     activeMode === m.id
-                      ? 'bg-[#2563EB] text-white border-[#2563EB]'
-                      : 'bg-[var(--color-bg-white)] text-slate-600 border-slate-200'
+                      ? 'bg-primary text-white border-primary shadow-sm font-extrabold'
+                      : 'bg-[var(--color-bg-white)] text-[var(--color-text-gray)] border-[var(--color-border-color)] hover:text-[var(--color-text-dark)] hover:border-primary/40'
                   }`}
                 >
-                  {m.emoji} {m.label}
+                  <span>{m.emoji}</span> <span>{m.label}</span>
                 </button>
               ))}
             </div>
@@ -426,8 +453,8 @@ function MobileUI({ isDark, onToggleTheme, children }) {
                   )}
                   <div className={`px-3 py-2 rounded-[14px] text-[12.5px] leading-relaxed ${
                     msg.sender === "user"
-                      ? "bg-[#121e1b] text-white rounded-tr-[3px]"
-                      : "bg-bg-white text-text-dark rounded-tl-[3px] border border-border-color"
+                      ? "bg-primary text-white rounded-tr-[3px]"
+                      : "bg-[var(--color-bg-white)] text-[var(--color-text-dark)] rounded-tl-[3px] border border-[var(--color-border-color)]"
                   }`}>
                     {msg.text}
                   </div>
@@ -447,7 +474,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             {messages.length === 1 && !isTyping && (
               <div className="bg-[var(--color-bg-light)] px-4 py-2 flex flex-col gap-1.5 border-t border-[var(--color-border-color)] shrink-0">
                 {QUICK_REPLIES.map((r) => (
-                  <button key={r.key} className="bg-[var(--color-bg-white)] text-[var(--color-text-dark)] border border-[var(--color-border-color)] px-3 py-1.5 rounded-xl text-[11.5px] text-left cursor-pointer transition-colors hover:bg-[var(--color-bg-light)] hover:text-gold" onClick={() => handleSend(r.text)}>
+                  <button key={r.key} className="bg-[var(--color-bg-white)] text-[var(--color-text-dark)] border border-[var(--color-border-color)] px-3 py-1.5 rounded-xl text-[11.5px] text-left cursor-pointer transition-colors hover:bg-[var(--color-bg-light)] hover:text-primary hover:border-primary/40" onClick={() => handleSend(r.text)}>
                     {r.text}
                   </button>
                 ))}
@@ -460,9 +487,9 @@ function MobileUI({ isDark, onToggleTheme, children }) {
                 placeholder="Ask Rivo..."
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
-                className="flex-1 border-none outline-none px-2.5 py-1.5 text-[12.5px] bg-[var(--color-bg-light)] rounded-lg text-[var(--color-text-dark)]"
+                className="flex-1 border-none outline-none px-3 py-1.5 text-[12.5px] bg-[var(--color-bg-light)] rounded-lg text-[var(--color-text-dark)] placeholder:text-[var(--color-text-gray)]"
               />
-              <button type="submit" className="bg-[#121e1b] text-white w-7 h-7 rounded-full flex items-center justify-center border-none cursor-pointer hover:bg-gold shrink-0">
+              <button type="submit" className="bg-primary text-white w-7 h-7 rounded-full flex items-center justify-center border-none cursor-pointer hover:bg-primary-dark shrink-0 transition-colors shadow-sm" aria-label="Send message">
                 <Send size={13} />
               </button>
             </form>
@@ -474,7 +501,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           {/* Hi! Speech Bubble */}
           {!isReducedMotion && (
             <div 
-              className={`absolute -top-7 -left-7 bg-bg-white border border-border-color text-text-dark text-[9.5px] font-extrabold px-2.5 py-1 rounded-2xl rounded-br-sm shadow-md pointer-events-none flex items-center gap-1 select-none z-50 transition-all duration-300 origin-bottom-right ${
+              className={`absolute -top-7 -left-7 bg-[var(--color-bg-white)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] text-[9.5px] font-extrabold px-2.5 py-1 rounded-2xl rounded-br-sm shadow-md pointer-events-none flex items-center gap-1 select-none z-50 transition-all duration-300 origin-bottom-right ${
                 showBubble ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-75 translate-y-2"
               }`}
             >
@@ -515,28 +542,31 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           />
         </div>
       </div>
+      )}
 
       {/* ── BOTTOM NAV ─────────────────────────────── */}
-      <nav className="h-[68px] bg-[var(--color-bg-white)]/95 backdrop-blur-xl border-t border-[var(--color-border-color)] flex items-center justify-around px-2 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[8100]">
-        {[
-          { id: "home", label: "Home", icon: <Home size={20} />, action: () => { setActiveTab("home"); navigate("/"); } },
-          { id: "explore", label: "Explore", icon: <Search size={20} />, action: () => { setActiveTab("explore"); navigate("/search"); } },
-          { id: "wishlist", label: "Wishlist", icon: <Heart size={20} />, action: () => { setActiveTab("wishlist"); navigate("/wishlist"); } },
-          { id: "profile", label: "Profile", icon: <User size={20} />, action: () => { setActiveTab("profile"); navigate("/profile"); } },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all bg-transparent border-none cursor-pointer ${
-              activeTab === tab.id ? "text-gold" : "text-[var(--color-text-gray)] hover:text-[var(--color-text-dark)]"
-            }`}
-            onClick={tab.action}
-          >
-            {tab.icon}
-            <span className={`text-[10px] font-semibold ${activeTab === tab.id ? "text-gold" : ""}`}>{tab.label}</span>
-            {activeTab === tab.id && <span className="w-1 h-1 bg-gold rounded-full" />}
-          </button>
-        ))}
-      </nav>
+      {location.pathname !== "/ai-planner" && (
+        <nav className="h-[68px] bg-[var(--color-bg-white)]/95 backdrop-blur-xl border-t border-[var(--color-border-color)] flex items-center justify-around px-2 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[8100]">
+          {[
+            { id: "home", label: "Home", icon: <Home size={20} />, action: () => { setActiveTab("home"); navigate("/"); } },
+            { id: "explore", label: "Explore", icon: <Search size={20} />, action: () => { setActiveTab("explore"); navigate("/search"); } },
+            { id: "wishlist", label: "Wishlist", icon: <Heart size={20} />, action: () => { setActiveTab("wishlist"); navigate("/wishlist"); } },
+            { id: "profile", label: "Profile", icon: <User size={20} />, action: () => { setActiveTab("profile"); navigate("/profile"); } },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all bg-transparent border-none cursor-pointer ${
+                activeTab === tab.id ? "text-gold" : "text-[var(--color-text-gray)] hover:text-[var(--color-text-dark)]"
+              }`}
+              onClick={tab.action}
+            >
+              {tab.icon}
+              <span className={`text-[10px] font-semibold ${activeTab === tab.id ? "text-gold" : ""}`}>{tab.label}</span>
+              {activeTab === tab.id && <span className="w-1 h-1 bg-gold rounded-full" />}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {/* ── SIDE DRAWER (same as desktop) ──────────── */}
       <div
@@ -558,7 +588,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           </button>
         </div>
 
-        <ul className="list-none flex flex-col gap-1.5 p-0 m-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+        <ul className="list-none flex flex-col gap-1.5 p-0 m-0 flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[var(--color-border-color)] [&::-webkit-scrollbar-thumb]:rounded-full">
           {(() => {
             const isLoggedIn = authService.isAuthenticated();
             const user = authService.getCurrentUser();
@@ -597,7 +627,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             ];
           })().map((item, idx) => {
             if (item.type === "divider") {
-              return <hr key={idx} className="border-none h-px bg-border-color my-1 shrink-0" />;
+              return <hr key={idx} className="border-none h-px bg-[var(--color-border-color)] my-1 shrink-0" />;
             }
             const active = item.path && location.pathname === item.path;
             return (

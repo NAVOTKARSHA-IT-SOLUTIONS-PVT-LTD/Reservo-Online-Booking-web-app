@@ -575,7 +575,7 @@ export default function AIPlanner() {
   };
 
   return (
-    <div className="h-[calc(100vh-121px)] md:h-[calc(100vh-112px)] flex flex-col bg-bg-light text-text-dark transition-colors duration-300 overflow-hidden font-sans">
+    <div className="h-full flex-1 md:h-[calc(100vh-112px)] flex flex-col bg-bg-light text-text-dark transition-colors duration-300 overflow-hidden font-sans">
       
       {/* Mobile Sub-Navigation Tabs */}
       <div className="md:hidden flex border-b border-border-color bg-bg-white shrink-0 p-2 gap-2">
@@ -621,7 +621,9 @@ export default function AIPlanner() {
         
 {options.length === 0 ? (
         /* INITIAL WELCOME STATE covering both Middle and Right Columns */
-        <div className="flex-1 bg-bg-light/50 overflow-y-auto p-6 flex flex-col justify-center items-center animate-fade-in">
+        <div className={`flex-1 bg-bg-light/50 overflow-y-auto p-6 flex-col justify-center items-center animate-fade-in ${
+          activeMobileTab === "itinerary" ? "flex" : "hidden md:flex"
+        }`}>
           <div className="max-w-[550px] w-full space-y-6 text-center">
             
             <div className="bg-[#1E293B] text-white p-6 rounded-3xl border border-[#334155] shadow-lg flex flex-col sm:flex-row gap-5 items-center text-left">
@@ -972,9 +974,9 @@ export default function AIPlanner() {
       )}
 
               {/* ── COLUMN 1: RIVO CHAT SIDEBAR (Width: 350px) ─────────────────── */}
-        <div className={`border-l border-border-color bg-bg-white flex flex-col overflow-hidden transition-all duration-300 ${
-          isSidebarCollapsed ? "w-0 opacity-0 border-l-0 pointer-events-none" : "w-full md:w-[350px] shrink-0"
-        } ${activeMobileTab === "chat" ? "flex" : "hidden md:flex"}`}>
+        <div className={`border-l-0 md:border-l border-border-color bg-bg-white flex flex-col overflow-hidden transition-all duration-300 ${
+          isSidebarCollapsed ? "md:w-0 md:opacity-0 md:border-l-0 md:pointer-events-none" : "w-full md:w-[350px] shrink-0"
+        } ${activeMobileTab === "chat" ? "flex w-full" : "hidden md:flex"}`}>
         
         {/* Sidebar Header */}
         <div className="p-4 border-b border-border-color flex items-center justify-between bg-bg-white shrink-0">
@@ -987,7 +989,7 @@ export default function AIPlanner() {
           </div>
           <button 
             onClick={() => setIsSidebarCollapsed(true)}
-            className="w-7 h-7 rounded-lg hover:bg-bg-light border-none cursor-pointer flex items-center justify-center text-text-gray"
+            className="hidden md:flex w-7 h-7 rounded-lg hover:bg-bg-light border-none cursor-pointer items-center justify-center text-text-gray"
             title="Collapse Sidebar"
           >
             <ChevronRight className="w-4 h-4" />
@@ -1195,7 +1197,7 @@ export default function AIPlanner() {
       {isSidebarCollapsed && (
         <button
           onClick={() => setIsSidebarCollapsed(false)}
-          className="absolute top-[135px] right-0 z-50 bg-bg-white border border-border-color border-l-0 shadow rounded-r-lg w-7 h-10 flex items-center justify-center cursor-pointer text-text-gray hover:text-text-dark"
+          className="hidden md:flex absolute top-[135px] right-0 z-50 bg-bg-white border border-border-color border-l-0 shadow rounded-r-lg w-7 h-10 items-center justify-center cursor-pointer text-text-gray hover:text-text-dark"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
