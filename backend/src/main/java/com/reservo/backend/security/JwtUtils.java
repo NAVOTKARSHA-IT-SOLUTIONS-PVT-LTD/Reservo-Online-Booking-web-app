@@ -27,11 +27,19 @@ public class JwtUtils {
 
     @PostConstruct
     public void init() {
-        if ("9a4f2c8d3e7b1a5c6d8e2f0a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c".equals(jwtSecret)) {
-            log.warn("JWT secret is using the default configuration fallback. An ephemeral random signing key has been generated for this session to secure tokens.");
+        if (jwtSecret == null || jwtSecret.isBlank() 
+                || "dev-secret-key-change-in-production-min-32-chars".equals(jwtSecret) 
+                || "9a4f2c8d3e7b1a5c6d8e2f0a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c".equals(jwtSecret)) {
+            log.warn("JWT secret is using default/development configuration. For production, set the JWT_SECRET environment variable (minimum 32 characters).");
             signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
         } else {
-            signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+            byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+            if (keyBytes.length < 32) {
+                log.warn("Configured JWT_SECRET is shorter than 32 bytes (256 bits). Falling back to secure generated key to prevent signature vulnerability.");
+                signingKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+            } else {
+                signingKey = Keys.hmacShaKeyFor(keyBytes);
+            }
         }
     }
 
