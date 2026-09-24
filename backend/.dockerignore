@@ -1,0 +1,18 @@
+# Docker ignore list
+target/
+*.class
+.mvn/
+mvnw
+mvnw.cmd
+.git/
+.gitignore
+.idea/
+.vscode/
+logs/
+*.log
+uploads/
+.env*
+*serviceAccountKey*.json
+*credentials*.json
+Dockerfile
+.dockerignore

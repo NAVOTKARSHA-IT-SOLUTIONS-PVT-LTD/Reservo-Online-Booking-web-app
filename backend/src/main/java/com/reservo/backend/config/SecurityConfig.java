@@ -23,6 +23,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.reservo.backend.security.CustomUserDetailsService;
 import com.reservo.backend.security.JwtAuthenticationFilter;
+import com.reservo.backend.security.RateLimitingFilter;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +34,7 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitingFilter rateLimitingFilter;
 
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
@@ -159,10 +161,12 @@ public class SecurityConfig {
 
 
                         // ====================================================
-                        // SWAGGER
+                        // ACTUATOR & SWAGGER
                         // ====================================================
 
                         .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/info",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
@@ -374,9 +378,13 @@ public class SecurityConfig {
 
 
                 // ============================================================
-                // JWT FILTER
+                // RATE LIMITING & JWT FILTERS
                 // ============================================================
 
+                .addFilterBefore(
+                        rateLimitingFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
