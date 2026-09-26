@@ -104,6 +104,10 @@ public class ResortDocumentController {
         );
     }
 
+    private static final java.util.Set<String> ALLOWED_DOC_EXTENSIONS = java.util.Set.of(
+            ".pdf", ".jpg", ".jpeg", ".png"
+    );
+
     /**
      * Upload physical file.
      *
@@ -118,9 +122,23 @@ public class ResortDocumentController {
         try {
 
             if (file == null || file.isEmpty()) {
-
                 throw new IllegalArgumentException(
                         "File cannot be empty"
+                );
+            }
+
+            if (file.getSize() > 15L * 1024 * 1024) {
+                throw new IllegalArgumentException(
+                        "Document file must be 15 MB or smaller"
+                );
+            }
+
+            String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
+            if (!contentType.equals("application/pdf")
+                    && !contentType.equals("image/jpeg")
+                    && !contentType.equals("image/png")) {
+                throw new IllegalArgumentException(
+                        "Only PDF, JPG, and PNG documents are allowed"
                 );
             }
 
@@ -135,7 +153,13 @@ public class ResortDocumentController {
                 extension =
                         originalFileName.substring(
                                 originalFileName.lastIndexOf(".")
-                        );
+                        ).toLowerCase().replaceAll("[^a-z0-9.]", "");
+            }
+
+            if (!ALLOWED_DOC_EXTENSIONS.contains(extension)) {
+                throw new IllegalArgumentException(
+                        "Invalid file extension. Allowed document formats: PDF, JPG, JPEG, PNG"
+                );
             }
 
             String fileName =
@@ -209,6 +233,12 @@ public class ResortDocumentController {
 
         try {
 
+            if (filename == null || !filename.matches("^[a-zA-Z0-9._-]+$")) {
+                return ResponseEntity
+                        .badRequest()
+                        .build();
+            }
+
             Path filePath =
                     this.fileStorageLocation
                             .resolve(filename)
@@ -263,6 +293,8 @@ public class ResortDocumentController {
                                     + resource.getFilename()
                                     + "\""
                     )
+                    .header("X-Content-Type-Options", "nosniff")
+                    .header("Content-Security-Policy", "default-src 'none'")
                     .body(resource);
 
         } catch (Exception ex) {

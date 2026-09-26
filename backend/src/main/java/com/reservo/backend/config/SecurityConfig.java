@@ -26,9 +26,11 @@ import com.reservo.backend.security.JwtAuthenticationFilter;
 import com.reservo.backend.security.RateLimitingFilter;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 

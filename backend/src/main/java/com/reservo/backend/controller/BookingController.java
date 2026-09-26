@@ -15,6 +15,7 @@ import com.reservo.backend.entity.Resort;
 import com.reservo.backend.entity.Room;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -38,18 +39,14 @@ public class BookingController {
     private final PaymentRepository paymentRepository;
 
     private String resolveEffectiveUserId(String requestedUserId) {
-        Optional<User> authUser = authService.getOptionalAuthenticatedUser();
-        if (authUser.isPresent()) {
-            User user = authUser.get();
-            if (user.getRole() == User.Role.ROLE_ADMIN) {
-                return (requestedUserId != null && !requestedUserId.isBlank()) ? requestedUserId : user.getId();
-            }
-            return user.getId();
+        User user = authService.getOptionalAuthenticatedUser()
+                .orElseThrow(() -> new UnauthorizedException("Authentication required to perform booking operations"));
+
+        if (user.getRole() == User.Role.ROLE_ADMIN) {
+            return (requestedUserId != null && !requestedUserId.isBlank()) ? requestedUserId : user.getId();
         }
-        if (requestedUserId != null && !requestedUserId.isBlank()) {
-            return requestedUserId;
-        }
-        throw new UnauthorizedException("Authentication required to perform booking operations");
+
+        return user.getId();
     }
 
     @PostMapping("/create")
@@ -104,6 +101,7 @@ public class BookingController {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin-all")
     public ResponseEntity<ApiResponse<List<Booking>>> getAdminAllBookings() {
         return ResponseEntity.ok(ApiResponse.success(bookingService.getAllBookings()));
@@ -309,6 +307,7 @@ public class BookingController {
     /**
      * Backward-compatible endpoint for internal/admin callers.
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/update-status")
     public ResponseEntity<ApiResponse<Booking>> updateBookingStatus(
             @RequestParam String bookingId,

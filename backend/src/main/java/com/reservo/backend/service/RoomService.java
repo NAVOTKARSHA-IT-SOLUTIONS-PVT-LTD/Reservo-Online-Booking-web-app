@@ -3,11 +3,16 @@ package com.reservo.backend.service;
 import com.reservo.backend.entity.Resort;
 import com.reservo.backend.entity.Booking;
 import com.reservo.backend.entity.Room;
+import com.reservo.backend.entity.User;
 import com.reservo.backend.exception.ResourceNotFoundException;
+import com.reservo.backend.exception.UnauthorizedException;
 import com.reservo.backend.repository.ResortRepository;
 import com.reservo.backend.repository.RoomRepository;
 import com.reservo.backend.repository.BookingRepository;
+import com.reservo.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +23,27 @@ public class RoomService {
     private final RoomRepository roomRepository;
     private final ResortRepository resortRepository;
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
+
+    private void verifyRoomManagementAccess(String resortId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            throw new UnauthorizedException("Authentication required to manage rooms");
+        }
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + auth.getName()));
+
+        if (user.getRole() == User.Role.ROLE_ADMIN) {
+            return;
+        }
+
+        Resort resort = resortRepository.findById(resortId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + resortId));
+
+        if (resort.getOwnerId() == null || !resort.getOwnerId().equals(user.getId())) {
+            throw new SecurityException("You are not authorized to modify rooms for this property");
+        }
+    }
 
     public List<Room> getRoomsByResort(String resortId) {
         Resort resort = resortRepository.findById(resortId)
@@ -59,6 +85,8 @@ public class RoomService {
     }
 
     public Room createRoom(String resortId, Room room) {
+        verifyRoomManagementAccess(resortId);
+
         Resort resort = resortRepository.findById(resortId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resort not found with ID: " + resortId));
 
@@ -81,6 +109,7 @@ public class RoomService {
 
     public Room updateRoomStatus(String id, Room.RoomStatus status, String maintenance) {
         Room room = getRoomById(id);
+        verifyRoomManagementAccess(room.getResortId());
         if (status != null) room.setStatus(status);
         if (maintenance != null) room.setDescription(maintenance);
         return roomRepository.save(room);
@@ -88,6 +117,7 @@ public class RoomService {
 
     public Room updateRoom(String id, Room updatedDetails) {
         Room room = getRoomById(id);
+        verifyRoomManagementAccess(room.getResortId());
         if (updatedDetails.getRoomNumber() != null) room.setRoomNumber(updatedDetails.getRoomNumber());
         if (updatedDetails.getPricePerNight() != null) room.setPricePerNight(updatedDetails.getPricePerNight());
         if (updatedDetails.getCapacity() != null) room.setCapacity(updatedDetails.getCapacity());
@@ -102,6 +132,7 @@ public class RoomService {
 
     public void deleteRoom(String id) {
         Room room = getRoomById(id);
+        verifyRoomManagementAccess(room.getResortId());
 
         // Never remove a physical room that is referenced by an active or
         // historical booking. This prevents Edit Property inventory changes

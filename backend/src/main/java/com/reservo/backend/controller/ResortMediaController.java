@@ -21,6 +21,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ResortMediaController {
 
+    private static final java.util.Set<String> ALLOWED_EXTENSIONS = java.util.Set.of(
+            ".jpg", ".jpeg", ".png", ".webp", ".mp4", ".mov", ".webm"
+    );
+
     @Value("${app.media.storage-dir:uploads/media}")
     private String storageDirectory;
 
@@ -35,6 +39,9 @@ public class ResortMediaController {
                 throw new IllegalArgumentException("File cannot be empty");
             }
             String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
+            if (contentType.contains("svg") || contentType.contains("xml") || contentType.contains("html")) {
+                throw new IllegalArgumentException("SVG, XML, and HTML uploads are not permitted for security reasons");
+            }
             if (!contentType.startsWith("image/") && !contentType.startsWith("video/")) {
                 throw new IllegalArgumentException("Only image and video files are allowed");
             }
@@ -42,13 +49,18 @@ public class ResortMediaController {
                 throw new IllegalArgumentException("Media file must be 25 MB or smaller");
             }
 
-            Path storage = storagePath();
-            Files.createDirectories(storage);
-
             String original = file.getOriginalFilename() == null ? "media" : file.getOriginalFilename();
             String extension = "";
             int dot = original.lastIndexOf('.');
-            if (dot >= 0) extension = original.substring(dot).replaceAll("[^A-Za-z0-9.]", "");
+            if (dot >= 0) {
+                extension = original.substring(dot).toLowerCase().replaceAll("[^a-z0-9.]", "");
+            }
+            if (!ALLOWED_EXTENSIONS.contains(extension)) {
+                throw new IllegalArgumentException("Invalid file extension. Allowed formats: JPG, JPEG, PNG, WEBP, MP4, MOV, WEBM");
+            }
+
+            Path storage = storagePath();
+            Files.createDirectories(storage);
 
             String fileName = UUID.randomUUID() + extension;
             Path target = storage.resolve(fileName).normalize();
@@ -70,6 +82,10 @@ public class ResortMediaController {
     @GetMapping("/files/{filename:.+}")
     public ResponseEntity<Resource> get(@PathVariable String filename) {
         try {
+            if (filename == null || !filename.matches("^[a-zA-Z0-9._-]+$")) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Path storage = storagePath();
             Path file = storage.resolve(filename).normalize();
 
@@ -94,6 +110,8 @@ public class ResortMediaController {
                     .contentType(mediaType)
                     .header(HttpHeaders.CONTENT_DISPOSITION,
                             "inline; filename=\"" + resource.getFilename() + "\"")
+                    .header("X-Content-Type-Options", "nosniff")
+                    .header("Content-Security-Policy", "default-src 'none'; media-src 'self'; img-src 'self'")
                     .body(resource);
         } catch (IOException e) {
             return ResponseEntity.notFound().build();

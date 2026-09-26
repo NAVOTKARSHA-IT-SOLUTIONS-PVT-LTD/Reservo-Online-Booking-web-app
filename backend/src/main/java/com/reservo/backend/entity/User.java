@@ -1,5 +1,6 @@
 package com.reservo.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.cloud.firestore.annotation.Exclude;
 
 import java.time.Instant;
@@ -56,6 +57,7 @@ public class User {
      *
      * NEVER store plain-text passwords.
      */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String passwordHash;
 
     private String phone;
