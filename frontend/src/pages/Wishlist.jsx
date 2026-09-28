@@ -46,11 +46,11 @@ export default function Wishlist({ onBook }) {
   };
 
   return (
-    <div className="py-[120px] pb-[100px] bg-bg-light min-h-screen">
+    <div className="pt-6 pb-24 sm:pt-10 lg:py-[120px] lg:pb-[100px] bg-bg-light min-h-screen">
       <div className="w-[90%] max-w-[1300px] mx-auto text-left">
-        <header className="text-center mb-[50px] animate-fade-in">
-          <h1 className="text-[32px] sm:text-[40px] font-bold text-text-dark mb-3">Saved Stays & Wishlist</h1>
-          <p className="text-[15px] text-text-gray max-w-[600px] mx-auto">Your curated selections of verified luxury retreats around the world.</p>
+        <header className="text-center mb-6 sm:mb-[50px] animate-fade-in">
+          <h1 className="text-[26px] sm:text-[32px] md:text-[40px] font-bold text-text-dark mb-2 sm:mb-3">Saved Stays & Wishlist</h1>
+          <p className="text-xs sm:text-[15px] text-text-gray max-w-[600px] mx-auto">Your curated selections of verified luxury retreats around the world.</p>
         </header>
 
         {wishlist.length > 0 ? (

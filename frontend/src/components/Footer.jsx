@@ -581,7 +581,7 @@ function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="bg-[#0B1530] text-slate-300 py-6 w-full transition-colors duration-300">
+        <div className="bg-[#0D47A1] text-slate-300 py-6 w-full transition-colors duration-300">
           <div className="w-full max-w-[1280px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-6 text-xs font-semibold">
 
             <div className="flex items-center gap-6">

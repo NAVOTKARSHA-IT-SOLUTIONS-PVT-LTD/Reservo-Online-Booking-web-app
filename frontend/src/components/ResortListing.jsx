@@ -526,7 +526,7 @@ export default function ResortListing({ onSelectResort, activeCategory: propActi
 
         {/* Category Filter Tabs Bar */}
         <section className="space-y-6">
-          <div className={`flex items-center justify-between overflow-x-auto pb-3 space-x-2 border-b ${
+          <div className={`flex items-center overflow-x-auto pb-3 space-x-2 border-b scrollbar-none overscroll-x-contain ${
             isDarkMode ? 'border-[#334155]' : 'border-[#E2E8F0]'
           }`}>
             {CATEGORIES.map(cat => (

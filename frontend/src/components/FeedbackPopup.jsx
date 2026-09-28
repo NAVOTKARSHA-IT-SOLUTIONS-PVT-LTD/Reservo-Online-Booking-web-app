@@ -36,13 +36,23 @@ function FeedbackPopup() {
       }
     };
 
+    const handleMobileScroll = (e) => {
+      if (e.detail?.scrollPercentage >= 45) {
+        showFeedback();
+      }
+    };
+
     window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
+    window.addEventListener("reservo-scroll", handleMobileScroll, {
       passive: true,
     });
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("reservo-scroll", handleMobileScroll);
     };
   }, []);
 
@@ -61,10 +71,15 @@ function FeedbackPopup() {
     <div
       className="
         fixed
-        bottom-6
-        left-6
+        bottom-20
+        left-4
+        right-4
+        sm:right-auto
+        sm:bottom-6
+        sm:left-6
         z-[9999]
-        w-[340px]
+        w-auto
+        max-w-[calc(100vw-32px)]
         sm:w-[380px]
         animate-feedback-popup
       "

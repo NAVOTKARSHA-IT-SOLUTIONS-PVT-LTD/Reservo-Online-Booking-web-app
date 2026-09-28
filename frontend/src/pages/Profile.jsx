@@ -126,11 +126,11 @@ function Profile() {
   }
 
   return (
-    <div className="py-30 pb-25 bg-bg-light min-h-screen fade-up">
-      <div className="w-[90%] max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-10 items-start">
+    <div className="pt-6 pb-24 sm:pt-10 lg:pt-30 lg:pb-25 bg-bg-light min-h-screen fade-up">
+      <div className="w-[92%] sm:w-[90%] max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 lg:gap-10 items-start">
         
         {/* Left column info */}
-        <aside className="bg-bg-white border border-border-color rounded-3xl p-7.5 shadow-custom text-center">
+        <aside className="bg-bg-white border border-border-color rounded-3xl p-5 sm:p-7.5 shadow-custom text-center">
           <div className="relative w-30 h-30 mx-auto mb-5">
             <img 
               src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=150&q=80" 
@@ -200,7 +200,7 @@ function Profile() {
         {/* Right column details */}
         <main className="flex flex-col gap-7.5">
           {activeSection === "details" && (
-            <div className="bg-bg-white border border-border-color rounded-3xl p-10 shadow-custom animate-fade-in">
+            <div className="bg-bg-white border border-border-color rounded-3xl p-5 sm:p-10 shadow-custom animate-fade-in">
               {user?.role === "ROLE_OWNER" && (
                 <div className="mb-6 p-5 rounded-2xl bg-slate-900/5 border border-slate-900/10 flex flex-col gap-3 text-left">
                   <div className="flex justify-between items-center">

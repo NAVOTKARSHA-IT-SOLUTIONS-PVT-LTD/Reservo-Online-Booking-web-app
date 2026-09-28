@@ -143,7 +143,7 @@ function SearchLoadingOverlay({ destination, onComplete }) {
         </div>
 
         {/* Bottom cards: Weather + Tip */}
-        <div className="flex gap-3 w-full">
+        <div className="flex flex-col sm:flex-row gap-3 w-full">
           <div className="flex-1 bg-white/5 border border-white/8 rounded-2xl px-4 py-3.5 text-left">
             <div className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-2">
               {destKey} Weather

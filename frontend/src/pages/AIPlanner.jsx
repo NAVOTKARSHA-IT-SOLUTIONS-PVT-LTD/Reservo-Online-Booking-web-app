@@ -1097,7 +1097,7 @@ export default function AIPlanner() {
                 placeholder="Type your travel plan..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                className="flex-1 bg-bg-light border border-border-color text-text-dark rounded-full px-4 py-2.5 text-[11px] outline-none focus:border-primary transition"
+                className="flex-1 bg-bg-light border border-border-color text-text-dark rounded-full px-4 py-2.5 text-base md:text-[11px] outline-none focus:border-primary transition"
                 disabled={isAnalyzing}
               />
               <button

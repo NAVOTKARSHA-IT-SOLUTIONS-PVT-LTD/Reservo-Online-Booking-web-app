@@ -238,6 +238,33 @@ function MobileUI({ isDark, onToggleTheme, children }) {
     }
   }, [location.pathname]);
 
+  // Listen for scroll-to-top requests from App or BackToTop button
+  useEffect(() => {
+    const handleScrollToTop = () => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    };
+    window.addEventListener("reservo-scroll-to-top", handleScrollToTop);
+    return () => window.removeEventListener("reservo-scroll-to-top", handleScrollToTop);
+  }, []);
+
+  const handleScroll = (e) => {
+    const target = e.currentTarget;
+    const scrollTop = target.scrollTop;
+    const totalHeight = target.scrollHeight - target.clientHeight;
+    const scrollPercentage = totalHeight > 0 ? (scrollTop / totalHeight) * 100 : 0;
+
+    // Dispatch custom scroll event to sync window-level features (progress bar, Hero parallax, BackToTop) on mobile
+    window.dispatchEvent(new CustomEvent("reservo-scroll", {
+      detail: {
+        scrollTop,
+        totalHeight,
+        scrollPercentage
+      }
+    }));
+  };
+
   const toggleWishlistHandler = (resort) => {
     toggleWishlist({
       id: String(resort.id),
@@ -252,10 +279,15 @@ function MobileUI({ isDark, onToggleTheme, children }) {
     setIsDrawerOpen(false);
     const performScroll = () => {
       const el = document.getElementById(id);
-      if (el) {
-        const yOffset = -80; // Mobile header offset
-        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
+      if (el && scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const yOffset = -12; // Mobile header offset
+        const targetScrollTop = container.scrollTop + (elRect.top - containerRect.top) + yOffset;
+        container.scrollTo({ top: Math.max(0, targetScrollTop), behavior: "smooth" });
+      } else if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     };
     if (location.pathname !== "/") {
@@ -331,7 +363,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[8000] md:hidden bg-[var(--color-bg-white)] text-[var(--color-text-dark)] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 h-[100dvh] max-h-[100dvh] z-[8000] md:hidden bg-[var(--color-bg-white)] text-[var(--color-text-dark)] flex flex-col overflow-hidden">
 
       {/* ── TOP BAR ─────────────────────────────────── */}
       <header className="sticky top-0 z-[99] flex items-center justify-between px-4 py-3 bg-[var(--color-bg-white)]/95 backdrop-blur-xl border-b border-[var(--color-border-color)] shrink-0">
@@ -395,6 +427,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
       {/* ── SCROLLABLE CONTENT ─────────────────────── */}
       <div 
         ref={scrollContainerRef} 
+        onScroll={handleScroll}
         className={`flex-1 ${
           location.pathname === "/ai-planner" 
             ? "overflow-hidden flex flex-col" 
@@ -412,7 +445,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
         <div className="fixed bottom-[72px] right-4 z-[8500]">
         {/* Chat Popup */}
         {isMascotOpen && (
-          <div className="absolute bottom-[60px] right-0 w-[300px] h-[420px] bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-2xl shadow-[0_15px_45px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <div className="absolute bottom-[60px] right-0 w-[calc(100vw-32px)] max-w-[320px] h-[420px] max-h-[calc(100dvh-160px)] bg-[var(--color-bg-white)] border border-[var(--color-border-color)] rounded-2xl shadow-[0_15px_45px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-300">
             {/* Chat Header */}
             <div className="bg-[#121e1b] px-4 py-3 flex items-center gap-2.5 border-b border-white/5 shrink-0">
               <img src={rivoAvatar} alt="Rivo" className="w-7 h-7 rounded-full object-cover border border-white/20" />
@@ -548,7 +581,14 @@ function MobileUI({ isDark, onToggleTheme, children }) {
       {location.pathname !== "/ai-planner" && (
         <nav className="h-[68px] bg-[var(--color-bg-white)]/95 backdrop-blur-xl border-t border-[var(--color-border-color)] flex items-center justify-around px-2 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[8100]">
           {[
-            { id: "home", label: "Home", icon: <Home size={20} />, action: () => { setActiveTab("home"); navigate("/"); } },
+            { id: "home", label: "Home", icon: <Home size={20} />, action: () => { 
+              if (location.pathname === "/" && scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+              } else {
+                setActiveTab("home"); 
+                navigate("/"); 
+              }
+            } },
             { id: "explore", label: "Explore", icon: <Search size={20} />, action: () => { setActiveTab("explore"); navigate("/search"); } },
             { id: "wishlist", label: "Wishlist", icon: <Heart size={20} />, action: () => { setActiveTab("wishlist"); navigate("/wishlist"); } },
             { id: "profile", label: "Profile", icon: <User size={20} />, action: () => { setActiveTab("profile"); navigate("/profile"); } },

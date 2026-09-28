@@ -216,12 +216,12 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-light pt-28 pb-20 px-6 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-bg-light pt-6 pb-24 sm:pt-10 lg:pt-28 lg:pb-20 px-4 sm:px-6 font-sans transition-colors duration-300">
       <div className="max-w-[700px] mx-auto space-y-6 animate-fade-in relative">
 
         {/* Toast Alert */}
         {toastMsg && (
-          <div className="fixed bottom-6 right-6 z-[999] bg-[#121e1b] text-white border border-[#334155] py-3.5 px-5 rounded-2xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div className="fixed bottom-20 right-4 left-4 sm:left-auto sm:right-6 sm:bottom-6 z-[999] bg-[#121e1b] text-white border border-[#334155] py-3.5 px-5 rounded-2xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-5 duration-300">
             <Check className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold">{toastMsg}</span>
           </div>

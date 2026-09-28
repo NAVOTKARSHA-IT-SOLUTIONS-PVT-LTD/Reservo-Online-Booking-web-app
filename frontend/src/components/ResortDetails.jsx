@@ -541,7 +541,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
   }, [viewFullPhotoUrl, handlePrevPhoto, handleNextPhoto]);
 
   return (
-    <div className="w-full max-w-[1280px] mx-auto px-5 py-8 font-sans transition-colors duration-300">
+    <div className="w-full max-w-[1280px] mx-auto px-4 sm:px-5 py-6 sm:py-8 pb-36 lg:pb-8 font-sans transition-colors duration-300">
       
       {/* 2-Column Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -842,7 +842,7 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
 
         {/* Right Column (Sticky Booking Card) */}
         <div className="lg:col-span-4 sticky top-6">
-          <div className="bg-bg-white border border-border-color rounded-[32px] p-6 shadow-[0_15px_45px_rgba(0,0,0,0.05)] space-y-5 transition-colors duration-300">
+          <div id="booking-card" className="bg-bg-white border border-border-color rounded-[32px] p-6 shadow-[0_15px_45px_rgba(0,0,0,0.05)] space-y-5 transition-colors duration-300">
             
             {/* Rates Header */}
             <div>
@@ -1295,6 +1295,29 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
           </div>
         </div>
       )}
+
+      {/* Mobile Sticky Booking Bottom Bar (Above Mobile Nav) */}
+      <div className="fixed bottom-[68px] left-0 right-0 p-3 px-4 bg-bg-white/95 backdrop-blur-md border-t border-border-color z-[8000] flex items-center justify-between lg:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div>
+          <div className="text-[10px] text-text-gray font-bold uppercase tracking-wider">Starting from</div>
+          <div className="text-base sm:text-lg font-extrabold text-text-dark">
+            {currencySymbol}{formattedPrice} <span className="text-xs text-text-gray font-normal">/ night</span>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            const bookingCard = document.getElementById("booking-card");
+            if (bookingCard) {
+              bookingCard.scrollIntoView({ behavior: "smooth" });
+            } else {
+              handleCheckAvailability();
+            }
+          }}
+          className="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-md border-none cursor-pointer transition-all"
+        >
+          Reserve Now
+        </button>
+      </div>
     </div>
   );
 }

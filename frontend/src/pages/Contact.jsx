@@ -102,7 +102,7 @@ function Contact() {
     <>
       {/* Hero */}
       <section 
-        className="py-[100px] md:py-[150px] px-5 text-center text-white bg-cover bg-center"
+        className="py-16 sm:py-24 md:py-[150px] px-5 text-center text-white bg-cover bg-center"
         style={{
           backgroundImage: `linear-gradient(rgba(20,35,32,0.72), rgba(20,35,32,0.72)), url(${contactImage})`
         }}
@@ -111,10 +111,10 @@ function Contact() {
           <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-3">
             Contact Reservo
           </span>
-          <h1 className="text-[42px] md:text-[64px] font-bold my-6 md:my-[25px] leading-tight text-white">
+          <h1 className="text-[28px] sm:text-[42px] md:text-[64px] font-bold my-4 sm:my-6 md:my-[25px] leading-tight text-white">
             We'd Love <br /> To Hear From You
           </h1>
-          <p className="max-w-[760px] mx-auto text-base md:text-xl leading-relaxed md:leading-[1.8] text-white/90">
+          <p className="max-w-[760px] mx-auto text-sm sm:text-base md:text-xl leading-relaxed md:leading-[1.8] text-white/90">
             Whether you're planning your next luxury vacation or need booking
             assistance, our travel experts are always ready to help.
           </p>
@@ -122,15 +122,15 @@ function Contact() {
       </section>
 
       {/* Contact */}
-      <section className="py-20 md:py-[100px] bg-bg-light transition-colors duration-300">
-        <div className="w-[90%] max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12.5 lg:gap-[70px] items-start">
+      <section className="py-12 md:py-[100px] bg-bg-light transition-colors duration-300">
+        <div className="w-[90%] max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-[70px] items-start">
 
           {/* Left */}
           <div className="text-center lg:text-left">
             <span className="inline-block text-gold font-semibold tracking-widest text-xs mb-3.75">
               GET IN TOUCH
             </span>
-            <h2 className="text-[36px] md:text-[46px] font-bold text-primary mb-5">
+            <h2 className="text-[26px] sm:text-[36px] md:text-[46px] font-bold text-primary mb-5">
               Let's Plan Your Next Luxury Escape
             </h2>
             <p className="text-text-gray leading-relaxed mb-7.5">

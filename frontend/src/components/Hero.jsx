@@ -102,8 +102,17 @@ function Hero() {
         ticking = true;
       }
     };
+    const handleMobileScroll = (e) => {
+      if (e.detail?.scrollTop !== undefined) {
+        setScrollY(e.detail.scrollTop);
+      }
+    };
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("reservo-scroll", handleMobileScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("reservo-scroll", handleMobileScroll);
+    };
   }, []);
 
   // Screen size detection for responsive video (Full HD on desktop, lightweight on mobile)
@@ -491,7 +500,7 @@ function Hero() {
 
             {/* Custom Calendar Dropdown */}
             {showCalendarDropdown && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-[320px] mb-3 bg-bg-white rounded-2xl shadow-[0_-20px_60px_rgba(0,0,0,0.15)] border border-border-color overflow-hidden z-50 animate-fade-in p-2">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-[320px] max-w-[calc(100vw-24px)] mb-3 bg-bg-white rounded-2xl shadow-[0_-20px_60px_rgba(0,0,0,0.15)] border border-border-color overflow-hidden z-50 animate-fade-in p-2">
                 <CustomCalendar
                   checkInDate={checkInDate}
                   checkOutDate={checkOutDate}
@@ -538,7 +547,7 @@ function Hero() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={(e) => { e.stopPropagation(); setGuestCount(Math.max(1, guestCount - 1)); }}
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
+                      className={`w-9 h-9 md:w-8 md:h-8 rounded-full border flex items-center justify-center transition ${
                         guestCount <= 1 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-border-color text-text-dark hover:border-primary hover:text-primary'
                       }`}
                       disabled={guestCount <= 1}
@@ -548,7 +557,7 @@ function Hero() {
                     <span className="text-[16px] font-bold text-text-dark w-6 text-center transition-colors duration-300">{guestCount}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); setGuestCount(Math.min(12, guestCount + 1)); }}
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
+                      className={`w-9 h-9 md:w-8 md:h-8 rounded-full border flex items-center justify-center transition ${
                         guestCount >= 12 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-border-color text-text-dark hover:border-primary hover:text-primary'
                       }`}
                       disabled={guestCount >= 12}
@@ -569,7 +578,7 @@ function Hero() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={(e) => { e.stopPropagation(); setChildCount(Math.max(0, childCount - 1)); }}
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
+                      className={`w-9 h-9 md:w-8 md:h-8 rounded-full border flex items-center justify-center transition ${
                         childCount <= 0 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-border-color text-text-dark hover:border-primary hover:text-primary'
                       }`}
                       disabled={childCount <= 0}
@@ -579,7 +588,7 @@ function Hero() {
                     <span className="text-[16px] font-bold text-text-dark w-6 text-center transition-colors duration-300">{childCount}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); setChildCount(Math.min(6, childCount + 1)); }}
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
+                      className={`w-9 h-9 md:w-8 md:h-8 rounded-full border flex items-center justify-center transition ${
                         childCount >= 6 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-border-color text-text-dark hover:border-primary hover:text-primary'
                       }`}
                       disabled={childCount >= 6}
@@ -600,7 +609,7 @@ function Hero() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={(e) => { e.stopPropagation(); setRoomCount(Math.max(1, roomCount - 1)); }}
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
+                      className={`w-9 h-9 md:w-8 md:h-8 rounded-full border flex items-center justify-center transition ${
                         roomCount <= 1 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-border-color text-text-dark hover:border-primary hover:text-primary'
                       }`}
                       disabled={roomCount <= 1}
@@ -610,7 +619,7 @@ function Hero() {
                     <span className="text-[16px] font-bold text-text-dark w-6 text-center transition-colors duration-300">{roomCount}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); setRoomCount(Math.min(6, roomCount + 1)); }}
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center transition ${
+                      className={`w-9 h-9 md:w-8 md:h-8 rounded-full border flex items-center justify-center transition ${
                         roomCount >= 6 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-border-color text-text-dark hover:border-primary hover:text-primary'
                       }`}
                       disabled={roomCount >= 6}

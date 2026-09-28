@@ -121,22 +121,27 @@ export default function GuidedTour() {
       <AnimatePresence>
         <motion.div
           key={currentStep}
-          initial={{ opacity: 0, y: 15, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ 
             opacity: 1, 
-            y: 0, 
             scale: 1,
-            // Position near the spotlight element
-            top: coords.isFallback 
-              ? window.innerHeight / 2 - 100 
-              : coords.top - window.scrollY + coords.height + 16,
-            left: coords.isFallback 
-              ? window.innerWidth / 2 - 150 
-              : Math.max(16, Math.min(window.innerWidth - 336, coords.left - window.scrollX + (coords.width / 2) - 150))
+            // Position near spotlight on desktop, or nicely centered on mobile
+            top: window.innerWidth < 768
+              ? "50%"
+              : coords.isFallback 
+                ? window.innerHeight / 2 - 100 
+                : coords.top - window.scrollY + coords.height + 16,
+            left: window.innerWidth < 768
+              ? "50%"
+              : coords.isFallback 
+                ? window.innerWidth / 2 - 150 
+                : Math.max(16, Math.min(window.innerWidth - 336, coords.left - window.scrollX + (coords.width / 2) - 150)),
+            x: window.innerWidth < 768 ? "-50%" : 0,
+            y: window.innerWidth < 768 ? "-50%" : 0,
           }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ type: "spring", stiffness: 350, damping: 26 }}
-          className="absolute w-[300px] bg-bg-white border border-border-color rounded-3xl p-5 shadow-2xl pointer-events-auto flex flex-col gap-4 text-left"
+          className="absolute w-[calc(100vw-32px)] max-w-[320px] bg-bg-white border border-border-color rounded-3xl p-5 shadow-2xl pointer-events-auto flex flex-col gap-4 text-left"
         >
           {/* Close button */}
           <button 
