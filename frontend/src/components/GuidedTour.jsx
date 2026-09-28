@@ -35,8 +35,8 @@ export default function GuidedTour() {
     // Show only once
     const completed = localStorage.getItem("reservo-tour-completed");
     if (!completed) {
-      // Delay tour popup by 2 seconds for smooth landing page experience
-      const timer = setTimeout(() => setShowTour(true), 2000);
+      // Delay tour popup to allow page to fully settle
+      const timer = setTimeout(() => setShowTour(true), 4000);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -48,19 +48,17 @@ export default function GuidedTour() {
       const step = TOUR_STEPS[currentStep];
       const el = document.querySelector(step.target);
       if (el) {
-        // Scroll element into view if needed
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        // Wait briefly for scroll to settle before measuring
-        setTimeout(() => {
-          const rect = el.getBoundingClientRect();
-          setCoords({
-            top: rect.top + window.scrollY,
-            left: rect.left + window.scrollX,
-            width: rect.width,
-            height: rect.height
-          });
-        }, 150);
+        const rect = el.getBoundingClientRect();
+        const isInViewport = rect.top >= 0 && rect.bottom <= window.innerHeight;
+        if (!isInViewport && currentStep > 0) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        setCoords({
+          top: rect.top + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+          height: rect.height
+        });
       } else {
         // Fallback to center screen if element is missing
         setCoords({
@@ -151,7 +149,7 @@ export default function GuidedTour() {
 
           {/* Rivo Header info */}
           <div className="flex items-center gap-3">
-            <img src={rivoMascot} alt="Rivo" className="w-9 h-9 rounded-full object-cover border border-gold" />
+            <img src={rivoMascot} alt="Rivo" width="36" height="36" className="w-9 h-9 rounded-full object-cover border border-gold" />
             <div>
               <h4 className="text-xs font-bold text-text-dark flex items-center gap-1">
                 {current.title} <Sparkles className="w-3 h-3 text-gold animate-pulse" />

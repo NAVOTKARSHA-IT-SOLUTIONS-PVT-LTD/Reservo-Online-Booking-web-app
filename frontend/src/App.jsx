@@ -393,20 +393,24 @@ function App() {
     };
   }, [toast]);
 
-  // Scroll Progress and Back To Top triggers
+  // Scroll Progress and Back To Top triggers (throttled with RAF)
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      // Scroll Progress Bar
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        setScrollProgress((window.scrollY / totalHeight) * 100);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+          if (totalHeight > 0) {
+            setScrollProgress((window.scrollY / totalHeight) * 100);
+          }
+          setShowBackToTop(window.scrollY > 400);
+          ticking = false;
+        });
+        ticking = true;
       }
-
-      // Back to Top button
-      setShowBackToTop(window.scrollY > 400);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 

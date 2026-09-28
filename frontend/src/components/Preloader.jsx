@@ -55,6 +55,8 @@ function Preloader({ onComplete }) {
           <img 
             src={rivoSupport} 
             alt="Rivo Concierge" 
+            width="112"
+            height="112"
             className="w-full h-full rounded-full border-3 border-gold object-cover animate-bounce-rivo"
           />
           <div className="absolute -inset-3 border-2 border-gold rounded-full animate-pulse-rivo pointer-events-none z-[-1]"></div>

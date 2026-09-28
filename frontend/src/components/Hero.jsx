@@ -23,6 +23,7 @@ import { useToast } from "../context/ToastContext";
 
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 import herovideo from "../assets/images/hero-video.mp4";
+import heroPoster from "../assets/images/hero_poster.webp";
 import CustomCalendar from "./CustomCalendar";
 
 
@@ -90,8 +91,15 @@ function Hero() {
   const calendarRef = useRef(null);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setScrollY(window.scrollY);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -226,11 +234,12 @@ function Hero() {
   <video
     className="absolute inset-0 w-full h-full object-cover"
     src={herovideo}
+    poster={heroPoster}
     autoPlay
     muted
     loop
     playsInline
-    preload="metadata"
+    preload="auto"
   />
 </div>
   
