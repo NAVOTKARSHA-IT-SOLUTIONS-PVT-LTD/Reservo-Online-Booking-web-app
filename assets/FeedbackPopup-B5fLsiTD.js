@@ -1,9 +1,14 @@
-import{n as e}from"./rolldown-runtime-Bh1tDfsg.js";import{a as t}from"./vendor-forms-DdSBG07f.js";import{E as n,I as r,n as i}from"./vendor-react-_RKYJX87.js";import{r as a}from"./vendor-framer-CbP3Qo0L.js";var o=e(t(),1),s=a();function c(){let[e,t]=(0,o.useState)(!1),[a,c]=(0,o.useState)(null),[l,u]=(0,o.useState)(!1),[d,f]=(0,o.useState)(``);(0,o.useEffect)(()=>{let e=!1,n=()=>{e||(e=!0,t(!0),window.removeEventListener(`scroll`,i))},r=setTimeout(n,2e4),i=()=>{let e=window.scrollY,t=document.documentElement.scrollHeight-window.innerHeight;t>0&&e/t*100>=45&&n()};return window.addEventListener(`scroll`,i,{passive:!0}),()=>{clearTimeout(r),window.removeEventListener(`scroll`,i)}},[]);let p=e=>{c(e),u(!0)};return e?(0,s.jsx)(`div`,{className:`
+import{n as e}from"./rolldown-runtime-Bh1tDfsg.js";import{a as t}from"./vendor-forms-DdSBG07f.js";import{E as n,I as r,n as i}from"./vendor-react-_RKYJX87.js";import{r as a}from"./vendor-framer-CbP3Qo0L.js";var o=e(t(),1),s=a();function c(){let[e,t]=(0,o.useState)(!1),[a,c]=(0,o.useState)(null),[l,u]=(0,o.useState)(!1),[d,f]=(0,o.useState)(``);(0,o.useEffect)(()=>{let e=!1,n=()=>{e||(e=!0,t(!0),window.removeEventListener(`scroll`,i))},r=setTimeout(n,2e4),i=()=>{let e=window.scrollY,t=document.documentElement.scrollHeight-window.innerHeight;t>0&&e/t*100>=45&&n()},a=e=>{e.detail?.scrollPercentage>=45&&n()};return window.addEventListener(`scroll`,i,{passive:!0}),window.addEventListener(`reservo-scroll`,a,{passive:!0}),()=>{clearTimeout(r),window.removeEventListener(`scroll`,i),window.removeEventListener(`reservo-scroll`,a)}},[]);let p=e=>{c(e),u(!0)};return e?(0,s.jsx)(`div`,{className:`
         fixed
-        bottom-6
-        left-6
+        bottom-20
+        left-4
+        right-4
+        sm:right-auto
+        sm:bottom-6
+        sm:left-6
         z-[9999]
-        w-[340px]
+        w-auto
+        max-w-[calc(100vw-32px)]
         sm:w-[380px]
         animate-feedback-popup
       `,children:(0,s.jsxs)(`div`,{className:`
