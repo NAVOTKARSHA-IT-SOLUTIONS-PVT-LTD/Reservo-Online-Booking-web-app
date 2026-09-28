@@ -23,6 +23,7 @@ import { useToast } from "../context/ToastContext";
 
 import SearchLoadingOverlay from "./SearchLoadingOverlay";
 import herovideo from "../assets/images/hero-video.mp4";
+import herovideoMobile from "../assets/images/hero-video-mobile.mp4";
 import heroPoster from "../assets/images/hero_poster.webp";
 import CustomCalendar from "./CustomCalendar";
 
@@ -103,6 +104,19 @@ function Hero() {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Screen size detection for responsive video (Full HD on desktop, lightweight on mobile)
+  const [isMobileScreen, setIsMobileScreen] = useState(() => {
+    return typeof window !== "undefined" ? window.innerWidth < 768 : false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileScreen(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize, { passive: true });
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Close dropdowns on outside click
@@ -232,15 +246,18 @@ function Hero() {
   }}
 >
   <video
+    key={isMobileScreen ? "hero-mob" : "hero-desk"}
     className="absolute inset-0 w-full h-full object-cover"
-    src={herovideo}
+    src={isMobileScreen ? herovideoMobile : herovideo}
     poster={heroPoster}
     autoPlay
     muted
     loop
     playsInline
     preload="auto"
-  />
+  >
+    <source src={isMobileScreen ? herovideoMobile : herovideo} type="video/mp4" />
+  </video>
 </div>
   
 
