@@ -587,6 +587,7 @@ function App() {
             <Route path="/search-results" element={renderResortListing()} />
             <Route path="/resorts" element={renderResortListing()} />
             <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} onBook={openBookingForResort} />} />
+            <Route path="/resorts/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} onBook={openBookingForResort} />} />
             <Route path="/wishlist" element={<Wishlist onBook={openBookingForResort} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />
             <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />

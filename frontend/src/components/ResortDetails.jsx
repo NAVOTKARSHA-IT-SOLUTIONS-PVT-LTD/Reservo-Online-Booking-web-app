@@ -5,17 +5,22 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Star, Heart, MapPin, Share, Play, Waves, Sparkles, Wifi, Check, X, ChevronDown, Plus, Minus, Calendar as CalendarIcon,
   Coffee, Compass, Mountain, Tv, Zap, Wind, Award, HeartHandshake, Flame,
-  ChevronLeft, ChevronRight, Maximize2
+  ChevronLeft, ChevronRight, Maximize2, Navigation, ExternalLink, Building2,
+  Plane, Train, Utensils, Footprints, ShieldCheck
 } from "lucide-react";
 
 import CustomCalendar from "./CustomCalendar";
 import CustomDropdown from "./CustomDropdown";
+import GoogleMap from "./GoogleMap";
+import { resortService } from "../services/resort.service";
 import { rewardService } from "../services/reward.service";
 import { bookingService } from "../services/booking.service";
 import { apiClient } from "../services/apiClient";
 
 import { useTranslation } from "../hooks/useTranslation";
 import { useToast } from "../context/ToastContext";
+
+const DEFAULT_RESORT_IMAGE = "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80";
 
 const getAmenityIcon = (name = "") => {
   const lower = String(name).toLowerCase();
@@ -563,6 +568,10 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                   src={currentPhoto}
                   alt={resort.name || "Resort"}
                   decoding="async"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = DEFAULT_RESORT_IMAGE;
+                  }}
                   initial={{ opacity: 0, scale: 1.04 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
@@ -672,7 +681,14 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                 onClick={() => setActiveVideoUrl(finalVideos[0])}
                 className="relative rounded-2xl overflow-hidden cursor-pointer h-20 shadow-sm border border-border-color group"
               >
-                <img src={finalGallery[0] || "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=400&q=80"} alt="Video preview" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                <img 
+                  src={finalGallery[0] || DEFAULT_RESORT_IMAGE} 
+                  alt="Video preview" 
+                  loading="lazy" 
+                  decoding="async" 
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_RESORT_IMAGE; }}
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                />
                 <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-1 text-white z-10">
                   <Play size={16} className="fill-current" />
                   <span className="text-[9px] font-bold uppercase tracking-wider">View Video</span>
@@ -693,7 +709,14 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                 }`}
                 title="Click to view photo full screen"
               >
-                <img src={imgUrl} alt={`Gallery thumbnail ${i+1}`} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                <img 
+                  src={imgUrl} 
+                  alt={`Gallery thumbnail ${i+1}`} 
+                  loading="lazy" 
+                  decoding="async" 
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_RESORT_IMAGE; }}
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                />
               </div>
             ))}
           </div>
@@ -789,14 +812,41 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
             )}
 
             {activeDetailTab === "location" && (
-              <div className="space-y-4 text-left animate-in fade-in duration-200">
-                <div className="p-4 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl text-center">
-                  <MapPin className="w-8 h-8 mx-auto mb-2 text-primary" />
-                  <p className="text-sm font-semibold text-[var(--color-text-dark)]">Location information</p>
-                  <p className="text-xs text-[var(--color-text-gray)] mt-1">{resort.location || "Location details available"}</p>
+              <div className="space-y-6 text-left animate-in fade-in duration-200">
+                {/* Location Header & Get Directions */}
+                <div className="p-4 bg-bg-light rounded-2xl border border-border-color flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-text-dark">{resort.name}</h4>
+                      <p className="text-xs text-text-gray mt-0.5">
+                        {resort.address || resort.location || "Prime Scenic Location"}, {resort.city || ""}, {resort.state || "India"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const dest = (resort.latitude && resort.longitude)
+                        ? `${resort.latitude},${resort.longitude}`
+                        : encodeURIComponent(`${resort.name} ${resort.city || ""}`);
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}`, "_blank");
+                    }}
+                    className="px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition hover:scale-105 cursor-pointer shrink-0"
+                  >
+                    <Navigation className="w-4 h-4" />
+                    Get Directions
+                  </button>
                 </div>
+
+                {/* Clean Google Map */}
+                <GoogleMap resort={resort} isDarkMode={isDarkMode} height="480px" />
               </div>
             )}
+
 
             {activeDetailTab === "posts" && (
               <div className="space-y-4 text-left animate-in fade-in duration-200">
@@ -817,7 +867,12 @@ export default function ResortDetails({ resort, urlId, isDarkMode, onBack, curre
                         className="bg-bg-white border border-border-color rounded-2xl overflow-hidden shadow-sm hover:shadow transition"
                       >
                         <div className="h-44 w-full bg-slate-900 overflow-hidden relative">
-                          <img src={post.mediaUrl} alt="Resort Post" className="w-full h-full object-cover" />
+                          <img 
+                            src={post.mediaUrl} 
+                            alt="Resort Post" 
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = DEFAULT_RESORT_IMAGE; }}
+                            className="w-full h-full object-cover" 
+                          />
                           <span className="absolute top-3 right-3 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white rounded-full text-[8px] font-bold uppercase tracking-wider">
                             {post.type === "image" ? "📸 Story" : post.type === "video" ? "🎥 Video" : "🎉 Event"}
                           </span>
