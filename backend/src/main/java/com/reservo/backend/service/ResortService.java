@@ -222,6 +222,9 @@ public class ResortService {
             resort.setCreatedAt(Instant.now());
         }
 
+        log.info("Saving Resort to Firebase Firestore -> Name: '{}', Latitude: {}, Longitude: {}, City: '{}', State: '{}'",
+                resort.getName(), resort.getLatitude(), resort.getLongitude(), resort.getCity(), resort.getState());
+
         return resortRepository.save(resort);
     }
 

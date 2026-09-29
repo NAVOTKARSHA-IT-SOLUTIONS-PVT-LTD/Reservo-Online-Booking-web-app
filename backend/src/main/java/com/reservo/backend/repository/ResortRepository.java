@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutionException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import com.google.cloud.Timestamp;
@@ -19,6 +20,7 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.reservo.backend.entity.Resort;
 
+@Slf4j
 @Repository
 public class ResortRepository {
 
@@ -63,6 +65,9 @@ public class ResortRepository {
                     .set(resort)
                     .get();
 
+            log.info("🔥 [FIREBASE FIRESTORE WRITE] Collection: 'resorts', DocumentId: '{}', Name: '{}', Latitude: {}, Longitude: {}, Address: '{}', City: '{}'",
+                    resort.getId(), resort.getName(), resort.getLatitude(), resort.getLongitude(), resort.getAddress(), resort.getCity());
+
             invalidateApprovedCache();
             return resort;
 
@@ -90,7 +95,10 @@ public class ResortRepository {
                 return Optional.empty();
             }
 
-            return Optional.of(convertDocument(document));
+            Resort resort = convertDocument(document);
+            log.info("🔥 [FIREBASE FIRESTORE READ] Collection: 'resorts', DocumentId: '{}' -> Name: '{}', Latitude: {}, Longitude: {}, City: '{}'",
+                    id, resort.getName(), resort.getLatitude(), resort.getLongitude(), resort.getCity());
+            return Optional.of(resort);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
