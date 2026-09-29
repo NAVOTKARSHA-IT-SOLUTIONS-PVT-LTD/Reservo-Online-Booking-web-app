@@ -389,9 +389,9 @@ public class PaymentController {
                     .keyId(razorpayService.getKeyId()) // Public Key ID ONLY
                     .bookingCode(pendingBooking.getBookingCode())
                     .resortName(resort.getName())
-                    .userName(user.getName() != null ? user.getName() : user.getDisplayName())
+                    .userName(user.getName() != null ? user.getName() : guestName)
                     .userEmail(user.getEmail())
-                    .userPhone(user.getPhoneNumber() != null ? user.getPhoneNumber() : guestPhone)
+                    .userPhone(user.getPhone() != null ? user.getPhone() : guestPhone)
                     .isComped(false)
                     .build();
 
@@ -436,11 +436,11 @@ public class PaymentController {
             );
 
             // Increment coupon usage if coupon was attached
-            if (confirmedBooking.getCouponCode() != null && !confirmedBooking.getCouponCode().trim().isEmpty()) {
+            if (confirmedBooking.getAppliedCouponCode() != null && !confirmedBooking.getAppliedCouponCode().trim().isEmpty()) {
                 try {
-                    couponService.incrementCouponUsage(confirmedBooking.getCouponCode());
+                    couponService.incrementCouponUsage(confirmedBooking.getAppliedCouponCode());
                 } catch (Exception e) {
-                    log.warn("Could not increment coupon count for {}", confirmedBooking.getCouponCode(), e);
+                    log.warn("Could not increment coupon count for {}", confirmedBooking.getAppliedCouponCode(), e);
                 }
             }
 
