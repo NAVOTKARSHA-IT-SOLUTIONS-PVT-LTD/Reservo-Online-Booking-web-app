@@ -309,18 +309,11 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
     }
   };
 
-  // Checkout call
+  // Checkout call via secure Razorpay payment
   const handleCheckout = async () => {
-    if (Math.round(grandTotal * 100) !== 0) {
-      toast("Payment module not implemented yet. Your booking was not created.", "error");
-      return;
-    }
-
     setSubmitting(true);
     try {
       // Re-check availability at the last step as a race-condition safeguard.
-      // The primary availability check already happens when the user clicks
-      // "Check Availability".
       await bookingService.checkAvailability(
         resort.id,
         { checkIn: modalCheckIn, checkOut: modalCheckOut },
@@ -346,17 +339,16 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
         guestPhone: isBookingForSelf ? undefined : guestPhone
       };
 
-      const result = await bookingService.createCheckoutSession(bookingDetails);
-      const url = new URL(result);
-      const bCode = url.searchParams.get("bookingCode") || `RES-${Math.floor(100000 + Math.random() * 900000)}`;
+      const result = await bookingService.initiateRazorpayPayment(bookingDetails);
+      const bCode = result.bookingCode || `RES-${Math.floor(100000 + Math.random() * 900000)}`;
 
       setConfirmedBookingCode(bCode);
       setIsConfirmed(true);
       setWizardStep(5);
-      toast(`Booking confirmed! Pass Code: ${bCode}`, "success");
+      toast(`Reservation confirmed! Reference: ${bCode}`, "success");
     } catch (e) {
       console.error("Checkout failure:", e);
-      toast(e.message || "Failed to confirm booking. Please try again.", "error");
+      toast(e.message || "Failed to complete reservation. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }

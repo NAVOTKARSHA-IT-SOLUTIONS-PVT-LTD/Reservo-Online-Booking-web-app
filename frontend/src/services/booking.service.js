@@ -205,22 +205,135 @@ export const bookingService = {
     };
   },
 
-  async createCheckoutSession(bookingDetails) {
-    // Real payment processing is intentionally disabled. A reservation can
-    // only be created directly when the final payable amount is exactly zero.
-    const total = Number(bookingDetails?.total);
-    if (!Number.isFinite(total) || total < 0) {
-      throw new Error("Invalid booking amount.");
-    }
-    if (Math.round(total * 100) !== 0) {
-      throw new Error("Payment module not implemented yet. Your booking was not created.");
+  async initiateRazorpayPayment(bookingDetails) {
+    const user = secureStorage.getItem("reservo_user");
+    if (!user?.id) {
+      throw new Error("Please log in to complete your reservation.");
     }
 
-    const booking = await this.createBooking({
-      ...bookingDetails,
-      total: 0
+    const queryParams = new URLSearchParams({
+      userId: user.id,
+      resortId: bookingDetails.resortId,
+      roomId: bookingDetails.roomId || "",
+      checkIn: bookingDetails.checkin,
+      checkOut: bookingDetails.checkout,
+      adults: String(bookingDetails.adults || 2),
+      children: String(bookingDetails.children || 0),
+      roomsCount: String(bookingDetails.roomsCount || 1)
     });
 
-    return `${window.location.origin}/payment/success?bookingCode=${encodeURIComponent(booking.code || booking.id || "")}`;
+    if (bookingDetails.couponCode) {
+      queryParams.append("couponCode", bookingDetails.couponCode);
+    }
+    if (bookingDetails.pointsToRedeem) {
+      queryParams.append("pointsToRedeem", String(bookingDetails.pointsToRedeem));
+    }
+    if (bookingDetails.guestName) {
+      queryParams.append("guestName", bookingDetails.guestName);
+    }
+    if (bookingDetails.guestPhone) {
+      queryParams.append("guestPhone", bookingDetails.guestPhone);
+    }
+
+    const orderResult = await apiClient.post(
+      `/api/v1/payments/razorpay/create-order?${queryParams.toString()}`
+    );
+
+    if (!orderResult?.success || !orderResult.data) {
+      throw new Error(orderResult?.message || "Failed to initiate payment order.");
+    }
+
+    const orderData = orderResult.data;
+
+    // 1. Zero-Total Comped Flow (100% discount, ₹0 payable)
+    if (orderData.isComped) {
+      return {
+        success: true,
+        isComped: true,
+        bookingCode: orderData.bookingCode,
+        redirectUrl: orderData.redirectUrl || `/payment/success?bookingCode=${encodeURIComponent(orderData.bookingCode)}`
+      };
+    }
+
+    // 2. Standard Razorpay Checkout Flow
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded) {
+      throw new Error("Unable to load Razorpay payment gateway. Please check your internet connection.");
+    }
+
+    return new Promise((resolve, reject) => {
+      const options = {
+        key: orderData.keyId, // PUBLIC KEY ONLY
+        amount: orderData.amountInPaise,
+        currency: orderData.currency || "INR",
+        name: "Reservo Luxury Stays",
+        description: `Booking for ${orderData.resortName || "Resort"}`,
+        image: "/favicon.png",
+        order_id: orderData.orderId,
+        handler: async (response) => {
+          try {
+            // Cryptographic verification on backend
+            const verifyPayload = {
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              bookingCode: orderData.bookingCode
+            };
+
+            const verifyResult = await apiClient.post("/api/v1/payments/razorpay/verify", verifyPayload);
+            if (verifyResult?.success) {
+              resolve({
+                success: true,
+                bookingCode: orderData.bookingCode,
+                paymentId: response.razorpay_payment_id,
+                redirectUrl: `/payment/success?bookingCode=${encodeURIComponent(orderData.bookingCode)}`
+              });
+            } else {
+              reject(new Error(verifyResult?.message || "Payment verification failed."));
+            }
+          } catch (err) {
+            reject(new Error(err.message || "Payment verification failed."));
+          }
+        },
+        prefill: {
+          name: orderData.userName || "",
+          email: orderData.userEmail || "",
+          contact: orderData.userPhone || ""
+        },
+        theme: {
+          color: "#105B5C"
+        },
+        modal: {
+          ondismiss: () => {
+            reject(new Error("Payment was cancelled by the user."));
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", (response) => {
+        reject(new Error(response?.error?.description || "Payment failed. Please try again."));
+      });
+      rzp.open();
+    });
+  },
+
+  async createCheckoutSession(bookingDetails) {
+    return this.initiateRazorpayPayment(bookingDetails);
   }
+};
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 };
