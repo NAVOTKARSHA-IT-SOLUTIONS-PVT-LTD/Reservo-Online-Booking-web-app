@@ -1,0 +1,1 @@
+if(typeof window<`u`&&!window.__googleMapsWarnFiltered){window.__googleMapsWarnFiltered=!0;let e=console.warn;console.warn=function(...t){let n=typeof t[0]==`string`?t[0]:``;n.includes(`google.maps.Marker is deprecated`)||n.includes(`AdvancedMarkerElement`)||e.apply(console,t)}}
