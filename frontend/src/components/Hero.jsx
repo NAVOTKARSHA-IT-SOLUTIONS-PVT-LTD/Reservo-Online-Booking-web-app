@@ -25,6 +25,7 @@ import SearchLoadingOverlay from "./SearchLoadingOverlay";
 import herovideo from "../assets/images/hero-video.mp4";
 import herovideoMobile from "../assets/images/hero-video-mobile.mp4";
 import heroPoster from "../assets/images/hero_poster.webp";
+import heroPosterMobile from "../assets/images/hero_poster_mobile.webp";
 import CustomCalendar from "./CustomCalendar";
 
 
@@ -119,6 +120,7 @@ function Hero() {
   const [isMobileScreen, setIsMobileScreen] = useState(() => {
     return typeof window !== "undefined" ? window.innerWidth < 768 : false;
   });
+  const [mobileVideoReady, setMobileVideoReady] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -127,6 +129,17 @@ function Hero() {
     window.addEventListener("resize", handleResize, { passive: true });
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (isMobileScreen) {
+      const timer = setTimeout(() => {
+        setMobileVideoReady(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setMobileVideoReady(true);
+    }
+  }, [isMobileScreen]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -255,17 +268,18 @@ function Hero() {
   }}
 >
   <video
-    key={isMobileScreen ? "hero-mob" : "hero-desk"}
+    key={isMobileScreen ? (mobileVideoReady ? "hero-mob-active" : "hero-mob-poster") : "hero-desk"}
     className="absolute inset-0 w-full h-full object-cover"
-    src={isMobileScreen ? herovideoMobile : herovideo}
-    poster={heroPoster}
-    autoPlay
+    poster={isMobileScreen ? heroPosterMobile : heroPoster}
+    autoPlay={!isMobileScreen || mobileVideoReady}
     muted
     loop
     playsInline
-    preload="auto"
+    preload={isMobileScreen ? "none" : "auto"}
   >
-    <source src={isMobileScreen ? herovideoMobile : herovideo} type="video/mp4" />
+    {(!isMobileScreen || mobileVideoReady) && (
+      <source src={isMobileScreen ? herovideoMobile : herovideo} type="video/mp4" />
+    )}
   </video>
 </div>
   

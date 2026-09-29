@@ -9,14 +9,15 @@ import {
   LogIn, UserPlus, HelpCircle, Phone, Shield, FileText,
   LayoutGrid, BookOpen, Settings, LogOut, Sliders, Building2
 } from "lucide-react";
-import logoImage from "../assets/images/logo.png";
+import logoImage from "../assets/images/logo.webp";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
-import rivoSearching from "../assets/images/rivo_searching.png";
-import rivoConfirmed from "../assets/images/rivo_confirmed.png";
-import rivoPlanner from "../assets/images/rivo_planner.png";
-import rivoSupport from "../assets/images/rivo_support.png";
-import rivoWaving from "../assets/images/rivo_waving.png";
+import rivoSearching from "../assets/images/rivo_searching.webp";
+import rivoConfirmed from "../assets/images/rivo_confirmed.webp";
+import rivoPlanner from "../assets/images/rivo_planner.webp";
+import rivoSupport from "../assets/images/rivo_support.webp";
+import rivoWaving from "../assets/images/rivo_waving.webp";
 import mascotWebp from "../assets/images/mascot_transparent.webp";
+import mascotStatic from "../assets/images/mascot_static.webp";
 import { authService } from "../services/auth.service";
 import { resortService } from "../services/resort.service";
 import Footer from "./Footer";
@@ -158,10 +159,20 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   ]);
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showComingSoon, setShowComingSoon] = useState(false);
   const [isMascotHovered, setIsMascotHovered] = useState(false);
+  const [animateMascot, setAnimateMascot] = useState(false);
   const navigate = useNavigate();
   const [liveResorts, setLiveResorts] = useState([]);
+
+  useEffect(() => {
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(() => setAnimateMascot(true), { timeout: 3500 });
+      return () => window.cancelIdleCallback(idleId);
+    } else {
+      const timer = setTimeout(() => setAnimateMascot(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -208,6 +219,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
   }, [isReducedMotion, isMascotOpen, isMascotHovered]);
 
   const handleMouseEnter = () => {
+    setAnimateMascot(true);
     setIsMascotHovered(true);
     setShowBubble(true);
   };
@@ -393,6 +405,10 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           <img 
             src={logoImage} 
             alt="Reservo Logo" 
+            width="32"
+            height="32"
+            loading="eager"
+            decoding="async"
             className="h-8 w-auto object-contain" 
           />
           <span className="text-[20px] font-extrabold tracking-[0.5px] font-serif leading-none text-[var(--color-text-dark)]">
@@ -554,12 +570,18 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               <img 
                 src={`${rivoAvatar}?v=10`} 
                 alt="Rivo Mascot Static" 
+                width="64"
+                height="64"
                 className="w-full h-full object-contain select-none"
               />
             ) : (
               <img 
-                src={mascotWebp} 
+                src={animateMascot ? mascotWebp : mascotStatic} 
                 alt="Rivo Mascot Animation" 
+                width="64"
+                height="64"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-contain select-none"
               />
             )}
@@ -568,7 +590,10 @@ function MobileUI({ isDark, onToggleTheme, children }) {
           {/* Click/Hover Event capture layer */}
           <button
             className="absolute inset-0 rounded-full bg-transparent border-none cursor-pointer z-10 focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
-            onClick={() => setIsMascotOpen(!isMascotOpen)}
+            onClick={() => {
+              setAnimateMascot(true);
+              setIsMascotOpen(!isMascotOpen);
+            }}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             aria-label="Chat with Rivo"

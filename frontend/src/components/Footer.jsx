@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { X, Send, MessageSquare, CheckCircle2 } from "lucide-react";
-import logoImage from "../assets/images/logo.png";
+import logoImage from "../assets/images/logo.webp";
 import { hostService } from "../services/host.service";
 
 // Inline SVG components for brand and utility icons
@@ -216,7 +216,7 @@ function Footer() {
               {/* Left Side: Logo and tagline */}
               <div className="flex flex-col items-center md:items-start text-center md:text-left">
                 <Link to="/" className="flex items-center gap-2 no-underline text-white dark:text-[#0A2342]">
-                  <img src={logoImage} alt="R" className="h-9 w-auto object-contain" />
+                  <img src={logoImage} alt="Reservo Logo" width="36" height="36" loading="lazy" decoding="async" className="h-9 w-auto object-contain" />
                   <span className="text-[20px] font-extrabold tracking-[0.5px] font-serif text-white dark:text-[#0A2342] transition-colors duration-300">
                     Reservo
                   </span>
