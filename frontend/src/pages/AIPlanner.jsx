@@ -5,11 +5,12 @@ import {
   Compass, Shield, Heart, Star, ChevronRight, Check, X,
   ArrowRight, ShieldCheck, Flame, Home, Waves, Mountain,
   Coins, Info, ArrowUpDown, ChevronDown, CheckCircle, Barcode, ClipboardCheck,
-  ChevronUp, Map, Compass as WandIcon, Smile, ChevronLeft
+  ChevronUp, Map, Compass as WandIcon, Smile, ChevronLeft, Navigation
 } from "lucide-react";
 
 import { apiClient } from "../services/apiClient";
 import { resortService } from "../services/resort.service";
+import GoogleMap from "../components/GoogleMap";
 
 // Rivo Mascots
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
@@ -745,17 +746,40 @@ export default function AIPlanner() {
 
         {/* LOCATION MAP SECTION */}
         <div className="bg-bg-white border border-border-color rounded-2xl p-4.5 shadow-sm space-y-3">
-          <h4 className="text-xs font-bold text-text-dark uppercase tracking-wider">Location</h4>
-          <div className="w-full h-32 rounded-xl overflow-hidden border border-border-color bg-bg-light relative">
-            <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=350&q=80" alt="Map View" className="w-full h-full object-cover opacity-85 filter brightness-95" />
-            <div className="absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black/50 via-transparent to-transparent">
-              <button className="w-full py-2 bg-bg-white text-text-dark text-[10px] font-bold rounded-lg border-none shadow cursor-pointer hover:bg-bg-light transition flex items-center justify-center gap-1.5">
-                <Map className="w-3.5 h-3.5 text-primary" /> View on Map
-              </button>
-            </div>
-            <div className="absolute top-8 left-1/3 w-3 h-3 rounded-full bg-primary border-2 border-bg-white shadow animate-ping" />
-            <div className="absolute top-8 left-1/3 w-3 h-3 rounded-full bg-primary border-2 border-bg-white shadow" />
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-text-dark uppercase tracking-wider flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-primary" /> Location
+            </h4>
+            {selectedOption?.location && (
+              <span className="text-[10px] text-text-gray font-medium truncate max-w-[130px]">
+                {selectedOption.location}
+              </span>
+            )}
           </div>
+          <div className="w-full h-36 rounded-xl overflow-hidden border border-border-color bg-bg-light relative">
+            <GoogleMap
+              resort={selectedOption?.resortDetails || {
+                name: selectedOption?.resortName,
+                location: selectedOption?.location,
+                city: selectedOption?.location
+              }}
+              height="144px"
+            />
+          </div>
+          <button
+            onClick={() => {
+              const res = selectedOption?.resortDetails;
+              const lat = res?.latitude || res?.lat;
+              const lng = res?.longitude || res?.lng;
+              const query = (lat && lng) 
+                ? `${lat},${lng}` 
+                : encodeURIComponent(`${selectedOption?.resortName || "Resort"} ${selectedOption?.location || ""}`);
+              window.open(`https://www.google.com/maps/dir/?api=1&destination=${query}`, "_blank", "noopener,noreferrer");
+            }}
+            className="w-full py-2 bg-bg-white hover:bg-bg-light text-text-dark text-[10px] font-bold rounded-lg border border-border-color shadow-sm cursor-pointer transition flex items-center justify-center gap-1.5"
+          >
+            <Navigation className="w-3.5 h-3.5 text-primary" /> Get Driving Directions
+          </button>
         </div>
 
         {/* SEE RESORT FEATURES & BOOK CTA */}

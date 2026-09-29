@@ -3,6 +3,34 @@ import { MapPin, Navigation, ExternalLink, Layers, Sparkles, AlertCircle } from 
 import { loadGoogleMaps } from "../utils/loadGoogleMaps";
 import SimpleMapEmbed from "./SimpleMapEmbed";
 
+// City coordinate directory for high-accuracy destination fallback
+const CITY_COORDS = {
+  pune: { lat: 18.5204, lng: 73.8567 },
+  mumbai: { lat: 19.0760, lng: 72.8777 },
+  goa: { lat: 15.2993, lng: 74.1240 },
+  lonavala: { lat: 18.7557, lng: 73.4091 },
+  khandala: { lat: 18.7610, lng: 73.3762 },
+  udaipur: { lat: 24.5854, lng: 73.7125 },
+  jaipur: { lat: 26.9124, lng: 75.7873 },
+  jaisalmer: { lat: 26.9157, lng: 70.9083 },
+  manali: { lat: 32.2432, lng: 77.1892 },
+  shimla: { lat: 31.1048, lng: 77.1734 },
+  kerala: { lat: 9.9312, lng: 76.2673 },
+  munnar: { lat: 10.0889, lng: 77.0595 },
+  kochi: { lat: 9.9312, lng: 76.2673 },
+  gangtok: { lat: 27.3389, lng: 88.6065 },
+  sikkim: { lat: 27.5330, lng: 88.5122 },
+  delhi: { lat: 28.6139, lng: 77.2090 },
+  bengaluru: { lat: 12.9716, lng: 77.5946 },
+  bangalore: { lat: 12.9716, lng: 77.5946 },
+  chennai: { lat: 13.0827, lng: 80.2707 },
+  hyderabad: { lat: 17.3850, lng: 78.4867 },
+  ooty: { lat: 11.4102, lng: 76.6950 },
+  coorg: { lat: 12.3375, lng: 75.8069 },
+  rishikesh: { lat: 30.0869, lng: 78.2676 },
+  maldives: { lat: 3.2028, lng: 73.2207 }
+};
+
 export default function GoogleMap({ resort = {}, isDarkMode = false, height = "480px" }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -15,17 +43,31 @@ export default function GoogleMap({ resort = {}, isDarkMode = false, height = "4
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-  const lat = Number(resort?.latitude ?? resort?.lat ?? 15.2993);
-  const lng = Number(resort?.longitude ?? resort?.lng ?? 74.1240);
-  const hasValidCoords = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+  // Resolve best coordinates
+  const rawLat = Number(resort?.latitude ?? resort?.lat);
+  const rawLng = Number(resort?.longitude ?? resort?.lng);
+  const hasValidCoords = !isNaN(rawLat) && !isNaN(rawLng) && rawLat !== 0 && rawLng !== 0;
+
+  const resolveCoords = () => {
+    if (hasValidCoords) return { lat: rawLat, lng: rawLng };
+    const text = `${resort?.name || ""} ${resort?.location || ""} ${resort?.city || ""} ${resort?.address || ""}`.toLowerCase();
+    for (const [key, val] of Object.entries(CITY_COORDS)) {
+      if (text.includes(key)) return val;
+    }
+    return { lat: 18.5204, lng: 73.8567 }; // Default Pune
+  };
+
+  const coords = resolveCoords();
+  const lat = coords.lat;
+  const lng = coords.lng;
 
   // Dark mode styles
   const darkMapStyles = [
-    { featureType: "all", elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-    { featureType: "all", elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-    { featureType: "all", elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-    { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] }
+    { featureType: "all", elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+    { featureType: "all", elementType: "labels.text.stroke", stylers: [{ color: "#1e293b" }] },
+    { featureType: "all", elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] }
   ];
 
   // Load Google Maps API script
@@ -44,12 +86,12 @@ export default function GoogleMap({ resort = {}, isDarkMode = false, height = "4
   useEffect(() => {
     if (!mapLoaded || !window.google || !window.google.maps || !mapRef.current) return;
 
-    const position = hasValidCoords ? { lat, lng } : { lat: 15.2993, lng: 74.1240 };
+    const position = { lat, lng };
 
     if (!mapInstanceRef.current) {
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
         center: position,
-        zoom: hasValidCoords ? 15 : 12,
+        zoom: 15,
         styles: isDarkMode && mapType === "roadmap" ? darkMapStyles : [],
         mapTypeId: mapType,
         disableDefaultUI: false,
@@ -78,6 +120,9 @@ export default function GoogleMap({ resort = {}, isDarkMode = false, height = "4
     // Custom luxury pin
     const priceText = resort?.pricePerNight ?? resort?.price;
     const formattedPrice = priceText ? `₹${Number(priceText).toLocaleString("en-IN")}` : "";
+    const imageUrl = resort?.image || resort?.imageUrl || resort?.heroImage || resort?.images?.[0] || "";
+    const resortTitle = resort?.name || resort?.title || "Luxury Resort";
+    const resortAddr = resort?.address || resort?.location || resort?.city || "Scenic Location";
 
     const pinSvg = `
       <svg xmlns="http://www.w3.org/2000/svg" width="46" height="54" viewBox="0 0 46 54">
@@ -97,7 +142,7 @@ export default function GoogleMap({ resort = {}, isDarkMode = false, height = "4
     const marker = new window.google.maps.Marker({
       position,
       map,
-      title: resort?.name || "Resort Location",
+      title: resortTitle,
       icon: {
         url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(pinSvg),
         scaledSize: new window.google.maps.Size(46, 54),
@@ -108,12 +153,31 @@ export default function GoogleMap({ resort = {}, isDarkMode = false, height = "4
 
     markerRef.current = marker;
 
+    const imageHtml = imageUrl
+      ? `<img src="${imageUrl}" alt="${resortTitle}" style="width: 100%; height: 110px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; display: block;" onerror="this.style.display='none'"/>`
+      : "";
+
+    const priceHtml = formattedPrice
+      ? `<div style="font-size: 14px; font-weight: 800; color: #0d9488; margin-top: 4px;">${formattedPrice} <span style="font-size: 10px; font-weight: 500; color: #64748b;">/ night</span></div>`
+      : "";
+
+    const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${position.lat},${position.lng}`;
+
     const infoContent = `
-      <div style="font-family: system-ui, -apple-system, sans-serif; padding: 6px 4px; max-width: 250px; color: #0f172a;">
-        <h4 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 800; color: #0f172a;">${resort?.name || "Resort"}</h4>
-        <p style="margin: 0 0 6px 0; font-size: 11px; color: #64748b;">${resort?.address || resort?.location || "Scenic Location"}</p>
-        ${formattedPrice ? `<div style="font-size: 13px; font-weight: 800; color: #0d9488; margin-bottom: 6px;">${formattedPrice} <span style="font-size: 10px; color: #64748b; font-weight: 500;">/ night</span></div>` : ""}
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${position.lat},${position.lng}" target="_blank" rel="noopener noreferrer" style="display: inline-block; font-size: 11px; font-weight: 700; color: #ffffff; background: #0d9488; padding: 4px 10px; border-radius: 9999px; text-decoration: none;">Get Directions →</a>
+      <div style="font-family: system-ui, -apple-system, sans-serif; padding: 6px; width: 230px; box-sizing: border-box;">
+        ${imageHtml}
+        <div style="font-size: 14px; font-weight: 800; color: #0f172a; line-height: 1.25; margin-bottom: 3px;">
+          ${resortTitle}
+        </div>
+        <div style="font-size: 11px; color: #64748b; line-height: 1.4; margin-bottom: 6px;">
+          📍 ${resortAddr}
+        </div>
+        ${priceHtml}
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9;">
+          <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" style="width: 100%; text-align: center; box-sizing: border-box; background: #0d9488; color: #ffffff; text-decoration: none; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-block;">
+            Get Driving Directions →
+          </a>
+        </div>
       </div>
     `;
 
@@ -122,7 +186,7 @@ export default function GoogleMap({ resort = {}, isDarkMode = false, height = "4
       infoWindowRef.current.open(map, marker);
     });
 
-  }, [mapLoaded, isDarkMode, mapType, hasValidCoords, lat, lng, resort]);
+  }, [mapLoaded, isDarkMode, mapType, lat, lng, resort]);
 
   // Fallback to SimpleMapEmbed if API key is not configured or failed to load
   if (!apiKey || loadError) {
