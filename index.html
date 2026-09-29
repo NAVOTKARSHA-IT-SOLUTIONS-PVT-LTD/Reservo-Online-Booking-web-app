@@ -53,14 +53,20 @@
     }(window.location))
   </script>
 
-  <!-- Google Fonts -->
+  <!-- Preload Mobile Hero Poster for Instant LCP -->
+  <link rel="preload" as="image" href="./hero_poster_mobile.webp" fetchpriority="high" type="image/webp" media="(max-width: 768px)" />
+
+  <!-- Google Fonts & Preconnects -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preconnect" href="https://images.unsplash.com" />
   <link rel="dns-prefetch" href="https://images.unsplash.com" />
 
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/Reservo-Online-Booking-web-app/assets/index-DQBuZrcF.js"></script>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+  </noscript>
+  <script type="module" crossorigin src="/Reservo-Online-Booking-web-app/assets/index-BrmVqKcg.js"></script>
   <link rel="modulepreload" crossorigin href="/Reservo-Online-Booking-web-app/assets/rolldown-runtime-Bh1tDfsg.js">
   <link rel="modulepreload" crossorigin href="/Reservo-Online-Booking-web-app/assets/vendor-forms-DdSBG07f.js">
   <link rel="modulepreload" crossorigin href="/Reservo-Online-Booking-web-app/assets/vendor-react-_RKYJX87.js">

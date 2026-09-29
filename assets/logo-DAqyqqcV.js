@@ -1,0 +1,1 @@
+var e=`/Reservo-Online-Booking-web-app/assets/logo-N0H8hiMF.png`;export{e as t};
