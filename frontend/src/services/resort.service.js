@@ -156,7 +156,16 @@ export const resortService = {
       amenities: (listing.amenities || []).map(a => typeof a === "string" ? { name: a, icon: "Sparkles" } : a),
       perks: ["Free Cancellation", "Breakfast Included", "Transfer Services"],
       category: catKey,
-      categoryLabel: listing.category || "Luxury Villa"
+      categoryLabel: listing.category || "Luxury Villa",
+      latitude: listing.latitude != null ? Number(listing.latitude) : (listing.location?.latitude != null ? Number(listing.location.latitude) : null),
+      longitude: listing.longitude != null ? Number(listing.longitude) : (listing.location?.longitude != null ? Number(listing.location.longitude) : null),
+      lat: listing.latitude != null ? Number(listing.latitude) : (listing.location?.latitude != null ? Number(listing.location.latitude) : null),
+      lng: listing.longitude != null ? Number(listing.longitude) : (listing.location?.longitude != null ? Number(listing.location.longitude) : null),
+      address: listing.address || listing.location?.address || city,
+      state: listing.location?.state || "",
+      country: listing.location?.country || "India",
+      pinCode: listing.location?.pinCode || "",
+      googlePlaceId: listing.googlePlaceId || listing.location?.googlePlaceId || ""
     };
   },
 
@@ -278,7 +287,17 @@ export const resortService = {
         area: "2,500 sq.ft.",
         checkIn: "3:00 PM",
         checkOut: "11:00 AM"
-      }
+      },
+      latitude: item.latitude != null ? Number(item.latitude) : (item.location?.latitude != null ? Number(item.location.latitude) : null),
+      longitude: item.longitude != null ? Number(item.longitude) : (item.location?.longitude != null ? Number(item.location.longitude) : null),
+      lat: item.latitude != null ? Number(item.latitude) : (item.location?.latitude != null ? Number(item.location.latitude) : null),
+      lng: item.longitude != null ? Number(item.longitude) : (item.location?.longitude != null ? Number(item.location.longitude) : null),
+      address: item.address || item.location?.address || safeLocation,
+      city: item.city || item.location?.city || safeLocation,
+      state: item.state || item.location?.state || "",
+      country: item.country || item.location?.country || "India",
+      pinCode: item.pinCode || item.location?.pinCode || "",
+      googlePlaceId: item.googlePlaceId || item.location?.googlePlaceId || ""
     };
   },
 

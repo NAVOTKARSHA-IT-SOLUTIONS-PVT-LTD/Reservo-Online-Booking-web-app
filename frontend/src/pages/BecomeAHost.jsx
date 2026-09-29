@@ -17,6 +17,7 @@ import { useToast } from "../context/ToastContext";
 import { useWishlist } from "../context/WishlistContext";
 import { apiClient } from "../services/apiClient";
 import CustomDropdown from "../components/CustomDropdown";
+import GoogleLocationPicker from "../components/GoogleLocationPicker";
 
 const DESTINATIONS = [
   { name: "Goa (North & South)", multiplier: 1.35, baseRate: 22000 },
@@ -277,8 +278,8 @@ export default function BecomeAHost() {
     ],
     location: {
       address: "",
-      city: "Goa",
-      state: "Goa",
+      city: "",
+      state: "",
       country: "India",
       pinCode: "",
       landmark: "",
@@ -408,7 +409,7 @@ export default function BecomeAHost() {
 
       const resortData = {
         name: finalTitle,
-        location: `${formData.location.city || "Goa"}, ${formData.location.state || "Goa"}, ${formData.location.country || "India"}`,
+        location: [formData.location.city, formData.location.state, formData.location.country].filter(Boolean).join(", ") || "India",
         address: formData.location.address || "",
         city: formData.location.city || "",
         state: formData.location.state || "",
@@ -450,6 +451,7 @@ export default function BecomeAHost() {
 
       // Do NOT create a fake/local listing before the backend succeeds.
       // The backend is the single source of truth.
+      console.log("🚀 [Submitting Resort to Backend & Firebase] -> Name:", resortData.name, "Latitude:", resortData.latitude, "Longitude:", resortData.longitude, "Location:", resortData.location);
       const created = await resortService.createResort(resortData);
 
       // Create the physical inventory only for room-wise listings. Room numbers
@@ -930,6 +932,30 @@ export default function BecomeAHost() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
+                      Search Address or Pinpoint on Map
+                    </label>
+                    <GoogleLocationPicker 
+                      value={formData.location} 
+                      onChange={(location) => setFormData(prev => ({ 
+                        ...prev, 
+                        location: { 
+                          ...prev.location, 
+                          address: location.address || prev.location.address,
+                          city: location.city || prev.location.city,
+                          state: location.state || prev.location.state,
+                          country: location.country || prev.location.country || "India",
+                          pinCode: location.pinCode || prev.location.pinCode,
+                          latitude: location.latitude ?? prev.location.latitude,
+                          longitude: location.longitude ?? prev.location.longitude,
+                          googlePlaceId: location.googlePlaceId || prev.location.googlePlaceId
+                        } 
+                      }))} 
+                      height="380px" 
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">
                       Street Address / Estate Name *
                     </label>
                     <input 
@@ -950,7 +976,7 @@ export default function BecomeAHost() {
                         type="text" 
                         value={formData.location.city}
                         onChange={(e) => setFormData(prev => ({ ...prev, location: { ...prev.location, city: e.target.value } }))}
-                        placeholder="e.g., Goa"
+                        placeholder="e.g., Pune, Goa, Mumbai"
                         className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
                       />
                     </div>
@@ -962,7 +988,7 @@ export default function BecomeAHost() {
                         type="text" 
                         value={formData.location.state}
                         onChange={(e) => setFormData(prev => ({ ...prev, location: { ...prev.location, state: e.target.value } }))}
-                        placeholder="e.g., Goa"
+                        placeholder="e.g., Maharashtra, Goa"
                         className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
                       />
                     </div>
@@ -977,7 +1003,7 @@ export default function BecomeAHost() {
                         type="text" 
                         value={formData.location.pinCode}
                         onChange={(e) => setFormData(prev => ({ ...prev, location: { ...prev.location, pinCode: e.target.value } }))}
-                        placeholder="e.g., 403515"
+                        placeholder="e.g., 411016"
                         className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
                       />
                     </div>
@@ -987,17 +1013,10 @@ export default function BecomeAHost() {
                       </label>
                       <input 
                         type="text" 
-                        value={formData.location.country}
+                        value={formData.location.country || "India"}
                         onChange={(e) => setFormData(prev => ({ ...prev, location: { ...prev.location, country: e.target.value } }))}
                         className="w-full bg-[var(--color-bg-light)] border border-[var(--color-border-color)] text-[var(--color-text-dark)] p-3.5 rounded-2xl text-xs font-medium outline-none focus:border-primary"
                       />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-gray)] mb-1.5">Location Details</label>
-                    <div className="p-4 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl">
-                      <MapPin className="w-6 h-6 text-primary mb-2" />
-                      <p className="text-xs text-[var(--color-text-gray)]">Interactive map disabled. Location details will be set via address fields above.</p>
                     </div>
                   </div>
                 </div>
