@@ -10,8 +10,10 @@ import java.util.concurrent.ExecutionException;
 import org.springframework.stereotype.Repository;
 
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
+import java.util.Date;
 import com.reservo.backend.entity.AiChatSession;
 
 @Repository
@@ -91,10 +93,7 @@ public class AiChatSessionRepository {
                 return Optional.empty();
             }
 
-            AiChatSession session =
-                    document.toObject(
-                            AiChatSession.class
-                    );
+            AiChatSession session = toSession(document);
 
             if (session != null) {
                 session.setId(document.getId());
@@ -152,10 +151,7 @@ public class AiChatSessionRepository {
             for (QueryDocumentSnapshot document :
                     documents) {
 
-                AiChatSession session =
-                        document.toObject(
-                                AiChatSession.class
-                        );
+                AiChatSession session = toSession(document);
 
                 if (session != null) {
                     session.setId(document.getId());
@@ -203,10 +199,7 @@ public class AiChatSessionRepository {
             for (QueryDocumentSnapshot document :
                     documents) {
 
-                AiChatSession session =
-                        document.toObject(
-                                AiChatSession.class
-                        );
+                AiChatSession session = toSession(document);
 
                 if (session != null) {
                     session.setId(document.getId());
@@ -232,6 +225,44 @@ public class AiChatSessionRepository {
                     e
             );
         }
+    }
+
+
+    /**
+     * Firestore's Java bean mapper cannot reliably construct java.time.Instant.
+     * Map the session fields explicitly and accept the common timestamp formats
+     * already present in older ai_chat_sessions documents.
+     */
+    private AiChatSession toSession(com.google.cloud.firestore.DocumentSnapshot document) {
+        AiChatSession session = new AiChatSession();
+        session.setId(document.getId());
+        session.setUserId(document.getString("userId"));
+        session.setMood(document.getString("mood"));
+        session.setCreatedAt(asInstant(document.get("createdAt")));
+        return session;
+    }
+
+    private Instant asInstant(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Timestamp ts) {
+            return ts.toSqlTimestamp().toInstant();
+        }
+        if (value instanceof Date date) {
+            return date.toInstant();
+        }
+        if (value instanceof Instant instant) {
+            return instant;
+        }
+        if (value instanceof String text) {
+            try {
+                return Instant.parse(text);
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**

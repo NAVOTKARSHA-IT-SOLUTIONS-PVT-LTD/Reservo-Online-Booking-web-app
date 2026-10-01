@@ -290,130 +290,177 @@ export default function AIPlanner() {
     }));
   };
 
-  // Natural Language Parser & Decision Generator
+  // AI planner: the backend is the source of truth for itinerary generation.
+  // The UI only uses resorts returned by the live Reservo inventory.
   const runAIEngine = async (userInputText) => {
     setIsAnalyzing(true);
-    
+
     const steps = [
-      "Analyzing travel intent...",
-      "Extracting budget & headcount...",
-      "Searching resort inventories...",
-      "Calculating transport estimates...",
-      "Curating customized activities...",
-      "Optimizing costs...",
+      "Understanding your trip request...",
+      "Checking Reservo's approved resort inventory...",
+      "Matching destination, guests and budget...",
+      "Building your day-by-day itinerary...",
+      "Verifying resort details...",
       "Almost ready..."
     ];
 
     steps.forEach((step, idx) => {
-      setTimeout(() => {
-        setThinkingStep(step);
-      }, idx * 300);
+      setTimeout(() => setThinkingStep(step), idx * 350);
     });
 
+    const text = (userInputText || "").toLowerCase();
     let parsedBudget = preferences.budget;
     let parsedGuests = preferences.travellers;
-    let parsedNights = preferences.nights;
-    let isNearMumbai = false;
+    let parsedDays = preferences.nights;
 
-    if (userInputText) {
-      const text = userInputText.toLowerCase();
-      
-      // 1. Match Indian Lakhs financial scaling (e.g. 5 lakhs, 5lakh, 5l)
-      const lakhsMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:lakh|lakhs|l)\b/);
-      if (lakhsMatch) {
-        parsedBudget = parseFloat(lakhsMatch[1]) * 100000;
-      } else {
-        // Standard budget check
-        const budgetMatch = text.match(/(?:budget|under|for|around)\s*(?:₹|rs)?\s*(\d+)\s*(?:k)?/);
-        if (budgetMatch) {
-          let val = parseInt(budgetMatch[1], 10);
-          if (text.includes(budgetMatch[1] + "k")) val *= 1000;
-          parsedBudget = val;
-        } else {
-          const kMatch = text.match(/(\d+)\s*k/);
-          if (kMatch) parsedBudget = parseInt(kMatch[1], 10) * 1000;
-        }
+    const lakh = text.match(/(\d+(?:\.\d+)?)\s*(?:lakh|lakhs|l)\b/);
+    const k = text.match(/(\d+(?:\.\d+)?)\s*k\b/);
+    const currency = text.match(/(?:₹|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)/i);
+    if (lakh) parsedBudget = Number(lakh[1]) * 100000;
+    else if (currency) parsedBudget = Number(currency[1].replace(/,/g, ""));
+    else if (k) parsedBudget = Number(k[1]) * 1000;
+
+    const guestMatch = text.match(/(\d+)\s*(?:people|persons?|guests?|adults?|members|travellers?)/);
+    if (guestMatch) parsedGuests = Number(guestMatch[1]);
+    if (/\bcouple\b|\bhoneymoon\b/.test(text)) parsedGuests = 2;
+
+    const dayMatch = text.match(/(\d+)\s*(?:days?|nights?)/);
+    if (dayMatch) parsedDays = Number(dayMatch[1]);
+    parsedDays = Math.max(1, Math.min(parsedDays || 3, 14));
+
+    // Match the user's destination against actual live resort records.
+    const destinationMatch = liveResorts.find(r => {
+      const haystack = `${r.name || ""} ${r.location || ""} ${r.city || ""} ${r.state || ""}`.toLowerCase();
+      return haystack && haystack.split(/[\s,|/-]+/).filter(Boolean)
+        .some(part => part.length >= 3 && text.includes(part));
+    });
+
+    const destination = destinationMatch
+      ? (destinationMatch.city || destinationMatch.location || "").split(",")[0].trim()
+      : "";
+
+    try {
+      if (!destination) {
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          sender: "rivo",
+          text: "Sure — I can create the itinerary. Which destination would you like to visit? I’ll only recommend resorts currently approved on Reservo.",
+          avatar: rivoMascot,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        }]);
+        setIsAnalyzing(false);
+        return;
       }
 
-      // 2. Headcount parsing
-      if (text.includes("couple") || text.includes("honeymoon") || text.includes("2 people") || text.includes("2 adults")) {
-        parsedGuests = 2;
-      } else {
-        const guestMatch = text.match(/(\d+)\s*(?:people|person|guest|adult|members)/);
-        if (guestMatch) parsedGuests = parseInt(guestMatch[1], 10);
+      const itineraryResponse = await apiClient.post("/api/v1/ai/itinerary", {
+        destination,
+        days: parsedDays,
+        interests: [],
+        budget: String(parsedBudget)
+      });
+
+      if (!itineraryResponse?.success || !itineraryResponse?.data) {
+        throw new Error("Itinerary API returned no data");
       }
 
-      // 3. Nights duration parsing
-      const nightMatch = text.match(/(\d+)\s*(?:night|day)/);
-      if (nightMatch) parsedNights = parseInt(nightMatch[1], 10);
+      const itinerary = typeof itineraryResponse.data === "string"
+        ? JSON.parse(itineraryResponse.data)
+        : itineraryResponse.data;
 
-      if (text.includes("mumbai") || text.includes("near mumbai") || text.includes("maharashtra")) {
-        isNearMumbai = true;
+      const resort = liveResorts.find(r =>
+        (itinerary.resortId && String(r.id) === String(itinerary.resortId)) ||
+        (itinerary.resortName && r.name === itinerary.resortName)
+      );
+
+      if (!itinerary.accommodationAvailable || !resort) {
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          sender: "rivo",
+          text: itinerary.accommodationNote ||
+            `Reservo currently has no approved resort matching ${destination}. I won't recommend an outside property.`,
+          avatar: rivoMascot,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        }]);
+        setIsAnalyzing(false);
+        return;
       }
-    }
 
-    // 4. Inventory verification from live dynamic database resorts
-    let queryLoc = "";
-    if (userInputText) {
-      const text = userInputText.toLowerCase();
-      const words = text.split(/[\s,.]+/);
-      for (const w of words) {
-        if (w.length >= 3 && !["create", "night", "plan", "show", "resort", "hotel", "stay", "with", "from", "for", "the", "and"].includes(w)) {
-          const match = liveResorts.find(r => 
-            (r.name && r.name.toLowerCase().includes(w)) || 
-            (r.location && r.location.toLowerCase().includes(w))
-          );
-          if (match) {
-            queryLoc = w;
-            break;
-          }
-        }
-      }
-    }
+      const nightlyRate = Number(resort.pricePerNight || resort.price || 0);
+      const total = nightlyRate * parsedDays;
 
-    const availableResorts = liveResorts;
-    const generated = createDynamicOptions(availableResorts, queryLoc, parsedNights, parsedGuests, parsedBudget);
+      const option = {
+        id: `ai-${resort.id}`,
+        type: "A",
+        title: resort.name,
+        resortName: resort.name,
+        resortImage: resort.imageUrl || resort.image || resort.heroImage,
+        location: resort.location || resort.city,
+        roomTitle: resort.listingMode === "ROOMS" ? "Available Room Inventory" : "Entire Property",
+        grandTotal: total,
+        guests: parsedGuests,
+        nights: parsedDays,
+        checkIn: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        checkOut: new Date(Date.now() + parsedDays * 86400000).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        weather: "Check local weather before travel",
+        bestMonths: "See destination conditions",
+        safety: "Verify current local advisories",
+        scores: {
+          luxury: Number(resort.rating || 0),
+          romantic: Number(resort.rating || 0),
+          family: Number(resort.rating || 0),
+          adventure: Number(resort.rating || 0),
+          value: Number(resort.rating || 0)
+        },
+        breakdown: { hotel: total, taxes: 0 },
+        activities: (itinerary.timeline || []).flatMap(day =>
+          (day.activities || []).slice(0, 2).map(a => ({ name: a.title }))
+        ),
+        pros: ["Approved Reservo partner property", "Price sourced from live resort inventory"],
+        cons: [],
+        resortDetails: resort,
+        itinerary: Object.fromEntries((itinerary.timeline || []).map(day => [
+          `day${day.day}`,
+          (day.activities || []).map(a => ({
+            time: a.time,
+            title: a.title,
+            desc: a.description
+          }))
+        ]))
+      };
 
-    if (generated.length === 0) {
-      setIsAnalyzing(false);
-      return;
-    }
+      setOptions([option]);
+      setSelectedOption(option);
+      setPreferences(prev => ({
+        ...prev,
+        budget: parsedBudget,
+        travellers: parsedGuests,
+        nights: parsedDays
+      }));
+      setActiveMobileTab("itinerary");
 
-    const recommended = generated[0];
-    let replyText = "";
-    if (recommended.grandTotal > parsedBudget) {
-      const overshoot = recommended.grandTotal - parsedBudget;
-      replyText = `Hi! I'm RIVO 👋\n\nI parsed your request for ${parsedGuests} guests. Option A (${recommended.resortName} at ${recommended.location}) is ready for your stay.`;
-    } else {
-      const savings = parsedBudget - recommended.grandTotal;
-      replyText = `Hi! I'm RIVO 👋\n\nI parsed your request for ${parsedGuests} guests. Option A is fully under your ₹${parsedBudget.toLocaleString()} budget (saves ₹${savings.toLocaleString()})! I've mapped ${recommended.roomTitle} at *${recommended.resortName}* (${recommended.location}). Enjoy your luxury vacation!`;
-    }
+      const budgetText = parsedBudget > 0
+        ? ` Total listed stay price: ₹${total.toLocaleString("en-IN")} for ${parsedDays} day(s).`
+        : "";
 
-    setOptions(generated);
-    setSelectedOption(generated[0]); 
-    setIsAnalyzing(false);
-    setActiveMobileTab("itinerary");
-
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    setMessages(prev => [
-      ...prev,
-      {
+      setMessages(prev => [...prev, {
         id: Date.now(),
         sender: "rivo",
-        text: replyText,
+        text: `I've created a ${parsedDays}-day itinerary for ${destination} using **${resort.name}**, an approved Reservo property.${budgetText} Activities are kept separate from resort-provided services unless the website data confirms them.`,
         avatar: rivoMascot,
-        time: timeStr
-      }
-    ]);
-
-    setPreferences(prev => ({
-      ...prev,
-      budget: parsedBudget,
-      travellers: parsedGuests,
-      nights: parsedNights
-    }));
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }]);
+    } catch (err) {
+      console.error("AI itinerary generation failed:", err);
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        sender: "rivo",
+        text: "I couldn't verify the itinerary against Reservo's live resort data right now. Please try again in a moment.",
+        avatar: rivoMascot,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }]);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleSendMessage = async (e) => {
@@ -441,22 +488,26 @@ export default function AIPlanner() {
       if (responseBody && responseBody.success && responseBody.data) {
         // If the message text contains keywords suggesting planning, run the planner engine
         const lowerText = userText.toLowerCase();
-        const needsPlanning = lowerText.includes("plan") || lowerText.includes("create") || lowerText.includes("book") || lowerText.includes("stay") || lowerText.includes("resort") || liveResorts.some(r => (r.location || "").toLowerCase().split(",").some(part => part.trim() && lowerText.includes(part.trim())));
+        const needsPlanning =
+          /\b(plan|itinerary|trip|vacation|holiday|stay|book|recommend|suggest)\b/i.test(userText) ||
+          /\b\d+\s*(day|days|night|nights)\b/i.test(userText);
         
-        setMessages(prev => [
-          ...prev,
-          {
-            id: Date.now(),
-            sender: "rivo",
-            text: responseBody.data.text || responseBody.data.replyText,
-            avatar: rivoMascot,
-            time: timeStr,
-            recommendation: responseBody.data.recommendation || responseBody.data.recommendedResort
-          }
-        ]);
-
-        if (needsPlanning) {
-          runAIEngine(userText);
+        if (!needsPlanning) {
+          setMessages(prev => [
+            ...prev,
+            {
+              id: Date.now(),
+              sender: "rivo",
+              text: responseBody.data.text || responseBody.data.replyText,
+              avatar: rivoMascot,
+              time: timeStr,
+              recommendation: responseBody.data.recommendation || responseBody.data.recommendedResort
+            }
+          ]);
+        } else {
+          // Planning requests are handled by the verified itinerary endpoint so the
+          // timeline and resort recommendation come from the backend inventory.
+          await runAIEngine(userText);
         }
       } else {
         throw new Error("API call failed");

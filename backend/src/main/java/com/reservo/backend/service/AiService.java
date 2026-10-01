@@ -52,14 +52,17 @@ public class AiService {
         }
 
         // Fetch or create session
-        AiChatSession session = sessionRepository.findById(sessionId)
+        final String finalSessionId = sessionId;
+        AiChatSession session = sessionRepository.findById(finalSessionId)
                 .orElseGet(() -> {
                     AiChatSession s = AiChatSession.builder()
-                            .id(request.getSessionId() != null ? request.getSessionId() : "session-" + UUID.randomUUID().toString().substring(0, 8))
+                            .id(finalSessionId)
                             .mood(request.getSelectedMood())
                             .build();
                     return sessionRepository.save(s);
                 });
+
+        activeChatSession.set(session.getId());
 
         // Save User Message
         AiChatMessage userMsg = AiChatMessage.builder()
@@ -97,12 +100,16 @@ public class AiService {
                 .build();
         messageRepository.save(rivoMsg);
 
-        return new AiChatResponse(
-                "msg-" + UUID.randomUUID().toString().substring(0, 8),
-                "rivo",
-                responseText,
-                recommendation
-        );
+        try {
+            return new AiChatResponse(
+                    "msg-" + UUID.randomUUID().toString().substring(0, 8),
+                    "rivo",
+                    responseText,
+                    recommendation
+            );
+        } finally {
+            activeChatSession.remove();
+        }
     }
 
     /**
@@ -112,8 +119,8 @@ public class AiService {
      * Generates a travel itinerary. Checks cache database prior to external LLM requests.
      */
     public String generateItinerary(AiItineraryRequest request, String userEmail) {
-        String dest = request.getDestination();
-        int days = request.getDays();
+        String dest = request.getDestination() == null ? "" : request.getDestination().trim();
+        int days = request.getDays() == null ? 3 : Math.max(1, Math.min(request.getDays(), 14));
         String budget = request.getBudget() != null ? request.getBudget() : "luxury";
 
         List<com.reservo.backend.entity.Booking> userBookings = new ArrayList<>();
@@ -123,17 +130,12 @@ public class AiService {
             });
         }
 
-        List<Resort> activeResorts = resortRepository.findByLocationContainingIgnoreCase(dest);
+        List<Resort> activeResorts = findApprovedResortsForDestination(dest);
 
-        // 1. Check Cache
-        Optional<AiItinerary> cached = itineraryRepository
-                .findFirstByDestinationIgnoreCaseAndDurationDaysAndBudgetLevelIgnoreCase(dest, days, budget);
-        if (cached.isPresent()) {
-            log.info("Serving itinerary for {} ({} days, {}) from database cache.", dest, days, budget);
-            return cached.get().getItineraryJson();
-        }
-
-        // 2. Resolve Itinerary JSON
+        // Do not reuse old itinerary cache entries: resort inventory is live and can
+        // change after approval/suspension, so every request must be generated from the
+        // current approved inventory.
+        // Resolve Itinerary JSON
         String itineraryJson = "";
         if (geminiApiKey != null && !geminiApiKey.trim().isEmpty()) {
             try {
@@ -145,15 +147,6 @@ public class AiService {
         } else {
             itineraryJson = generateLocalMockItinerary(dest, days, budget);
         }
-
-        // 3. Store Cache
-        AiItinerary item = AiItinerary.builder()
-                .destination(dest)
-                .durationDays(days)
-                .budgetLevel(budget)
-                .itineraryJson(itineraryJson)
-                .build();
-        itineraryRepository.save(item);
 
         return itineraryJson;
     }
@@ -170,29 +163,96 @@ public class AiService {
     private String queryGeminiModel(String prompt, String mood) throws Exception {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiApiKey;
 
-        List<Resort> resortsList = resortRepository.findAll();
-        StringBuilder resortsCtx = new StringBuilder();
-        resortsCtx.append("We have the following verified resorts in our database:\n");
-        for (Resort r : resortsList) {
-            resortsCtx.append("- ").append(r.getName()).append(" located at ").append(r.getLocation()).append(" (Price: ").append(r.getPricePerNight()).append(")\n");
+        // Load recent conversation first so short follow-ups such as
+        // "I want 2 days" inherit the destination from the previous turns.
+        List<AiChatMessage> history = Collections.emptyList();
+        try {
+            String historySessionId = findSessionIdForPrompt(prompt);
+            if (!historySessionId.isBlank()) {
+                history = messageRepository.findBySessionIdOrderByCreatedAtAsc(historySessionId);
+            }
+        } catch (Exception historyError) {
+            log.debug("Chat history could not be loaded; continuing without history: {}", historyError.getMessage());
         }
 
-        String systemContext = "You are Rivo, the expert AI travel companion and concierge for Reservo.\n" +
-                "Reservo is India's premium luxury booking platform for hand-verified resorts, villas, and boutique stays.\n" +
-                "Reservo Platform Details & Policies:\n" +
-                "1. Support: Available 24/7. Call our helpline or trigger the secure SIP dialer widget.\n" +
-                "2. Stays Context:\n" + resortsCtx.toString() + "\n" +
-                "3. Payments: Securely processed via Stripe cards, UPI codes, and Indian Netbanking.\n" +
-                "4. Wishlists: Users must log in to add/save retreats in their wishlists.\n" +
-                "5. Active user companion mood context: " + mood + ".\n" +
-                "Guidelines: Give friendly, expert, premium, and very concise travel suggestions. Recommend only our verified resorts listed above. Keep your responses under 3 sentences.";
+        List<Resort> approved = resortRepository.findByStatus(Resort.ResortStatus.APPROVED);
+        List<Resort> usableInventory = approved.stream()
+                .filter(this::isUsableResort)
+                .toList();
+
+        // Do not send the entire Reservo inventory to Gemini when the user asked about
+        // a specific destination/resort. This prevents answers such as "Goa resorts"
+        // from listing Pune, Jaipur, null and other unrelated records.
+        List<Resort> relevantInventory = findRelevantApprovedResorts(prompt, history, usableInventory);
+
+        StringBuilder resortsCtx = new StringBuilder();
+        resortsCtx.append("VERIFIED RESERVO PLATFORM INVENTORY. These are the ONLY resorts you may recommend, name, price, or claim availability for:\n");
+        if (relevantInventory.isEmpty()) {
+            resortsCtx.append("NO MATCHING APPROVED RESORTS ARE CURRENTLY AVAILABLE FOR THIS REQUEST.\n");
+        } else {
+            for (Resort r : relevantInventory) {
+                resortsCtx.append(resortContext(r)).append("\n");
+            }
+        }
+
+        StringBuilder historyCtx = new StringBuilder();
+        if (!history.isEmpty()) {
+            historyCtx.append("RECENT CONVERSATION:\n");
+            history.stream().skip(Math.max(0, history.size() - 10)).forEach(m ->
+                    historyCtx.append(m.getSender()).append(": ").append(safe(m.getMessageText())).append("\n"));
+        }
+
+        String systemContext = """
+                You are Rivo, the AI travel assistant inside Reservo.
+                Your job is to answer the user's question helpfully, accurately and naturally.
+
+                HARD RESERVO RULES:
+                1. Reservo is a resort booking platform. When discussing stays, bookings, prices,
+                   resort availability, amenities, or recommendations, use ONLY the verified
+                   Reservo inventory supplied below.
+                2. NEVER invent a resort, room, price, rating, amenity, discount, availability,
+                   booking, policy, address, phone number, or website detail.
+                3. If the user asks for a destination where the supplied inventory has no approved
+                   matching resort, say so clearly. Do not substitute an outside hotel.
+                4. You may answer general travel questions from general knowledge, but clearly
+                   distinguish general destination suggestions from Reservo inventory.
+                5. For an itinerary, accommodation MUST be an approved Reservo resort from the
+                   supplied inventory. Other attractions/activities are general suggestions unless
+                   the supplied resort data explicitly confirms them.
+                6. Never claim an activity is provided by a resort unless the supplied data says so.
+                7. IMPORTANT CONVERSATION MEMORY: if the latest user message only changes duration,
+                   budget, guest count, interests, or another trip detail, inherit the destination
+                   and other still-valid details from the recent conversation. Do NOT ask for the
+                   destination again when it is already clear from the conversation.
+                8. If a genuinely required detail is missing and cannot be inferred from the recent
+                   conversation, ask one short clarifying question.
+                9. When the user asks for a resort list for a destination, list ONLY matching
+                   Reservo resorts. Do not list resorts from other cities/states.
+                10. Skip incomplete inventory records. Never display null resort names, null
+                    locations, or null prices.
+                11. When the user asks for an itinerary, give a useful day-by-day plan in the
+                    response itself: Day 1, Day 2, etc., with practical time/activity suggestions,
+                    accommodation, and a clear note that attractions are general suggestions unless
+                    verified by Reservo. Do not reply with only "I've created an itinerary".
+                12. If the user provides a budget, use it as a constraint and do not invent a
+                    total activity cost. State the verified accommodation cost separately when it
+                    can be calculated from the supplied nightly price and number of nights.
+
+                VERIFIED INVENTORY:
+                """ + resortsCtx + "\nMOOD: " + safe(mood) + "\n" + historyCtx +
+                "\nCURRENT USER QUESTION: " + safe(prompt);
 
         Map<String, Object> requestBody = new HashMap<>();
         Map<String, Object> contentMap = new HashMap<>();
         Map<String, Object> partMap = new HashMap<>();
-        partMap.put("text", systemContext + "\nUser Message: " + prompt);
+        partMap.put("text", systemContext);
         contentMap.put("parts", Collections.singletonList(partMap));
         requestBody.put("contents", Collections.singletonList(contentMap));
+
+        Map<String, Object> generationConfig = new HashMap<>();
+        generationConfig.put("temperature", 0.2);
+        generationConfig.put("maxOutputTokens", 1800);
+        requestBody.put("generationConfig", generationConfig);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -202,39 +262,75 @@ public class AiService {
         return parseTextFromGeminiResponse(response);
     }
 
-    private String queryGeminiItinerary(String dest, int days, List<String> interests, String budget, 
-                                        List<com.reservo.backend.entity.Booking> bookings, 
+    /**
+     * The current chat method stores the user message before calling the model, so the
+     * model history can be loaded by session id. This helper is intentionally simple:
+     * the actual session id is embedded in the current request by handleChat through
+     * the thread-local below.
+     */
+    private final ThreadLocal<String> activeChatSession = new ThreadLocal<>();
+
+    private String findSessionIdForPrompt(String ignoredPrompt) {
+        String id = activeChatSession.get();
+        return id == null ? "" : id;
+    }
+
+    private String queryGeminiItinerary(String dest, int days, List<String> interests, String budget,
+                                        List<com.reservo.backend.entity.Booking> bookings,
                                         List<Resort> resorts) throws Exception {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiApiKey;
 
+        if (days < 1) days = 1;
+        if (days > 14) days = 14;
+
         StringBuilder context = new StringBuilder();
-        context.append("You are Rivo, Reservo's travel buddy. Generate a realistic JSON itinerary.\n");
+        context.append("""
+                You are Rivo, Reservo's itinerary planner.
+                Generate a practical travel itinerary using the verified Reservo data below.
+
+                NON-NEGOTIABLE:
+                - Accommodation recommendations MUST come only from the supplied approved Reservo resorts.
+                - Never create or rename a resort.
+                - Never invent a resort price, rating, room type, amenity or availability.
+                - If there is no approved resort matching the requested destination, set
+                  accommodationAvailable=false and explain that Reservo has no approved
+                  matching resort at the moment.
+                - Activities may be general destination activities, but do not claim that
+                  Reservo provides them unless the resort data explicitly supports them.
+                - If a booked Reservo resort is supplied, use that booking as the accommodation.
+                - Keep the plan realistic and avoid impossible travel schedules.
+                """);
+
+        if (resorts != null && !resorts.isEmpty()) {
+            context.append("\nAPPROVED RESERVO RESORTS:\n");
+            for (Resort r : resorts) {
+                context.append(resortContext(r)).append("\n");
+            }
+        } else {
+            context.append("\nAPPROVED RESERVO RESORTS: NONE MATCH THE REQUESTED DESTINATION.\n");
+        }
+
         if (bookings != null && !bookings.isEmpty()) {
-            context.append("User has confirmed bookings in ").append(dest).append(":\n");
+            context.append("\nUSER'S EXISTING BOOKINGS:\n");
             for (com.reservo.backend.entity.Booking b : bookings) {
                 if (b.getResortId() != null) {
                     Resort bookedResort = resortRepository.findById(b.getResortId()).orElse(null);
-                    if (bookedResort != null && bookedResort.getLocation() != null
-                            && bookedResort.getLocation().toLowerCase().contains(dest.toLowerCase())) {
-                        context.append("- Resort: ").append(bookedResort.getName())
-                               .append(" (Address: ").append(bookedResort.getLocation()).append(")")
-                               .append(" from ").append(b.getCheckInDate()).append(" to ").append(b.getCheckOutDate()).append("\n");
+                    if (bookedResort != null) {
+                        context.append("- ").append(bookedResort.getName())
+                                .append(" at ").append(safe(bookedResort.getLocation()))
+                                .append(" from ").append(b.getCheckInDate())
+                                .append(" to ").append(b.getCheckOutDate()).append("\n");
                     }
                 }
             }
         }
 
-        if (resorts != null && !resorts.isEmpty()) {
-            context.append("Approved partner resorts available to suggest in ").append(dest).append(":\n");
-            for (Resort r : resorts) {
-                context.append("- ").append(r.getName()).append(" in ").append(r.getLocation())
-                       .append(" (Price: ").append(r.getPricePerNight()).append(" per night, rating: ").append(r.getRating()).append(")\n");
-            }
-        }
-
-        String systemPrompt = context.toString();
-        String promptText = String.format("%s\nGenerate a %d-day itinerary for %s. Interests: %s. Budget: %s. Use the user's booked stay details for their activities on those days, and recommend our approved partner resorts for accommodation or dinners.",
-            systemPrompt, days, dest, String.join(", ", interests), budget);
+        String promptText = context +
+                "\nDestination: " + safe(dest) +
+                "\nDays: " + days +
+                "\nInterests: " + (interests == null ? "not specified" : String.join(", ", interests)) +
+                "\nBudget: " + safe(budget) +
+                "\nReturn only the requested JSON object.";
 
         Map<String, Object> requestBody = new HashMap<>();
         Map<String, Object> contentMap = new HashMap<>();
@@ -243,15 +339,85 @@ public class AiService {
         contentMap.put("parts", Collections.singletonList(partMap));
         requestBody.put("contents", Collections.singletonList(contentMap));
 
-        // Enforce structured schema
         Map<String, Object> generationConfig = new HashMap<>();
         generationConfig.put("responseMimeType", "application/json");
+        generationConfig.put("temperature", 0.15);
 
+        Map<String, Object> schema = itinerarySchema();
+        generationConfig.put("responseSchema", schema);
+        requestBody.put("generationConfig", generationConfig);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+        Map<String, Object> response = restTemplate.postForObject(url, entity, Map.class);
+        return parseTextFromGeminiResponse(response);
+    }
+
+    /**
+     * Extracts the generated text from a Gemini generateContent response.
+     * Gemini returns text under candidates[0].content.parts[*].text.
+     */
+    @SuppressWarnings("unchecked")
+    private String parseTextFromGeminiResponse(Map<String, Object> response) {
+        if (response == null) {
+            throw new IllegalStateException("Gemini returned an empty response");
+        }
+
+        Object candidatesObj = response.get("candidates");
+        if (!(candidatesObj instanceof List)) {
+            Object error = response.get("error");
+            throw new IllegalStateException("Gemini response did not contain candidates"
+                    + (error != null ? ": " + error : ""));
+        }
+
+        List<?> candidates = (List<?>) candidatesObj;
+        if (candidates.isEmpty() || !(candidates.get(0) instanceof Map)) {
+            throw new IllegalStateException("Gemini returned no usable candidates");
+        }
+
+        Map<String, Object> candidate = (Map<String, Object>) candidates.get(0);
+        Object contentObj = candidate.get("content");
+        if (!(contentObj instanceof Map)) {
+            throw new IllegalStateException("Gemini response contained no content");
+        }
+
+        Map<String, Object> content = (Map<String, Object>) contentObj;
+        Object partsObj = content.get("parts");
+        if (!(partsObj instanceof List)) {
+            throw new IllegalStateException("Gemini response contained no parts");
+        }
+
+        StringBuilder text = new StringBuilder();
+        for (Object partObj : (List<?>) partsObj) {
+            if (partObj instanceof Map) {
+                Object partText = ((Map<String, Object>) partObj).get("text");
+                if (partText != null) {
+                    if (text.length() > 0) text.append('\n');
+                    text.append(partText);
+                }
+            }
+        }
+
+        if (text.length() == 0) {
+            throw new IllegalStateException("Gemini returned an empty text response");
+        }
+
+        return text.toString().trim();
+    }
+
+    private Map<String, Object> itinerarySchema() {
         Map<String, Object> schema = new HashMap<>();
         schema.put("type", "OBJECT");
         Map<String, Object> props = new HashMap<>();
         props.put("destination", Map.of("type", "STRING"));
         props.put("days", Map.of("type", "INTEGER"));
+        props.put("accommodationAvailable", Map.of("type", "BOOLEAN"));
+        props.put("resortId", Map.of("type", "STRING"));
+        props.put("resortName", Map.of("type", "STRING"));
+        props.put("resortLocation", Map.of("type", "STRING"));
+        props.put("accommodationNote", Map.of("type", "STRING"));
 
         Map<String, Object> timelineSchema = new HashMap<>();
         timelineSchema.put("type", "ARRAY");
@@ -268,133 +434,273 @@ public class AiService {
         activityItem.put("properties", Map.of(
                 "time", Map.of("type", "STRING"),
                 "title", Map.of("type", "STRING"),
-                "description", Map.of("type", "STRING")
+                "description", Map.of("type", "STRING"),
+                "source", Map.of("type", "STRING")
         ));
         activitiesSchema.put("items", activityItem);
         timelineProps.put("activities", activitiesSchema);
-
         timelineItem.put("properties", timelineProps);
         timelineSchema.put("items", timelineItem);
         props.put("timeline", timelineSchema);
 
         schema.put("properties", props);
-        generationConfig.put("responseSchema", schema);
-        requestBody.put("generationConfig", generationConfig);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
-        Map<String, Object> response = restTemplate.postForObject(url, entity, Map.class);
-        return parseTextFromGeminiResponse(response);
+        return schema;
     }
 
-    private String parseTextFromGeminiResponse(Map<String, Object> response) {
-        try {
-            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-            Map<String, Object> firstCandidate = candidates.get(0);
-            Map<String, Object> content = (Map<String, Object>) firstCandidate.get("content");
-            List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
-            return (String) parts.get(0).get("text");
-        } catch (Exception e) {
-            log.error("Failed to parse Gemini response payload:", e);
-            throw new RuntimeException("Malformed Gemini API payload");
-        }
+    private String resortContext(Resort r) {
+        return "- RESORT_ID=" + safe(r.getId()) +
+                " | name=" + safe(r.getName()) +
+                " | location=" + safe(r.getLocation()) +
+                " | city=" + safe(r.getCity()) +
+                " | state=" + safe(r.getState()) +
+                " | pricePerNight=" + String.valueOf(r.getPricePerNight()) +
+                " | rating=" + String.valueOf(r.getRating()) +
+                " | guests=" + String.valueOf(r.getGuests()) +
+                " | bedrooms=" + String.valueOf(r.getBedrooms()) +
+                " | category=" + safe(r.getCategory()) +
+                " | description=" + safe(r.getDescription()) +
+                " | amenities=" + safe(r.getAmenities()) +
+                " | highlights=" + safe(r.getHighlights()) +
+                " | listingMode=" + safe(r.getListingMode());
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 
     // ── LOCAL MOCK FALLBACK ENGINES ──────────────────────────────────────────────────
 
     private String generateLocalMockReply(String message, String mood) {
-        String msg = message.toLowerCase();
-        if (msg.contains("available") || msg.contains("resort") || msg.contains("list")) {
-            List<Resort> approved = resortRepository.findByStatus(Resort.ResortStatus.APPROVED);
-            if (approved == null || approved.isEmpty()) {
-                return "We currently don't have any live resorts in our system, but our default collections are: Ocean Bliss Resort, Royal Palm Retreat, Sunset Lagoon, and Hill View Escape.";
-            }
+        String msg = safe(message).toLowerCase(Locale.ROOT);
+        List<Resort> approved = resortRepository.findByStatus(Resort.ResortStatus.APPROVED)
+                .stream().filter(this::isUsableResort).toList();
+
+        if (approved.isEmpty()) {
+            return "I can help with travel planning, but Reservo currently has no complete approved resort records available to recommend. You can still ask me general travel questions.";
+        }
+
+        if (msg.contains("hello") || msg.equals("hi") || msg.startsWith("hi ")) {
+            return "Hi! I'm Rivo 👋 I can answer travel questions, compare approved Reservo resorts, and create day-by-day itineraries using Reservo properties.";
+        }
+
+        if (msg.contains("available") || msg.contains("resort") || msg.contains("list") || msg.contains("stay")) {
+            List<Resort> matches = findRelevantApprovedResorts(message, Collections.emptyList(), approved);
+            List<Resort> toShow = matches.isEmpty() ? approved : matches;
             StringBuilder sb = new StringBuilder();
-            sb.append("Here are our available luxury resorts:\n");
-            for (Resort r : approved) {
-                sb.append("- ").append(r.getName()).append(" in ").append(r.getLocation()).append(" (₹").append(r.getPricePerNight()).append("/night)\n");
+            sb.append(matches.isEmpty()
+                    ? "Here are the currently approved Reservo resorts:\n"
+                    : "Here are the approved Reservo resorts matching your request:\n");
+            for (Resort r : toShow) {
+                sb.append("• ").append(safe(r.getName()))
+                        .append(" — ").append(displayLocation(r))
+                        .append(" — ₹").append(String.valueOf(r.getPricePerNight())).append("/night\n");
             }
-            return sb.toString();
-        }
-        if (msg.contains("hello") || msg.contains("hi ")) {
-            return "Greetings! I'm Rivo, your luxury travel guide. Are you looking to plan a relaxation getaway, explore adventurous mountains, or find beachfront suite deals?";
-        }
-        if (msg.contains("goa") || msg.contains("beach")) {
-            return "Goa offers beautiful sandy shores and spectacular sunsets. I highly suggest looking at the Ocean Bliss Resort which has private beach lounge options and premium suites.";
-        }
-        if (msg.contains("bali") || msg.contains("palm") || msg.contains("indonesia")) {
-            return "Bali is wonderful! The Royal Palm Retreat is perfect if you want tropical infinity pools and scenic villa views.";
-        }
-        if (msg.contains("maldives") || msg.contains("lagoon") || msg.contains("water")) {
-            return "If you seek overwater bungalows and private butler service, Sunset Lagoon Resort in the Maldives is our top recommended escape.";
-        }
-        if (msg.contains("udaipur") || msg.contains("palace") || msg.contains("rajasthan")) {
-            return "For a royal heritage experience overlooking Lake Pichola, you will love the Hill View Escape in Udaipur.";
+            return sb.toString().trim();
         }
 
-        // Mood-based default replies
-        if ("luxury".equalsIgnoreCase(mood)) {
-            return "Greetings from Rivo Luxury Concierge. I've highlighted properties offering VIP airport private pickups, infinity pools, and round-the-clock room dining service.";
-        }
-        if ("budget".equalsIgnoreCase(mood)) {
-            return "Welcome! I've filtered our verified collections for smart luxury deals under ₹15,000 per night.";
-        }
-        if ("adventure".equalsIgnoreCase(mood)) {
-            return "Looking for a thrill? Let's check out our mountain view retreats offering guided safaris, watersports, and trekking trails.";
+        for (Resort r : approved) {
+            String name = safe(r.getName()).toLowerCase(Locale.ROOT);
+            String location = safe(r.getLocation()).toLowerCase(Locale.ROOT);
+            String city = safe(r.getCity()).toLowerCase(Locale.ROOT);
+            if ((!name.isBlank() && msg.contains(name))
+                    || (!location.isBlank() && msg.contains(location))
+                    || (!city.isBlank() && msg.contains(city))) {
+                return "Yes — " + safe(r.getName()) + " is an approved Reservo property in " +
+                        displayLocation(r) + ". Its listed price is ₹" + r.getPricePerNight() + " per night.";
+            }
         }
 
-        return "Interesting query! I can help you search resorts, book suites, or generate custom travel plans. Let me know where you'd like to fly!";
+        return "I can help with Reservo resort information, trip planning, budgets, amenities, bookings and general travel questions. Tell me what you want to plan or ask.";
     }
 
     private Resort scanAndMatchResort(String text) {
-        String checkText = text.toLowerCase();
+        String checkText = safe(text).toLowerCase(Locale.ROOT);
         List<Resort> approved = resortRepository.findByStatus(Resort.ResortStatus.APPROVED);
         for (Resort r : approved) {
-            if (checkText.contains(r.getName().toLowerCase()) || checkText.contains(r.getLocation().toLowerCase().split(",")[0])) {
+            if (!isUsableResort(r)) continue;
+            String name = safe(r.getName()).toLowerCase(Locale.ROOT).trim();
+            String location = safe(r.getLocation()).toLowerCase(Locale.ROOT).trim();
+            String city = safe(r.getCity()).toLowerCase(Locale.ROOT).trim();
+            String state = safe(r.getState()).toLowerCase(Locale.ROOT).trim();
+            if ((!name.isBlank() && checkText.contains(name))
+                    || (!location.isBlank() && checkText.contains(location))
+                    || (!city.isBlank() && checkText.contains(city))
+                    || (!state.isBlank() && checkText.contains(state))) {
                 return r;
             }
         }
         return null;
     }
 
-    private String generateLocalMockItinerary(String dest, int days, String budget) {
-        // Return a beautifully structured JSON itinerary matching our frontend expectations
-        StringBuilder json = new StringBuilder();
-        json.append("{\n");
-        json.append("  \"destination\": \"").append(dest).append("\",\n");
-        json.append("  \"days\": ").append(days).append(",\n");
-        json.append("  \"timeline\": [\n");
+    /**
+     * Returns only approved Reservo resorts matching the requested destination.
+     * This deliberately filters the live inventory in memory so suspended/pending
+     * properties can never be recommended by Rivo.
+     */
+    private List<Resort> findApprovedResortsForDestination(String destination) {
+        String query = safe(destination).trim().toLowerCase(Locale.ROOT);
+        if (query.isBlank()) return Collections.emptyList();
 
-        for (int d = 1; d <= days; d++) {
-            json.append("    {\n");
-            json.append("      \"day\": ").append(d).append(",\n");
-            if (d == 1) {
-                json.append("      \"theme\": \"Arrival and Concierge Leisure\",\n");
-                json.append("      \"activities\": [\n");
-                json.append("        { \"time\": \"10:00 AM\", \"title\": \"Arrival & Welcome Lounge Check-in\", \"description\": \"Check-in at your resort. Enjoy cold brew teas and signature welcome mocktails.\" },\n");
-                json.append("        { \"time\": \"03:00 PM\", \"title\": \"Concierge Property Tour\", \"description\": \"Guided overview of the private lagoon, spa houses, and dining lounges.\" },\n");
-                json.append("        { \"time\": \"07:30 PM\", \"title\": \"Sunset Beach Dinner\", \"description\": \"Luxury multi-course candlelit dinner with ocean wave music.\" }\n");
-            } else if (d == 2) {
-                json.append("      \"theme\": \"Luxury Adventure & Spa Wellness\",\n");
-                json.append("      \"activities\": [\n");
-                json.append("        { \"time\": \"08:00 AM\", \"title\": \"Yoga & Ocean-view Breakfast\", \"description\": \"Morning yoga session followed by a curated organic buffet buffet.\" },\n");
-                json.append("        { \"time\": \"01:00 PM\", \"title\": \"Guided Excursions\", \"description\": \"Trekking local trails or water-sports with verified safety guides.\" },\n");
-                json.append("        { \"time\": \"05:30 PM\", \"title\": \"Soma Spa Retreat\", \"description\": \"Relaxing therapeutic massages utilizing local herbal oils.\" }\n");
-            } else {
-                json.append("      \"theme\": \"Cultural Shopping & Departure\",\n");
-                json.append("      \"activities\": [\n");
-                json.append("        { \"time\": \"09:30 AM\", \"title\": \"Local Craft Tour\", \"description\": \"Visit nearby artisan shops and souvenir stands accompanied by our resort driver.\" },\n");
-                json.append("        { \"time\": \"01:00 PM\", \"title\": \"Checkout & Private Airport Shuttle\", \"description\": \"Bidding farewell to the sanctuary and returning to the airport lounge.\" }\n");
+        List<Resort> approved = resortRepository.findByStatus(Resort.ResortStatus.APPROVED);
+        List<Resort> matches = new ArrayList<>();
+        for (Resort r : approved) {
+            if (!isUsableResort(r)) continue;
+            String name = safe(r.getName()).toLowerCase(Locale.ROOT);
+            String location = safe(r.getLocation()).toLowerCase(Locale.ROOT);
+            String city = safe(r.getCity()).toLowerCase(Locale.ROOT);
+            String state = safe(r.getState()).toLowerCase(Locale.ROOT);
+            if ((!name.isBlank() && name.contains(query))
+                    || (!location.isBlank() && location.contains(query))
+                    || (!city.isBlank() && city.contains(query))
+                    || (!state.isBlank() && state.contains(query))) {
+                matches.add(r);
             }
-            json.append("      ]\n");
-            json.append("    }").append(d < days ? ",\n" : "\n");
+        }
+        return matches;
+    }
+
+    private boolean isUsableResort(Resort r) {
+        if (r == null) return false;
+        if (safe(r.getId()).isBlank()) return false;
+        if (safe(r.getName()).isBlank()) return false;
+        if (safe(r.getLocation()).isBlank() && safe(r.getCity()).isBlank() && safe(r.getState()).isBlank()) return false;
+        return r.getPricePerNight() != null;
+    }
+
+    private String displayLocation(Resort r) {
+        if (!safe(r.getLocation()).isBlank()) return safe(r.getLocation());
+        String city = safe(r.getCity());
+        String state = safe(r.getState());
+        if (!city.isBlank() && !state.isBlank()) return city + ", " + state;
+        return !city.isBlank() ? city : state;
+    }
+
+    /**
+     * Finds the inventory relevant to the current request and recent conversation.
+     * Matching against known resort city/state/location/name keeps Gemini grounded
+     * in the destination the user is actually discussing.
+     */
+    private List<Resort> findRelevantApprovedResorts(String prompt, List<AiChatMessage> history, List<Resort> approved) {
+        String combined = safe(prompt).toLowerCase(Locale.ROOT);
+        if (history != null) {
+            history.stream().skip(Math.max(0, history.size() - 10)).forEach(m -> {
+                // handled below by building a second string without mutating a lambda target
+            });
+            StringBuilder historyText = new StringBuilder(combined);
+            for (AiChatMessage m : history) {
+                if (m != null) historyText.append(" ").append(safe(m.getMessageText()).toLowerCase(Locale.ROOT));
+            }
+            combined = historyText.toString();
         }
 
-        json.append("  ]\n");
-        json.append("}");
+        LinkedHashSet<String> locationTokens = new LinkedHashSet<>();
+        for (Resort r : approved) {
+            if (r == null) continue;
+            addTokenIfMentioned(locationTokens, combined, r.getCity());
+            addTokenIfMentioned(locationTokens, combined, r.getState());
+            addTokenIfMentioned(locationTokens, combined, r.getLocation());
+        }
 
-        return json.toString();
+        // If a specific resort name is mentioned, keep that resort even if its city
+        // isn't mentioned explicitly.
+        LinkedHashSet<Resort> matches = new LinkedHashSet<>();
+        for (Resort r : approved) {
+            if (r == null) continue;
+            String name = safe(r.getName()).toLowerCase(Locale.ROOT).trim();
+            if (!name.isBlank() && combined.contains(name)) matches.add(r);
+        }
+
+        for (String token : locationTokens) {
+            for (Resort r : approved) {
+                if (containsIgnoreCase(r.getCity(), token)
+                        || containsIgnoreCase(r.getState(), token)
+                        || containsIgnoreCase(r.getLocation(), token)
+                        || containsIgnoreCase(r.getName(), token)) {
+                    matches.add(r);
+                }
+            }
+        }
+
+        if (!matches.isEmpty()) return new ArrayList<>(matches);
+        return new ArrayList<>(approved);
     }
+
+    private void addTokenIfMentioned(Set<String> tokens, String combined, String value) {
+        String normalized = safe(value).toLowerCase(Locale.ROOT).trim();
+        if (!normalized.isBlank() && combined.contains(normalized)) {
+            tokens.add(normalized);
+        }
+        // Also use the first part of "City, State" locations.
+        if (normalized.contains(",")) {
+            String first = normalized.split(",", 2)[0].trim();
+            if (!first.isBlank() && combined.contains(first)) tokens.add(first);
+        }
+    }
+
+    private boolean containsIgnoreCase(String value, String token) {
+        String v = safe(value).toLowerCase(Locale.ROOT);
+        return !token.isBlank() && v.contains(token);
+    }
+
+    private String generateLocalMockItinerary(String dest, int days, String budget) {
+        List<Resort> matches = findApprovedResortsForDestination(dest);
+        Resort selected = matches.isEmpty() ? null : matches.get(0);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("destination", dest);
+        result.put("days", Math.max(1, Math.min(days, 14)));
+        result.put("accommodationAvailable", selected != null);
+        result.put("resortId", selected == null ? "" : safe(selected.getId()));
+        result.put("resortName", selected == null ? "" : safe(selected.getName()));
+        result.put("resortLocation", selected == null ? "" : safe(selected.getLocation()));
+        result.put("accommodationNote", selected == null
+                ? "Reservo currently has no approved resort matching this destination."
+                : "Accommodation is selected only from Reservo's approved resort inventory.");
+
+        List<Map<String, Object>> timeline = new ArrayList<>();
+        for (int d = 1; d <= Math.max(1, Math.min(days, 14)); d++) {
+            Map<String, Object> day = new LinkedHashMap<>();
+            day.put("day", d);
+            day.put("theme", d == 1 ? "Arrival & Resort Check-in" : (d == days ? "Leisure & Departure" : "Explore & Relax"));
+
+            List<Map<String, String>> activities = new ArrayList<>();
+            if (d == 1) {
+                activities.add(activity("12:00 PM", "Arrival & Check-in",
+                        selected == null ? "Arrive at the destination and choose from available local options." :
+                                "Check in at " + safe(selected.getName()) + ". Follow the property's confirmed check-in instructions.", "Reservo"));
+                activities.add(activity("03:00 PM", "Relaxation",
+                        selected == null ? "Relax after arrival." : "Enjoy the resort's listed amenities.", "General"));
+            } else if (d == days) {
+                activities.add(activity("09:00 AM", "Breakfast & Leisure",
+                        selected == null ? "Enjoy a relaxed morning." : "Enjoy your morning at " + safe(selected.getName()) + ".", "General"));
+                activities.add(activity("12:00 PM", "Check-out / Departure",
+                        "Complete check-out and continue your onward journey.", "General"));
+            } else {
+                activities.add(activity("09:00 AM", "Morning Exploration",
+                        "Explore nearby attractions suitable for your interests; confirm opening hours before visiting.", "General"));
+                activities.add(activity("05:00 PM", "Resort Leisure",
+                        selected == null ? "Return to your accommodation and relax." :
+                                "Return to " + safe(selected.getName()) + " and enjoy its listed amenities.", "General"));
+            }
+            day.put("activities", activities);
+            timeline.add(day);
+        }
+        result.put("timeline", timeline);
+
+        try {
+            return objectMapper.writeValueAsString(result);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to build fallback itinerary", e);
+        }
+    }
+
+    private Map<String, String> activity(String time, String title, String description, String source) {
+        Map<String, String> a = new LinkedHashMap<>();
+        a.put("time", time);
+        a.put("title", title);
+        a.put("description", description);
+        a.put("source", source);
+        return a;
+    }
+
 }
