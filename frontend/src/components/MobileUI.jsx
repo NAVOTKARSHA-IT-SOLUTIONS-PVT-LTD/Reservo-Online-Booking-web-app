@@ -317,8 +317,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
 
     let replyMessage = "";
     if (mode.id === "luxury") {
-      if (onToggleTheme && !isDark) onToggleTheme();
-      replyMessage = "Rivo is now in Luxury Mode! 👑 I've toggled the premium dark theme and filtered our listings for high-end resorts with Dedicated AI Butler service. Enjoy your luxury escape!";
+      replyMessage = "Rivo is now in Luxury Mode! 👑 I've filtered our listings for high-end resorts with Dedicated AI Butler service. Enjoy your luxury escape!";
       window.dispatchEvent(new CustomEvent("rivo-mode", { detail: { mode: "luxury" } }));
       navigate("/search");
     } else if (mode.id === "budget") {
@@ -476,8 +475,15 @@ function MobileUI({ isDark, onToggleTheme, children }) {
               </button>
             </div>
 
-            {/* Companion Mode Selector Bar (Mobile) */}
-            <div className="bg-[var(--color-bg-light)] border-b border-[var(--color-border-color)] px-3 py-1.5 flex gap-1.5 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-none">
+            {/* Companion Mode Selector Bar (Mobile) with visible slider for navigation */}
+            <div 
+              onWheel={(e) => {
+                if (e.deltaY !== 0) {
+                  e.currentTarget.scrollLeft += e.deltaY;
+                }
+              }}
+              className="bg-[var(--color-bg-light)] border-b border-[var(--color-border-color)] px-3 pt-1.5 pb-2 flex gap-1.5 overflow-x-auto whitespace-nowrap shrink-0 scroll-smooth [scrollbar-width:thin] [scrollbar-color:rgba(100,116,139,0.45)_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-black/5 dark:[&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-400/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-500/80 [&::-webkit-scrollbar-thumb]:rounded-full"
+            >
               {COMPANION_MODES.map(m => (
                 <button
                   key={m.id}
@@ -494,7 +500,7 @@ function MobileUI({ isDark, onToggleTheme, children }) {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-2.5 bg-bg-light">
+            <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-2.5 bg-bg-light [scrollbar-width:thin] [scrollbar-color:rgba(100,116,139,0.45)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-black/5 dark:[&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-400/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-500/80 [&::-webkit-scrollbar-thumb]:rounded-full">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex items-start gap-2 max-w-[90%] ${msg.sender === "user" ? "self-end flex-row-reverse" : "self-start"}`}>
                   {msg.sender === "rivo" && (

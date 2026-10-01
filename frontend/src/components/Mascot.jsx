@@ -238,12 +238,24 @@ function Mascot({ isDark, setIsDark }) {
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
+  const modesContainerRef = useRef(null);
+  const activeModeBtnRef = useRef(null);
 
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (activeModeBtnRef.current) {
+      activeModeBtnRef.current.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest"
+      });
+    }
+  }, [activeMode, isOpen]);
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
@@ -256,8 +268,7 @@ function Mascot({ isDark, setIsDark }) {
 
     let replyMessage = "";
     if (mode.id === "luxury") {
-      if (setIsDark) setIsDark(true);
-      replyMessage = "Rivo is now in Luxury Mode! 👑 I've toggled the premium dark theme and filtered our listings for high-end resorts with Dedicated AI Butler service. Enjoy your luxury escape!";
+      replyMessage = "Rivo is now in Luxury Mode! 👑 I've filtered our listings for high-end resorts with Dedicated AI Butler service. Enjoy your luxury escape!";
       window.dispatchEvent(new CustomEvent("rivo-mode", { detail: { mode: "luxury" } }));
       navigate("/search");
     } else if (mode.id === "budget") {
@@ -398,25 +409,36 @@ function Mascot({ isDark, setIsDark }) {
             </button>
           </div>
 
-          {/* Companion Mode Selector Bar */}
-          <div className="bg-bg-light border-b border-border-color px-4 py-2 flex gap-2 overflow-x-auto whitespace-nowrap shrink-0 scrollbar-none">
-            {COMPANION_MODES.map(m => (
-              <button
-                key={m.id}
-                onClick={() => handleSelectMode(m)}
-                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all border cursor-pointer ${
-                  activeMode === m.id
-                    ? 'bg-[#2563EB] text-white border-[#2563EB] scale-105'
-                    : 'bg-bg-white text-text-gray border-border-color'
-                }`}
-              >
-                {m.emoji} {m.label}
-              </button>
-            ))}
+          {/* Companion Mode Selector Bar with visible slider for mouse navigation */}
+          <div className="bg-bg-light border-b border-border-color px-3 pt-2 pb-2 shrink-0">
+            <div 
+              ref={modesContainerRef}
+              onWheel={(e) => {
+                if (e.deltaY !== 0) {
+                  e.currentTarget.scrollLeft += e.deltaY;
+                }
+              }}
+              className="flex gap-2 overflow-x-auto whitespace-nowrap scroll-smooth pb-1.5 [scrollbar-width:thin] [scrollbar-color:rgba(100,116,139,0.45)_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-black/5 dark:[&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-400/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-500/80 hover:[&::-webkit-scrollbar-thumb]:bg-[#2563EB] dark:hover:[&::-webkit-scrollbar-thumb]:bg-[#2563EB] [&::-webkit-scrollbar-thumb]:rounded-full"
+            >
+              {COMPANION_MODES.map(m => (
+                <button
+                  key={m.id}
+                  ref={activeMode === m.id ? activeModeBtnRef : null}
+                  onClick={() => handleSelectMode(m)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all border cursor-pointer shrink-0 select-none ${
+                    activeMode === m.id
+                      ? 'bg-[#2563EB] text-white border-[#2563EB] scale-105 shadow-sm'
+                      : 'bg-bg-white text-text-gray border-border-color hover:text-text-dark hover:border-[#2563EB]/40'
+                  }`}
+                >
+                  {m.emoji} {m.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-5 overflow-y-auto flex flex-col gap-3.75 bg-bg-light">
+          <div className="flex-1 p-5 overflow-y-auto flex flex-col gap-3.75 bg-bg-light [scrollbar-width:thin] [scrollbar-color:rgba(100,116,139,0.45)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-black/5 dark:[&::-webkit-scrollbar-track]:bg-white/10 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-400/80 dark:[&::-webkit-scrollbar-thumb]:bg-slate-500/80 hover:[&::-webkit-scrollbar-thumb]:bg-[#2563EB] dark:hover:[&::-webkit-scrollbar-thumb]:bg-[#2563EB] [&::-webkit-scrollbar-thumb]:rounded-full">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex items-start gap-2.5 max-w-[85%] ${
                 msg.sender === "user" ? "self-end flex-row-reverse" : "self-start"
