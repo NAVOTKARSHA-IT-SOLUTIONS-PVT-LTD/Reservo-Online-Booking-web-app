@@ -674,8 +674,8 @@ function App() {
             {renderAppRoutes()}
           </main>
 
-          {/* Floating Mascot Widget */}
-          <Mascot isDark={isDark} setIsDark={setIsDark} />
+          {/* Floating Mascot Widget (Hidden on AI Planner page) */}
+          {location.pathname !== "/ai-planner" && <Mascot isDark={isDark} setIsDark={setIsDark} />}
 
           {/* Footer */}
           {location.pathname !== "/ai-planner" && <Footer />}

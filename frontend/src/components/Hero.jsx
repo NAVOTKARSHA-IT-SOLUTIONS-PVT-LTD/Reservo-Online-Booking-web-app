@@ -294,46 +294,46 @@ function Hero() {
         <div className="flex-1 max-w-[600px] text-white" style={{ transform: `translateY(${-scrollY * 0.08}px)`, opacity: Math.max(0, 1 - scrollY / 700) }}>
           
           {/* Title */}
-          <h1 className="font-extrabold text-[36px] sm:text-[56px] lg:text-[70px] leading-[1.05] mb-6 font-serif tracking-tight drop-shadow-xl text-white">
+          <h1 className="font-extrabold text-[32px] sm:text-[56px] lg:text-[70px] leading-[1.05] mb-4 sm:mb-6 font-serif tracking-tight drop-shadow-xl text-white">
   Book Smart.<br />
   Stay <span className="italic text-white font-serif">Better.</span>
 </h1>
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 mb-8 md:mb-12">
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-4 mb-4 sm:mb-8 md:mb-12">
             <button 
               onClick={() => navigate("/ai-planner")}
-              className="w-full sm:w-auto bg-[#1B5CF8] text-white px-6 py-3.5 rounded-full text-[15px] font-bold border-none cursor-pointer flex items-center justify-center gap-2 hover:bg-[#1549d4] transition-all shadow-[0_10px_25px_rgba(27,92,248,0.4)]"
+              className="w-full sm:w-auto bg-[#1B5CF8] text-white px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-full text-xs sm:text-[15px] font-bold border-none cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-[#1549d4] transition-all shadow-[0_6px_18px_rgba(27,92,248,0.35)] sm:shadow-[0_10px_25px_rgba(27,92,248,0.4)]"
             >
-              <Sparkles size={18} /> Launch Rivo AI Planner
+              <Sparkles className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" /> Launch Rivo AI Planner
             </button>
             <button 
               onClick={scrollToExplore}
-              className="w-full sm:w-auto bg-black/30 backdrop-blur-md border border-white/20 text-white px-6 py-3.5 rounded-full text-[15px] font-bold cursor-pointer flex items-center justify-center gap-2 hover:bg-black/50 transition-all shadow-lg"
+              className="w-full sm:w-auto bg-black/30 backdrop-blur-md border border-white/20 text-white px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-full text-xs sm:text-[15px] font-bold cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 hover:bg-black/50 transition-all shadow-md sm:shadow-lg"
             >
-              Explore Resorts <ArrowRight size={18} />
+              Explore Resorts <ArrowRight className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" />
             </button>
           </div>
 
           {/* Social Proof */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border border-white/10 bg-black/20 backdrop-blur-sm">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
-                <Star size={14} className="fill-current text-teal-300" />
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-full border border-white/10 bg-black/20 backdrop-blur-sm">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
+                <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current text-teal-300" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[13px] font-bold text-white leading-tight">4.9/5</span>
-                <span className="text-[11px] text-white/70">12K+ Reviews</span>
+                <span className="text-[11px] sm:text-[13px] font-bold text-white leading-tight">4.9/5</span>
+                <span className="text-[9px] sm:text-[11px] text-white/70">12K+ Reviews</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-full border border-white/10 bg-black/20 backdrop-blur-sm">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
-                <ShieldCheck size={14} className="text-teal-300" />
+            <div className="flex items-center gap-2 sm:gap-3 px-3 py-1.5 sm:px-4 sm:py-2.5 rounded-full border border-white/10 bg-black/20 backdrop-blur-sm">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0">
+                <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-teal-300" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[13px] font-bold text-white leading-tight">Best Price</span>
-                <span className="text-[11px] text-white/70">Guaranteed</span>
+                <span className="text-[11px] sm:text-[13px] font-bold text-white leading-tight">Best Price</span>
+                <span className="text-[9px] sm:text-[11px] text-white/70">Guaranteed</span>
               </div>
             </div>
           </div>
