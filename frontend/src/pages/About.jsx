@@ -16,7 +16,7 @@ function About() {
 
       {/* Hero */}
       <section 
-        className="py-[100px] md:py-[150px] px-5 text-center text-white bg-cover bg-center relative"
+        className="py-16 sm:py-24 md:py-[150px] px-5 text-center text-white bg-cover bg-center relative"
         style={{
           backgroundImage: `linear-gradient(rgba(10,17,32,0.75), rgba(10,17,32,0.75)), url(${aboutImage})`
         }}
@@ -25,10 +25,10 @@ function About() {
           <span className="block text-center text-xs font-bold uppercase tracking-widest text-gold mb-3">
             About Reservo
           </span>
-          <h1 className="text-[42px] md:text-[64px] font-extrabold my-6 md:my-[25px] leading-tight text-white font-serif">
+          <h1 className="text-[28px] sm:text-[42px] md:text-[64px] font-extrabold my-4 sm:my-6 md:my-[25px] leading-tight text-white font-serif">
             Luxury Stays, <br /> Extraordinary Experiences
           </h1>
-          <p className="max-w-[760px] mx-auto text-base md:text-xl leading-relaxed md:leading-[1.8] text-white/90 font-medium">
+          <p className="max-w-[760px] mx-auto text-sm sm:text-base md:text-xl leading-relaxed md:leading-[1.8] text-white/90 font-medium">
             Reservo is your trusted luxury resort booking platform,
             helping travelers discover premium destinations across India
             with comfort, elegance, and unforgettable hospitality.
@@ -37,8 +37,8 @@ function About() {
       </section>
 
       {/* About Section */}
-      <section className="py-20 md:py-[100px] bg-bg-light transition-colors duration-300">
-        <div className="w-[90%] max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12.5 lg:gap-20 items-center">
+      <section className="py-12 md:py-[100px] bg-bg-light transition-colors duration-300">
+        <div className="w-[90%] max-w-[1300px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
           
           <div className="w-full">
             <img
@@ -52,10 +52,10 @@ function About() {
             <span className="inline-block text-gold font-bold tracking-widest text-xs mb-3.75 uppercase">
               WHO WE ARE
             </span>
-            <h2 className="text-[36px] md:text-[48px] font-extrabold text-text-dark font-serif mb-6.25 transition-colors duration-300">
+            <h2 className="text-[26px] sm:text-[36px] md:text-[48px] font-extrabold text-text-dark font-serif mb-4 sm:mb-6.25 transition-colors duration-300">
               Making Every Journey Truly Memorable
             </h2>
-            <p className="text-text-gray leading-relaxed text-[17px] mb-5.5 transition-colors duration-300">
+            <p className="text-text-gray leading-relaxed text-sm sm:text-[17px] mb-5.5 transition-colors duration-300">
               Reservo connects travelers with India's finest luxury resorts,
               boutique stays, villas, and nature retreats. Our carefully
               selected properties ensure comfort, elegance, and exceptional

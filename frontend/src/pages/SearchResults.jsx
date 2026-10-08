@@ -9,6 +9,7 @@ import rivoSearching from "../assets/images/rivo_searching.png";
 import { resortService } from "../services/resort.service";
 import { authService } from "../services/auth.service";
 import CustomDropdown from "../components/CustomDropdown";
+import SearchResortsMap from "../components/SearchResortsMap";
 
 const FILTER_CHIPS = [
   { id: "ai", label: "✨ AI Recommended", icon: null },
@@ -176,6 +177,8 @@ function SearchResults() {
   const [sortKey, setSortKey] = useState("recommended");
   const [activeTopChip, setActiveTopChip] = useState("ai");
   const [resortsList, setResortsList] = useState([]);
+  const [selectedResortForMap, setSelectedResortForMap] = useState(null);
+  const [showMobileMap, setShowMobileMap] = useState(false);
 
   useEffect(() => {
     const loadResorts = async () => {
@@ -495,11 +498,14 @@ function SearchResults() {
               </div>
             </div>
 
-            {/* Map Widget Placeholder */}
-            <div className="bg-bg-white border border-border-color rounded-[24px] overflow-hidden shadow-sm h-[300px] relative group flex flex-col items-center justify-center bg-gray-50">
-              <Map size={36} className="text-gold mb-2 opacity-50" />
-              <p className="text-sm font-bold text-text-dark">Interactive Map</p>
-              <p className="text-xs text-text-gray mt-1">Map feature is currently unavailable.</p>
+            {/* Interactive Search Map Widget */}
+            <div className="h-[360px] relative">
+              <SearchResortsMap 
+                resorts={sorted} 
+                selectedResort={selectedResortForMap}
+                onSelectResort={(resort) => setSelectedResortForMap(resort)}
+                height="360px"
+              />
             </div>
 
             {/* Local Events Widget */}
@@ -534,11 +540,42 @@ function SearchResults() {
             <Filter size={16} /> Filters
           </button>
           <div className="w-px h-5 bg-white/20"></div>
-          <button className="flex items-center gap-2 text-sm font-bold text-white bg-transparent border-none cursor-pointer">
-            <Map size={16} /> Map
+          <button 
+            onClick={() => setShowMobileMap(true)}
+            className="flex items-center gap-2 text-sm font-bold text-white bg-transparent border-none cursor-pointer"
+          >
+            <Map size={16} /> Map ({sorted.length})
           </button>
         </div>
       </div>
+
+      {/* Mobile Map Fullscreen Modal */}
+      {showMobileMap && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex flex-col justify-end lg:hidden">
+          <div className="bg-bg-white w-full h-[85vh] rounded-t-[32px] p-4 flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="flex justify-between items-center pb-3 border-b border-border-color mb-3">
+              <div>
+                <h3 className="text-base font-bold text-text-dark">Explore Stays on Map</h3>
+                <p className="text-xs text-text-gray">{sorted.length} properties found</p>
+              </div>
+              <button 
+                onClick={() => setShowMobileMap(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-text-dark hover:bg-gray-200"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 w-full rounded-2xl overflow-hidden min-h-[300px]">
+              <SearchResortsMap 
+                resorts={sorted} 
+                selectedResort={selectedResortForMap}
+                onSelectResort={(resort) => setSelectedResortForMap(resort)}
+                height="100%"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

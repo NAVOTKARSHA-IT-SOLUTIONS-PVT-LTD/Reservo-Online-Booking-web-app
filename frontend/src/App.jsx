@@ -393,7 +393,7 @@ function App() {
     };
   }, [toast]);
 
-  // Scroll Progress and Back To Top triggers
+  // Scroll Progress and Back To Top triggers (supports both desktop window scroll and MobileUI container scroll)
   useEffect(() => {
     const handleScroll = () => {
       // Scroll Progress Bar
@@ -406,8 +406,19 @@ function App() {
       setShowBackToTop(window.scrollY > 400);
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const handleMobileScroll = (e) => {
+      if (e.detail) {
+        setScrollProgress(e.detail.scrollPercentage || 0);
+        setShowBackToTop((e.detail.scrollTop || 0) > 400);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("reservo-scroll", handleMobileScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("reservo-scroll", handleMobileScroll);
+    };
   }, []);
 
   // Keyboard Shortcuts (Esc to close dialogs, Alt+H for Home, Alt+W for Wishlist)
@@ -576,6 +587,7 @@ function App() {
             <Route path="/search-results" element={renderResortListing()} />
             <Route path="/resorts" element={renderResortListing()} />
             <Route path="/resort/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} onBook={openBookingForResort} />} />
+            <Route path="/resorts/:id" element={<ResortDetailsPageWrapper isDark={isDark} currencySymbol={currencySymbol} exchangeRate={exchangeRate} onBook={openBookingForResort} />} />
             <Route path="/wishlist" element={<Wishlist onBook={openBookingForResort} />} />
             <Route path="/ai-planner" element={<AIPlanner />} />
             <Route path="/partner" element={<ProtectedRoute><PartnerOnboarding /></ProtectedRoute>} />
@@ -612,7 +624,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-bg-light transition-colors duration-300">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col bg-bg-light transition-colors duration-300">
       
       {/* Interactive Guided Tour component overlay */}
       <Suspense fallback={null}>
@@ -643,7 +655,7 @@ function App() {
       )}
 
       {location.pathname === "/login" || location.pathname === "/register" || location.pathname.startsWith("/admin") || location.pathname.startsWith("/host") ? (
-        <main id="main-content" className="flex-grow flex flex-col min-h-screen">
+        <main id="main-content" className="flex-grow flex flex-col min-h-screen min-h-[100dvh]">
           <Suspense fallback={<PageLoader />}>
             {renderAppRoutes()}
           </Suspense>
@@ -703,13 +715,16 @@ function App() {
 
       {/* Floating Action Buttons: Back To Top */}
       <AnimatePresence>
-        {showBackToTop && !isMobile && (
+        {showBackToTop && (
           <motion.button
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="fixed bottom-26 right-8 bg-[#121e1b] text-white p-3 rounded-full shadow-lg border border-[#334155] cursor-pointer hover:bg-primary transition-colors duration-300 z-40"
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              window.dispatchEvent(new CustomEvent("reservo-scroll-to-top"));
+            }}
+            className={`fixed ${isMobile ? "bottom-20 left-4 z-[8200]" : "bottom-26 right-8 z-40"} bg-[#121e1b] text-white p-3 rounded-full shadow-lg border border-[#334155] cursor-pointer hover:bg-primary transition-colors duration-300`}
             aria-label="Back to top"
           >
             <ArrowUp size={16} />
@@ -725,7 +740,7 @@ function App() {
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 50, opacity: 0 }}
-            className="fixed bottom-6 right-6 lg:left-6 lg:right-auto max-w-sm w-[90%] bg-bg-white border border-border-color p-5 rounded-3xl shadow-2xl z-[10001] flex flex-col gap-4 font-sans text-left"
+            className="fixed bottom-20 left-4 right-4 sm:left-6 sm:right-auto sm:bottom-6 max-w-sm w-auto sm:w-[90%] bg-bg-white border border-border-color p-5 rounded-3xl shadow-2xl z-[10001] flex flex-col gap-4 font-sans text-left mx-auto sm:mx-0"
           >
             <div>
               <h4 className="text-sm font-bold text-text-dark flex items-center gap-1.5">

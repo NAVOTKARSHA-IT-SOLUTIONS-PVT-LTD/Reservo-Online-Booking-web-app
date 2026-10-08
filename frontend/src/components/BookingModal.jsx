@@ -309,18 +309,11 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
     }
   };
 
-  // Checkout call
+  // Checkout call via secure Razorpay payment
   const handleCheckout = async () => {
-    if (Math.round(grandTotal * 100) !== 0) {
-      toast("Payment module not implemented yet. Your booking was not created.", "error");
-      return;
-    }
-
     setSubmitting(true);
     try {
       // Re-check availability at the last step as a race-condition safeguard.
-      // The primary availability check already happens when the user clicks
-      // "Check Availability".
       await bookingService.checkAvailability(
         resort.id,
         { checkIn: modalCheckIn, checkOut: modalCheckOut },
@@ -346,17 +339,16 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
         guestPhone: isBookingForSelf ? undefined : guestPhone
       };
 
-      const result = await bookingService.createCheckoutSession(bookingDetails);
-      const url = new URL(result);
-      const bCode = url.searchParams.get("bookingCode") || `RES-${Math.floor(100000 + Math.random() * 900000)}`;
+      const result = await bookingService.initiateRazorpayPayment(bookingDetails);
+      const bCode = result.bookingCode || `RES-${Math.floor(100000 + Math.random() * 900000)}`;
 
       setConfirmedBookingCode(bCode);
       setIsConfirmed(true);
       setWizardStep(5);
-      toast(`Booking confirmed! Pass Code: ${bCode}`, "success");
+      toast(`Reservation confirmed! Reference: ${bCode}`, "success");
     } catch (e) {
       console.error("Checkout failure:", e);
-      toast(e.message || "Failed to confirm booking. Please try again.", "error");
+      toast(e.message || "Failed to complete reservation. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -414,11 +406,11 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
               </div>
 
               {/* Toggle Booking For */}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   type="button"
                   onClick={() => setIsBookingForSelf(true)}
-                  className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                  className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl border text-[11.5px] sm:text-xs font-bold transition cursor-pointer ${
                     isBookingForSelf
                       ? 'bg-[#DBEAFE] border-[#2563EB] text-[#2563EB]'
                       : isDarkMode ? 'bg-[#111827] border-[#334155] text-stone-400' : 'bg-[#F8FAFC] border-[#E2E8F0] text-stone-600'
@@ -429,7 +421,7 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
                 <button
                   type="button"
                   onClick={() => setIsBookingForSelf(false)}
-                  className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                  className={`flex-1 py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl border text-[11.5px] sm:text-xs font-bold transition cursor-pointer ${
                     !isBookingForSelf
                       ? 'bg-[#DBEAFE] border-[#2563EB] text-[#2563EB]'
                       : isDarkMode ? 'bg-[#111827] border-[#334155] text-stone-400' : 'bg-[#F8FAFC] border-[#E2E8F0] text-stone-600'
@@ -794,11 +786,11 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
 
         {/* Footer controls */}
         {wizardStep < 5 && (
-          <div className={`p-6 border-t flex justify-end gap-3 ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
+          <div className={`p-4 sm:p-6 border-t flex justify-end gap-2 sm:gap-3 ${isDarkMode ? 'bg-[#111827] border-[#334155]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
             {wizardStep > 1 && (
               <button
                 onClick={handlePrevStep}
-                className="py-3 px-5 border border-stone-300 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-slate-800 rounded-xl text-xs font-bold cursor-pointer transition bg-transparent text-inherit"
+                className="py-2.5 sm:py-3 px-4 sm:px-5 border border-stone-300 hover:bg-stone-100 dark:border-stone-700 dark:hover:bg-slate-800 rounded-xl text-xs font-bold cursor-pointer transition bg-transparent text-inherit"
               >
                 Back
               </button>
@@ -808,14 +800,14 @@ export default function BookingModal({ resort, room, bookingDates, bookingGuests
               <button
                 onClick={handleCheckout}
                 disabled={submitting}
-                className="py-3 px-6 bg-[#22C55E] hover:bg-[#15803D] disabled:bg-stone-400 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg border-none transition cursor-pointer flex items-center justify-center gap-1.5"
+                className="py-2.5 sm:py-3 px-5 sm:px-6 bg-[#22C55E] hover:bg-[#15803D] disabled:bg-stone-400 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg border-none transition cursor-pointer flex items-center justify-center gap-1.5"
               >
                 {submitting ? "Processing..." : "Complete Reservation"}
               </button>
             ) : (
               <button
                 onClick={handleNextStep}
-                className="py-3 px-6 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md border-none transition cursor-pointer flex items-center justify-center gap-1.5"
+                className="py-2.5 sm:py-3 px-5 sm:px-6 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md border-none transition cursor-pointer flex items-center justify-center gap-1.5"
               >
                 Continue <ArrowRight size={14} />
               </button>

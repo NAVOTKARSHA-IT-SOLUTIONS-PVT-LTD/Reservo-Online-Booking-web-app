@@ -93,15 +93,7 @@ public class LoyaltyTransactionRepository {
                 return Optional.empty();
             }
 
-            LoyaltyTransaction transaction =
-                    document.toObject(
-                            LoyaltyTransaction.class
-                    );
-
-            if (transaction != null) {
-                transaction.setId(id);
-            }
-
+            LoyaltyTransaction transaction = fromDocument(document);
             return Optional.ofNullable(transaction);
 
         } catch (InterruptedException e) {
@@ -148,20 +140,9 @@ public class LoyaltyTransactionRepository {
             List<LoyaltyTransaction> transactions =
                     new ArrayList<>();
 
-            for (QueryDocumentSnapshot document :
-                    documents) {
-
-                LoyaltyTransaction transaction =
-                        document.toObject(
-                                LoyaltyTransaction.class
-                        );
-
+            for (QueryDocumentSnapshot document : documents) {
+                LoyaltyTransaction transaction = fromDocument(document);
                 if (transaction != null) {
-
-                    transaction.setId(
-                            document.getId()
-                    );
-
                     transactions.add(transaction);
                 }
             }
@@ -214,20 +195,9 @@ public class LoyaltyTransactionRepository {
             List<LoyaltyTransaction> transactions =
                     new ArrayList<>();
 
-            for (QueryDocumentSnapshot document :
-                    documents) {
-
-                LoyaltyTransaction transaction =
-                        document.toObject(
-                                LoyaltyTransaction.class
-                        );
-
+            for (QueryDocumentSnapshot document : documents) {
+                LoyaltyTransaction transaction = fromDocument(document);
                 if (transaction != null) {
-
-                    transaction.setId(
-                            document.getId()
-                    );
-
                     transactions.add(transaction);
                 }
             }
@@ -280,6 +250,61 @@ public class LoyaltyTransactionRepository {
                     "Failed to delete loyalty transaction",
                     e
             );
+        }
+    }
+
+    /**
+     * Safely deserialize a Firestore document into LoyaltyTransaction
+     * without failing on java.time.Instant deserialization.
+     */
+    private LoyaltyTransaction fromDocument(com.google.cloud.firestore.DocumentSnapshot document) {
+        if (document == null || !document.exists()) return null;
+        java.util.Map<String, Object> d = document.getData();
+        if (d == null) return null;
+
+        LoyaltyTransaction tx = new LoyaltyTransaction();
+        tx.setId(document.getId());
+        tx.setUserId(asString(d.get("userId")));
+        tx.setDescription(asString(d.get("description")));
+        tx.setPointsChange(asInteger(d.get("pointsChange")));
+        tx.setCreatedAt(asInstant(d.get("createdAt")));
+        if (tx.getCreatedAt() == null) {
+            tx.setCreatedAt(java.time.Instant.now());
+        }
+        return tx;
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private Integer asInteger(Object value) {
+        if (value == null) return 0;
+        if (value instanceof Number n) return n.intValue();
+        try { return Integer.parseInt(String.valueOf(value)); }
+        catch (Exception e) { return 0; }
+    }
+
+    private java.time.Instant asInstant(Object value) {
+        if (value == null) return null;
+        if (value instanceof com.google.cloud.Timestamp ts) return ts.toDate().toInstant();
+        if (value instanceof java.util.Date date) return date.toInstant();
+        if (value instanceof java.util.Map<?, ?> map) {
+            Object epochSec = map.get("epochSecond");
+            Object nano = map.get("nano");
+            if (epochSec instanceof Number sec) {
+                long n = (nano instanceof Number num) ? num.longValue() : 0L;
+                return java.time.Instant.ofEpochSecond(sec.longValue(), n);
+            }
+        }
+        String text = String.valueOf(value).trim();
+        try { return java.time.Instant.parse(text); }
+        catch (Exception ignored) {
+            try {
+                return java.time.LocalDateTime.parse(text).toInstant(java.time.ZoneOffset.UTC);
+            } catch (Exception ignoredAgain) {
+                return null;
+            }
         }
     }
 

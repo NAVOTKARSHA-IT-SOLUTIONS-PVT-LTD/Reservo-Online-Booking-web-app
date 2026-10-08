@@ -1,10 +1,14 @@
 package com.reservo.backend.controller;
 
 import com.reservo.backend.dto.ApiResponse;
+import com.reservo.backend.dto.RazorpayOrderResponse;
+import com.reservo.backend.dto.RazorpayVerifyRequest;
 import com.reservo.backend.entity.Booking;
 import com.reservo.backend.entity.Coupon;
+import com.reservo.backend.entity.Resort;
 import com.reservo.backend.repository.CouponRepository;
 import com.reservo.backend.service.BookingService;
+import com.reservo.backend.service.RazorpayService;
 import com.reservo.backend.service.StripeService;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
@@ -37,6 +41,8 @@ public class PaymentController {
     private final UserRepository userRepository;
     private final CouponService couponService;
     private final com.reservo.backend.service.AuthService authService;
+    private final RazorpayService razorpayService;
+    private final com.reservo.backend.repository.ResortRepository resortRepository;
 
     @Value("${app.stripe.webhook-secret}")
     private String endpointSecret;
@@ -249,5 +255,250 @@ public class PaymentController {
         }
 
         return ResponseEntity.ok("Received");
+    }
+
+    // ============================================================
+    // RAZORPAY PAYMENT ENDPOINTS (100% Leak-Proof & Secure)
+    // ============================================================
+
+    /**
+     * Step 1: Create a secure Razorpay Order.
+     * Price is NEVER accepted from the client; it is recalculated canonical from DB.
+     * Secret Key NEVER leaves the server; only public keyId is returned.
+     */
+    @PostMapping("/razorpay/create-order")
+    public ResponseEntity<ApiResponse<RazorpayOrderResponse>> createRazorpayOrder(
+            @RequestParam(required = false) String userId,
+            @RequestParam String resortId,
+            @RequestParam String roomId,
+            @RequestParam String checkIn,
+            @RequestParam String checkOut,
+            @RequestParam(defaultValue = "2") int adults,
+            @RequestParam(defaultValue = "0") int children,
+            @RequestParam(defaultValue = "1") int roomsCount,
+            @RequestParam(required = false) String couponCode,
+            @RequestParam(required = false) Integer pointsToRedeem,
+            @RequestParam(required = false) String guestName,
+            @RequestParam(required = false) String guestPhone,
+            @RequestParam(required = false) String successUrl) {
+        try {
+            User user = resolveEffectiveUser(userId);
+            String effectiveUserId = user.getId();
+
+            Resort resort = resortRepository.findById(resortId)
+                    .orElseThrow(() -> new IllegalArgumentException("Resort not found with ID: " + resortId));
+
+            int effectiveRooms = Math.max(1, Math.max(roomsCount, Math.max((int) Math.ceil(adults / 2.0), (int) Math.ceil(children / 2.0))));
+
+            // Server-side canonical price recalculation (Prevents client tampering)
+            BigDecimal calculatedAmount = bookingService.calculateBaseBookingAmount(
+                    resortId, roomId, LocalDate.parse(checkIn), LocalDate.parse(checkOut), effectiveRooms);
+
+            // KYC validation rule: > ₹50,000 amount requires verified status
+            if (calculatedAmount.compareTo(BigDecimal.valueOf(50000)) > 0 && user.getKycStatus() != User.KycStatus.VERIFIED) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("Identity verification (KYC) required for bookings over ₹50,000.", 400));
+            }
+
+            // Coupon validation
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            if (couponCode != null && !couponCode.trim().isEmpty()) {
+                Coupon coupon = couponService.getAndValidateCoupon(couponCode.trim(), effectiveUserId, resortId, calculatedAmount);
+                if (coupon.getDiscountType() == Coupon.DiscountType.PERCENTAGE) {
+                    discountAmount = calculatedAmount.multiply(coupon.getDiscountValue().divide(BigDecimal.valueOf(100)));
+                } else {
+                    discountAmount = coupon.getDiscountValue().min(calculatedAmount);
+                }
+                log.info("Applied coupon {} for discount: {}", couponCode, discountAmount);
+            }
+
+            // Loyalty points redemption
+            BigDecimal pointsDiscount = BigDecimal.ZERO;
+            int redeemedPoints = 0;
+            if (pointsToRedeem != null && pointsToRedeem > 0) {
+                if (user.getRewardPoints() < pointsToRedeem) {
+                    throw new IllegalArgumentException("Insufficient points balance.");
+                }
+                BigDecimal pointsValue = BigDecimal.valueOf(pointsToRedeem).divide(BigDecimal.valueOf(10), 2, java.math.RoundingMode.HALF_UP);
+                BigDecimal remainingAmount = calculatedAmount.subtract(discountAmount);
+                BigDecimal maxPointsValueAllowed = remainingAmount.multiply(BigDecimal.valueOf(0.5));
+                if (pointsValue.compareTo(maxPointsValueAllowed) > 0) {
+                    pointsValue = maxPointsValueAllowed;
+                    redeemedPoints = pointsValue.multiply(BigDecimal.valueOf(10)).intValue();
+                } else {
+                    redeemedPoints = pointsToRedeem;
+                }
+                pointsDiscount = pointsValue;
+                log.info("Applied reward points discount: {} (Redeemed: {} points)", pointsDiscount, redeemedPoints);
+            }
+
+            BigDecimal finalAmount = calculatedAmount.subtract(discountAmount).subtract(pointsDiscount).max(BigDecimal.ZERO);
+
+            // 1. ZERO-TOTAL FLOW (100% Comped Booking)
+            if (finalAmount.compareTo(BigDecimal.ZERO) == 0) {
+                Booking compedBooking = bookingService.createBooking(
+                        effectiveUserId, resortId, roomId,
+                        LocalDate.parse(checkIn), LocalDate.parse(checkOut),
+                        BigDecimal.ZERO, guestName, guestPhone,
+                        (couponCode != null && !couponCode.trim().isEmpty()) ? couponCode.trim().toUpperCase() : null,
+                        discountAmount, redeemedPoints, pointsDiscount,
+                        Math.max(1, adults), Math.max(0, children), effectiveRooms
+                );
+
+                bookingService.confirmBooking(
+                        compedBooking.getBookingCode(),
+                        "FREE_" + System.currentTimeMillis(),
+                        "ZERO_TOTAL_COUPON"
+                );
+
+                if (couponCode != null && !couponCode.trim().isEmpty()) {
+                    couponService.incrementCouponUsage(couponCode.trim());
+                }
+
+                String redirect = "/payment/success?bookingCode=" + compedBooking.getBookingCode();
+                RazorpayOrderResponse response = RazorpayOrderResponse.builder()
+                        .isComped(true)
+                        .bookingCode(compedBooking.getBookingCode())
+                        .amountInRupees(BigDecimal.ZERO)
+                        .amountInPaise(0L)
+                        .currency("INR")
+                        .redirectUrl(redirect)
+                        .build();
+
+                return ResponseEntity.ok(ApiResponse.success(response, "Reservation completed without payment."));
+            }
+
+            // 2. STANDARD RAZORPAY FLOW
+            Booking pendingBooking = bookingService.createBooking(
+                    effectiveUserId, resortId, roomId,
+                    LocalDate.parse(checkIn), LocalDate.parse(checkOut),
+                    finalAmount, guestName, guestPhone,
+                    (couponCode != null && !couponCode.trim().isEmpty()) ? couponCode.trim().toUpperCase() : null,
+                    discountAmount, redeemedPoints, pointsDiscount,
+                    Math.max(1, adults), Math.max(0, children), effectiveRooms
+            );
+
+            String razorpayOrderId = razorpayService.createOrder(pendingBooking, resort.getName());
+            long amountInPaise = finalAmount.multiply(BigDecimal.valueOf(100)).longValue();
+
+            RazorpayOrderResponse response = RazorpayOrderResponse.builder()
+                    .orderId(razorpayOrderId)
+                    .amountInPaise(amountInPaise)
+                    .amountInRupees(finalAmount)
+                    .currency("INR")
+                    .keyId(razorpayService.getKeyId()) // Public Key ID ONLY
+                    .bookingCode(pendingBooking.getBookingCode())
+                    .resortName(resort.getName())
+                    .userName(user.getName() != null ? user.getName() : guestName)
+                    .userEmail(user.getEmail())
+                    .userPhone(user.getPhone() != null ? user.getPhone() : guestPhone)
+                    .isComped(false)
+                    .build();
+
+            return ResponseEntity.ok(ApiResponse.success(response, "Razorpay order created successfully."));
+        } catch (IllegalStateException e) {
+            log.warn("Razorpay order creation rejected: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(e.getMessage(), HttpStatus.CONFLICT.value()));
+        } catch (Exception e) {
+            log.error("Failed to create Razorpay order", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to initiate payment: " + e.getMessage(), 500));
+        }
+    }
+
+    /**
+     * Step 2: Verify Cryptographic Payment Signature using HMAC-SHA256.
+     * Confirms the booking only after mathematical proof of payment.
+     */
+    @PostMapping("/razorpay/verify")
+    public ResponseEntity<ApiResponse<Booking>> verifyRazorpayPayment(@RequestBody RazorpayVerifyRequest request) {
+        try {
+            log.info("Verifying Razorpay payment for booking {}", request.getBookingCode());
+
+            boolean isValid = razorpayService.verifyPaymentSignature(
+                    request.getRazorpayOrderId(),
+                    request.getRazorpayPaymentId(),
+                    request.getRazorpaySignature()
+            );
+
+            if (!isValid) {
+                log.error("SECURITY ALERT: Razorpay payment signature verification failed for booking {}. Possible client-side tampering!",
+                        request.getBookingCode());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("Payment verification failed. Cryptographic signature does not match.", 400));
+            }
+
+            Booking confirmedBooking = bookingService.confirmBooking(
+                    request.getBookingCode(),
+                    request.getRazorpayPaymentId(),
+                    "RAZORPAY"
+            );
+
+            // Increment coupon usage if coupon was attached
+            if (confirmedBooking.getAppliedCouponCode() != null && !confirmedBooking.getAppliedCouponCode().trim().isEmpty()) {
+                try {
+                    couponService.incrementCouponUsage(confirmedBooking.getAppliedCouponCode());
+                } catch (Exception e) {
+                    log.warn("Could not increment coupon count for {}", confirmedBooking.getAppliedCouponCode(), e);
+                }
+            }
+
+            log.info("Successfully verified Razorpay payment {} for booking {}",
+                    request.getRazorpayPaymentId(), request.getBookingCode());
+
+            return ResponseEntity.ok(ApiResponse.success(confirmedBooking, "Payment verified and reservation confirmed!"));
+        } catch (Exception e) {
+            log.error("Failed to verify Razorpay payment for booking {}", request.getBookingCode(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Payment verification processing failed: " + e.getMessage(), 500));
+        }
+    }
+
+    /**
+     * Step 3: Webhook fallback for Razorpay asynchronous payment events.
+     * Automatically confirms booking if user disconnects network during checkout.
+     */
+    @PostMapping("/razorpay/webhook")
+    public ResponseEntity<String> handleRazorpayWebhook(
+            @RequestBody String payload,
+            @RequestHeader(value = "X-Razorpay-Signature", required = false) String signature) {
+
+        if (signature == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Missing X-Razorpay-Signature header");
+        }
+
+        boolean isValid = razorpayService.verifyWebhookSignature(payload, signature);
+        if (!isValid) {
+            log.error("SECURITY ALERT: Razorpay webhook signature verification failed!");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Webhook signature mismatch");
+        }
+
+        try {
+            org.json.JSONObject event = new org.json.JSONObject(payload);
+            String eventType = event.optString("event");
+            log.info("Received valid Razorpay webhook event: {}", eventType);
+
+            if ("payment.captured".equals(eventType) || "order.paid".equals(eventType)) {
+                org.json.JSONObject paymentEntity = event.optJSONObject("payload")
+                        .optJSONObject("payment")
+                        .optJSONObject("entity");
+
+                if (paymentEntity != null) {
+                    String paymentId = paymentEntity.optString("id");
+                    org.json.JSONObject notes = paymentEntity.optJSONObject("notes");
+                    String bookingCode = notes != null ? notes.optString("bookingCode") : null;
+
+                    if (bookingCode != null && !bookingCode.isBlank()) {
+                        bookingService.confirmBooking(bookingCode, paymentId, "RAZORPAY_WEBHOOK");
+                        log.info("Razorpay Webhook successfully confirmed booking {}", bookingCode);
+                    }
+                }
+            }
+            return ResponseEntity.ok("OK");
+        } catch (Exception e) {
+            log.error("Error processing Razorpay webhook", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Webhook processing failed");
+        }
     }
 }

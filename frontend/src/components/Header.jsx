@@ -7,7 +7,7 @@ import {
   LayoutGrid, BookOpen, Bell, Settings, User, LogOut, Sliders, Building2,
   Search, MapPin, Calendar, Users, Star
 } from "lucide-react";
-import logoImage from "../assets/images/logo.png";
+import logoImage from "../assets/images/logo.webp";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "../services/auth.service";
 import { hostService } from "../services/host.service";

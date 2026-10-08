@@ -72,12 +72,12 @@ function Testimonials() {
  
               <div className="flex justify-between items-end">
                 <div className="flex items-center gap-2.5">
-                  <img src={item.image} alt={item.name} className="w-10 h-10 rounded-full object-cover" />
+                  <img src={item.image} alt={item.name} width="40" height="40" loading="lazy" decoding="async" className="w-10 h-10 rounded-full object-cover" />
                   <div>
-                    <h4 className="text-[13.5px] font-extrabold text-text-dark mb-0.5 flex items-center gap-1 transition-colors duration-300">
+                    <h3 className="text-[13.5px] font-extrabold text-text-dark mb-0.5 flex items-center gap-1 transition-colors duration-300">
                       {item.name} 
                       <span className="bg-primary text-white rounded-full p-0.5"><Shield size={8} className="fill-current" /></span>
-                    </h4>
+                    </h3>
                     <span className="text-[11px] text-text-gray font-medium transition-colors duration-300">{item.location}</span>
                   </div>
                 </div>
@@ -94,13 +94,13 @@ function Testimonials() {
 
         {/* Pagination Dots */}
         <div className="flex items-center justify-center gap-3 bg-bg-white px-4 py-2 rounded-full shadow-sm border border-border-color transition-colors duration-300">
-          <button className="text-primary hover:text-primary-dark transition-colors border-none bg-transparent cursor-pointer flex items-center"><ChevronLeft size={16} /></button>
+          <button aria-label="Previous testimonial" className="text-primary hover:text-primary-dark transition-colors border-none bg-transparent cursor-pointer flex items-center"><ChevronLeft size={16} /></button>
           <div className="flex items-center gap-1.5">
             <span className="w-5 h-1.5 rounded-full bg-primary transition-colors"></span>
             <span className="w-1.5 h-1.5 rounded-full bg-border-color transition-colors"></span>
             <span className="w-1.5 h-1.5 rounded-full bg-border-color transition-colors"></span>
           </div>
-          <button className="text-primary hover:text-primary-dark transition-colors border-none bg-transparent cursor-pointer flex items-center"><ChevronRight size={16} /></button>
+          <button aria-label="Next testimonial" className="text-primary hover:text-primary-dark transition-colors border-none bg-transparent cursor-pointer flex items-center"><ChevronRight size={16} /></button>
         </div>
 
         {/* Explore All Reviews Link */}

@@ -60,7 +60,7 @@ export default function Notifications() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg-light pt-28 pb-20 px-6 font-sans">
+      <div className="min-h-screen bg-bg-light pt-6 pb-24 sm:pt-10 lg:pt-28 lg:pb-20 px-4 sm:px-6 font-sans">
         <div className="max-w-[700px] mx-auto space-y-6">
           <div className="border-b border-border-color pb-4">
             <h1 className="text-3xl font-serif font-extrabold text-text-dark">Notifications</h1>
@@ -78,14 +78,14 @@ export default function Notifications() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-bg-light pt-28 pb-20 px-6 flex items-center justify-center">
+      <div className="min-h-screen bg-bg-light pt-6 pb-24 sm:pt-10 lg:pt-28 lg:pb-20 px-4 sm:px-6 flex items-center justify-center">
         <ErrorScreen type="network" message={error} onRetry={fetchNotifications} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg-light pt-28 pb-20 px-6 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-bg-light pt-6 pb-24 sm:pt-10 lg:pt-28 lg:pb-20 px-4 sm:px-6 font-sans transition-colors duration-300">
       <div className="max-w-[700px] mx-auto space-y-6 animate-fade-in">
         
         {/* Header Title */}

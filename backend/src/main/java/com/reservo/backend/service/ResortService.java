@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.reservo.backend.dto.ResortCardDTO;
 import com.reservo.backend.entity.Resort;
 import com.reservo.backend.entity.User;
 import com.reservo.backend.exception.ResourceNotFoundException;
@@ -37,6 +38,38 @@ public class ResortService {
         ).stream()
                 .filter(this::isValidPublicResort)
                 .toList();
+    }
+
+    public List<ResortCardDTO> getAllApprovedResortCards() {
+        return getAllApprovedResorts().stream()
+                .map(ResortCardDTO::fromEntity)
+                .toList();
+    }
+
+    public List<ResortCardDTO> searchResortCards(String search) {
+        return searchResorts(search).stream()
+                .map(ResortCardDTO::fromEntity)
+                .toList();
+    }
+
+    public List<ResortCardDTO> filterResortCards(
+            String location,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Double minRating
+    ) {
+        return filterResorts(location, minPrice, maxPrice, minRating).stream()
+                .map(ResortCardDTO::fromEntity)
+                .toList();
+    }
+
+    public static <T> List<T> paginate(List<T> list, Integer page, Integer size) {
+        if (list == null || list.isEmpty() || page == null || size == null || size <= 0) {
+            return list != null ? list : List.of();
+        }
+        int fromIndex = Math.min(Math.max(0, page) * size, list.size());
+        int toIndex = Math.min(fromIndex + size, list.size());
+        return list.subList(fromIndex, toIndex);
     }
 
     private boolean isValidPublicResort(Resort resort) {
@@ -188,6 +221,9 @@ public class ResortService {
         if (resort.getCreatedAt() == null) {
             resort.setCreatedAt(Instant.now());
         }
+
+        log.info("Saving Resort to Firebase Firestore -> Name: '{}', Latitude: {}, Longitude: {}, City: '{}', State: '{}'",
+                resort.getName(), resort.getLatitude(), resort.getLongitude(), resort.getCity(), resort.getState());
 
         return resortRepository.save(resort);
     }

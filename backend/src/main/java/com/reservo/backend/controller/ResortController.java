@@ -1,9 +1,12 @@
 package com.reservo.backend.controller;
 
 import com.reservo.backend.dto.ApiResponse;
+import com.reservo.backend.dto.PageResponseDTO;
+import com.reservo.backend.dto.ResortCardDTO;
 import com.reservo.backend.entity.Resort;
 import com.reservo.backend.service.ResortService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
@@ -19,8 +22,34 @@ public class ResortController {
     private final ResortService resortService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Resort>>> getAllResorts() {
-        return ResponseEntity.ok(ApiResponse.success(resortService.getAllApprovedResorts()));
+    public ResponseEntity<ApiResponse<List<ResortCardDTO>>> getAllResorts(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+
+        List<ResortCardDTO> all = resortService.getAllApprovedResortCards();
+        int total = all.size();
+        List<ResortCardDTO> paged = ResortService.paginate(all, page, size);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-Total-Count", String.valueOf(total));
+        if (size != null && size > 0) {
+            headers.add("X-Page-Number", String.valueOf(page != null ? page : 0));
+            headers.add("X-Page-Size", String.valueOf(size));
+            headers.add("X-Total-Pages", String.valueOf((int) Math.ceil((double) total / size)));
+        }
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(ApiResponse.success(paged));
+    }
+
+    @GetMapping("/paged")
+    public ResponseEntity<ApiResponse<PageResponseDTO<ResortCardDTO>>> getPagedResorts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        List<ResortCardDTO> all = resortService.getAllApprovedResortCards();
+        PageResponseDTO<ResortCardDTO> pageResponse = PageResponseDTO.of(all, page, size);
+        return ResponseEntity.ok(ApiResponse.success(pageResponse));
     }
 
     @GetMapping("/{id}")
@@ -29,36 +58,63 @@ public class ResortController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<List<Resort>>> searchResorts(
+    public ResponseEntity<ApiResponse<List<ResortCardDTO>>> searchResorts(
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "location", required = false) String location,
-            @RequestParam(value = "query", required = false) String query) {
+            @RequestParam(value = "query", required = false) String query,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+
         String searchTerm = (search != null && !search.isBlank()) ? search
                 : (location != null && !location.isBlank()) ? location
                 : (query != null && !query.isBlank()) ? query : "";
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        resortService.searchResorts(searchTerm)
-                )
-        );
-    }
-    @GetMapping("/filter")
-    public ResponseEntity<ApiResponse<List<Resort>>> filterResorts(
-        @RequestParam(required = false) String location,
-        @RequestParam(required = false) BigDecimal minPrice,
-        @RequestParam(required = false) BigDecimal maxPrice,
-        @RequestParam(required = false) Double minRating) {
 
-        return ResponseEntity.ok(
-            ApiResponse.success(
-                    resortService.filterResorts(
-                            location,
-                            minPrice,
-                            maxPrice,
-                            minRating
-                    )
-            )
-    );
+        List<ResortCardDTO> all = resortService.searchResortCards(searchTerm);
+        int total = all.size();
+        List<ResortCardDTO> paged = ResortService.paginate(all, page, size);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-Total-Count", String.valueOf(total));
+        if (size != null && size > 0) {
+            headers.add("X-Page-Number", String.valueOf(page != null ? page : 0));
+            headers.add("X-Page-Size", String.valueOf(size));
+            headers.add("X-Total-Pages", String.valueOf((int) Math.ceil((double) total / size)));
+        }
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(ApiResponse.success(paged));
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<ApiResponse<List<ResortCardDTO>>> filterResorts(
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+
+        List<ResortCardDTO> all = resortService.filterResortCards(
+                location,
+                minPrice,
+                maxPrice,
+                minRating
+        );
+        int total = all.size();
+        List<ResortCardDTO> paged = ResortService.paginate(all, page, size);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-Total-Count", String.valueOf(total));
+        if (size != null && size > 0) {
+            headers.add("X-Page-Number", String.valueOf(page != null ? page : 0));
+            headers.add("X-Page-Size", String.valueOf(size));
+            headers.add("X-Total-Pages", String.valueOf((int) Math.ceil((double) total / size)));
+        }
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(ApiResponse.success(paged));
     }
 
     @PostMapping

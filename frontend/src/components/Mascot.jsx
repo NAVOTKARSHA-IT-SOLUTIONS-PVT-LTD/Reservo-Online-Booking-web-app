@@ -3,11 +3,11 @@ import { resortService } from "../services/resort.service";
 import { X, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
-import rivoSearching from "../assets/images/rivo_searching.png";
-import rivoConfirmed from "../assets/images/rivo_confirmed.png";
-import rivoPlanner from "../assets/images/rivo_planner.png";
-import rivoSupport from "../assets/images/rivo_support.png";
-import rivoWaving from "../assets/images/rivo_waving.png";
+import rivoSearching from "../assets/images/rivo_searching.webp";
+import rivoConfirmed from "../assets/images/rivo_confirmed.webp";
+import rivoPlanner from "../assets/images/rivo_planner.webp";
+import rivoSupport from "../assets/images/rivo_support.webp";
+import rivoWaving from "../assets/images/rivo_waving.webp";
 import mascotWebp from "../assets/images/mascot_transparent.webp";
 
 const QUICK_REPLIES = [

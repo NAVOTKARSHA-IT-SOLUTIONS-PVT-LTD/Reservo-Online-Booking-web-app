@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import rivoSearching from "../assets/images/rivo_searching.png";
 import { apiClient } from "../services/apiClient";
+import GoogleLocationPicker from "../components/GoogleLocationPicker";
 
 export default function PartnerOnboarding() {
   const navigate = useNavigate();
@@ -59,13 +60,13 @@ export default function PartnerOnboarding() {
     category: "resort",
     pricePerNight: "15000",
     // Step 3: Location
-    country: "India",
-    state: "",
-    city: "",
     address: "",
+    city: "",
+    state: "",
+    country: "India",
     pinCode: "",
-    latitude: "",
-    longitude: "",
+    latitude: null,
+    longitude: null,
     googlePlaceId: "",
     // Step 4: Verification
     licenseNumber: "",
@@ -150,8 +151,8 @@ export default function PartnerOnboarding() {
         state: formData.state,
         country: formData.country,
         pinCode: formData.pinCode,
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude),
+        latitude: Number.isFinite(Number(formData.latitude)) ? Number(formData.latitude) : null,
+        longitude: Number.isFinite(Number(formData.longitude)) ? Number(formData.longitude) : null,
         googlePlaceId: formData.googlePlaceId || null,
         description: `Welcome to ${formData.name}. Managed by ${formData.businessName}. Experience premium comfort in our luxury ${formData.category} rooms.`,
         imageUrl: finalImageUrl,
@@ -447,11 +448,31 @@ export default function PartnerOnboarding() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Location confirmation</label>
-                      <div className="p-4 bg-[var(--color-bg-light)] border border-[var(--color-border-color)] rounded-xl">
-                        <MapPin className="w-6 h-6 text-primary mb-2" />
-                        <p className="text-xs text-[var(--color-text-gray)]">Interactive map disabled. Location set via address fields above.</p>
-                      </div>
+                      <label className="text-[9px] text-[var(--color-text-gray)] font-bold uppercase">Interactive Location Selection</label>
+                      <GoogleLocationPicker 
+                        value={{
+                          address: formData.address,
+                          city: formData.city,
+                          state: formData.state,
+                          country: formData.country,
+                          pinCode: formData.pinCode,
+                          latitude: formData.latitude,
+                          longitude: formData.longitude,
+                          googlePlaceId: formData.googlePlaceId
+                        }} 
+                        onChange={(location) => setFormData(prev => ({ 
+                          ...prev, 
+                          address: location.address,
+                          city: location.city,
+                          state: location.state,
+                          country: location.country,
+                          pinCode: location.pinCode,
+                          latitude: location.latitude,
+                          longitude: location.longitude,
+                          googlePlaceId: location.googlePlaceId
+                        }))} 
+                        height="350px" 
+                      />
                     </div>
                   </div>
                 )}

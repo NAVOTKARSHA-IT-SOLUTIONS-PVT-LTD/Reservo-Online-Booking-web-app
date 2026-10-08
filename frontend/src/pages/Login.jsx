@@ -291,7 +291,7 @@ export default function Login({ setIsAuthenticated }) {
   };
 
   return (
-    <div className="h-screen w-screen bg-bg-light flex items-center justify-center font-sans overflow-hidden transition-colors duration-300 p-0 lg:p-6 select-none">
+    <div className="min-h-screen min-h-[100dvh] w-screen bg-bg-light flex items-center justify-center font-sans overflow-y-auto lg:overflow-hidden transition-colors duration-300 p-0 lg:p-6 select-none">
       
       {/* Toast message overlay */}
       <AnimatePresence>
@@ -309,7 +309,7 @@ export default function Login({ setIsAuthenticated }) {
       </AnimatePresence>
 
       {/* Main Split Container */}
-      <div className="w-full h-full lg:h-[90vh] lg:max-h-[800px] max-w-[1200px] bg-bg-white border border-border-color lg:rounded-[32px] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.04)] flex flex-col lg:flex-row">
+      <div className="w-full min-h-screen min-h-[100dvh] lg:min-h-0 lg:h-[90vh] lg:max-h-[800px] max-w-[1200px] bg-bg-white border-0 lg:border border-border-color lg:rounded-[32px] overflow-y-auto lg:overflow-hidden shadow-none lg:shadow-[0_30px_60px_rgba(0,0,0,0.04)] flex flex-col lg:flex-row">
         
         {/* LEFT COLUMN: HERO PANEL */}
         <div className="relative w-full lg:w-[45%] h-[280px] lg:h-full bg-slate-900 text-white p-6 lg:p-10 hidden lg:flex flex-col justify-between shrink-0 overflow-hidden">
@@ -379,35 +379,42 @@ export default function Login({ setIsAuthenticated }) {
         </div>
 
         {/* RIGHT COLUMN: INPUT FORM */}
-        <div className="w-full lg:flex-1 h-0 lg:h-full flex-grow bg-bg-white p-6 lg:p-10 flex flex-col justify-between items-center relative overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+        <div className="w-full lg:flex-1 min-h-screen min-h-[100dvh] lg:min-h-0 lg:h-full flex-grow bg-bg-white p-6 lg:p-10 flex flex-col justify-between items-center relative overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
           
-          {/* Top Actions: Language Selector */}
-          <div className="self-end relative shrink-0">
-            <button 
-              onClick={() => setShowLangMenu(!showLangMenu)}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-border-color rounded-full bg-bg-white text-text-dark text-[10px] font-bold cursor-pointer hover:border-primary transition"
-            >
-              <Globe className="w-3 h-3 text-text-gray" />
-              <span>{language}</span>
-              <ChevronDown className="w-2.5 h-2.5 text-text-gray" />
-            </button>
+          {/* Top Actions: Logo (mobile only) & Language Selector */}
+          <div className="w-full flex justify-between items-center mb-4 lg:mb-0 shrink-0">
+            <Link to="/" className="lg:hidden flex items-center gap-2 no-underline select-none">
+              <img src={logoImage} alt="Reservo Logo" className="h-7 w-auto object-contain" />
+              <span className="text-lg font-extrabold font-serif text-text-dark">Reservo</span>
+            </Link>
 
-            {showLangMenu && (
-              <div className="absolute right-0 top-9 bg-bg-white border border-border-color rounded-xl shadow-lg p-1 w-26 z-50 text-[10px] font-semibold text-text-dark animate-fade-in">
-                {["English", "Hindi"].map(lang => (
-                  <button 
-                    key={lang}
-                    onClick={() => {
-                      setLanguage(lang);
-                      setShowLangMenu(false);
-                    }}
-                    className="w-full text-left py-1.5 px-2.5 rounded-lg hover:bg-bg-light bg-transparent border-none cursor-pointer text-text-dark"
-                  >
-                    {lang}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="relative ml-auto">
+              <button 
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-border-color rounded-full bg-bg-white text-text-dark text-[10px] font-bold cursor-pointer hover:border-primary transition"
+              >
+                <Globe className="w-3 h-3 text-text-gray" />
+                <span>{language}</span>
+                <ChevronDown className="w-2.5 h-2.5 text-text-gray" />
+              </button>
+
+              {showLangMenu && (
+                <div className="absolute right-0 top-9 bg-bg-white border border-border-color rounded-xl shadow-lg p-1 w-26 z-50 text-[10px] font-semibold text-text-dark animate-fade-in">
+                  {["English", "Hindi"].map(lang => (
+                    <button 
+                      key={lang}
+                      onClick={() => {
+                        setLanguage(lang);
+                        setShowLangMenu(false);
+                      }}
+                      className="w-full text-left py-1.5 px-2.5 rounded-lg hover:bg-bg-light bg-transparent border-none cursor-pointer text-text-dark"
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Form wrapper */}

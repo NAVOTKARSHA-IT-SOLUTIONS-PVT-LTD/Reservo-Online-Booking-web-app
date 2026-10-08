@@ -14,6 +14,7 @@ import { resortService } from "../services/resort.service";
 import { authService } from "../services/auth.service";
 import { useToast } from "../context/ToastContext";
 import { apiClient } from "../services/apiClient";
+import GoogleLocationPicker from "../components/GoogleLocationPicker";
 
 const splitUrls = (urlStr) => {
   if (!urlStr) return [];
@@ -3538,10 +3539,30 @@ export default function HostAdminPortal() {
                     </div>
                     <label><span className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">Landmark</span>
                       <input value={propertyEditForm.landmark} onChange={e => setPropertyEditForm(p=>({...p,landmark:e.target.value}))} placeholder="Nearby landmark" className="w-full p-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-blue-500"/></label>
-                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                      <MapPin className="w-6 h-6 text-primary mb-2" />
-                      <p className="text-xs text-slate-500">Interactive map disabled. Location set via address fields above.</p>
-                    </div>
+                    <GoogleLocationPicker 
+                      value={{
+                        address: propertyEditForm.address,
+                        city: propertyEditForm.city,
+                        state: propertyEditForm.state,
+                        country: propertyEditForm.country,
+                        pinCode: propertyEditForm.pinCode,
+                        latitude: propertyEditForm.latitude,
+                        longitude: propertyEditForm.longitude,
+                        googlePlaceId: propertyEditForm.googlePlaceId
+                      }} 
+                      onChange={(location) => setPropertyEditForm(p => ({ 
+                        ...p, 
+                        address: location.address,
+                        city: location.city,
+                        state: location.state,
+                        country: location.country,
+                        pinCode: location.pinCode,
+                        latitude: location.latitude,
+                        longitude: location.longitude,
+                        googlePlaceId: location.googlePlaceId
+                      }))} 
+                      height="350px" 
+                    />
                   </div>
                 </section>
 

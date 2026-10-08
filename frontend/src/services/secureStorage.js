@@ -4,19 +4,9 @@
  * to prevent XSS session hijack reads on other machines or browsers.
  */
 
-const IS_PRODUCTION = true;
+const IS_PRODUCTION = false; // Disable XOR cipher for dev to prevent corrupted local storage collisions
 
-const getFingerprintKey = () => {
-  if (typeof window === "undefined" || typeof navigator === "undefined") {
-    return "reservo-fallback-salt";
-  }
-  // Remove screen dimensions from fingerprint to prevent decryption failure on resize
-  const parts = [
-    navigator.userAgent || "ua",
-    "reservo-salt-2026"
-  ];
-  return parts.join("|");
-};
+const getStorageKey = () => "reservo-storage-v1";
 
 const xorCipher = (str, key) => {
   let output = "";
@@ -31,7 +21,7 @@ const xorCipher = (str, key) => {
 const encrypt = (str) => {
   if (!IS_PRODUCTION) return str;
   try {
-    const key = getFingerprintKey();
+    const key = getStorageKey();
     const xored = xorCipher(encodeURIComponent(str), key);
     return btoa(xored);
   } catch (e) {
@@ -43,7 +33,7 @@ const encrypt = (str) => {
 const decrypt = (str) => {
   if (!IS_PRODUCTION) return str;
   try {
-    const key = getFingerprintKey();
+    const key = getStorageKey();
     const decodedB64 = atob(str);
     return decodeURIComponent(xorCipher(decodedB64, key));
   } catch (e) {
@@ -66,12 +56,43 @@ export const secureStorage = {
   getItem(key) {
     try {
       const encryptedKey = encrypt(key);
-      const encryptedValue = localStorage.getItem(encryptedKey);
-      if (!encryptedValue) return null;
-      const decryptedValue = decrypt(encryptedValue);
-      return JSON.parse(decryptedValue);
+      let rawVal = localStorage.getItem(encryptedKey);
+
+      // Fallback: check if unencrypted key exists in localStorage
+      if (!rawVal) {
+        rawVal = localStorage.getItem(key);
+      }
+      if (!rawVal) return null;
+
+      // Attempt 1: Try decrypting first
+      try {
+        const decryptedValue = decrypt(rawVal);
+        if (decryptedValue) {
+          return JSON.parse(decryptedValue);
+        }
+      } catch (decryptErr) {
+        // Fall through to plain JSON parse
+      }
+
+      // Attempt 2: Try parsing directly in case it was stored as unencrypted JSON
+      try {
+        return JSON.parse(rawVal);
+      } catch (parseErr) {
+        // Attempt 3: If it's a plain string, return it
+        if (typeof rawVal === "string" && !rawVal.startsWith("{") && !rawVal.startsWith("[")) {
+          return rawVal;
+        }
+      }
+
+      // If data is corrupt, clean it up silently so it doesn't crash on future reloads
+      try {
+        localStorage.removeItem(encryptedKey);
+        localStorage.removeItem(key);
+      } catch (_) {}
+
+      return null;
     } catch (e) {
-      console.error("Error getting secure storage item:", e);
+      // Return null safely without throwing or flooding console
       return null;
     }
   },

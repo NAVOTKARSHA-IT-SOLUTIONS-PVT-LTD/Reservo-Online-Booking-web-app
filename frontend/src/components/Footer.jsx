@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { X, Send, MessageSquare, CheckCircle2 } from "lucide-react";
-import logoImage from "../assets/images/logo.png";
+import logoImage from "../assets/images/logo.webp";
 import { hostService } from "../services/host.service";
 
 // Inline SVG components for brand and utility icons
@@ -208,56 +208,56 @@ function Footer() {
   if (!isHomePage) {
     return (
       <>
-        <footer className="bg-[#0B1530] text-slate-300 py-12 border-t border-slate-800 font-sans mt-auto">
+        <footer className="bg-[#0A1120] dark:bg-white text-slate-300 dark:text-slate-700 py-12 border-t border-slate-800 dark:border-slate-200 font-sans mt-auto transition-colors duration-300">
           <div className="w-full max-w-[1280px] mx-auto px-6">
             {/* Top section */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-8 pb-8 border-b border-slate-800">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8 pb-8 border-b border-slate-800 dark:border-slate-200">
               
               {/* Left Side: Logo and tagline */}
               <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                <Link to="/" className="flex items-center gap-2 no-underline text-white">
-                  <img src={logoImage} alt="R" className="h-9 w-auto object-contain" />
-                  <span className="text-[20px] font-extrabold tracking-[0.5px] font-serif text-white transition-colors duration-300">
+                <Link to="/" className="flex items-center gap-2 no-underline text-white dark:text-[#0A2342]">
+                  <img src={logoImage} alt="Reservo Logo" width="36" height="36" loading="lazy" decoding="async" className="h-9 w-auto object-contain" />
+                  <span className="text-[20px] font-extrabold tracking-[0.5px] font-serif text-white dark:text-[#0A2342] transition-colors duration-300">
                     Reservo
                   </span>
                 </Link>
-                <p className="text-slate-400 text-sm mt-3">
+                <p className="text-slate-400 dark:text-slate-500 text-sm mt-3">
                   Luxury stays. Unforgettable experiences.
                 </p>
               </div>
 
               {/* Center: Navigation Links */}
               <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-semibold">
-                <Link to="/" className="text-slate-300 hover:text-white transition-colors decoration-none">Home</Link>
-                <span className="text-slate-600">•</span>
-                <Link to="/search" className="text-slate-300 hover:text-white transition-colors decoration-none">Destinations</Link>
-                <span className="text-slate-600">•</span>
-                <Link to="/resorts" className="text-slate-300 hover:text-white transition-colors decoration-none">Stays</Link>
-                <span className="text-slate-600">•</span>
-                <Link to="/about" className="text-slate-300 hover:text-white transition-colors decoration-none">About Us</Link>
-                <span className="text-slate-600">•</span>
-                <button type="button" onClick={() => { setShowFeedbackModal(true); setSubmitted(false); }} className="text-slate-300 hover:text-white transition-colors bg-transparent border-none p-0 cursor-pointer text-sm font-semibold">Feedback</button>
-                <span className="text-slate-600">•</span>
-                <Link to="/support" className="text-slate-300 hover:text-white transition-colors decoration-none">Contact Us</Link>
+                <Link to="/" className="text-slate-300 dark:text-slate-600 hover:text-white dark:hover:text-[#0D47A1] transition-colors decoration-none">Home</Link>
+                <span className="text-slate-600 dark:text-slate-300">•</span>
+                <Link to="/search" className="text-slate-300 dark:text-slate-600 hover:text-white dark:hover:text-[#0D47A1] transition-colors decoration-none">Destinations</Link>
+                <span className="text-slate-600 dark:text-slate-300">•</span>
+                <Link to="/resorts" className="text-slate-300 dark:text-slate-600 hover:text-white dark:hover:text-[#0D47A1] transition-colors decoration-none">Stays</Link>
+                <span className="text-slate-600 dark:text-slate-300">•</span>
+                <Link to="/about" className="text-slate-300 dark:text-slate-600 hover:text-white dark:hover:text-[#0D47A1] transition-colors decoration-none">About Us</Link>
+                <span className="text-slate-600 dark:text-slate-300">•</span>
+                <button type="button" onClick={() => { setShowFeedbackModal(true); setSubmitted(false); }} className="text-slate-300 dark:text-slate-600 hover:text-white dark:hover:text-[#0D47A1] transition-colors bg-transparent border-none p-0 cursor-pointer text-sm font-semibold">Feedback</button>
+                <span className="text-slate-600 dark:text-slate-300">•</span>
+                <Link to="/support" className="text-slate-300 dark:text-slate-600 hover:text-white dark:hover:text-[#0D47A1] transition-colors decoration-none">Contact Us</Link>
               </div>
 
               {/* Right Side: Follow Us */}
               <div className="flex flex-col items-center md:items-end gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Follow Us</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Follow Us</span>
                 <div className="flex gap-3">
-                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Instagram" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Instagram" className="w-9 h-9 rounded-full bg-slate-800 dark:bg-slate-100 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 dark:text-slate-600 transition-colors">
                     <InstagramIcon className="w-4 h-4" />
                   </a>
-                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Facebook" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo Facebook" className="w-9 h-9 rounded-full bg-slate-800 dark:bg-slate-100 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 dark:text-slate-600 transition-colors">
                     <FacebookIcon className="w-4 h-4" />
                   </a>
-                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo X" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                  <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo X" className="w-9 h-9 rounded-full bg-slate-800 dark:bg-slate-100 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 dark:text-slate-600 transition-colors">
                     <XIcon className="w-4 h-4" />
                   </a>
-                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo LinkedIn" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo LinkedIn" className="w-9 h-9 rounded-full bg-slate-800 dark:bg-slate-100 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 dark:text-slate-600 transition-colors">
                     <LinkedInIcon className="w-4 h-4" />
                   </a>
-                  <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo YouTube" className="w-9 h-9 rounded-full bg-slate-800 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 transition-colors">
+                  <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="Visit Reservo YouTube" className="w-9 h-9 rounded-full bg-slate-800 dark:bg-slate-100 hover:bg-[#2563EB] hover:text-white flex items-center justify-center text-slate-300 dark:text-slate-600 transition-colors">
                     <YoutubeIcon className="w-4 h-4" />
                   </a>
                 </div>
@@ -266,13 +266,13 @@ function Footer() {
             </div>
 
             {/* Bottom Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6 text-xs text-slate-500">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6 text-xs text-slate-500 dark:text-slate-400">
               <div>
-                &copy; 2026 <span className="font-semibold text-slate-400">Reservo</span>. All Rights Reserved.
+                &copy; 2026 <span className="font-semibold text-slate-400 dark:text-slate-700">Reservo</span>. All Rights Reserved.
               </div>
               <div className="flex gap-4">
-                <Link to="/terms" className="hover:text-slate-300 transition-colors decoration-none">Terms of Service</Link>
-                <Link to="/help" className="hover:text-slate-300 transition-colors decoration-none">Privacy Policy</Link>
+                <Link to="/terms" className="hover:text-slate-300 dark:hover:text-slate-700 transition-colors decoration-none">Terms of Service</Link>
+                <Link to="/help" className="hover:text-slate-300 dark:hover:text-slate-700 transition-colors decoration-none">Privacy Policy</Link>
               </div>
             </div>
           </div>
@@ -286,7 +286,7 @@ function Footer() {
   return (
     <>
       <footer
-        className="bg-bg-white pt-16 font-sans border-t border-border-color transition-colors duration-300"
+        className="bg-[#0A1120] dark:bg-white pt-16 font-sans border-t border-slate-800 dark:border-slate-200 transition-colors duration-300 text-white dark:text-[#0A2342]"
         id="footer"
       >
         <div className="w-full max-w-[1280px] mx-auto px-5">
@@ -301,12 +301,12 @@ function Footer() {
                   className="h-10 w-auto object-contain"
                 />
 
-                <span className="text-[24px] font-extrabold tracking-[0.5px] text-text-dark font-serif transition-colors duration-300">
+                <span className="text-[24px] font-extrabold tracking-[0.5px] text-white dark:text-[#0A2342] font-serif transition-colors duration-300">
                   Reservo
                 </span>
               </Link>
 
-              <p className="text-text-gray text-[14px] leading-relaxed mb-8 max-w-[280px] transition-colors duration-300">
+              <p className="text-slate-400 dark:text-[#4A5D73] text-[14px] leading-relaxed mb-8 max-w-[280px] transition-colors duration-300">
                 Discover India's finest luxury resorts, boutique stays, and
                 unforgettable travel experiences. Your perfect vacation starts
                 with Reservo.
@@ -318,7 +318,7 @@ function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Visit Reservo Facebook Page"
-                  className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+                  className="w-10 h-10 rounded-full border border-slate-700/80 dark:border-slate-200 bg-white/5 dark:bg-slate-100 flex items-center justify-center text-slate-300 dark:text-[#4A5D73] hover:text-white dark:hover:text-white hover:bg-primary dark:hover:bg-[#0D47A1] hover:border-primary dark:hover:border-[#0D47A1] transition-all"
                 >
                   <FacebookIcon className="w-4 h-4" />
                 </a>
@@ -328,7 +328,7 @@ function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Visit Reservo Instagram Page"
-                  className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+                  className="w-10 h-10 rounded-full border border-slate-700/80 dark:border-slate-200 bg-white/5 dark:bg-slate-100 flex items-center justify-center text-slate-300 dark:text-[#4A5D73] hover:text-white dark:hover:text-white hover:bg-primary dark:hover:bg-[#0D47A1] hover:border-primary dark:hover:border-[#0D47A1] transition-all"
                 >
                   <InstagramIcon className="w-4 h-4" />
                 </a>
@@ -338,7 +338,7 @@ function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Visit Reservo X Page"
-                  className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+                  className="w-10 h-10 rounded-full border border-slate-700/80 dark:border-slate-200 bg-white/5 dark:bg-slate-100 flex items-center justify-center text-slate-300 dark:text-[#4A5D73] hover:text-white dark:hover:text-white hover:bg-primary dark:hover:bg-[#0D47A1] hover:border-primary dark:hover:border-[#0D47A1] transition-all"
                 >
                   <XIcon className="w-4 h-4" />
                 </a>
@@ -348,7 +348,7 @@ function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Visit Reservo LinkedIn Page"
-                  className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+                  className="w-10 h-10 rounded-full border border-slate-700/80 dark:border-slate-200 bg-white/5 dark:bg-slate-100 flex items-center justify-center text-slate-300 dark:text-[#4A5D73] hover:text-white dark:hover:text-white hover:bg-primary dark:hover:bg-[#0D47A1] hover:border-primary dark:hover:border-[#0D47A1] transition-all"
                 >
                   <LinkedInIcon className="w-4 h-4" />
                 </a>
@@ -358,7 +358,7 @@ function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Visit Reservo YouTube Page"
-                  className="w-10 h-10 rounded-full border border-border-color flex items-center justify-center text-text-gray hover:text-white hover:bg-primary hover:border-primary transition-all bg-transparent"
+                  className="w-10 h-10 rounded-full border border-slate-700/80 dark:border-slate-200 bg-white/5 dark:bg-slate-100 flex items-center justify-center text-slate-300 dark:text-[#4A5D73] hover:text-white dark:hover:text-white hover:bg-primary dark:hover:bg-[#0D47A1] hover:border-primary dark:hover:border-[#0D47A1] transition-all"
                 >
                   <YoutubeIcon className="w-4 h-4" />
                 </a>
@@ -367,16 +367,16 @@ function Footer() {
 
             {/* Quick Links */}
             <div className="lg:col-span-2 lg:col-start-4">
-              <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
+              <h4 className="text-[14px] font-extrabold text-white dark:text-[#0A2342] uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
                 Quick Links
-                <span className="w-8 h-0.5 bg-[#2563EB]"></span>
+                <span className="w-8 h-0.5 bg-sky-400 dark:bg-[#2563EB]"></span>
               </h4>
 
-              <ul className="flex flex-col gap-4 text-[14px] text-text-gray font-medium p-0 list-none transition-colors duration-300">
+              <ul className="flex flex-col gap-4 text-[14px] text-slate-300 dark:text-[#4A5D73] font-medium p-0 list-none transition-colors duration-300">
                 <li>
                   <Link
                     to="/"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Home</span>
                   </Link>
@@ -385,7 +385,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/search"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Destinations</span>
                   </Link>
@@ -394,7 +394,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/search"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Stays</span>
                   </Link>
@@ -403,7 +403,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/about"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>About Us</span>
                   </Link>
@@ -412,7 +412,7 @@ function Footer() {
                 <li>
                   <Link
                     to={hasPublished ? "/host/dashboard" : "/become-a-host"}
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>{hasPublished ? "Host Administration" : "Become a Host"}</span>
                   </Link>
@@ -425,7 +425,7 @@ function Footer() {
                       setShowFeedbackModal(true);
                       setSubmitted(false);
                     }}
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5 bg-transparent border-none p-0 cursor-pointer font-medium text-[14px] w-full text-left"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5 bg-transparent border-none p-0 cursor-pointer font-medium text-[14px] w-full text-left"
                   >
                     <span>Feedback</span>
                   </button>
@@ -435,16 +435,16 @@ function Footer() {
 
             {/* Our Services */}
             <div className="lg:col-span-2">
-              <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
+              <h4 className="text-[14px] font-extrabold text-white dark:text-[#0A2342] uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
                 Our Services
-                <span className="w-8 h-0.5 bg-[#2563EB]"></span>
+                <span className="w-8 h-0.5 bg-sky-400 dark:bg-[#2563EB]"></span>
               </h4>
 
-              <ul className="flex flex-col gap-4 text-[14px] text-text-gray font-medium p-0 list-none transition-colors duration-300">
+              <ul className="flex flex-col gap-4 text-[14px] text-slate-300 dark:text-[#4A5D73] font-medium p-0 list-none transition-colors duration-300">
                 <li>
                   <Link
                     to="/search"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Luxury Stays</span>
                   </Link>
@@ -453,7 +453,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/search"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Spa & Wellness</span>
                   </Link>
@@ -462,7 +462,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/search"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Private Villas</span>
                   </Link>
@@ -471,7 +471,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/search"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Wedding Events</span>
                   </Link>
@@ -480,7 +480,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/search"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Travel Packages</span>
                   </Link>
@@ -490,16 +490,16 @@ function Footer() {
 
             {/* Company Info */}
             <div className="lg:col-span-2">
-              <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
+              <h4 className="text-[14px] font-extrabold text-white dark:text-[#0A2342] uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
                 Company Info
-                <span className="w-8 h-0.5 bg-[#2563EB]"></span>
+                <span className="w-8 h-0.5 bg-sky-400 dark:bg-[#2563EB]"></span>
               </h4>
 
-              <ul className="flex flex-col gap-4 text-[14px] text-text-gray font-medium p-0 list-none transition-colors duration-300">
+              <ul className="flex flex-col gap-4 text-[14px] text-slate-300 dark:text-[#4A5D73] font-medium p-0 list-none transition-colors duration-300">
                 <li>
                   <Link
                     to="/careers"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Careers</span>
                   </Link>
@@ -508,7 +508,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/terms"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Terms of Service</span>
                   </Link>
@@ -517,7 +517,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/help"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Help Center</span>
                   </Link>
@@ -526,7 +526,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/support"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Support</span>
                   </Link>
@@ -535,7 +535,7 @@ function Footer() {
                 <li>
                   <Link
                     to="/privacy-policy"
-                    className="hover:text-primary transition-colors flex items-center justify-between text-text-gray decoration-none py-0.5"
+                    className="hover:text-white dark:hover:text-[#0D47A1] transition-colors flex items-center justify-between text-slate-300 dark:text-[#4A5D73] decoration-none py-0.5"
                   >
                     <span>Privacy Policy</span>
                   </Link>
@@ -545,12 +545,12 @@ function Footer() {
 
             {/* Newsletter */}
             <div className="lg:col-span-3">
-              <h4 className="text-[14px] font-extrabold text-text-dark uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
+              <h4 className="text-[14px] font-extrabold text-white dark:text-[#0A2342] uppercase tracking-wider mb-6 flex flex-col gap-2 transition-colors duration-300">
                 Newsletter
-                <span className="w-8 h-0.5 bg-[#2563EB]"></span>
+                <span className="w-8 h-0.5 bg-sky-400 dark:bg-[#2563EB]"></span>
               </h4>
 
-              <p className="text-text-gray text-[13px] leading-relaxed mb-6 transition-colors duration-300">
+              <p className="text-slate-400 dark:text-[#4A5D73] text-[13px] leading-relaxed mb-6 transition-colors duration-300">
                 Subscribe to get exclusive offers, travel inspiration & more.
               </p>
 
@@ -559,18 +559,18 @@ function Footer() {
                 onSubmit={(e) => e.preventDefault()}
               >
                 <div className="relative w-full">
-                  <MailIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-gray" />
+                  <MailIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
 
                   <input
                     type="email"
                     placeholder="Enter your email"
-                    className="w-full border border-border-color rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:border-primary transition-colors bg-bg-light text-text-dark"
+                    className="w-full border border-slate-700 dark:border-slate-300 rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:border-primary transition-colors bg-[#131D33] dark:bg-slate-50 text-white dark:text-slate-900 placeholder:text-slate-400 dark:placeholder:text-slate-400"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-primary hover:bg-primary-dark text-white rounded-xl py-3.5 text-sm font-bold flex items-center justify-center gap-2 border-none cursor-pointer transition-colors shadow-md"
+                  className="w-full bg-[#0D47A1] hover:bg-[#1565C0] text-white rounded-xl py-3.5 text-sm font-bold flex items-center justify-center gap-2 border-none cursor-pointer transition-colors shadow-md"
                 >
                   Subscribe
                   <SendIcon className="w-4 h-4" />
@@ -581,32 +581,32 @@ function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="bg-[#0B1530] text-slate-300 py-6 w-full transition-colors duration-300">
+        <div className="bg-[#0A1120] dark:bg-slate-50 text-slate-400 dark:text-slate-600 py-6 w-full border-t border-slate-800 dark:border-slate-200 transition-colors duration-300">
           <div className="w-full max-w-[1280px] mx-auto px-6 flex flex-col lg:flex-row justify-between items-center gap-6 text-xs font-semibold">
 
             <div className="flex items-center gap-6">
               <span className="flex items-center gap-2">
-                <ShieldIcon className="w-4 h-4 text-[#2563EB]" />
+                <ShieldIcon className="w-4 h-4 text-sky-400 dark:text-blue-600" />
                 100% Secure Booking
               </span>
 
-              <span className="w-px h-4 bg-slate-800"></span>
+              <span className="w-px h-4 bg-slate-800 dark:bg-slate-300"></span>
 
               <span className="flex items-center gap-2">
-                <HeadphoneIcon className="w-4 h-4 text-[#2563EB]" />
+                <HeadphoneIcon className="w-4 h-4 text-sky-400 dark:text-blue-600" />
                 24/7 Customer Support
               </span>
             </div>
 
-            <div className="text-slate-400">
+            <div className="text-slate-400 dark:text-slate-600">
               &copy; 2026{" "}
-              <span className="font-extrabold text-white">Reservo</span>.
+              <span className="font-extrabold text-white dark:text-[#0A2342]">Reservo</span>.
               All Rights Reserved.
             </div>
 
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-4">
-                <span className="font-black italic text-sm tracking-tighter text-white">
+                <span className="font-black italic text-sm tracking-tighter text-white dark:text-slate-900">
                   VISA
                 </span>
 
@@ -615,19 +615,19 @@ function Footer() {
                   <div className="w-4.5 h-4.5 rounded-full bg-[#F79E1B] opacity-90"></div>
                 </div>
 
-                <span className="font-bold italic text-[10px] border border-slate-700 px-1.5 py-0.5 rounded-sm text-slate-400">
+                <span className="font-bold italic text-[10px] border border-slate-700 dark:border-slate-300 px-1.5 py-0.5 rounded-sm text-slate-400 dark:text-slate-600">
                   AMEX
                 </span>
 
-                <span className="font-bold italic text-xs text-white">
+                <span className="font-bold italic text-xs text-white dark:text-slate-900">
                   UPI
                 </span>
               </div>
 
-              <span className="w-px h-4 bg-slate-800"></span>
+              <span className="w-px h-4 bg-slate-800 dark:bg-slate-300"></span>
 
               <span className="flex items-center gap-1.5">
-                <LockIcon className="w-3.5 h-3.5 text-[#2563EB]" />
+                <LockIcon className="w-3.5 h-3.5 text-sky-400 dark:text-blue-600" />
                 Encrypted & Secure
               </span>
             </div>

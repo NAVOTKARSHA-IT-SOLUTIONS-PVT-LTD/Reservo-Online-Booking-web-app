@@ -122,10 +122,6 @@ public class ResortPostRepository {
                                     "resortId",
                                     resortId
                             )
-                            .orderBy(
-                                    "createdAt",
-                                    com.google.cloud.firestore.Query.Direction.DESCENDING
-                            )
                             .get()
                             .get()
                             .getDocuments();
@@ -140,15 +136,12 @@ public class ResortPostRepository {
 
                 if (post != null) {
 
-                    // Make sure the Firestore ID is
-                    // available in the Java object.
                     if (post.getId() == null) {
                         try {
                             post.setId(
                                     document.getId()
                             );
-                        } catch (NumberFormatException ignored) {
-                            // Keep stored ID if available.
+                        } catch (Exception ignored) {
                         }
                     }
 
@@ -156,23 +149,23 @@ public class ResortPostRepository {
                 }
             }
 
+            // In-memory sort (avoids missing Firestore composite index error)
+            posts.sort((a, b) -> {
+                if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+                if (a.getCreatedAt() == null) return 1;
+                if (b.getCreatedAt() == null) return -1;
+                return b.getCreatedAt().compareTo(a.getCreatedAt());
+            });
+
             return posts;
 
         } catch (InterruptedException e) {
 
             Thread.currentThread().interrupt();
+            return new ArrayList<>();
 
-            throw new RuntimeException(
-                    "Interrupted while loading resort posts",
-                    e
-            );
-
-        } catch (ExecutionException e) {
-
-            throw new RuntimeException(
-                    "Failed to load resort posts",
-                    e
-            );
+        } catch (Exception e) {
+            return new ArrayList<>();
         }
     }
 

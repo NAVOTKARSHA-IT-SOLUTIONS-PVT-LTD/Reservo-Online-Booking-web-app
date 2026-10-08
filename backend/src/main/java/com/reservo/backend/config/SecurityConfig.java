@@ -174,6 +174,7 @@ public class SecurityConfig {
                         ).permitAll()
 
 
+
                         // ====================================================
                         // ADMIN
                         // ====================================================
@@ -213,6 +214,18 @@ public class SecurityConfig {
                                 "/api/v1/reviews/**",
                                 "/api/v1/availability/**",
                                 "/api/v1/rewards/validate"
+                        ).permitAll()
+
+                        // Places API endpoints are public so guests can browse nearby places and new
+                        // hosts can search an address before signing in.
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/places/**"
+                        ).permitAll()
+
+                        // Google Maps location tracking & stats logging endpoints
+                        .requestMatchers(
+                                "/api/v1/map-tracking/**"
                         ).permitAll()
 
 

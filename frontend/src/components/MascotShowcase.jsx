@@ -4,10 +4,10 @@ import { useTranslation } from "../hooks/useTranslation";
 
 // Import all Rivo mascot images
 import rivoMascot from "../assets/images/rivo_mascot.jpg";
-import rivoSearching from "../assets/images/rivo_searching.png";
-import rivoConfirmed from "../assets/images/rivo_confirmed.png";
-import rivoPlanner from "../assets/images/rivo_planner.png";
-import rivoSupport from "../assets/images/rivo_support.png";
+import rivoSearching from "../assets/images/rivo_searching.webp";
+import rivoConfirmed from "../assets/images/rivo_confirmed.webp";
+import rivoPlanner from "../assets/images/rivo_planner.webp";
+import rivoSupport from "../assets/images/rivo_support.webp";
 
 const SHOWCASE_TABS = [
   {
@@ -122,6 +122,8 @@ function MascotShowcase() {
                 <img 
                   src={`${activeTab.image}?v=10`} 
                   alt={`Rivo ${activeTabId}`}
+                  width="150"
+                  height="150"
                   loading="lazy"
                   decoding="async"
                   className="w-full h-full object-cover transition-transform duration-300"

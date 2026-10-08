@@ -79,6 +79,22 @@ public class ResortMediaController {
         }
     }
 
+    private Path resolveMediaFile(String filename) {
+        Path direct = storagePath().resolve(filename).normalize();
+        if (Files.exists(direct)) {
+            return direct;
+        }
+        Path altBackend = Paths.get("backend", storageDirectory).toAbsolutePath().normalize().resolve(filename).normalize();
+        if (Files.exists(altBackend)) {
+            return altBackend;
+        }
+        Path altParent = Paths.get("..", storageDirectory).toAbsolutePath().normalize().resolve(filename).normalize();
+        if (Files.exists(altParent)) {
+            return altParent;
+        }
+        return direct;
+    }
+
     @GetMapping("/files/{filename:.+}")
     public ResponseEntity<Resource> get(@PathVariable String filename) {
         try {
@@ -86,12 +102,7 @@ public class ResortMediaController {
                 return ResponseEntity.badRequest().build();
             }
 
-            Path storage = storagePath();
-            Path file = storage.resolve(filename).normalize();
-
-            if (!file.startsWith(storage)) {
-                return ResponseEntity.badRequest().build();
-            }
+            Path file = resolveMediaFile(filename);
 
             Resource resource = new UrlResource(file.toUri());
             if (!resource.exists() || !resource.isReadable()) {

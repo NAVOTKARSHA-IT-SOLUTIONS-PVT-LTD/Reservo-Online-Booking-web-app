@@ -294,28 +294,28 @@ export default function Reviews() {
           </p>
 
           {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-8 text-left">
-            <div className="bg-[#132742] border border-white/15 rounded-2xl p-4 shadow-sm">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 max-w-3xl mx-auto mb-8 text-left">
+            <div className="bg-[#132742] border border-white/15 rounded-2xl p-3 sm:p-4 shadow-sm">
+              <div className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white flex items-center gap-1.5">
                 <span>4.9</span>
-                <Star size={20} className="fill-yellow-400 text-yellow-400" />
+                <Star size={18} className="fill-yellow-400 text-yellow-400 shrink-0" />
               </div>
-              <div className="text-[11px] font-semibold text-slate-300 mt-0.5">Average Guest Rating</div>
+              <div className="text-[10px] sm:text-[11px] font-semibold text-slate-300 mt-0.5">Average Rating</div>
             </div>
 
-            <div className="bg-[#132742] border border-white/15 rounded-2xl p-4 shadow-sm">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white">12,480+</div>
-              <div className="text-[11px] font-semibold text-slate-300 mt-0.5">Verified Stays</div>
+            <div className="bg-[#132742] border border-white/15 rounded-2xl p-3 sm:p-4 shadow-sm">
+              <div className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white">12,480+</div>
+              <div className="text-[10px] sm:text-[11px] font-semibold text-slate-300 mt-0.5">Verified Stays</div>
             </div>
 
-            <div className="bg-[#132742] border border-white/15 rounded-2xl p-4 shadow-sm">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white">98.6%</div>
-              <div className="text-[11px] font-semibold text-slate-300 mt-0.5">Would Recommend</div>
+            <div className="bg-[#132742] border border-white/15 rounded-2xl p-3 sm:p-4 shadow-sm">
+              <div className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white">98.6%</div>
+              <div className="text-[10px] sm:text-[11px] font-semibold text-slate-300 mt-0.5">Recommend</div>
             </div>
 
-            <div className="bg-[#132742] border border-white/15 rounded-2xl p-4 shadow-sm">
-              <div className="text-2xl sm:text-3xl font-extrabold text-white">100%</div>
-              <div className="text-[11px] font-semibold text-slate-300 mt-0.5">Real Guest Verified</div>
+            <div className="bg-[#132742] border border-white/15 rounded-2xl p-3 sm:p-4 shadow-sm">
+              <div className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white">100%</div>
+              <div className="text-[10px] sm:text-[11px] font-semibold text-slate-300 mt-0.5">Guest Verified</div>
             </div>
           </div>
 
